@@ -34,6 +34,8 @@ library
   exposed-modules:
       VDB.Config
     , VDB.Feature
+    , VDB.FeatureExpr
+    , VDB.SAT
 
 test-suite test
   hs-source-dirs:   test
