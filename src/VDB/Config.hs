@@ -1,40 +1,43 @@
 module VDB.Config where
 
+import Data.SBV (Boolean(..))
+
 import VDB.Feature
 
 
--- | A configuration is a function that indicates whether each feature
---   is enabled ('True') or disabled ('False').
-type Config = Feature -> Bool
+-- | A configuration is a function that indicates whether each feature is
+--   enabled ('true') or disabled ('false'). The boolean return value is
+--   parameterized to admit alternative logics or symbolic values.
+type Config b = Feature -> b
 
 -- | A configuration that enables all features.
-enableAll :: Config
-enableAll _ = True
+enableAll :: Boolean b => Config b
+enableAll _ = true
 
 -- | A configuration that disables all features.
-disableAll :: Config
-disableAll _ = False
+disableAll :: Boolean b => Config b
+disableAll _ = false
 
 -- | Override a configuration to enable an option.
-enable :: Feature -> Config -> Config
-enable this c o
-    | o == this = True
-    | otherwise = c o
+enable :: Boolean b => Feature -> Config b -> Config b
+enable this c f
+    | f == this = true
+    | otherwise = c f
 
 -- | Override a configuration to disable an option.
-disable :: Feature -> Config -> Config
-disable this c o
-    | o == this = False
-    | otherwise = c o
+disable :: Boolean b => Feature -> Config b -> Config b
+disable this c f
+    | f == this = false
+    | otherwise = c f
 
 -- | Override a configuration to enable the indicated features.
-enableMany :: [Feature] -> Config -> Config
-enableMany os c o
-    | elem o os = True
-    | otherwise = c o
+enableMany :: Boolean b => [Feature] -> Config b -> Config b
+enableMany fs c f
+    | elem f fs = true
+    | otherwise = c f
 
 -- | Override a configuration to disable all except the indicated features.
-disableMany :: [Feature] -> Config -> Config
-disableMany os c o
-    | elem o os = False
-    | otherwise = c o
+disableMany :: Boolean b => [Feature] -> Config b -> Config b
+disableMany fs c f
+    | elem f fs = false
+    | otherwise = c f
