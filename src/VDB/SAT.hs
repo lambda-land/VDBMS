@@ -6,30 +6,30 @@
 module VDB.SAT where
 
 import Control.Monad (liftM2)
-import Data.SBV (Boolean(..),SBool,Symbolic,isSatisfiable)
+import Data.SBV (Boolean(..),Predicate,SBool,Symbolic,isSatisfiable)
 import System.IO.Unsafe (unsafePerformIO)
 
 
 -- | A type class for types that can be converted to symbolic predicates
 --   and checked by a SAT solver.
 class Boolean b => SAT b where
-  toSymbolic :: b -> Symbolic SBool
+  toPredicate :: b -> Predicate
 
 -- | Is the predicate satisfiable?
-sat :: SAT b => b -> Bool
-sat p = unsafePerformIO (isSatisfiable (toSymbolic p))
+satisfiable :: SAT b => b -> Bool
+satisfiable b = unsafePerformIO (isSatisfiable (toPredicate b))
 
 -- | Is the predicate unsatisfiable?
-unsat :: SAT b => b -> Bool
-unsat = not . sat
+unsatisfiable :: SAT b => b -> Bool
+unsatisfiable = not . satisfiable
 
 -- | Is the predicate a tautology?
-taut :: SAT b => b -> Bool
-taut = unsat . bnot
+tautology :: SAT b => b -> Bool
+tautology = unsatisfiable . bnot
 
 -- | Are these predicates equivalent?
-equiv :: SAT b => b -> b -> Bool
-equiv a b = taut (a <=> b)
+equivalent :: SAT b => b -> b -> Bool
+equivalent a b = tautology (a <=> b)
 
 
 -- Instances
@@ -42,10 +42,10 @@ instance Boolean b => Boolean (Symbolic b) where
   (|||) = liftM2 (|||)
 
 instance SAT SBool where
-  toSymbolic = return
+  toPredicate = return
 
-instance SAT (Symbolic SBool) where
-  toSymbolic = id
+instance SAT Predicate where
+  toPredicate = id
 
 instance SAT (Symbolic Bool) where
-  toSymbolic = fmap fromBool
+  toPredicate = fmap fromBool

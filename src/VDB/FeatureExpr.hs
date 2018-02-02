@@ -68,13 +68,16 @@ symbolicFeatureExpr e = do
 -- | Reduce the size of a feature expression by applying some basic
 --   simplification rules.
 shrinkFeatureExpr :: FeatureExpr -> FeatureExpr
-shrinkFeatureExpr e             | unsat e = Lit False
-                                | taut  e = Lit True
-shrinkFeatureExpr (Not (Not e))           = shrinkFeatureExpr e
-shrinkFeatureExpr (And l r)     | taut l  = shrinkFeatureExpr r
-                                | taut r  = shrinkFeatureExpr l
-shrinkFeatureExpr (Or l r)      | unsat l = shrinkFeatureExpr r
-                                | unsat r = shrinkFeatureExpr l
+shrinkFeatureExpr e
+    | unsatisfiable e           = Lit False
+    | tautology e               = Lit True
+shrinkFeatureExpr (Not (Not e)) = shrinkFeatureExpr e
+shrinkFeatureExpr (And l r)
+    | tautology l               = shrinkFeatureExpr r
+    | tautology r               = shrinkFeatureExpr l
+shrinkFeatureExpr (Or l r)
+    | unsatisfiable l           = shrinkFeatureExpr r
+    | unsatisfiable r           = shrinkFeatureExpr l
 shrinkFeatureExpr e = e
 
 instance Boolean FeatureExpr where
@@ -85,7 +88,7 @@ instance Boolean FeatureExpr where
   (|||) = Or
 
 instance SAT FeatureExpr where
-  toSymbolic = symbolicFeatureExpr
+  toPredicate = symbolicFeatureExpr
 
 instance Show FeatureExpr where
   show = prettyFeatureExpr
