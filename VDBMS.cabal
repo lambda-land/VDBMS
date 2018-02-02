@@ -23,6 +23,7 @@ library
       DeriveDataTypeable
     , DeriveGeneric
     , FlexibleContexts
+    , FlexibleInstances
     , GeneralizedNewtypeDeriving
     , MultiParamTypeClasses
     , OverloadedStrings
@@ -31,6 +32,8 @@ library
     , containers
     , sbv
   exposed-modules:
+      VDB.Config
+    , VDB.Feature
 
 test-suite test
   hs-source-dirs:   test
