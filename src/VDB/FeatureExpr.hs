@@ -1,7 +1,6 @@
 module VDB.FeatureExpr where
 
 import Data.Data (Data,Typeable)
-import GHC.Generics (Generic)
 
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
@@ -21,12 +20,12 @@ import VDB.SAT
 
 -- | Boolean expressions over features.
 data FeatureExpr
-     = Lit Bool
-     | Ref Feature
-     | Not FeatureExpr
-     | And FeatureExpr FeatureExpr
-     | Or  FeatureExpr FeatureExpr
-  deriving (Data,Eq,Generic,Typeable)
+   = Lit Bool
+   | Ref Feature
+   | Not FeatureExpr
+   | And FeatureExpr FeatureExpr
+   | Or  FeatureExpr FeatureExpr
+  deriving (Data,Eq,Typeable)
 
 -- | The set of features referenced in a feature expression.
 features :: FeatureExpr -> Set Feature
