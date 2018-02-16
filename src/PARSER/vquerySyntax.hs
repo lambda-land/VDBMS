@@ -2,15 +2,15 @@ module VquerySyntax where
 
 -- | AST for V-schema
 -- |
--- | Rname∶≔(any relation name)
--- | attr∶≔(any attribute name)
--- | attrSet∶≔ε | attr,attrSet 
--- | vSet∶≔{attrSet}
--- |      | vSet ∪vSet  
--- |      | f<vSet,vSet> 
--- | vRelation∶≔[Rname∶vSet]
--- | vRelationList∶≔ ε | vRelation,vRelationList
--- | vSchema∶≔f<{vRelationList},∅>
+-- | Rname∶:=(any relation name)
+-- | attr∶:=(any attribute name)
+-- | attrSet ∶:= ε | attr,attrSet 
+-- | vSet∶:= {attrSet}
+-- |       | vSet ∪vSet  
+-- |       | f<vSet,vSet> 
+-- | vRelation ∶:= [Rname∶vSet]
+-- | vRelationList ∶:= ε | vRelation,vRelationList
+-- | vSchema ∶:= f<{vRelationList},∅>
 
 type Rname = String
 type Attr = String
@@ -24,20 +24,20 @@ data VSchema = Vsch FeatureDim Vrelations
 
 -- | Concrete syntax for V-Query
 -- |
--- | const∶≔(any constant value)
--- | vtable∶≔(any vtable name)
--- | vtables∶≔ε | vtable,vtables 
--- | opt∶≔ <|<=|=|>|>=|  !=   
--- | vCondition∷= tag
--- |            | attr opt const 
--- |            | attr opt attr
--- |            | !vCondition
--- |            | vCondition OR vCondition
--- |            | vCondition AND vCondition
--- |            | f<vCondition ,vCondition>	
--- | query∶≔SELECT vSet FROM vtables WHERE vCondition
--- | vQuery∶≔query
--- |        | f<query,query> 
+-- | const ∶:= (any constant value)
+-- | vtable ∶:= (any vtable name)
+-- | vtables ∶:= ε | vtable,vtables 
+-- | opt ∶:= <|<=|=|>|>=|  !=   
+-- | vCondition ∶:= tag
+-- |              | attr opt const 
+-- |              | attr opt attr
+-- |              | !vCondition
+-- |              | vCondition OR vCondition
+-- |              | vCondition AND vCondition
+-- |              | f<vCondition ,vCondition>	
+-- | query ∶:= SELECT vSet FROM vtables WHERE vCondition
+-- | vQuery ∶:= query
+-- |          | f<query,query> 
 
 data Const = I Int 
            | S String
@@ -57,12 +57,12 @@ data VQuery = Single Query
 
 -- | Concrete syntax for feature formula
 
--- | feature∶≔(any feature name) 
--- | tag∶≔True | False 
--- | conjFeature∷=feature
--- |             | conjFeature ∧ conjFeature
--- | disjFeature∶≔ conjFeature ∨ feature 
--- |             |conjFeature ∨conjFeature
+-- | feature ∶:= (any feature name) 
+-- | tag ∶:= True | False 
+-- | conjFeature ∶:= feature
+-- |               | conjFeature ∧ conjFeature
+-- | disjFeature ∶:= conjFeature ∨ feature 
+-- |               | conjFeature ∨conjFeature
 -- |            
 -- | f∷= conjFeature | disjFeature 
 
