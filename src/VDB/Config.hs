@@ -2,7 +2,7 @@ module VDB.Config where
 
 import Data.SBV (Boolean(..))
 
-import VDB.Feature
+import VDB.Name
 
 
 -- | A configuration is a function that indicates whether each feature is

@@ -10,7 +10,7 @@ import qualified Data.Map.Strict as Map
 import Data.SBV
 
 import VDB.Config
-import VDB.Feature
+import VDB.Name
 import VDB.SAT
 
 
