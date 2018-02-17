@@ -33,9 +33,11 @@ library
     , sbv
   exposed-modules:
       VDB.Config
-    , VDB.Feature
+    , VDB.Condition
     , VDB.FeatureExpr
+    , VDB.Name
     , VDB.SAT
+    , VDB.Variational
 
 test-suite test
   hs-source-dirs:   test
