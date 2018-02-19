@@ -1,77 +1,79 @@
 module VquerySyntax where
 
--- | AST for V-schema
--- |
--- | Rname ::= (any relation name)
--- | attr ::=(any attribute name)
--- | attrSet ::= ε | attr,attrSet 
--- | vSet ::= {attrSet}
--- |       | vSet ∪vSet  
--- |       | f<vSet,vSet> 
--- | vRelation ::= [Rname:vSet]
--- | vRelationList ::= ε | vRelation,vRelationList
--- | vSchema ::= f<{vRelationList},∅>
+
+import VDB.Condition.hs
+import VDB.FeatureExpr.hs
+--| Concrete Syntax and AST for V-schema
+--|
+--| Rname ∶:= (any relation name)
+--| attrName ∶:= (any attribute name)
+--| attr ::= attrName | CHOICE (featureExpr,attr,attr)
+--| attrList ::= attr | attr,attrList
+--| vRelation ::= [Rname: attrList]
+--| vRelationList ::= vRelation | vRelation,vRelationList
+--| vSchema ::= featureExpr ? {vRelationList}
+
 
 type Rname = String
-type Attr = String
-type Aset = [String]
-data Vset = AttrSet Aset
-          | VsetUnion Vset Vset
-          | VsetF FeatureDim Vset Vset
-data Vrelation = RVset Rname Vset
-type Vrelations = [Vrelation]
-data VSchema = Vsch FeatureDim Vrelations 
+type AttrName = String
+type Attr = AttrName | AttrCHOICE FeatureExpr Attr Attr
+data AttrList = Attr | AttrConcat Attr AttrList
+data Vrelation = VR Rname AttrList
+type VRelationList = Vrelation | RConcat Vrelation VRelationList
+data VSchema = ScheCHOICE FeatureExpr VRelationList
 
--- | Concrete syntax for V-Query
--- |
--- | const ::= (any constant value)
--- | vtable ::= (any vtable name)
--- | vtables ::= ε | vtable,vtables 
--- | opt ::= <|<=|=|>|>=|  !=   
--- | vCondition ::= tag
--- |              | attr opt const 
--- |              | attr opt attr
--- |              | !vCondition
--- |              | vCondition OR vCondition
--- |              | vCondition AND vCondition
--- |              | f<vCondition ,vCondition>	
--- | query ::= SELECT vSet FROM vtables WHERE vCondition
--- | vQuery ::= query
--- |          | f<query,query> 
+--| Concrete Syntax and AST for Query 
+--|
+--| const::=(any constant value)
+--| tableName ::= (any table name)
+--| table ::=  tableName | CHOICE (featureExpr,table ,table)
+--| tableList ::=   table | table CROSSJOIN tableList
+--| opt ::=  <|<=|=|>|>=|  !=   
+--| condition ∷= tag
+--|            | attr opt const 
+--|            | attr opt attr
+--|            | !condition
+--|            | condition OR condition
+--|            | condition AND condition
+--|            | CHOICE (featureExpr,conditon ,condition)		
+--|query ::= SELECT attrList FROM tableList WHERE condition
 
-data Const = I Int 
-           | S String
-type Vtable = String
-type Vtables = [Vtable]
-data Opt = Less | LessEqul | Equal | Greater | GreaterEqul | NotEqual
-data Vcond = T Tag 
-           | AttrOptC Attr Opt Const
-           | AttrOptA Attr Opt Attr
-           | NotCond Vcond
-           | OrCond Vcond Vcond 
-           | AndCond Vcond Vcond 
-           | VcondF FeatureDim Vcond Vcond 
-data Query = SelectFromWhere Vset Vtables Vcond 
-data VQuery = Single Query
-            | VQueryF FeatureDim Query Query 
 
--- | Concrete syntax for feature formula
+-- | Comparison operators from VDB/Condition.hs
+-- data Op = LT | LTE | GTE | GT | EQ | NEQ
+--   deriving (Data,Eq,Show,Typeable)
 
--- | feature ::= (any feature name) 
--- | tag ::= True | False 
--- | conjFeature ::= feature
--- |               | conjFeature ∧ conjFeature
--- | disjFeature ::= conjFeature ∨ feature 
--- |               | conjFeature ∨conjFeature
--- |            
--- | f ::=  conjFeature | disjFeature 
+-- | Conditions from VDB/Condition.hs.
+-- data Condition
+--    = Comp Op Atom Atom
+--    | Not  Condition
+--    | Or   Condition Condition
+--    | And  Condition Condition
+--    | CChc FeatureExpr Condition Condition
+--   deriving (Data,Eq,Show,Typeable)
 
-type Feature = String
-type Tag = Bool
-data ConjFeature = F Feature 
-                 | Conj ConjFeature ConjFeature
-data DisjFeature = DisjCF ConjFeature Feature
-                 | DisjCC ConjFeature ConjFeature
-data FeatureDim = Fconj ConjFeature
-                 | Fdisj DisjFeature             
+type TableName = String
+type Table = TableName | TableCHOICE FeatureExpr Table Table 
+type TableList = Table | CROSSJOIN Table TableList
+
+data Query = SFW AttrList TableList Condition  
+
+
+--| feature ::= (any feature name) 
+--| tag ::= True | False 
+--| conjFeature ∷= feature
+--|              | conjFeature∧ conjFeature
+--| disjFeature ::= conjFeature ∨conjFeature
+--|               | conjFeature ∨feature 
+--| featureExpr∷= conjFeature | disjFeature 
+
+-- ****???? TO DO
+-- type Feature = String
+-- type Tag = Bool
+-- data ConjFeature = F Feature 
+--                  | Conj ConjFeature ConjFeature
+-- data DisjFeature = DisjCF ConjFeature Feature
+--                  | DisjCC ConjFeature ConjFeature
+-- data FeatureExpr = Fconj ConjFeature
+--                  | Fdisj DisjFeature             
 
