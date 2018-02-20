@@ -1,4 +1,4 @@
-module PARSER.ParsingSQL where 
+module VDB.ParsingSQL where 
 
 --  
 -- Concrete syntax for VDB.SQL
