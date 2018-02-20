@@ -55,7 +55,7 @@ data TableList
    | CROSSJOIN Table TableList
   deriving (Eq,Show)
 
--- | Query expression.
+-- | Query expression. SELECT ... FROM ... WHERE ...
 data Query = SFW AttrList TableList Condition  
   deriving (Eq,Show)
 
