@@ -28,12 +28,12 @@ data RelationList
 -- | FROM ... 
 data FromSentence  = FROM RelationList
   deriving (Eq,Show)
-  
+
 -- | Where ...
 data WhereSentence = WHERE Condition
 
 -- | Query expression. SELECT ... FROM ... WHERE ...
-data Query = SFW AttrList FromSentence WhereSentence  
+data Query = SELECT AttrList FromSentence WhereSentence  
   deriving (Eq,Show)
 
 
@@ -67,12 +67,14 @@ data CreateRelation = CreateTable Relation AttrAndTypeList
 --  (Relation associated with varialtional relation) 
 -- 
 
+-- | VRelation is a relation associated with attrList
+data VRelation = VR Relation AttrList
 
 -- | A VrelationList is a list of Vrelaiton which will contribute to a v-schema.
 --   Empty list is not allowed. 
 data VRelationList 
-   = Vrelation 
-   | RConcat Vrelation VRelationList
+   = VRelation 
+   | VRConcat VRelation VRelationList
   deriving (Eq,Show)
 
 -- | A v-schema involved with featureExpr. 
