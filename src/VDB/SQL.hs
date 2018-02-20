@@ -10,8 +10,9 @@ import VDB.Condition
 --
 
 -- | An Attr is an Attribute together with its feature choices.
-data Attr = Attribute  
-          | AttrCHOICE FeatureExpr Attribute Attribute
+data Attr 
+   = Attribute  
+   | AttrCHOICE FeatureExpr Attribute Attribute
   deriving (Eq,Show)
 
 -- | An attrList is a list of Attr. Empty list is not allowed.
