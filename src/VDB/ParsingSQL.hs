@@ -4,16 +4,20 @@ module VDB.ParsingSQL where
 -- Concrete syntax for VDB.SQL
 -- 
 
--- | Rname ::= (any relation name)
--- | attrName ::= (any attribute name)
--- | attr ::= attrName
---          | CHOICE (featureExpr,attr,attr)
--- | attrList ::= attr
---              | attr,attrList
--- | vRelation ::= [Rname: attrList]
--- | vRelationList ::= vRelation 
---                   | vRelation,vRelationList
--- | vSchema ::= featureExpr ? {vRelationList}
+
+-- | attribute ::= (any attribute name)
+
+-- | attrList ::= attribute 
+--              | CHOICE (featureExpr,attrList,attrList)
+--              | attibute, attrList
+
+
+-- | relaiton ::= (any relation name)
+
+-- | relationList ::= relation 
+--                  | CHOICE (featureExpr,tableList ,tableList)
+--                  | relationList CROSSJOIN relationList
+
 
 -- | int ::= (Any integer)
 -- | bool ::= (Any Boolean value)
@@ -27,13 +31,9 @@ module VDB.ParsingSQL where
 --              | condition AND condition
 --              | CHOICE (featureExpr,conditon ,condition)	
 
--- | tableName ::= (any table name)
--- | table ::=  tableName 
---           | CHOICE (featureExpr,table ,table)
--- | tableList ::= table 
---               | table CROSSJOIN tableList
 
--- | query ::= SELECT attrList FROM tableList WHERE condition
+
+-- | query ::= SELECT attrList FROM relationList WHERE condition
 
 
 -- | feature ::= (any feature name)
@@ -43,3 +43,28 @@ module VDB.ParsingSQL where
 --               | featureExpr ∧featureExpr 
 --               | featureExpr ∨featureExpr 
 
+
+-- 
+-- * Traditional schema in SQL
+-- * (Define a schema in traditional SQL by create one table per time)
+-- 
+
+-- | dataType ::= (any table type)
+
+-- | attrAndType ::= attribute datatype  
+
+-- | attrAndTypeList ::= attrAndType
+--                     | attrAndType, attrAndTypeList
+
+-- | createRelation ::= CREATE TABLE relation (attrAndTypeList);
+
+--
+-- * Variational schema
+-- * (Relation associated with varialtional relation) 
+-- 
+
+
+-- | vRelation: ::= [relation: attrList]
+-- | vRelationList ::= vRelation
+--                   | vRelaiton, vRelaitonList
+-- | vSchema ::= featureExpr ? {vRelationList}
