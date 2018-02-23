@@ -1,10 +1,39 @@
 -- | A generic interface for variational things.
 module VDB.Variational where
 
+import Data.Maybe (catMaybes)
+
 import VDB.Config
 import VDB.FeatureExpr
 import VDB.Name
 
+
+--
+-- * Optional values
+--
+
+-- | An optionally included value. Whether it is included is determined by
+--   a presence condition.
+type Opt a = (a,FeatureExpr)
+
+-- | Apply a selection to an optional value.
+selectOpt :: Feature -> Bool -> Opt a -> Opt a
+selectOpt f b (a,e) = (a, selectFeatureExpr f b e)
+
+-- | Apply a configuration to an optional value.
+configureOpt :: Config Bool -> Opt a -> Maybe a
+configureOpt c (a,e)
+    | evalFeatureExpr c e = Just a
+    | otherwise           = Nothing
+
+-- | Configure a list of optional values.
+configureOptList :: Config Bool -> [Opt a] -> [a]
+configureOptList c os = catMaybes (map (configureOpt c) os)
+
+
+--
+-- * Variational type class
+--
 
 -- | A type class for variational things.
 class Variational a where
