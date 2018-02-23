@@ -43,6 +43,7 @@ library
     , VDB.Name
     , VDB.SAT
     , VDB.Variational
+    , VDB.Value
 
 test-suite test
   hs-source-dirs:   test

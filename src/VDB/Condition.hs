@@ -5,21 +5,16 @@ import Data.Data (Data,Typeable)
 
 import Data.SBV (Boolean(..))
 
-import VDB.Name
 import VDB.FeatureExpr (FeatureExpr)
+import VDB.Name
+import VDB.Value
 import VDB.Variational
 
 
 -- | Atoms are the leaves of a condition.
 data Atom
-   = I Int
-   | B Bool
-   | S String
-   | A Attribute
-  deriving (Data,Eq,Show,Typeable)
-
--- | Comparison operators.
-data CompOp = EQ | NEQ | LT | LTE | GTE | GT
+   = Val  Value
+   | Attr Attribute
   deriving (Data,Eq,Show,Typeable)
 
 -- | Variational conditions.
