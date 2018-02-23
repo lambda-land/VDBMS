@@ -22,7 +22,7 @@ data Atom
 data CompOp = EQ | NEQ | LT | LTE | GTE | GT
   deriving (Data,Eq,Show,Typeable)
 
--- | Conditions.
+-- | Variational conditions.
 data Condition
    = Lit  Bool
    | Comp CompOp Atom Atom

@@ -36,7 +36,8 @@ library
     , containers
     , sbv
   exposed-modules:
-      VDB.Config
+      VDB.Algebra
+    , VDB.Config
     , VDB.Condition
     , VDB.FeatureExpr
     , VDB.Name
