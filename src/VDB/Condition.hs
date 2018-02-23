@@ -2,6 +2,8 @@ module VDB.Condition where
 
 import Data.Data (Data,Typeable)
 
+import Data.SBV (Boolean(..))
+
 import VDB.Name
 import VDB.FeatureExpr
 
@@ -15,14 +17,22 @@ data Atom
   deriving (Data,Eq,Show,Typeable)
 
 -- | Comparison operators.
-data Op = LT | LTE | GTE | GT | EQ | NEQ
+data CompOp = EQ | NEQ | LT | LTE | GTE | GT | EQ | NEQ
   deriving (Data,Eq,Show,Typeable)
 
 -- | Conditions.
 data Condition
-   = Comp Op Atom Atom
+   = Lit  Bool
+   | Comp CompOp Atom Atom
    | Not  Condition
    | Or   Condition Condition
    | And  Condition Condition
    | CChc FeatureExpr Condition Condition
   deriving (Data,Eq,Show,Typeable)
+
+instance Boolean Condition where
+  true  = Lit True
+  false = Lit False
+  bnot  = Not
+  (&&&) = And
+  (|||) = Or
