@@ -6,6 +6,10 @@ import Prelude hiding (Ordering(..))
 import Data.Data (Data,Typeable)
 
 
+-- | Primitive types.
+data Type = TInt | TBool | TString
+  deriving (Data,Eq,Show,Typeable)
+
 -- | Primitive values.
 data Value
    = I Int
@@ -16,6 +20,12 @@ data Value
 -- | Comparison operations.
 data CompOp = EQ | NEQ | LT | LTE | GTE | GT
   deriving (Data,Eq,Show,Typeable)
+
+-- | Get the type of a value.
+typeOf :: Value -> Type
+typeOf (I _) = TInt
+typeOf (B _) = TBool
+typeOf (S _) = TString
 
 -- | Semantics of a comparison operation.
 compOp :: Ord a => CompOp -> a -> a -> Bool
