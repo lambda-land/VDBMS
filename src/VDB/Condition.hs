@@ -5,7 +5,7 @@ import Data.Data (Data,Typeable)
 import Data.SBV (Boolean(..))
 
 import VDB.Name
-import VDB.FeatureExpr
+import VDB.FeatureExpr (FeatureExpr)
 
 
 -- | Atoms are the leaves of a condition.
@@ -17,7 +17,7 @@ data Atom
   deriving (Data,Eq,Show,Typeable)
 
 -- | Comparison operators.
-data CompOp = EQ | NEQ | LT | LTE | GTE | GT | EQ | NEQ
+data CompOp = EQ | NEQ | LT | LTE | GTE | GT
   deriving (Data,Eq,Show,Typeable)
 
 -- | Conditions.
