@@ -39,6 +39,18 @@ evalFeatureExpr c (Not e)   = bnot (evalFeatureExpr c e)
 evalFeatureExpr c (And l r) = evalFeatureExpr c l &&& evalFeatureExpr c r
 evalFeatureExpr c (Or  l r) = evalFeatureExpr c l ||| evalFeatureExpr c r
 
+-- | Select a feature within a feature expressions, potentially simplifying it.
+selectFeatureExpr :: Feature -> Bool -> FeatureExpr -> FeatureExpr
+selectFeatureExpr f b e = shrinkFeatureExpr (select e)
+  where
+    select e@(Lit _)  = e
+    select e@(Ref f')
+        | f == f'     = if b then true else false
+        | otherwise   = e
+    select (Not e)    = Not (select e)
+    select (And l r)  = And (select l) (select r)
+    select (Or  l r)  = Or  (select l) (select r)
+
 -- | Pretty print a feature expression.
 prettyFeatureExpr :: FeatureExpr -> String
 prettyFeatureExpr = top

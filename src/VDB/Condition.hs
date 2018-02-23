@@ -6,6 +6,7 @@ import Data.SBV (Boolean(..))
 
 import VDB.Name
 import VDB.FeatureExpr (FeatureExpr)
+import VDB.Variational
 
 
 -- | Atoms are the leaves of a condition.
@@ -29,6 +30,16 @@ data Condition
    | And  Condition Condition
    | CChc FeatureExpr Condition Condition
   deriving (Data,Eq,Show,Typeable)
+
+instance Variational Condition where
+
+  choice = CChc
+
+  choiceMap g (Not c)      = Not (choiceMap g c)
+  choiceMap g (Or  l r)    = Or  (choiceMap g l) (choiceMap g r)
+  choiceMap g (And l r)    = And (choiceMap g l) (choiceMap g r)
+  choiceMap g (CChc f l r) = g f l r
+  choiceMap _ c            = c
 
 instance Boolean Condition where
   true  = Lit True
