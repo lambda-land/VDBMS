@@ -1,3 +1,4 @@
+-- | Typed symbol domains.
 module VDB.Name where
 
 import Data.Data (Data,Typeable)

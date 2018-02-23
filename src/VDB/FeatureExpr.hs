@@ -1,3 +1,4 @@
+-- | Feature expressions.
 module VDB.FeatureExpr where
 
 import Data.Data (Data,Typeable)

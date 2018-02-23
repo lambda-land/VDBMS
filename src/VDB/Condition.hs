@@ -1,3 +1,4 @@
+-- | Variational conditions in relational algebra and queries.
 module VDB.Condition where
 
 import Data.Data (Data,Typeable)

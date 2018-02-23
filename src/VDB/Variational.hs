@@ -1,3 +1,4 @@
+-- | A generic interface for variational things.
 module VDB.Variational where
 
 import VDB.Config
