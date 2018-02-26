@@ -1,3 +1,4 @@
+-- | Configurations.
 module VDB.Config where
 
 import Data.SBV (Boolean(..))

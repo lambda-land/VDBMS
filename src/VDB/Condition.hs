@@ -1,28 +1,45 @@
+-- | Variational conditions in relational algebra and queries.
 module VDB.Condition where
 
 import Data.Data (Data,Typeable)
 
+import Data.SBV (Boolean(..))
+
+import VDB.FeatureExpr (FeatureExpr)
 import VDB.Name
-import VDB.FeatureExpr
+import VDB.Value
+import VDB.Variational
 
 
 -- | Atoms are the leaves of a condition.
 data Atom
-   = I Int
-   | B Bool
-   | S String
-   | A Attribute
+   = Val  Value
+   | Attr Attribute
   deriving (Data,Eq,Show,Typeable)
 
--- | Comparison operators.
-data Op = LT | LTE | GTE | GT | EQ | NEQ
-  deriving (Data,Eq,Show,Typeable)
-
--- | Conditions.
+-- | Variational conditions.
 data Condition
-   = Comp Op Atom Atom
+   = Lit  Bool
+   | Comp CompOp Atom Atom
    | Not  Condition
    | Or   Condition Condition
    | And  Condition Condition
    | CChc FeatureExpr Condition Condition
   deriving (Data,Eq,Show,Typeable)
+
+instance Variational Condition where
+
+  choice = CChc
+
+  choiceMap g (Not c)      = Not (choiceMap g c)
+  choiceMap g (Or  l r)    = Or  (choiceMap g l) (choiceMap g r)
+  choiceMap g (And l r)    = And (choiceMap g l) (choiceMap g r)
+  choiceMap g (CChc f l r) = g f l r
+  choiceMap _ c            = c
+
+instance Boolean Condition where
+  true  = Lit True
+  false = Lit False
+  bnot  = Not
+  (&&&) = And
+  (|||) = Or
