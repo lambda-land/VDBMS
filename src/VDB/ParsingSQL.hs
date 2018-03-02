@@ -129,6 +129,15 @@ identifier = (lexeme . try) (p >>= check)
 -- Parser
 --
 
+algebra :: Parser Algebra 
+algebra = do 
+  reservedword "SELECT" 
+  attrList <- alist
+  reservedword "FROM"
+  tableList <- tlist 
+  reservedword "WHERE"
+  condition <- cond 
+  return ()
 
 
 
