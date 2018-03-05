@@ -113,7 +113,7 @@ parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
 -- | 'integer' parses an integer
-integer :: Parser Integer
+integer :: Parser Int
 integer = lexeme L.decimal
 
 -- | 'comma' parses a comma ","
@@ -130,7 +130,7 @@ reservedword w = lexeme (string w *> notFollowedBy alphaNumChar)
 
 -- | list of reserved words
 reservedwords :: [String]
-reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE", "OR", "AND", "NOT"]
+reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE", "OR", "AND", "NOT", "true", "false"]
 
 -- | ? 
 identifier :: Parser String
@@ -142,8 +142,8 @@ identifier = (lexeme . try) (p >>= check)
                 else return x
 
 -- | Parser for compare operators
-compare :: Parser CompOp 
-compare = (symbol "=" *> pure EQ)
+compareOp :: Parser CompOp 
+compareOp = (symbol "=" *> pure EQ)
   <|> (symbol "!=" *> pure NEQ)
   <|> (symbol "<" *> pure LT)
   <|> (symbol "<=" *> pure LTE) 
@@ -229,15 +229,56 @@ condition = makeExprParser conTerm conOperators
 -- | Define the lists with operator precedence  precedence, 
 --   associativity and what constructors to use in each case.
 conOperators :: [[Operator Parser Condition]]
-conOperators = undefined
-  -- [[Prefix (CChc featureExpr <$ reservedword "CHOICE")]
-  --  [Prefix (Not <$ reservedword "NOT")],
-  --  [InfixL (And <$ reservedword "AND")],
-  --  [InfixL (Or <$ reservedword "OR")]]
+conOperators = 
+  [[Prefix (Not <$ reservedword "NOT")],
+   [InfixL (And <$ reservedword "AND")],
+   [InfixL (Or <$ reservedword "OR")  ]]
 
+-- | Parse Lit Bool for Condition 
 conTerm :: Parser Condition 
-conTerm = undefined  
+conTerm = (Lit True <$ reservedword "true")
+  <|> (Lit False <$ reservedword "false")
 
+-- | define a parser for comparation between atom
+--   ( Comp CompOp Atom Atom)
+comp :: Parser Condition 
+comp = do 
+  cop1 <- compareOp 
+  atom1 <- atom
+  atom2 <- atom
+  return (Comp cop1 atom1 atom2)
+
+-- | define a parser for Atom 
+atom :: Parser Atom 
+atom = Val <$> val
+  <|> Attr <$> attribute 
+
+-- | define a parser for Value
+val :: Parser Value
+val = I <$> integer 
+  <|> (B True <$ reservedword "true")
+  <|> (B False <$ reservedword "false")
+  <|> S <$> identifier
+
+-- | define a parser for Attribute
+attribute :: Parser Attribute 
+attribute = Attribute <$> identifier
+
+
+-- | Parse for CChc FeatureExpr Condition Condition 
+-- cchc :: Parser Condition 
+-- cchc = do 
+--   reservedword "CHOICE"
+--   void (symbol "(")
+--   featureExpr1 <- featureExpr
+--   void (symbol ",")
+--   cond1 <- condition 
+--     void (symbol ",")
+--   cond2 <- condition 
+--   void (symbol ")")
+--   return (CChc featureExpr1 cond1 cond2)
+
+-- | define a parser for featureExpr
 featureExpr :: Parser FeatureExpr 
 featureExpr = undefined
 
