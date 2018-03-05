@@ -1,5 +1,6 @@
 module VDB.ParsingSQL where 
 
+import Prelude hiding (EQ,NEQ,LT,LTE,GTE,GT,compare)
 import Control.Monad (void)
 import Data.Void
 import Text.Megaparsec
@@ -7,6 +8,15 @@ import Text.Megaparsec.Char
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Char.Lexer as L
 
+
+import VDB.Algebra
+import Data.Data (Data,Typeable)
+
+import VDB.Name
+import VDB.FeatureExpr (FeatureExpr)
+import VDB.Condition
+import VDB.Variational 
+import VDB.Value 
 --  
 -- Concrete syntax for VDB.SQL
 -- 
@@ -77,6 +87,8 @@ import qualified Text.Megaparsec.Char.Lexer as L
 -- | vSchema ::= featureExpr ? {vRelationList}
 
 
+
+type Parser = Parsec Void String
 --
 --  Lexer
 --
@@ -84,7 +96,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 -- | spaceConsumer: consume the whitespace, newline,
 --                  line comment out, block comment out 
 spaceConsumer :: Parser ()
-spaceConsumer = L.space space1 newline lineCmnt blockCmnt 
+spaceConsumer = L.space space1 lineCmnt blockCmnt 
   where lineCmnt = L.skipLineComment "--"
         blockCmnt = L.skipBlockComment "/*" "*/"
 
@@ -108,14 +120,19 @@ integer = lexeme L.decimal
 comma :: Parser String 
 comma = symbol ","
 
+-- | newline parsers a newline "\n"
+newline :: Parser String
+newline = symbol "\n"
+
 -- | parses the reservedwords and identifiers 
-reservedWord :: String -> Parser ()
+reservedword :: String -> Parser ()
 reservedword w = lexeme (string w *> notFollowedBy alphaNumChar)
 
 -- | list of reserved words
 reservedwords :: [String]
-reservedwords = ["SELECT", "FROM", "WHERE", "OR", "AND", "NOT"]
+reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE", "OR", "AND", "NOT"]
 
+-- | ? 
 identifier :: Parser String
 identifier = (lexeme . try) (p >>= check)
   where
@@ -124,20 +141,106 @@ identifier = (lexeme . try) (p >>= check)
                 then fail $ "keyword " ++ show x ++ " cannot be an identifier"
                 else return x
 
+-- | Parser for compare operators
+compare :: Parser CompOp 
+compare = (symbol "=" *> pure EQ)
+  <|> (symbol "!=" *> pure NEQ)
+  <|> (symbol "<" *> pure LT)
+  <|> (symbol "<=" *> pure LTE) 
+  <|> (symbol ">=" *> pure GTE)
+  <|> (symbol ">" *> pure GT)
 
 --
 -- Parser
 --
 
+-- algebra :: Parser Algebra 
+-- algebra = do  
+--   reservedword "SELECT" 
+--   alist <- attrlist
+--   reservedword "FROM"
+--   tlist <- tablelist 
+--   reservedword "WHERE"
+--   cond <- condition 
+--   return ()
+
+-- | parse single algebra
 algebra :: Parser Algebra 
-algebra = do 
-  reservedword "SELECT" 
-  attrList <- alist
+algebra = selectSentence 
+  <|> fromSentence 
+  <|> whereSentence 
+  <|> choiceSentence 
+
+-- | Parser for SELECT 
+selectSentence :: Parser Algebra 
+selectSentence = do 
+  reservedword "SELECT"
+  alist <- attrlist
+  algebra1 <- algebra 
+  return (Proj alist algebra1)
+
+-- | Parser for FROM 
+fromSentence :: Parser Algebra
+fromSentence = do 
   reservedword "FROM"
-  tableList <- tlist 
+  tlist <- tablelist 
+  return (From tlist)
+
+-- fromSentence = undefined
+
+-- | Parser for WHERE
+whereSentence :: Parser Algebra
+whereSentence = do 
   reservedword "WHERE"
-  condition <- cond 
-  return ()
+  cond <- condition 
+  algebra1 <- algebra
+  return (Sel cond algebra1)
+
+-- | Parser for CHOICE()
+choiceSentence :: Parser Algebra
+choiceSentence = do
+  reservedword "CHOICE"
+  void (symbol "(")
+  featureExpr1 <- featureExpr 
+  void (symbol ",")
+  algebra1 <- algebra
+  void (symbol ",")
+  algebra2 <- algebra
+  void (symbol ")")
+  return (AChc featureExpr1 algebra1 algebra2)
+
+
+-- 
+-- expressions  
+-- 
+
+-- | Parse the sequence of attrubite seperated by comman
+attrlist :: Parser [Attribute] 
+attrlist = sepBy1 (Attribute <$> identifier) comma
+
+-- | Parse the sequence of Relation seperated by comman
+tablelist :: Parser [Relation]
+tablelist = sepBy1 (Relation <$> identifier) comma
+
+-- | Parse the condition
+condition :: Parser Condition
+condition = makeExprParser conTerm conOperators
+
+-- | Define the lists with operator precedence  precedence, 
+--   associativity and what constructors to use in each case.
+conOperators :: [[Operator Parser Condition]]
+conOperators = undefined
+  -- [[Prefix (CChc featureExpr <$ reservedword "CHOICE")]
+  --  [Prefix (Not <$ reservedword "NOT")],
+  --  [InfixL (And <$ reservedword "AND")],
+  --  [InfixL (Or <$ reservedword "OR")]]
+
+conTerm :: Parser Condition 
+conTerm = undefined  
+
+featureExpr :: Parser FeatureExpr 
+featureExpr = undefined
+
 
 
 

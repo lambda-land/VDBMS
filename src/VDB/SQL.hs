@@ -26,8 +26,8 @@ data RelationList
   deriving (Eq,Show)
 
 -- | FROM ... 
-data FromSentence  = FROM RelationList
-  deriving (Eq,Show)
+-- data FromSentence  = FROM RelationList
+--   deriving (Eq,Show)
 
 -- | Where ...
 data WhereSentence = WHERE Condition
