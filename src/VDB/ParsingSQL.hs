@@ -105,12 +105,13 @@ import VDB.Value
 --    | AConcat AttrList AttrList
 --   deriving (Eq,Show)
 
+-- | singleAttr includes plain attribute and variational attributelist
 data SingleAttr 
    = A Attribute  
    | AttrChc FeatureExpr [SingleAttr] [SingleAttr]
   deriving (Eq,Show)
 
--- | A Table is a list of table. Empty list is not allowed. 
+-- | singleRelation includes a plain attribute and variational relationList 
 data SingleRelation  
    = R Relation
    | RelChc FeatureExpr [SingleRelation] [SingleRelation]
@@ -132,7 +133,6 @@ data FromExpr  = From [SingleRelation]
 -- | Where ...
 data WhereExpr = Where Condition 
   deriving (Eq,Show)
-
 
 type Parser = Parsec Void String
 --
@@ -364,7 +364,13 @@ compareOp = (symbol "=" *> pure EQ)
 
 -- | define a parser for featureExpr
 featureExpr :: Parser FeatureExpr 
-featureExpr = undefined
+featureExpr = makeExprParser featureTerm featureOperators
+
+featureTerm :: Parser FeatureExpr
+featureTerm = undefined
+
+featureOperators :: [[Operator Parser FeatureExpr]]
+featureOperators = undefined
 
 
 
