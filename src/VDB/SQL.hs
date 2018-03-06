@@ -12,29 +12,32 @@ import VDB.Condition
 
 -- | An attrList is a list of Attribute. Empty list is not allowed.
 data AttrList 
-   = Attr Attribute  
-   | AttrCHOICE FeatureExpr AttrList AttrList
-   | AttrConcat AttrList AttrList
+   = A Attribute  
+   | AttrChc FeatureExpr AttrList AttrList
+   | AConcat AttrList AttrList
   deriving (Eq,Show)
 
 
 -- | A Table is a list of table. Empty list is not allowed. 
 data RelationList 
    = R Relation
-   | RelaitonCHOICE FeatureExpr RelationList RelationList 
-   | CROSSJOIN RelationList RelaitonList
+   | RelChc FeatureExpr RelationList RelationList 
+   | CROSSJOIN RelationList RelationList
   deriving (Eq,Show)
-
--- | FROM ... 
--- data FromSentence  = FROM RelationList
---   deriving (Eq,Show)
-
--- | Where ...
-data WhereSentence = WHERE Condition
 
 -- | Query expression. SELECT ... FROM ... WHERE ...
-data Query = SELECT AttrList FromSentence WhereSentence  
+data Query = SELECT AttrList FromExpr WhereExpr
+           | QChc FeatureExpr Query Query
   deriving (Eq,Show)
+
+
+-- | FROM ... 
+data FromExpr  = FROM RelationList
+  deriving (Eq,Show)
+
+-- | Where ...
+data WhereExpr = WHERE Condition 
+
 
 
 -- | A Vrelation is the name of variational relation and its corresponding attribute list.
