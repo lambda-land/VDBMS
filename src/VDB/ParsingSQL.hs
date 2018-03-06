@@ -305,24 +305,26 @@ condition = makeExprParser conTerm conOperators
 conOperators :: [[Operator Parser Condition]]
 conOperators = 
   [[Prefix (Not <$ reservedword "NOT")],
-   [InfixL (And <$ reservedword "AND")],
-   [InfixL (Or <$ reservedword "OR")  ]]
+   [InfixL (And <$ reservedword "AND"),
+    InfixL (Or <$ reservedword "OR")  ]]
 
 -- | Parse Lit Bool for Condition 
 conTerm :: Parser Condition 
-conTerm = comp 
+conTerm =  parens comp
   <|> (Lit True <$ reservedword "true")
   <|> (Lit False <$ reservedword "false")
+  <|> comp
   <|> choiceCondition
 
 choiceCondition :: Parser Condition 
 choiceCondition = undefined
+
 -- | define a parser for comparation between atom
 --   ( Comp CompOp Atom Atom)
 comp :: Parser Condition 
 comp = do 
-  cop1 <- compareOp 
   atom1 <- atom
+  cop1 <- compareOp 
   atom2 <- atom
   return (Comp cop1 atom1 atom2)
 
