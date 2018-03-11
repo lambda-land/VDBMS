@@ -14,15 +14,15 @@ import VDB.Name
 
 -- | An optionally included value. Whether it is included is determined by
 --   a presence condition.
-type Opt a = (a,FeatureExpr)
+type Opt a = (FeatureExpr, a)
 
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a
-selectOpt f b (a,e) = (a, selectFeatureExpr f b e)
+selectOpt f b (e,a) = (selectFeatureExpr f b e, a)
 
 -- | Apply a configuration to an optional value.
 configureOpt :: Config Bool -> Opt a -> Maybe a
-configureOpt c (a,e)
+configureOpt c (e,a)
     | evalFeatureExpr c e = Just a
     | otherwise           = Nothing
 
