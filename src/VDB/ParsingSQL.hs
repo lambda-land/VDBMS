@@ -3,6 +3,7 @@ module VDB.ParsingSQL where
 import Prelude hiding (EQ,NEQ,LT,LTE,GTE,GT,compare)
 import Control.Monad (void)
 import Data.Void
+import Data.Data (Data,Typeable)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Expr
@@ -15,8 +16,6 @@ import VDB.Algebra
 import Data.Data (Data,Typeable)
 
 import VDB.Name
-import VDB.FeatureExpr (FeatureExpr)
-import VDB.Condition
 import VDB.Variational 
 import VDB.Value
 
@@ -97,44 +96,60 @@ import VDB.Value
 -- * Syntax for SQL
 --
 
-
 -- | An attrList is a list of Attribute. Empty list is not allowed.
--- data AttrList 
---    = A Attribute  
---    | AChc FeatureExpr AttrList AttrList
---    | AConcat AttrList AttrList
---   deriving (Eq,Show)
-
--- | singleAttr includes plain attribute and variational attributelist
-data SingleAttr 
+data AttrList 
    = A Attribute  
-   | AttrChc FeatureExpr [SingleAttr] [SingleAttr]
+   | AttrChc FeatureExpr AttrList AttrList
+   | AConcat AttrList AttrList
   deriving (Eq,Show)
 
--- | singleRelation includes a plain attribute and variational relationList 
-data SingleRelation  
+-- | A RelationList is a list of relation / Choice of relation. Empty list is not allowed. 
+data RelationList 
    = R Relation
-   | RelChc FeatureExpr [SingleRelation] [SingleRelation]
+   | RelChc FeatureExpr RelationList RelationList 
+   | CROSSJOIN RelationList RelationList
   deriving (Eq,Show)
 
 -- | Query expression. SELECT ... FROM ... WHERE ...
--- data Query = SELECT AttrList FromExpr WhereExpr
---            | QChc FeatureExpr Query Query
---   deriving (Eq,Show)
-
-data Query = Select [SingleAttr] FromExpr WhereExpr
+data Query = Select AttrList FromExpr WhereExpr
            | QChc FeatureExpr Query Query
   deriving (Eq,Show)
 
 -- | FROM ... 
-data FromExpr  = From [SingleRelation]
+data FromExpr  = From RelationList
   deriving (Eq,Show)
 
 -- | Where ...
-data WhereExpr = Where Condition 
+data WhereExpr = Where Condition
+  deriving (Eq,Show)
+
+-- | Boolean expressions over features.
+data FeatureExpr
+   = FLit Bool
+   | FRef Feature
+   | FNot FeatureExpr
+   | FAnd FeatureExpr FeatureExpr
+   | FOr  FeatureExpr FeatureExpr
+  deriving (Eq,Show)
+
+-- | Atoms are the leaves of a condition.
+data Atom
+   = Val  Value
+   | Attr Attribute
+  deriving (Eq,Show)
+
+-- | Variational conditions.
+data Condition
+   = CLit  Bool
+   | CComp CompOp Atom Atom
+   | CNot  Condition
+   | COr   Condition Condition
+   | CAnd  Condition Condition
+   | CChc FeatureExpr Condition Condition
   deriving (Eq,Show)
 
 type Parser = Parsec Void String
+
 --
 --  Lexer
 --
@@ -188,20 +203,9 @@ identifier = (lexeme . try) (p >>= check)
                 else return x
 
 
-
 --
 -- Parser
 --
-
--- algebra :: Parser Algebra 
--- algebra = do  
---   reservedword "SELECT" 
---   alist <- attrlist
---   reservedword "FROM"
---   tlist <- tablelist 
---   reservedword "WHERE"
---   cond <- condition 
---   return ()
 
 -- | parse v-query
 query :: Parser Query 
@@ -212,7 +216,7 @@ query = selectExpr
 selectExpr :: Parser Query 
 selectExpr = do 
   reservedword "SELECT"
-  alist <- attrlist
+  alist <- attrlistExpr
   fromExpr1 <- fromExpr
   whereExpr1 <- whereExpr
   return (Select alist fromExpr1 whereExpr1)
@@ -233,7 +237,7 @@ choiceExpr = do
 fromExpr :: Parser FromExpr
 fromExpr = do 
   reservedword "FROM"
-  rlist <- relationlist
+  rlist <- relationlistExpr
   return (From rlist)
 
 whereExpr :: Parser WhereExpr
@@ -243,58 +247,110 @@ whereExpr = do
   return (Where cond)
 
 -- 
--- expressions  
+-- Parser for AttrList  
 -- 
 
--- | Parse the sequence of attrubite seperated by comman
-attrlist :: Parser [SingleAttr] 
-attrlist = sepBy1 singleAttr comma 
--- | Parse single A Attribute
-singleAttr :: Parser SingleAttr
-singleAttr = A <$> attribute
-  <|> choiceAttr
-
-choiceAttr :: Parser SingleAttr
-choiceAttr = do
-  reservedword "CHOICE"
-  void (symbol "(")
-  featureExpr1 <- featureExpr 
-  void (symbol ",")
-  a1 <- attrlist
-  void (symbol ",")
-  a2 <- attrlist
-  void (symbol ")")
-  return (AttrChc featureExpr1 a1 a2)
-
--- | Parse the sequence of relation seperated by comman
-relationlist :: Parser [SingleRelation] 
-relationlist = sepBy1 singleRelation comma 
-
--- | Parse single SingleRelation
-singleRelation :: Parser SingleRelation
-singleRelation = R <$> relation
-  <|> choiceRelation
-
--- | Parse choice on relation
-choiceRelation :: Parser SingleRelation
-choiceRelation = do
-  reservedword "CHOICE"
-  void (symbol "(")
-  featureExpr1 <- featureExpr 
-  void (symbol ",")
-  r1 <- relationlist
-  void (symbol ",")
-  r2 <- relationlist
-  void (symbol ")")
-  return (RelChc featureExpr1 r1 r2)
 
 -- | define a parser for Attribute
 attribute :: Parser Attribute 
 attribute = Attribute <$> identifier
 
+-- | 
+attrlistTerm :: Parser AttrList
+attrlistTerm =  attrChoice
+  <|> A <$> attribute
+  <|> parens attrlistExpr
+  
+
+attrlistOperators :: [[Operator Parser AttrList]]
+attrlistOperators =
+  [ [ InfixL (AConcat <$ symbol ",")]]
+
+attrlistExpr :: Parser AttrList
+attrlistExpr = makeExprParser attrlistTerm attrlistOperators
+
+attrlistExprAsParameter :: Parser AttrList
+attrlistExprAsParameter = parens attrlistExpr 
+ <|> A <$> attribute
+
+attrChoice :: Parser AttrList
+attrChoice = do
+  reservedword "CHOICE"
+  void (symbol "(")
+  featureExpr1 <- featureExpr
+  void (symbol ",")
+  a1 <- attrlistExprAsParameter
+  void (symbol ",")
+  a2 <- attrlistExprAsParameter
+  void (symbol ")")
+  return (AttrChc featureExpr1 a1 a2)
+
+--
+-- Parser for RelationList
+--
+
 -- | define a parser for Relation
 relation :: Parser Relation
 relation = Relation <$> identifier
+
+-- | 
+relationlistTerm :: Parser RelationList
+relationlistTerm =  relationChoice
+  <|> R <$> relation
+  <|> parens relationlistExpr
+  
+
+relationlistOperators :: [[Operator Parser RelationList]]
+relationlistOperators =
+  [ [ InfixL (CROSSJOIN <$ symbol ",")]]
+
+relationlistExpr :: Parser RelationList
+relationlistExpr = makeExprParser relationlistTerm relationlistOperators
+
+relationlistExprAsParameter :: Parser RelationList
+relationlistExprAsParameter = parens relationlistExpr 
+ <|> R <$> relation
+
+relationChoice :: Parser RelationList
+relationChoice = do
+  reservedword "CHOICE"
+  void (symbol "(")
+  featureExpr1 <- featureExpr
+  void (symbol ",")
+  a1 <- relationlistExprAsParameter
+  void (symbol ",")
+  a2 <- relationlistExprAsParameter
+  void (symbol ")")
+  return (RelChc featureExpr1 a1 a2)
+
+--
+-- Parser for FeatureExpr
+--
+
+-- | define a parser for featureExpr
+featureExpr :: Parser FeatureExpr 
+featureExpr = makeExprParser featureTerm featureOperators
+  <|> parens featureExpr  
+
+featureTerm :: Parser FeatureExpr
+featureTerm = FRef <$> feature 
+  <|> (FLit True <$ reservedword "true")
+  <|> (FLit False <$ reservedword "false")
+  
+featureOperators :: [[Operator Parser FeatureExpr]]
+featureOperators =
+  [[Prefix (FNot <$ reservedword "NOT")],
+   [InfixL (FAnd <$ reservedword "AND"),
+    InfixL (FOr <$ reservedword "OR")  ]]
+
+feature :: Parser Feature
+feature = Feature <$> identifier
+
+
+
+-- 
+-- Parser for Condition
+-- 
 
 -- | Parse the condition
 condition :: Parser Condition
@@ -304,15 +360,15 @@ condition = makeExprParser conTerm conOperators
 --   associativity and what constructors to use in each case.
 conOperators :: [[Operator Parser Condition]]
 conOperators = 
-  [[Prefix (Not <$ reservedword "NOT")],
-   [InfixL (And <$ reservedword "AND"),
-    InfixL (Or <$ reservedword "OR")  ]]
+  [[Prefix (CNot <$ reservedword "NOT")],
+   [InfixL (CAnd <$ reservedword "AND"),
+    InfixL (COr <$ reservedword "OR")  ]]
 
 -- | Parse Lit Bool for Condition 
 conTerm :: Parser Condition 
 conTerm =  parens comp
-  <|> (Lit True <$ reservedword "true")
-  <|> (Lit False <$ reservedword "false")
+  <|> (CLit True <$ reservedword "true")
+  <|> (CLit False <$ reservedword "false")
   <|> comp
   <|> choiceCondition
 
@@ -326,7 +382,7 @@ comp = do
   atom1 <- atom
   cop1 <- compareOp 
   atom2 <- atom
-  return (Comp cop1 atom1 atom2)
+  return (CComp cop1 atom1 atom2)
 
 -- | define a parser for Atom 
 atom :: Parser Atom 
@@ -350,28 +406,15 @@ compareOp = (symbol "=" *> pure EQ)
   <|> (symbol ">" *> pure GT)
 
 -- | Parse for CChc FeatureExpr Condition Condition 
--- cchc :: Parser Condition 
--- cchc = do 
---   reservedword "CHOICE"
---   void (symbol "(")
---   featureExpr1 <- featureExpr
---   void (symbol ",")
---   cond1 <- condition 
---     void (symbol ",")
---   cond2 <- condition 
---   void (symbol ")")
---   return (CChc featureExpr1 cond1 cond2)
-
--- | define a parser for featureExpr
-featureExpr :: Parser FeatureExpr 
-featureExpr = makeExprParser featureTerm featureOperators
-
-featureTerm :: Parser FeatureExpr
-featureTerm = undefined
-
-featureOperators :: [[Operator Parser FeatureExpr]]
-featureOperators = undefined
-
-
-
+conditionChoice :: Parser Condition 
+conditionChoice = do
+  reservedword "CHOICE"
+  void (symbol "(")
+  featureExpr1 <- featureExpr
+  void (symbol ",")
+  c1 <- condition
+  void (symbol ",")
+  c2 <- condition
+  void (symbol ")")
+  return (CChc featureExpr1 c1 c2)
 
