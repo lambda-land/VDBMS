@@ -29,14 +29,14 @@ import VDB.Value
 
 -- | attrList ::= attribute 
 --              | CHOICE (featureExpr,attrList,attrList)
---              | attibute, attrList
+--              | attrList, attrList
 
 
 -- | relaiton ::= (any relation name)
 
 -- | relationList ::= relation 
---                  | CHOICE (featureExpr,tableList ,tableList)
---                  | relationList CROSSJOIN relationList
+--                  | CHOICE (featureExpr,relationList ,relationList)
+--                  | relationList, relationList
 
 
 -- | int ::= (Any integer)
@@ -51,13 +51,6 @@ import VDB.Value
 --              | condition AND condition
 --              | CHOICE (featureExpr,conditon ,condition)	
 
-
--- | query :: = SELECT attrlist fromExpr whereExpr
---            | CHOICE(featureExor, query, query )
--- | fromExpr :: = FROM relationlist 
--- | whereExpr :: = WHERE condition
-
-
 -- | feature ::= (any feature name)
 -- | featureExpr∷= bool
 --               | feature 
@@ -65,6 +58,12 @@ import VDB.Value
 --               | featureExpr  AND featureExpr 
 --               | featureExpr OR featureExpr 
 
+
+-- | query :: = SELECT attrlist fromExpr whereExpr
+--            | CHOICE(featureExor, query, query )
+
+-- | fromExpr :: = FROM relationlist 
+-- | whereExpr :: = WHERE condition
 
 -- 
 -- * Traditional schema in SQL
@@ -93,7 +92,7 @@ import VDB.Value
 
 
 --
--- * Syntax for SQL
+-- * Abstract Syntax for SQL
 --
 
 -- | An attrList is a list of Attribute. Empty list is not allowed.
@@ -204,7 +203,7 @@ identifier = (lexeme . try) (p >>= check)
 
 
 --
--- Parser
+-- Parser for Query
 --
 
 -- | parse v-query
@@ -250,29 +249,34 @@ whereExpr = do
 -- Parser for AttrList  
 -- 
 
+-- | Parser for AttrList
+attrlistExpr :: Parser AttrList
+attrlistExpr = makeExprParser attrlistTerm attrlistOperators
 
 -- | define a parser for Attribute
 attribute :: Parser Attribute 
 attribute = Attribute <$> identifier
 
--- | 
+-- | attrlistTerm is defining the terms for AttrList 
 attrlistTerm :: Parser AttrList
 attrlistTerm =  attrChoice
   <|> A <$> attribute
   <|> parens attrlistExpr
   
-
+-- | define the operator(,) for AttrList, in the case of concatenate the list
 attrlistOperators :: [[Operator Parser AttrList]]
 attrlistOperators =
   [ [ InfixL (AConcat <$ symbol ",")]]
 
-attrlistExpr :: Parser AttrList
-attrlistExpr = makeExprParser attrlistTerm attrlistOperators
 
+-- | Used to parse attrlist in CHOICE() function,
+--   the list of attribute should be closed by parenthesis 
 attrlistExprAsParameter :: Parser AttrList
 attrlistExprAsParameter = parens attrlistExpr 
  <|> A <$> attribute
+ <|> attrChoice
 
+-- | Parser for the choice in AttrList (AttrChc)
 attrChoice :: Parser AttrList
 attrChoice = do
   reservedword "CHOICE"
@@ -288,29 +292,34 @@ attrChoice = do
 --
 -- Parser for RelationList
 --
+relationlistExpr :: Parser RelationList
+relationlistExpr = makeExprParser relationlistTerm relationlistOperators
 
--- | define a parser for Relation
+-- | define a parser for a single Relation 
 relation :: Parser Relation
 relation = Relation <$> identifier
 
--- | 
+-- | define the Terms in RelationList 
 relationlistTerm :: Parser RelationList
 relationlistTerm =  relationChoice
   <|> R <$> relation
   <|> parens relationlistExpr
   
-
+-- | define the Operators in relationList
+--   in case of relationList seperated by ,
 relationlistOperators :: [[Operator Parser RelationList]]
 relationlistOperators =
   [ [ InfixL (CROSSJOIN <$ symbol ",")]]
 
-relationlistExpr :: Parser RelationList
-relationlistExpr = makeExprParser relationlistTerm relationlistOperators
-
+-- | Used to parse the RelationList in CHOICE() function,
+--   NOTE: a list of relation as parameter should be 
+--   enclosed by parenthesis
 relationlistExprAsParameter :: Parser RelationList
 relationlistExprAsParameter = parens relationlistExpr 
  <|> R <$> relation
+ <|> relationChoice
 
+-- | Parser for choice in RelationList (RelChc)
 relationChoice :: Parser RelationList
 relationChoice = do
   reservedword "CHOICE"
@@ -323,6 +332,7 @@ relationChoice = do
   void (symbol ")")
   return (RelChc featureExpr1 a1 a2)
 
+
 --
 -- Parser for FeatureExpr
 --
@@ -332,20 +342,22 @@ featureExpr :: Parser FeatureExpr
 featureExpr = makeExprParser featureTerm featureOperators
   <|> parens featureExpr  
 
+-- | define the terms in featureExpr
 featureTerm :: Parser FeatureExpr
 featureTerm = FRef <$> feature 
   <|> (FLit True <$ reservedword "true")
   <|> (FLit False <$ reservedword "false")
-  
+
+-- | define the operators in featureExpr
 featureOperators :: [[Operator Parser FeatureExpr]]
 featureOperators =
   [[Prefix (FNot <$ reservedword "NOT")],
    [InfixL (FAnd <$ reservedword "AND"),
     InfixL (FOr <$ reservedword "OR")  ]]
 
+-- | Parser for single Feature
 feature :: Parser Feature
 feature = Feature <$> identifier
-
 
 
 -- 
@@ -356,7 +368,7 @@ feature = Feature <$> identifier
 condition :: Parser Condition
 condition = makeExprParser conTerm conOperators
 
--- | Define the lists with operator precedence  precedence, 
+-- | Define the lists with operator precedence, 
 --   associativity and what constructors to use in each case.
 conOperators :: [[Operator Parser Condition]]
 conOperators = 
