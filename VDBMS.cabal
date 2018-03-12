@@ -42,6 +42,7 @@ library
     , VDB.FeatureExpr
     , VDB.Name
     , VDB.SAT
+    , VDB.Schema
     , VDB.Table
     , VDB.Variational
     , VDB.Value
