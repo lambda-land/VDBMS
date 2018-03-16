@@ -1,4 +1,4 @@
-module VDB.ParsingSQL where 
+module ParsingSQL where 
 
 import Prelude hiding (EQ,NEQ,LT,LTE,GTE,GT,compare)
 import Control.Monad (void)
@@ -92,7 +92,7 @@ import VDB.Value
 
 
 --
--- * Abstract Syntax for SQL Query
+-- * Abstract Syntax for SQL
 --
 
 -- | An attrList is a list of Attribute. Empty list is not allowed.
@@ -147,38 +147,8 @@ data Condition
    | CChc FeatureExpr Condition Condition
   deriving (Eq,Show)
 
---
--- Abstract syntax for SQL Schema
---
-
--- | Type expression for data
-data DataType = INTEGER | BOOLEAN | VARCHAR | NULL
-  deriving (Eq,Show)
--- | Associate attribute with datatype
-data AttrAndTypes 
-  = AT Attribute DataType
-  | ATConcat AttrAndTypes AttrAndTypes
-  deriving (Eq,Show)
--- | CREATE TABLE expression
-data CreateRelation = CreateTable Relation AttrAndTypes
-  deriving (Eq,Show)
 type Parser = Parsec Void String
 
---
--- * Abstract Syntax for Variational schema
---  (Relation associated with varialtional relation) 
--- 
-
--- | A VrelationList is a list of Vrelaiton which will contribute to a v-schema.
---   Empty list is not allowed. 
-data VRelationList 
-   = VR Relation AttrList
-   | VRConcat VRelationList  VRelationList 
-  deriving (Eq,Show)
-
--- | A v-schema involved with featureExpr. 
-data VSchema = ScheCHOICE FeatureExpr VRelationList 
-  deriving (Eq,Show)
 --
 --  Lexer
 --
@@ -220,8 +190,7 @@ reservedword w = lexeme (string w *> notFollowedBy alphaNumChar)
 
 -- | list of reserved words
 reservedwords :: [String]
-reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE", "OR", "AND", "NOT", "true", "false",
-                 "CREATE TABLE"]
+reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE", "OR", "AND", "NOT", "true", "false"]
 
 -- | ? 
 identifier :: Parser String
@@ -460,79 +429,4 @@ conditionChoice = do
   c2 <- condition
   void (symbol ")")
   return (CChc featureExpr1 c1 c2)
-
-
---
--- Parser for SQL traditional schema
---
-
--- | Parser for DataType
-datatype :: Parser DataType 
-datatype = symbol "INTEGER" *> pure INTEGER
-  <|> symbol "BOOLEAN" *> pure BOOLEAN
-  <|> symbol "VARCHAR" *> pure VARCHAR
-  <|> symbol "NULL" *> pure NULL
-
--- | Parser for AttrAndType expression
-attrandtypesExpr :: Parser AttrAndTypes
-attrandtypesExpr = makeExprParser attrandtypesTerm attrandtypesOperators
-
--- | Parser for terms in AttrAndType
-attrandtypesTerm :: Parser AttrAndTypes
-attrandtypesTerm = do 
-  attr1 <- attribute 
-  dt    <- datatype
-  return (AT attr1 dt)
-
-
--- | define operators for ATtrAndType 
-attrandtypesOperators :: [[Operator Parser AttrAndTypes]]
-attrandtypesOperators = 
-    [ [ InfixL (ATConcat <$ symbol ",")]]
-
--- | Parser for CreateRelation
-createrelation :: Parser CreateRelation
-createrelation = do 
-  reservedword "CREATE TABLE"
-  relation1 <- relation
-  void (symbol "(")
-  ant1 <- attrandtypesExpr
-  void (symbol ")")
-  return (CreateTable relation1 ant1)
-
---
--- Parser for V-Schema
--- (Relation associated with varialtional relation) 
---
-
--- | vRelation ::= [relation: attrList]
--- | vRelationList ::= vRelation
---                   | vRelaiton, vRelaitonList
--- | vSchema ::= featureExpr ? {vRelationList}
-
--- | Parser for RelationWithAttrList ([relation: attrList])
-vrTerm :: Parser VRelationList
-vrTerm = do 
-  void (symbol "[")
-  rname <- relation
-  void (symbol ":")
-  alist1 <- attrlistExpr
-  void (symbol "]")
-  return (VR rname alist1)
-
--- | Parser for VRelationList
-vRelationList  :: Parser VRelationList 
-vRelationList = makeExprParser vrTerm vrOperators
-
-vrOperators :: [[Operator Parser VRelationList ]]
-vrOperators =    [ [ InfixL (VRConcat <$ symbol ",")]]
-
-vSchema :: Parser VSchema
-vSchema = do
-  featureExpr1 <- featureExpr  
-  void (symbol "?")
-  void (symbol "{")
-  vrlist1 <- vRelationList
-  void (symbol "}")
-  return (ScheCHOICE featureExpr1 vrlist1)
 
