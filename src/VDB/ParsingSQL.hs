@@ -46,7 +46,7 @@ import VDB.Value
 -- | atom ::= int | bool | string | attr  
 -- | opt ::= <| <= | = | > | >= | !=   
 -- | condition ∷= atom opt atom 
---              | !condition
+--              | NOT condition
 --              | condition OR condition
 --              | condition AND condition
 --              | CHOICE (featureExpr,conditon ,condition)	
@@ -368,6 +368,7 @@ feature = Feature <$> identifier
 condition :: Parser Condition
 condition = makeExprParser conTerm conOperators
 
+
 -- | Define the lists with operator precedence, 
 --   associativity and what constructors to use in each case.
 conOperators :: [[Operator Parser Condition]]
@@ -382,10 +383,8 @@ conTerm =  parens comp
   <|> (CLit True <$ reservedword "true")
   <|> (CLit False <$ reservedword "false")
   <|> comp
-  <|> choiceCondition
+  <|> conditionChoice
 
-choiceCondition :: Parser Condition 
-choiceCondition = undefined
 
 -- | define a parser for comparation between atom
 --   ( Comp CompOp Atom Atom)
@@ -417,6 +416,12 @@ compareOp = (symbol "=" *> pure EQ)
   <|> (symbol ">=" *> pure GTE)
   <|> (symbol ">" *> pure GT)
 
+-- | 
+conditionAsParameter :: Parser Condition
+conditionAsParameter = condition 
+ <|> parens condition
+ <|> conditionChoice
+
 -- | Parse for CChc FeatureExpr Condition Condition 
 conditionChoice :: Parser Condition 
 conditionChoice = do
@@ -424,9 +429,9 @@ conditionChoice = do
   void (symbol "(")
   featureExpr1 <- featureExpr
   void (symbol ",")
-  c1 <- condition
+  c1 <- conditionAsParameter
   void (symbol ",")
-  c2 <- condition
+  c2 <- conditionAsParameter
   void (symbol ")")
   return (CChc featureExpr1 c1 c2)
 
