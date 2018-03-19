@@ -5,7 +5,8 @@ module ParserTest where
 import ParsingSQL
 import Text.Megaparsec
 
--- TO DO : 1. fix choice among the condition 
+-- | TO DO : 1. fix choice among the condition 
+--           2. () in CHOICE
 
 -- | Basic tests for lexer.
 -- >>> parseTest spaceConsumer "-- comments"
@@ -72,9 +73,14 @@ import Text.Megaparsec
 --   >>> parseTest whereExpr "WHERE isEncrypted = true"
 --   Where (CComp EQ (Val (S "isEncrypted")) (Val (B True)))
 
+
 -- | Tests for query 
 -- 
 --   >>> parseTest query "SELECT mid FROM encryption WHERE isEncrypted = true"
 --   Select (A (Attribute {attributeName = "mid"})) (From (R (Relation {relationName = "encryption"}))) (Where (CComp EQ (Val (S "isEncrypted")) (Val (B True))))
---
-
+--   
+--   >>> parseTest query "SELECT CHOICE(encrypt, (mid,isEncrypted,enryptionKey),(mid,enryptionKey)) FROM encryption WHERE isEncrypted = true"
+--   Select (AttrChc (FRef (Feature {featureName = "encrypt"})) (AConcat (AConcat (A (Attribute {attributeName = "mid"})) (A (Attribute {attributeName = "isEncrypted"}))) (A (Attribute {attributeName = "enryptionKey"}))) (AConcat (A (Attribute {attributeName = "mid"})) (A (Attribute {attributeName = "enryptionKey"})))) (From (R (Relation {relationName = "encryption"}))) (Where (CComp EQ (Val (S "isEncrypted")) (Val (B True))))
+--   
+--   >>> parseTest query "SELECT mid FROM CHOICE(encrypt AND signed, (signiture, encryption), signiture) WHERE true"
+--   Select (A (Attribute {attributeName = "mid"})) (From (RelChc (FAnd (FRef (Feature {featureName = "encrypt"})) (FRef (Feature {featureName = "signed"}))) (CROSSJOIN (R (Relation {relationName = "signiture"})) (R (Relation {relationName = "encryption"}))) (R (Relation {relationName = "signiture"})))) (Where (CLit True))
