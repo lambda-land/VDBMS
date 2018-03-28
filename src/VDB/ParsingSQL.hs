@@ -1,3 +1,4 @@
+
 module ParsingSQL where 
 
 import Prelude hiding (EQ,NEQ,LT,LTE,GTE,GT,compare)
@@ -90,6 +91,7 @@ import VDB.Value
 --                   | vRelaiton, vRelaitonList
 -- | vSchema ::= featureExpr ? {vRelationList}
 
+-- ** TO DO: RelConc --> fixed
 
 --
 -- * Abstract Syntax for SQL
@@ -98,15 +100,17 @@ import VDB.Value
 -- | An attrList is a list of Attribute. Empty list is not allowed.
 data AttrList 
    = A Attribute  
-   | AttrChc FeatureExpr AttrList AttrList
+   | Attr2Chc FeatureExpr AttrList AttrList
+   | Attr1Chc FeatureExpr AttrList
    | AConcat AttrList AttrList
   deriving (Eq,Show)
 
 -- | A RelationList is a list of relation / Choice of relation. Empty list is not allowed. 
 data RelationList 
    = R Relation
-   | RelChc FeatureExpr RelationList RelationList 
-   | CROSSJOIN RelationList RelationList
+   | Rel2Chc FeatureExpr RelationList RelationList
+   | Rel1Chc FeatureExpr RelationList 
+   | RelConcat RelationList RelationList
   deriving (Eq,Show)
 
 -- | Query expression. SELECT ... FROM ... WHERE ...
@@ -259,7 +263,8 @@ attribute = Attribute <$> identifier
 
 -- | attrlistTerm is defining the terms for AttrList 
 attrlistTerm :: Parser AttrList
-attrlistTerm =  attrChoice
+attrlistTerm =  attr1Choice
+  <|> attr2Choice
   <|> A <$> attribute
   <|> parens attrlistExpr
   
@@ -274,11 +279,11 @@ attrlistOperators =
 attrlistExprAsParameter :: Parser AttrList
 attrlistExprAsParameter = parens attrlistExpr 
  <|> A <$> attribute
- <|> attrChoice
+ <|> attr2Choice
 
 -- | Parser for the choice in AttrList (AttrChc)
-attrChoice :: Parser AttrList
-attrChoice = do
+attr2Choice :: Parser AttrList
+attr2Choice = do
   reservedword "CHOICE"
   void (symbol "(")
   featureExpr1 <- featureExpr
@@ -287,7 +292,17 @@ attrChoice = do
   void (symbol ",")
   a2 <- attrlistExprAsParameter
   void (symbol ")")
-  return (AttrChc featureExpr1 a1 a2)
+  return (Attr2Chc featureExpr1 a1 a2)
+
+attr1Choice :: Parser AttrList
+attr1Choice = do
+  reservedword "CHOICE"
+  void (symbol "(")
+  featureExpr1 <- featureExpr
+  void (symbol ",")
+  a1 <- attrlistExprAsParameter
+  void (symbol ")")
+  return (Attr1Chc featureExpr1 a1)
 
 --
 -- Parser for RelationList
@@ -301,7 +316,7 @@ relation = Relation <$> identifier
 
 -- | define the Terms in RelationList 
 relationlistTerm :: Parser RelationList
-relationlistTerm =  relationChoice
+relationlistTerm =  relation2Choice
   <|> R <$> relation
   <|> parens relationlistExpr
   
@@ -309,7 +324,7 @@ relationlistTerm =  relationChoice
 --   in case of relationList seperated by ,
 relationlistOperators :: [[Operator Parser RelationList]]
 relationlistOperators =
-  [ [ InfixL (CROSSJOIN <$ symbol ",")]]
+  [ [ InfixL (RelConcat <$ symbol ",")]]
 
 -- | Used to parse the RelationList in CHOICE() function,
 --   NOTE: a list of relation as parameter should be 
@@ -317,11 +332,11 @@ relationlistOperators =
 relationlistExprAsParameter :: Parser RelationList
 relationlistExprAsParameter = parens relationlistExpr 
  <|> R <$> relation
- <|> relationChoice
+ <|> relation2Choice
 
--- | Parser for choice in RelationList (RelChc)
-relationChoice :: Parser RelationList
-relationChoice = do
+-- | Parser for 2 choices in RelationList (Rel2Chc)
+relation2Choice :: Parser RelationList
+relation2Choice = do
   reservedword "CHOICE"
   void (symbol "(")
   featureExpr1 <- featureExpr
@@ -330,8 +345,18 @@ relationChoice = do
   void (symbol ",")
   a2 <- relationlistExprAsParameter
   void (symbol ")")
-  return (RelChc featureExpr1 a1 a2)
+  return (Rel2Chc featureExpr1 a1 a2)
 
+-- | Parser for 1 choice in RelationList (Rel1Chc)
+relation1Choice :: Parser RelationList
+relation1Choice = do
+  reservedword "CHOICE"
+  void (symbol "(")
+  featureExpr1 <- featureExpr
+  void (symbol ",")
+  a1 <- relationlistExprAsParameter
+  void (symbol ")")
+  return (Rel1Chc featureExpr1 a1)
 
 --
 -- Parser for FeatureExpr
