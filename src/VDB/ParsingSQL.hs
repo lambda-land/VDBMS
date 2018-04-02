@@ -1,23 +1,23 @@
 
-module ParsingSQL where 
+module VDB.ParsingSQL where 
 
-import Prelude hiding (EQ,NEQ,LT,LTE,GTE,GT,compare)
+import Prelude hiding (EQ,LT,GT,compare)
 import Control.Monad (void)
 import Data.Void
-import Data.Data (Data,Typeable)
+-- import Data.Data (Data,Typeable)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import qualified Text.ParserCombinators.Parsec.Combinator as C
+-- import qualified Text.ParserCombinators.Parsec.Combinator as C
 
 
-import VDB.Algebra
-import Data.Data (Data,Typeable)
+-- import VDB.Algebra
+-- import Data.Data (Data,Typeable)
 
 import VDB.Name
-import VDB.Variational 
+-- import VDB.Variational 
 import VDB.Value
 
 
@@ -30,6 +30,7 @@ import VDB.Value
 
 -- | attrList ::= attribute 
 --              | CHOICE (featureExpr,attrList,attrList)
+--              | CHOICE (featureExpr,attrList)
 --              | attrList, attrList
 
 
@@ -37,6 +38,7 @@ import VDB.Value
 
 -- | relationList ::= relation 
 --                  | CHOICE (featureExpr,relationList ,relationList)
+--                  | CHOICE (featureExpr,realtionList)
 --                  | relationList, relationList
 
 
