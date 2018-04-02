@@ -12,8 +12,10 @@ import VDB.Value
 import Prelude hiding (EQ,LT,GT,compare)
 
 
---  TO DO:
---  1. nested choice on relationlist
+--  TO DO / Challenges:
+--  1. Can't implement (SELECT ... FROM ... WHERE) and (SELECT ... FROM ... )at same time
+--     the same situation happend in the implementation of CHOICE() with different number of parameters.
+--     I guess the challenge is how to implemnt a overloading function? 
 
 
 -- 
@@ -149,10 +151,10 @@ testCondition = testGroup "Test Condition"
           expectVal @=? output
     ]
   ,
-    testGroup "4) CHOICE (featureExpr,condition,condition)"
-    [  testCase "- CHOICE(US, true, false)" $
+    testGroup "4) CHOICE2(featureExpr,condition,condition)"
+    [  testCase "- CHOICE2(US, true, false)" $
        do output <- return $ 
-            parse condition "" "CHOICE(US, true, false)"
+            parse condition "" "CHOICE2(US, true, false)"
           expectVal <- return $
             Right $ CChc (FRef (Feature {featureName = "US"})) 
                          (CLit True)
@@ -161,9 +163,9 @@ testCondition = testGroup "Test Condition"
     ]
     ,
     testGroup "test condition combination"
-    [  testCase "- CHOICE(US, (price > 2000), (price > 1000)) AND count = 500" $
+    [  testCase "- CHOICE2(US, (price > 2000), (price > 1000)) AND count = 500" $
        do output <- return $ 
-            parse condition "" "CHOICE(US, (price > 2000), (price > 1000)) AND count = 500"
+            parse condition "" "CHOICE2(US, (price > 2000), (price > 1000)) AND count = 500"
           expectVal <- return $
             Right $ CAnd
                       ( CChc (FRef (Feature {featureName = "US"})) 
@@ -202,31 +204,31 @@ testFromExpr = testGroup "Test FromExpr (FROM relationlist)"
           expectVal @=? output   
     ]
   ,
-    testGroup "3) FROM CHOICE(featureExpr, relationlist, relationlist)"
-    [  testCase "- FROM CHOICE(encrypt, encrption)" $
+    testGroup "3) FROM CHOICEX(featureExpr, relationlist, relationlist)"
+    [  testCase "- FROM CHOICE1(encrypt, encrption)" $
        do output <- return $ 
-            parse fromExpr "" "FROM CHOICE(encrypt, encrption)"
+            parse fromExpr "" "FROM CHOICE1(encrypt, encrption)"
           expectVal <- return $
             Right $ From (Rel1Chc 
                            (FRef (Feature {featureName = "encrypt"}))
                            (R (Relation {relationName = "encrption"}))) 
           expectVal @=? output 
     ]
-  -- ,
-  --   testGroup "4) FROM nested choices"
-  --   [  testCase "- FROM CHOICE(feature1, (CHOICE(feature2, relation2), relation1), relation1)" $
-  --      do output <- return $ 
-  --           parse fromExpr "" "FROM CHOICE(feature1, ( CHOICE(feature2, relation2) , relation1), relation1)"
-  --         expectVal <- return $
-  --           Right $ From (Rel2Chc (FRef (Feature {featureName = "feature1"})) 
-  --                                 (RelConcat
-  --                                  (Rel1Chc 
-  --                                    (FRef (Feature {featureName = "feature2"}))
-  --                                    (R (Relation {relationName = "relation2"})))
-  --                                  (R (Relation {relationName = "relation1"})))
-  --                                (R (Relation {relationName = "relation1"})))
-  --         expectVal @=? output
-  --   ]
+  ,
+    testGroup "4) FROM nested choices"
+    [  testCase "- FROM CHOICE2(feature1, (CHOICE1(feature2, relation2), relation1), relation1)" $
+       do output <- return $ 
+            parse fromExpr "" "FROM CHOICE2(feature1, ( CHOICE1(feature2, relation2) , relation1), relation1)"
+          expectVal <- return $
+            Right $ From (Rel2Chc (FRef (Feature {featureName = "feature1"})) 
+                                  (RelConcat
+                                   (Rel1Chc 
+                                     (FRef (Feature {featureName = "feature2"}))
+                                     (R (Relation {relationName = "relation2"})))
+                                   (R (Relation {relationName = "relation1"})))
+                                 (R (Relation {relationName = "relation1"})))
+          expectVal @=? output
+    ]
   ]
 
 --
@@ -272,9 +274,9 @@ testQueryExpr = testGroup "Test Query"
     ]
   ,
     testGroup "2) Variational Queries "
-    [  testCase "-- SELECT CHOICE(encrypt, (mid,isEncrypted,enryptionKey),(mid,enryptionKey)) FROM encryption WHERE isEncrypted = true" $
+    [  testCase "-- SELECT CHOICE2(encrypt, (mid,isEncrypted,enryptionKey),(mid,enryptionKey)) FROM encryption WHERE isEncrypted = true" $
        do output <- return $ 
-            parse query "" "SELECT CHOICE(encrypt, (mid,isEncrypted,enryptionKey),(mid,enryptionKey)) FROM encryption WHERE isEncrypted = true"
+            parse query "" "SELECT CHOICE2(encrypt, (mid,isEncrypted,enryptionKey),(mid,enryptionKey)) FROM encryption WHERE isEncrypted = true"
           expectVal <- return $
             Right $ SFW (Attr2Chc (FRef (Feature {featureName = "encrypt"})) 
                                  (AConcat 
@@ -288,29 +290,41 @@ testQueryExpr = testGroup "Test Query"
                         (Where (CComp EQ (Val (S "isEncrypted")) (Val (B True))))
           expectVal @=? output   
     
-    ,  testCase "-- SELECT mid, CHOICE(encrypt, isEncrypted) ,enryptionKey FROM encryption WHERE isEncrypted = true" $
+    ,  testCase "-- SELECT mid, CHOICE1(encrypt, isEncrypted) ,enryptionKey FROM encryption WHERE isEncrypted = true" $
        do output <- return $ 
-            parse query "" "SELECT mid, CHOICE(encrypt, isEncrypted, placeholder),enryptionKey FROM encryption WHERE isEncrypted = true"
+            parse query "" "SELECT mid, CHOICE1(encrypt, isEncrypted),enryptionKey FROM encryption WHERE isEncrypted = true"
           expectVal <- return $
             Right $ SFW (AConcat (AConcat (A (Attribute {attributeName = "mid"})) 
-                                          (Attr2Chc (FRef (Feature {featureName = "encrypt"})) 
-                                                    (A (Attribute {attributeName = "isEncrypted"})) 
-                                                    (A (Attribute {attributeName = "placeholder"})))) 
+                                          (Attr1Chc (FRef (Feature {featureName = "encrypt"})) 
+                                                    (A (Attribute {attributeName = "isEncrypted"})))) 
                                  (A (Attribute {attributeName = "enryptionKey"}))) 
-                      (From (R (Relation {relationName = "encryption"}))) 
-                      (Where (CComp EQ (Val (S "isEncrypted")) (Val (B True))))
+                        (From (R (Relation {relationName = "encryption"}))) 
+                        (Where (CComp EQ (Val (S "isEncrypted")) (Val (B True))))
           expectVal @=? output  
 
-    ,  testCase "-- SELECT mid FROM CHOICE(encrypt AND signed, (signiture, encryption), signiture)" $
+    ,  testCase "-- SELECT mid FROM CHOICE1(encrypt AND signed, encryption), signiture WHERE true" $
        do output <- return $ 
-            parse query "" "SELECT mid FROM CHOICE(encrypt AND signed, (signiture, encryption), signiture)"
+            parse query "" "SELECT mid FROM CHOICE1(encrypt AND signed, encryption), signiture WHERE true"
           expectVal <- return $
-            Right $ SF (A (Attribute {attributeName = "mid"})) 
-                       (From (Rel2Chc (FAnd (FRef (Feature {featureName = "encrypt"})) 
-                                           (FRef (Feature {featureName = "signed"}))) 
-                                     (RelConcat (R (Relation {relationName = "signiture"}))
-                                                (R (Relation {relationName = "encryption"}))) 
-                                     (R (Relation {relationName = "signiture"}))))
+            Right $ SFW (A (Attribute {attributeName = "mid"})) 
+                        (From (RelConcat (Rel1Chc (FAnd (FRef (Feature {featureName = "encrypt"})) 
+                                                      (FRef (Feature {featureName = "signed"}))) 
+                                                 (R (Relation {relationName = "encryption"}))) 
+                                        (R (Relation {relationName = "signiture"}))))
+                       (Where (CLit True))
+          expectVal @=? output  
+
+   ,  testCase "--  SELECT mid, CHOICE(encrypt, isEncrypted) ,enryptionKey FROM encryption WHERE isEncrypted = true" $
+       do output <- return $ 
+            parse query "" "SELECT mid, CHOICE1(encrypt, isEncrypted) ,enryptionKey FROM encryption WHERE isEncrypted = true"
+          expectVal <- return $
+            Right $ SFW (AConcat (AConcat (A (Attribute {attributeName = "mid"})) 
+                                          (Attr1Chc (FRef (Feature {featureName = "encrypt"})) 
+                                                    (A (Attribute {attributeName = "isEncrypted"})))) 
+                                 (A (Attribute {attributeName = "enryptionKey"}))) 
+                        (From (R (Relation {relationName = "encryption"}))) 
+                        (Where (CComp EQ (Val (S "isEncrypted")) (Val (B True))))
           expectVal @=? output  
     ]   
+   
   ]

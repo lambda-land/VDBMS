@@ -197,7 +197,7 @@ reservedword w = lexeme (string w *> notFollowedBy alphaNumChar)
 
 -- | list of reserved words
 reservedwords :: [String]
-reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE", "OR", "AND", "NOT", "true", "false", "!"]
+reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE1", "CHOICE2", "OR", "AND", "NOT", "true", "false", "!"]
 
 -- | ? 
 identifier :: Parser String
@@ -300,7 +300,7 @@ attrlistExprAsParameter = parens attrlistExpr
 -- | Parser for the choice in AttrList (AttrChc)
 attr2Choice :: Parser AttrList
 attr2Choice = do
-  reservedword "CHOICE"
+  reservedword "CHOICE2"
   void (symbol "(")
   featureExpr1 <- featureExpr
   void (symbol ",")
@@ -312,7 +312,7 @@ attr2Choice = do
 
 attr1Choice :: Parser AttrList
 attr1Choice = do
-  reservedword "CHOICE"
+  reservedword "CHOICE1"
   void (symbol "(")
   featureExpr1 <- featureExpr
   void (symbol ",")
@@ -357,7 +357,7 @@ relationlistExprAsParameter = parens relationlistExpr
 -- | Parser for 2 choices in RelationList (Rel2Chc)
 relation2Choice :: Parser RelationList
 relation2Choice = do
-  reservedword "CHOICE"
+  reservedword "CHOICE2"
   void (symbol "(")
   featureExpr1 <- featureExpr
   void (symbol ",")
@@ -370,7 +370,7 @@ relation2Choice = do
 -- | Parser for 1 choice in RelationList (Rel1Chc)
 relation1Choice :: Parser RelationList
 relation1Choice = do
-  reservedword "CHOICE"
+  reservedword "CHOICE1"
   void (symbol "(")
   featureExpr1 <- featureExpr
   void (symbol ",")
@@ -474,7 +474,7 @@ conditionAsParameter = condition
 -- | Parse for CChc FeatureExpr Condition Condition 
 conditionChoice :: Parser Condition 
 conditionChoice = do
-  reservedword "CHOICE"
+  reservedword "CHOICE2"
   void (symbol "(")
   featureExpr1 <- featureExpr
   void (symbol ",")
