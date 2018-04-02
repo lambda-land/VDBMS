@@ -116,7 +116,8 @@ data RelationList
   deriving (Eq,Show)
 
 -- | Query expression. SELECT ... FROM ... WHERE ...
-data Query = Select AttrList FromExpr WhereExpr
+data Query = SF AttrList FromExpr 
+           |SFW AttrList FromExpr WhereExpr
            | QChc FeatureExpr Query Query
   deriving (Eq,Show)
 
@@ -214,17 +215,26 @@ identifier = (lexeme . try) (p >>= check)
 
 -- | parse v-query
 query :: Parser Query 
-query = selectExpr 
+query = selectFromWhereExpr 
+  <|> selectFromExpr
   <|> choiceExpr 
 
--- | Parser for SELECT 
-selectExpr :: Parser Query 
-selectExpr = do 
+-- | Parser for SELECT ... FROM ... WHERE
+selectFromWhereExpr :: Parser Query 
+selectFromWhereExpr = do 
   reservedword "SELECT"
   alist <- attrlistExpr
   fromExpr1 <- fromExpr
   whereExpr1 <- whereExpr
-  return (Select alist fromExpr1 whereExpr1)
+  return (SFW alist fromExpr1 whereExpr1)
+
+-- | Parser for SELECT ... FROM ... WHERE
+selectFromExpr :: Parser Query 
+selectFromExpr = do 
+  reservedword "SELECT"
+  alist <- attrlistExpr
+  fromExpr1 <- fromExpr
+  return (SF alist fromExpr1)
 
 -- | Parser for CHOICE()
 choiceExpr :: Parser Query
@@ -258,8 +268,9 @@ whereExpr = do
 -- | Parser for AttrList
 attrlistExpr :: Parser AttrList
 attrlistExpr = makeExprParser attrlistTerm attrlistOperators
-    <|> attr1Choice
     <|> attr2Choice
+    <|> attr1Choice
+    
 
 -- | define a parser for Attribute
 attribute :: Parser Attribute 
@@ -267,8 +278,8 @@ attribute = Attribute <$> identifier
 
 -- | attrlistTerm is defining the terms for AttrList 
 attrlistTerm :: Parser AttrList
-attrlistTerm =  attr1Choice
-  <|> attr2Choice
+attrlistTerm =  attr2Choice
+  <|> attr1Choice
   <|> A <$> attribute
   <|> parens attrlistExpr
   
@@ -283,8 +294,8 @@ attrlistOperators =
 attrlistExprAsParameter :: Parser AttrList
 attrlistExprAsParameter = parens attrlistExpr 
  <|> A <$> attribute
- <|> attr1Choice
  <|> attr2Choice
+ <|> attr1Choice
 
 -- | Parser for the choice in AttrList (AttrChc)
 attr2Choice :: Parser AttrList
@@ -314,8 +325,8 @@ attr1Choice = do
 --
 relationlistExpr :: Parser RelationList
 relationlistExpr = makeExprParser relationlistTerm relationlistOperators
-  <|> relation1Choice
   <|> relation2Choice
+  <|> relation1Choice
 
 -- | define a parser for a single Relation 
 relation :: Parser Relation
@@ -323,8 +334,8 @@ relation = Relation <$> identifier
 
 -- | define the Terms in RelationList 
 relationlistTerm :: Parser RelationList
-relationlistTerm =  relation1Choice
-  <|> relation2Choice
+relationlistTerm =  relation2Choice
+  <|> relation1Choice
   <|> R <$> relation
   <|> parens relationlistExpr
   
@@ -340,8 +351,8 @@ relationlistOperators =
 relationlistExprAsParameter :: Parser RelationList
 relationlistExprAsParameter = parens relationlistExpr 
  <|> R <$> relation
- <|> relation1Choice
  <|> relation2Choice
+ <|> relation1Choice
 
 -- | Parser for 2 choices in RelationList (Rel2Chc)
 relation2Choice :: Parser RelationList

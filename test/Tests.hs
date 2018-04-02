@@ -8,4 +8,5 @@ main :: IO ()
 main = defaultMain $ testGroup ""
   [ testFeatureExpr
   , testCondition
-  , testFromExpr]
+  , testFromExpr
+  , testQueryExpr]
