@@ -6,4 +6,6 @@ import TestParser
 
 main :: IO ()
 main = defaultMain $ testGroup ""
-  [testFeatureExpr]
+  [ testFeatureExpr
+  , testCondition
+  , testFromExpr]

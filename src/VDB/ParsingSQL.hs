@@ -57,7 +57,7 @@ import VDB.Value
 -- | feature ::= (any feature name)
 -- | featureExpr∷= bool
 --               | feature 
---               | !featureExpr
+--               | NOT featureExpr
 --               | featureExpr  AND featureExpr 
 --               | featureExpr OR featureExpr 
 
@@ -196,7 +196,7 @@ reservedword w = lexeme (string w *> notFollowedBy alphaNumChar)
 
 -- | list of reserved words
 reservedwords :: [String]
-reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE", "OR", "AND", "NOT", "true", "false"]
+reservedwords = ["SELECT", "FROM", "WHERE", "CHOICE", "OR", "AND", "NOT", "true", "false", "!"]
 
 -- | ? 
 identifier :: Parser String
@@ -258,6 +258,8 @@ whereExpr = do
 -- | Parser for AttrList
 attrlistExpr :: Parser AttrList
 attrlistExpr = makeExprParser attrlistTerm attrlistOperators
+    <|> attr1Choice
+    <|> attr2Choice
 
 -- | define a parser for Attribute
 attribute :: Parser Attribute 
@@ -281,6 +283,7 @@ attrlistOperators =
 attrlistExprAsParameter :: Parser AttrList
 attrlistExprAsParameter = parens attrlistExpr 
  <|> A <$> attribute
+ <|> attr1Choice
  <|> attr2Choice
 
 -- | Parser for the choice in AttrList (AttrChc)
@@ -311,6 +314,8 @@ attr1Choice = do
 --
 relationlistExpr :: Parser RelationList
 relationlistExpr = makeExprParser relationlistTerm relationlistOperators
+  <|> relation1Choice
+  <|> relation2Choice
 
 -- | define a parser for a single Relation 
 relation :: Parser Relation
@@ -318,7 +323,8 @@ relation = Relation <$> identifier
 
 -- | define the Terms in RelationList 
 relationlistTerm :: Parser RelationList
-relationlistTerm =  relation2Choice
+relationlistTerm =  relation1Choice
+  <|> relation2Choice
   <|> R <$> relation
   <|> parens relationlistExpr
   
@@ -334,6 +340,7 @@ relationlistOperators =
 relationlistExprAsParameter :: Parser RelationList
 relationlistExprAsParameter = parens relationlistExpr 
  <|> R <$> relation
+ <|> relation1Choice
  <|> relation2Choice
 
 -- | Parser for 2 choices in RelationList (Rel2Chc)
@@ -371,16 +378,18 @@ featureExpr = makeExprParser featureTerm featureOperators
 
 -- | define the terms in featureExpr
 featureTerm :: Parser FeatureExpr
-featureTerm = FRef <$> feature 
+featureTerm = parens featureExpr 
+  <|> FRef <$> feature 
   <|> (FLit True <$ reservedword "true")
   <|> (FLit False <$ reservedword "false")
 
 -- | define the operators in featureExpr
 featureOperators :: [[Operator Parser FeatureExpr]]
 featureOperators =
-  [[Prefix (FNot <$ reservedword "NOT")],
-   [InfixL (FAnd <$ reservedword "AND"),
-    InfixL (FOr <$ reservedword "OR")  ]]
+  [ [ Prefix (FNot <$ reservedword "NOT")]
+  , [ InfixL (FAnd <$ reservedword "AND")
+    , InfixL (FOr <$ reservedword "OR") ]
+  ]
 
 -- | Parser for single Feature
 feature :: Parser Feature
@@ -394,6 +403,7 @@ feature = Feature <$> identifier
 -- | Parse the condition
 condition :: Parser Condition
 condition = makeExprParser conTerm conOperators
+  <|> conditionChoice
 
 
 -- | Define the lists with operator precedence, 
@@ -406,7 +416,8 @@ conOperators =
 
 -- | Parse Lit Bool for Condition 
 conTerm :: Parser Condition 
-conTerm =  parens comp
+conTerm = parens condition 
+  <|> parens comp
   <|> (CLit True <$ reservedword "true")
   <|> (CLit False <$ reservedword "false")
   <|> comp
