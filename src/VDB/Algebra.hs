@@ -14,10 +14,11 @@ data SetOp = Union | Diff | Prod
 
 -- | Variational relational algebra.
 data Algebra
-   = SetOp SetOp Algebra Algebra
+  =  SetOp SetOp Algebra Algebra
    | Proj  [Attribute] Algebra
    | Sel   Condition Algebra
    | AChc  FeatureExpr Algebra Algebra
+   | Rel   Relation
   deriving (Data,Eq,Show,Typeable)
 
 instance Variational Algebra where
