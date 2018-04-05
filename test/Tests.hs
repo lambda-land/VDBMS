@@ -9,4 +9,5 @@ main = defaultMain $ testGroup ""
   [ testFeatureExpr
   , testCondition
   , testFromExpr
+  , testWhereExpr
   , testQueryExpr]
