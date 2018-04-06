@@ -16,8 +16,10 @@ import qualified Text.Megaparsec.Char.Lexer as L
 -- import VDB.Algebra
 -- import Data.Data (Data,Typeable)
 
+import VDB.Condition
+import VDB.FeatureExpression
 import VDB.Name
--- import VDB.Variational 
+import VDB.Variational 
 import VDB.Value
 
 
@@ -100,58 +102,14 @@ import VDB.Value
 --
 
 -- | An attrList is a list of Attribute. Empty list is not allowed.
-data AttrList 
-   = A Attribute  
-   | Attr2Chc FeatureExpr AttrList AttrList
-   | Attr1Chc FeatureExpr AttrList
-   | AConcat AttrList AttrList
-  deriving (Eq,Show)
+type AttrList = [Opt Attribute]
 
 -- | A RelationList is a list of relation / Choice of relation. Empty list is not allowed. 
-data RelationList 
-   = R Relation
-   | Rel2Chc FeatureExpr RelationList RelationList
-   | Rel1Chc FeatureExpr RelationList 
-   | RelConcat RelationList RelationList
-  deriving (Eq,Show)
+type RelationList = [Opt Relation]
 
 -- | Query expression. SELECT ... FROM ... WHERE ...
-data Query = SF AttrList FromExpr 
-           |SFW AttrList FromExpr WhereExpr
+data Query = Select AttrList RelationList (Maybe Condition)
            | QChc FeatureExpr Query Query
-  deriving (Eq,Show)
-
--- | FROM ... 
-data FromExpr  = From RelationList
-  deriving (Eq,Show)
-
--- | Where ...
-data WhereExpr = Where Condition
-  deriving (Eq,Show)
-
--- | Boolean expressions over features.
-data FeatureExpr
-   = FLit Bool
-   | FRef Feature
-   | FNot FeatureExpr
-   | FAnd FeatureExpr FeatureExpr
-   | FOr  FeatureExpr FeatureExpr
-  deriving (Eq,Show)
-
--- | Atoms are the leaves of a condition.
-data Atom
-   = Val  Value
-   | Attr Attribute
-  deriving (Eq,Show)
-
--- | Variational conditions.
-data Condition
-   = CLit  Bool
-   | CComp CompOp Atom Atom
-   | CNot  Condition
-   | COr   Condition Condition
-   | CAnd  Condition Condition
-   | CChc FeatureExpr Condition Condition
   deriving (Eq,Show)
 
 type Parser = Parsec Void String

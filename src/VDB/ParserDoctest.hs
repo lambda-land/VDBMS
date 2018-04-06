@@ -6,8 +6,8 @@ import ParsingSQL
 import Text.Megaparsec
 
 -- | TO DO : 1. fix choice among the condition 
---           2. () in CHOICE
-
+--           2. CHOICE for 2 alternative 
+--            
 -- | Basic tests for lexer.
 -- >>> parseTest spaceConsumer "-- comments"
 -- ()
@@ -84,3 +84,5 @@ import Text.Megaparsec
 --   
 --   >>> parseTest query "SELECT mid FROM CHOICE(encrypt AND signed, (signiture, encryption), signiture) WHERE true"
 --   Select (A (Attribute {attributeName = "mid"})) (From (RelChc (FAnd (FRef (Feature {featureName = "encrypt"})) (FRef (Feature {featureName = "signed"}))) (CROSSJOIN (R (Relation {relationName = "signiture"})) (R (Relation {relationName = "encryption"}))) (R (Relation {relationName = "signiture"})))) (Where (CLit True))
+--   
+--   >>> parseTest query "SELECT mid, CHOICE(encrypt, isEncrypted) ,enryptionKey FROM encryption WHERE isEncrypted = true"
