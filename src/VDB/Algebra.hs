@@ -18,7 +18,7 @@ data Algebra
    | Proj  [Attribute] Algebra
    | Sel   Condition Algebra
    | AChc  FeatureExpr Algebra Algebra
-   | Rel   Relation
+   -- | Rel   Relation
   deriving (Data,Eq,Show,Typeable)
 
 instance Variational Algebra where
