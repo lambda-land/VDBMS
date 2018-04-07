@@ -18,11 +18,7 @@ data Algebra
    | Proj  [Opt Attribute] Algebra
    | Sel   Condition Algebra
    | AChc  FeatureExpr Algebra Algebra
-<<<<<<< HEAD
-   -- | Rel   Relation
-=======
-   | TRef  Relation
->>>>>>> upstream/master
+   | TRef  [Opt Relation]
   deriving (Data,Eq,Show,Typeable)
 
 instance Variational Algebra where
@@ -33,7 +29,11 @@ instance Variational Algebra where
   choiceMap g (Proj as e)   = Proj as (choiceMap g e)
   choiceMap g (Sel  c  e)   = Sel  c  (choiceMap g e)
   choiceMap g (AChc f l r)  = g f l r
+  choiceMap _ (TRef r)      = TRef r
 
   select = undefined
 
   configure = undefined
+
+
+
