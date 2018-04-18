@@ -1,5 +1,6 @@
-module TestParser where 
 
+module TestParser where 
+{-
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -328,3 +329,4 @@ testQueryExpr = testGroup "Test Query"
     ]   
    
   ]
+  -}

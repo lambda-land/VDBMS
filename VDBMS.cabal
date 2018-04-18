@@ -50,6 +50,8 @@ library
     , VDB.Variational
     , VDB.Value
     , VDB.ParsingSQL
+    , VDB.SQL
+    , VDB.VSqlToAlgebra
 
 test-suite test
   hs-source-dirs:   test
@@ -71,3 +73,4 @@ test-suite test
     , parsec
   other-modules:
       TestParser
+      TestTranslater
