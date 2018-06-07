@@ -38,6 +38,7 @@ library
     , text
     , megaparsec
     , parsec
+    , HDBC
   exposed-modules:
       VDB.Algebra
     , VDB.Config
@@ -52,6 +53,8 @@ library
     , VDB.ParsingSQL
     , VDB.SQL
     , VDB.VSqlToAlgebra
+    , VDB.Target
+    , VDB.AlgebraToSql
 
 test-suite test
   hs-source-dirs:   test

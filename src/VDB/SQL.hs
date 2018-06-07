@@ -8,6 +8,21 @@ import VDB.Condition
 
 import VDB.Variational 
 
+--
+-- * Abstract Syntax for SQL
+--
+
+-- | An attrList is a list of Attribute. Empty list is not allowed.
+type AttrList = [Opt Attribute]
+
+-- | A RelationList is a list of relation / Choice of relation. Empty list is not allowed. 
+type RelationList = [Opt Relation]
+
+-- | Query expression. SELECT ... FROM ... WHERE ...
+data VQuery = VSelect AttrList RelationList (Maybe Condition)
+            | QChc FeatureExpr VQuery VQuery
+  deriving (Eq,Show)
+
 
 
 --  
@@ -82,17 +97,3 @@ import VDB.Variational
 --                   | vRelaiton, vRelaitonList
 -- | vSchema ::= featureExpr ? {vRelationList}
 
---
--- * Abstract Syntax for SQL
---
-
--- | An attrList is a list of Attribute. Empty list is not allowed.
-type AttrList = [Opt Attribute]
-
--- | A RelationList is a list of relation / Choice of relation. Empty list is not allowed. 
-type RelationList = [Opt Relation]
-
--- | Query expression. SELECT ... FROM ... WHERE ...
-data Query = Select AttrList RelationList (Maybe Condition)
-           | QChc FeatureExpr Query Query
-  deriving (Eq,Show)
