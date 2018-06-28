@@ -1,7 +1,7 @@
 
 module VDB.ParsingSQL where 
 
-{- 
+
 import Prelude hiding (EQ,LT,GT,compare)
 import Control.Monad (void)
 import Data.Void
@@ -77,7 +77,7 @@ identifier = (lexeme . try) (p >>= check)
                 then fail $ "keyword " ++ show x ++ " cannot be an identifier"
                 else return x
 
-
+{-
 --
 -- Parser for Query
 --

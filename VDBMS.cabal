@@ -39,6 +39,7 @@ library
     , megaparsec
     , parsec
     , HDBC
+    , HDBC-postgresql
   exposed-modules:
       VDB.Algebra
     , VDB.Config

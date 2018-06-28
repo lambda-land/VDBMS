@@ -14,7 +14,6 @@ import VDB.Config
 import VDB.Name
 import VDB.SAT
 
-
 -- | Boolean expressions over features.
 data FeatureExpr
    = Lit Bool

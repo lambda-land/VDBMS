@@ -5,8 +5,8 @@ import Data.Data (Data,Typeable)
 
 import VDB.Name
 import VDB.FeatureExpr (FeatureExpr)
-import VDB.Condition
 import VDB.Variational
+import VDB.Condition
 
 -- | Basic set operations.
 data SetOp = Union | Diff | Prod
@@ -21,6 +21,7 @@ data Algebra
    | TRef  Relation
    | Empty 
   deriving (Data,Eq,Show,Typeable)
+
 
 instance Variational Algebra where
 

@@ -1,16 +1,21 @@
 module VDB.AlgebraToSql where 
 
--- import VDB.Target 
+import Prelude hiding (EQ, NEQ ,LT ,LTE , GTE ,GT)
+import VDB.Target 
 -- import VDB.SQL 
--- import VDB.Algebra
+import VDB.Algebra
 import VDB.Name
 import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C
+import qualified VDB.Target as T
 import VDB.Variational
--- import VDB.Value
+import VDB.Value  
 
 import Database.HDBC
--- import Database.HDBC.PostgreSQL
+import Database.HDBC.PostgreSQL
+
+import Data.Map(Map)
+import qualified Data.Map as Map 
 
 type QueryClause = String 
 
@@ -21,56 +26,159 @@ querySFW al rl cond = if length cond == 0
                     else buildQuery ["SELECT ", al , " FROM ",rl , " WHERE ", cond ]
 
 -- | build a list of string into Query clause
-buildQuery :: [String] -> QueryClause
+buildQuery :: [String] -> String 
 buildQuery list = filter (/= '\n') $ unlines list
 
 -- | transfer sql value to string 
 sqlRowToString = map (fromSql :: SqlValue -> String)
 
 
-main :: IO ()
-main = do 
-        conn <- connectPostgreSQL "host=localhost dbname=ai_db"
-        result <- quickQuery conn (querySFW "*" "taughtby" "") []
-        mapM_ print $ map sqlRowToString result
+-- main :: IO ()
+-- main = do 
+--         conn <- connectPostgreSQL "host=localhost dbname=ai_db"
+--         result <- quickQuery conn (querySFW "*" "taughtby" "") []
+--         mapM_ print $ map sqlRowToString result
 
---
--- ** Variational relational algebra.
---
+-- main :: IO ()
+-- main = do 
+--         conn <- connectPostgreSQL "host=localhost dbname=ai_db"
+--         result <- quickQuery conn (q0) []
+--         mapM_ print $ map sqlRowToString result
 
-data SetOp = Union | Diff | Prod
-   deriving(Show)
+data Query = QueryOp SetOp Query Query 
+           | Select [Attribute] Query 
+           | From Relation (Maybe T.Condition) 
+           | EmptyQuery
+  deriving (Show)
+-- | TO DO: update predence condition
+type SqlQuery = String 
+
+type TableAlias = String 
+
+-- | translate variational algebra to sql query AST
+transAlgebraToQuery :: Algebra -> Query 
+transAlgebraToQuery (SetOp Prod  a1 a2)  = QueryOp Prod (transAlgebraToQuery a1) (transAlgebraToQuery a2) 
+transAlgebraToQuery (SetOp Diff  a1 a2)  = undefined 
+transAlgebraToQuery (SetOp Union a1 a2)  = undefined 
+transAlgebraToQuery (Proj  opAttrList a) = Select (map lift opAttrList) (transAlgebraToQuery a) 
+transAlgebraToQuery (AChc  fexpr a1 a2)  = undefined 
+transAlgebraToQuery (TRef  r)            = From r Nothing 
+transAlgebraToQuery (Empty)              = EmptyQuery
+
+-- | translate sql query AST to plain sql string with counter 
+transQueryToSql :: Query -> SqlQuery -> Int -> (SqlQuery, TableAlias, Int )
+transQueryToSql (From r Nothing) p c = 
+  let t = "T" ++ show c 
+  in (buildQuery [" (SELECT * ", " FROM ",relationName r," )", " as ", t], t, c+1)
+transQueryToSql (From r (Just cond)) p c = 
+  let t = "T" ++ show c 
+  in (buildQuery [" (SELECT * ", " FROM ",relationName r," )", " as ", t, " WHERE ", prettyCond cond], t, c+1)
+transQueryToSql (Select attrList q) p c =
+  let t =  "T" ++ show c 
+      (p',q',c') = transQueryToSql q p (c+1)
+  in ((buildQuery [" SELECT ", prettyAttrList attrList, " FROM ", p']), t, c')
+transQueryToSql (QueryOp Prod l r) p c= 
+  let t = "T" ++ show c
+      (pl,ql,cl) = transQueryToSql l p (c+1)
+      (pr,qr,cr) = transQueryToSql r pl cl   
+  in ((buildQuery [" (SELECT * ", " FROM ", pl, " , ", pr, " ) "]), t, cr)
+transQueryToSql (empty) p c              = undefined
 
 
-data Algebra
-   = Proj  [Opt Attribute] (Maybe C.Condition) Relations 
-   | AChc  F.FeatureExpr Algebra Algebra  
-   deriving(Show)
+-- | abstract plain sql query from *plain sql query with counter*
+sendToPosgreSQL :: Query -> QueryClause
+sendToPosgreSQL (QueryOp Prod q1 q2)  = sendToPosgreSQL q1 ++ sendToPosgreSQL q2
+sendToPosgreSQL (QueryOp Diff q1 q2)  = undefined
+sendToPosgreSQL (QueryOp Union q1 q2) = undefined
+sendToPosgreSQL (Select attrList q)   = buildQuery [" SELECT ", prettyAttrList attrList, sendToPosgreSQL q]
+sendToPosgreSQL (From r Nothing)              = buildQuery [" FROM ", prettyRel r, " as ", prettyRel r]
+sendToPosgreSQL (From r (Just cond)) = undefined
 
-data Relations  
-    = TRef  Relation
-    | SetOp SetOp Relations Relations
-    | Empty
-     deriving(Show)
-
+-- | lift the a from *opt a* 
 lift :: Opt a  -> a  
 lift (_,a)= a 
 
-data Query = Nested SetOp Query Query 
-           | Select [Attribute] [Relation] (Maybe C.Condition)
-  deriving (Show)
--- tran1 = transAlgebraToSql $ Proj [(F.Ref "f1","A1"),(F.Ref "f2","A2")] Nothing (SetOp Prod (TRef "relation1") (TRef "relation2"))
+-- | pretty print the condition in module target
+prettyCond :: T.Condition -> QueryClause
+prettyCond (T.Lit  b)                 = show b
+prettyCond (T.Comp compOp a1 a2)      = prettyAtom a1 ++ prettyCompOp compOp ++ prettyAtom a2
+prettyCond (T.Not  cond)              = undefined
+prettyCond (T.Or   cond1 cond2)       = undefined
+prettyCond (T.And  cond1 cond2)       = undefined
+prettyCond (T.SAT  f)                 = "SAT(" ++ F.prettyFeatureExpr f ++ ") "
 
-transAlgebraToSql :: Algebra -> Query  
-transAlgebraToSql (Proj oplist cond (TRef r)) = Select (map lift oplist) [r] cond 
-transAlgebraToSql (Proj oplist cond p)        = Select (map lift oplist) (transProduct p) cond                          
-transAlgebraToSql (AChc _      a1   a2)       = Nested Union (transAlgebraToSql a1) (transAlgebraToSql a2)
+-- | pretty print the compare operator 
+prettyCompOp :: CompOp ->QueryClause
+prettyCompOp EQ  = "=="
+prettyCompOp NEQ = "/="
+prettyCompOp LT  = "<"
+prettyCompOp LTE = "<="
+prettyCompOp GTE = ">="
+prettyCompOp GT  = ">"
 
-transProduct :: Relations -> [Relation]
-transProduct (TRef r)           = [r]
-transProduct (SetOp Prod r1 r2) = transProduct r1 ++ transProduct r2 
-transProduct Empty              = []
+-- | pretty print the relation
+prettyRel :: Relation -> QueryClause 
+prettyRel = relationName
 
+-- | pretty print the plain attribute list , which means no opt/tag with attribute
+prettyAttrList :: [Attribute] -> QueryClause
+prettyAttrList []     = ""
+prettyAttrList [x]    = attributeName x
+prettyAttrList (x:xs) = attributeName x ++ "," ++ prettyAttrList xs
 
+-- | pretty print the Atom 
+prettyAtom :: C.Atom -> QueryClause
+prettyAtom (C.Val  v  ) = prettyValue v
+prettyAtom (C.Attr attr ) = attributeName attr
 
+-- | pretty print the value in Condition
+prettyValue :: Value -> QueryClause
+prettyValue (I i) = show i
+prettyValue (B b) = show b 
+prettyValue (S s) = s
+
+-- 
+--  Examples
+-- 
+t0 =  (Relation {relationName = "taughtby"})
+t1 = (Relation {relationName = "courselevel"})
+a1 = Attribute {attributeName = "course"}
+a2 = Attribute {attributeName = "professor"}
+f0 = (Feature {featureName = "US"})
+
+q1 = Select [a1,a2] $ From t0 Nothing 
+q2 = Select [a1,a2] $ QueryOp Prod (From t0 Nothing) (From t1 Nothing)
+
+q3 = Select [a1,a2] $ From t0 $ Just (T.Comp GT (C.Attr a1) (C.Val (I 5))) 
+q4 = Select [a1,a2] $ From t0 $ Just (T.SAT (F.Ref f0 ))
+
+e1 = SetOp Prod (TRef "r1") (TRef "r2")
+
+e2 = Proj [(F.And 
+                    (F.Ref (Feature {featureName = "A"})) 
+                    (F.Ref (Feature {featureName = "A"})), 
+                   Attribute {attributeName = "1"})
+                 ,
+                  (F.Ref (Feature {featureName = "B"}),
+                   Attribute {attributeName = "2"})
+                 ] 
+          (TRef "Table1")
+
+e3 =  Proj [(F.And 
+                    (F.Ref (Feature {featureName = "A"})) 
+                    (F.Ref (Feature {featureName = "A"})), 
+                   Attribute {attributeName = "1"})
+                 ,
+                  (F.Ref (Feature {featureName = "B"}),
+                   Attribute {attributeName = "2"})
+                 ] 
+          (SetOp Prod 
+                (AChc (F.Ref (Feature {featureName = " B"})) 
+                      (TRef (Relation {relationName = "1"})) 
+                       Empty) 
+                (SetOp Prod 
+                      (AChc (F.Ref (Feature {featureName = "C"})) 
+                            (TRef (Relation {relationName = "2"})) 
+                             Empty) 
+                       Empty))
 

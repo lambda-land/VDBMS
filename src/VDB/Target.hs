@@ -1,9 +1,11 @@
 module VDB.Target where
 
+import Data.Data (Data,Typeable)
 import VDB.Condition (Atom(..))
 import VDB.FeatureExpr (FeatureExpr)
 import VDB.Name
 import VDB.Value
+
 
 
 -- | Variational conditions.
@@ -18,10 +20,11 @@ data Condition
   deriving (Data,Eq,Show,Typeable)
 
 -- | Query expression. SELECT ... FROM ... WHERE ...
-data Query = Select [Attr] FromExpr (Maybe Condition)
-  deriving (Eq,Show)
+-- data Query = 
+-- 	Select [Attribute] FromExpr (Maybe Condition)
+--   deriving (Eq,Show)
 
 -- | TODO: Add Join.
-type FromExpr = [Relation]
+-- type FromExpr = [Relation]
 
 
