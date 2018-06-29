@@ -45,54 +45,70 @@ sqlRowToString = map (fromSql :: SqlValue -> String)
 --         result <- quickQuery conn (q0) []
 --         mapM_ print $ map sqlRowToString result
 
+-- data Query = QueryOp SetOp Query Query 
+--            | Select [Attribute] Query 
+--            | From Relation (Maybe T.Condition)            
+--            | EmptyQuery
+--   deriving (Show)
+
 data Query = QueryOp SetOp Query Query 
            | Select [Attribute] Query 
-           | From Relation (Maybe T.Condition) 
+           | Where (Maybe T.Condition) Query 
+           | From Relation            
            | EmptyQuery
   deriving (Show)
+
 -- | TO DO: update predence condition
 type SqlQuery = String 
 
 type TableAlias = String 
 
+type FeatureEnv = Map Attribute F.FeatureExpr
+
+-- | TO DO : 1. make a map for feature expression for each attribute
+--           2. variational queries
+
 -- | translate variational algebra to sql query AST
-transAlgebraToQuery :: Algebra -> Query 
-transAlgebraToQuery (SetOp Prod  a1 a2)  = QueryOp Prod (transAlgebraToQuery a1) (transAlgebraToQuery a2) 
-transAlgebraToQuery (SetOp Diff  a1 a2)  = undefined 
-transAlgebraToQuery (SetOp Union a1 a2)  = undefined 
-transAlgebraToQuery (Proj  opAttrList a) = Select (map lift opAttrList) (transAlgebraToQuery a) 
-transAlgebraToQuery (AChc  fexpr a1 a2)  = undefined 
-transAlgebraToQuery (TRef  r)            = From r Nothing 
-transAlgebraToQuery (Empty)              = EmptyQuery
+-- transAlgebraToQuery :: Algebra -> FeatureEnv -> (Query, FeatureEnv) 
+-- transAlgebraToQuery (SetOp Prod  a1 a2)  m = undefined
+-- transAlgebraToQuery (SetOp Diff  a1 a2)  m = undefined 
+-- transAlgebraToQuery (SetOp Union a1 a2)  m = undefined 
+-- transAlgebraToQuery (Proj  opAttrList a) m = Select (map lift opAttrList) (transAlgebraToQuery a) 
+-- transAlgebraToQuery (AChc  fexpr a1 a2)  m = undefined 
+-- transAlgebraToQuery (TRef  r)            m = From r 
+-- transAlgebraToQuery (Empty)              m = EmptyQuery
 
 -- | translate sql query AST to plain sql string with counter 
-transQueryToSql :: Query -> SqlQuery -> Int -> (SqlQuery, TableAlias, Int )
-transQueryToSql (From r Nothing) p c = 
+transQueryToSql' :: Query -> SqlQuery -> Int -> (SqlQuery, TableAlias, Int )
+transQueryToSql' (Select attrList q) p c =
+  let t =  "T" ++ show c 
+      (p',q',c') = transQueryToSql' q p (c+1)
+  in ((buildQuery [" SELECT ", prettyAttrList attrList, " FROM ", p']), t, c')
+transQueryToSql' (QueryOp Prod l r) p c = 
+  let t = "T" ++ show c
+      (pl,ql,cl) = transQueryToSql' l p (c+1)
+      (pr,qr,cr) = transQueryToSql' r pl cl   
+  in ((buildQuery [" (SELECT * ", " FROM ", pl, " , ", pr, " ) "]), t, cr)
+transQueryToSql' (Where Nothing q) p c  = transQueryToSql' q p c 
+transQueryToSql' (Where (Just cond) q) p c  =   
+  let t = "T" ++ show c 
+      (p',q',c') = transQueryToSql' q p c
+  in (p' ++ buildQuery [" WHERE ", prettyCond cond], t, c')
+transQueryToSql' (From r) p c = 
   let t = "T" ++ show c 
   in (buildQuery [" (SELECT * ", " FROM ",relationName r," )", " as ", t], t, c+1)
-transQueryToSql (From r (Just cond)) p c = 
-  let t = "T" ++ show c 
-  in (buildQuery [" (SELECT * ", " FROM ",relationName r," )", " as ", t, " WHERE ", prettyCond cond], t, c+1)
-transQueryToSql (Select attrList q) p c =
-  let t =  "T" ++ show c 
-      (p',q',c') = transQueryToSql q p (c+1)
-  in ((buildQuery [" SELECT ", prettyAttrList attrList, " FROM ", p']), t, c')
-transQueryToSql (QueryOp Prod l r) p c= 
-  let t = "T" ++ show c
-      (pl,ql,cl) = transQueryToSql l p (c+1)
-      (pr,qr,cr) = transQueryToSql r pl cl   
-  in ((buildQuery [" (SELECT * ", " FROM ", pl, " , ", pr, " ) "]), t, cr)
-transQueryToSql (empty) p c              = undefined
+transQueryToSql' (empty) p c              = undefined
 
-
+transQueryToSql :: Query -> (SqlQuery, TableAlias, Int )
+transQueryToSql q = transQueryToSql' q " " 0
 -- | abstract plain sql query from *plain sql query with counter*
-sendToPosgreSQL :: Query -> QueryClause
-sendToPosgreSQL (QueryOp Prod q1 q2)  = sendToPosgreSQL q1 ++ sendToPosgreSQL q2
-sendToPosgreSQL (QueryOp Diff q1 q2)  = undefined
-sendToPosgreSQL (QueryOp Union q1 q2) = undefined
-sendToPosgreSQL (Select attrList q)   = buildQuery [" SELECT ", prettyAttrList attrList, sendToPosgreSQL q]
-sendToPosgreSQL (From r Nothing)              = buildQuery [" FROM ", prettyRel r, " as ", prettyRel r]
-sendToPosgreSQL (From r (Just cond)) = undefined
+-- sendToPosgreSQL :: Query -> QueryClause
+-- sendToPosgreSQL (QueryOp Prod q1 q2)  = sendToPosgreSQL q1 ++ sendToPosgreSQL q2
+-- sendToPosgreSQL (QueryOp Diff q1 q2)  = undefined
+-- sendToPosgreSQL (QueryOp Union q1 q2) = undefined
+-- sendToPosgreSQL (Select attrList q)   = buildQuery [" SELECT ", prettyAttrList attrList, sendToPosgreSQL q]
+-- sendToPosgreSQL (From r )              = buildQuery [" FROM ", prettyRel r, " as ", prettyRel r]
+-- sendToPosgreSQL (From r (Just cond)) = undefined
 
 -- | lift the a from *opt a* 
 lift :: Opt a  -> a  
@@ -146,11 +162,13 @@ a1 = Attribute {attributeName = "course"}
 a2 = Attribute {attributeName = "professor"}
 f0 = (Feature {featureName = "US"})
 
-q1 = Select [a1,a2] $ From t0 Nothing 
-q2 = Select [a1,a2] $ QueryOp Prod (From t0 Nothing) (From t1 Nothing)
+q1 = Select [a1,a2] $ From t0 
+q2 = Select [a1,a2] $ QueryOp Prod (From t0 ) (From t1)
 
-q3 = Select [a1,a2] $ From t0 $ Just (T.Comp GT (C.Attr a1) (C.Val (I 5))) 
-q4 = Select [a1,a2] $ From t0 $ Just (T.SAT (F.Ref f0 ))
+q3 = Select [a1,a2] $ Where (Just (T.Comp GT (C.Attr a1) (C.Val (I 5))) ) $ From t0 
+q4 = Select [a1,a2] $ Where (Just (T.SAT (F.Ref f0 ))) $ From t0 
+
+w1 = Where (Just (T.SAT (F.Ref f0 ))) $ From t0 
 
 e1 = SetOp Prod (TRef "r1") (TRef "r2")
 
