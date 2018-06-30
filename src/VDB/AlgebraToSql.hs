@@ -69,14 +69,24 @@ type FeatureEnv = Map Attribute F.FeatureExpr
 --           2. variational queries
 
 -- | translate variational algebra to sql query AST
--- transAlgebraToQuery :: Algebra -> FeatureEnv -> (Query, FeatureEnv) 
--- transAlgebraToQuery (SetOp Prod  a1 a2)  m = undefined
--- transAlgebraToQuery (SetOp Diff  a1 a2)  m = undefined 
--- transAlgebraToQuery (SetOp Union a1 a2)  m = undefined 
--- transAlgebraToQuery (Proj  opAttrList a) m = Select (map lift opAttrList) (transAlgebraToQuery a) 
--- transAlgebraToQuery (AChc  fexpr a1 a2)  m = undefined 
--- transAlgebraToQuery (TRef  r)            m = From r 
--- transAlgebraToQuery (Empty)              m = EmptyQuery
+transAlgebraToQuery :: Algebra -> FeatureEnv -> Query  
+transAlgebraToQuery (SetOp Prod  a1 a2)  m = QueryOp Prod (transAlgebraToQuery a1) (transAlgebraToQuery a2) 
+transAlgebraToQuery (SetOp Diff  a1 a2)  m = QueryOp Diff (transAlgebraToQuery a1) (transAlgebraToQuery a2)  
+transAlgebraToQuery (SetOp Union a1 a2)  m = QueryOp Union (transAlgebraToQuery a1) (transAlgebraToQuery a2)   
+transAlgebraToQuery (Proj  opAttrList a) m = 
+  let m' = foldl (\m-> \(f,a) -> Map.insert a f m ) Map.empty opAttrList 
+  in Select (map lift opAttrList) (transAlgebraToQuery a m')
+transAlgebraToQuery (Sel   cond  a)      m = 
+  let cond' = updateCond cond m 
+  Where (Just cond' ) (transAlgebraToQuery a m) 
+transAlgebraToQuery (AChc  f a1 a2)      m = undefined 
+transAlgebraToQuery (TRef  r)            m = From r 
+transAlgebraToQuery (Empty)              m = EmptyQuery
+
+--| transfer condition into target condition. (condition + SAT FeatureExpr)
+updateCond :: C.Condtion -> FeatureEnv -> T.Condition 
+updateCond (CChc f cond1 cond2 ) m = undefined
+updateCond _                     m = undefined -- SAT
 
 -- | translate sql query AST to plain sql string with counter 
 transQueryToSql' :: Query -> SqlQuery -> Int -> (SqlQuery, TableAlias, Int )
@@ -101,6 +111,7 @@ transQueryToSql' (empty) p c              = undefined
 
 transQueryToSql :: Query -> (SqlQuery, TableAlias, Int )
 transQueryToSql q = transQueryToSql' q " " 0
+
 -- | abstract plain sql query from *plain sql query with counter*
 -- sendToPosgreSQL :: Query -> QueryClause
 -- sendToPosgreSQL (QueryOp Prod q1 q2)  = sendToPosgreSQL q1 ++ sendToPosgreSQL q2
@@ -113,6 +124,7 @@ transQueryToSql q = transQueryToSql' q " " 0
 -- | lift the a from *opt a* 
 lift :: Opt a  -> a  
 lift (_,a)= a 
+
 
 -- | pretty print the condition in module target
 prettyCond :: T.Condition -> QueryClause
