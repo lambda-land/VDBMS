@@ -17,6 +17,9 @@ import Database.HDBC.PostgreSQL
 import Data.Map(Map)
 import qualified Data.Map as Map 
 
+import Data.Set (Set)
+import qualified Data.Set as Set
+
 type QueryClause = String 
 
 -- | select attributelist, relationlist, condition in plain string 
@@ -64,29 +67,48 @@ type SqlQuery = String
 type TableAlias = String 
 
 type FeatureEnv = Map Attribute F.FeatureExpr
+type ConditionEnv = Set T.Condition
+
+-- ToDo: Make enviroment as condition + featureExpr
 
 -- | TO DO : 1. make a map for feature expression for each attribute
 --           2. variational queries
 
 -- | translate variational algebra to sql query AST
-transAlgebraToQuery :: Algebra -> FeatureEnv -> Query  
-transAlgebraToQuery (SetOp Prod  a1 a2)  m = QueryOp Prod (transAlgebraToQuery a1) (transAlgebraToQuery a2) 
-transAlgebraToQuery (SetOp Diff  a1 a2)  m = QueryOp Diff (transAlgebraToQuery a1) (transAlgebraToQuery a2)  
-transAlgebraToQuery (SetOp Union a1 a2)  m = QueryOp Union (transAlgebraToQuery a1) (transAlgebraToQuery a2)   
-transAlgebraToQuery (Proj  opAttrList a) m = 
+transAlgebraToQuery' :: Algebra -> FeatureEnv -> T.Condition -> Query  
+transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
+transAlgebraToQuery' (SetOp Diff  a1 a2)  m s = QueryOp Diff (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)  
+transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)   
+transAlgebraToQuery' (Proj  opAttrList a) m s = 
   let m' = foldl (\m-> \(f,a) -> Map.insert a f m ) Map.empty opAttrList 
-  in Select (map lift opAttrList) (transAlgebraToQuery a m')
-transAlgebraToQuery (Sel   cond  a)      m = 
-  let cond' = updateCond cond m 
-  Where (Just cond' ) (transAlgebraToQuery a m) 
-transAlgebraToQuery (AChc  f a1 a2)      m = undefined 
-transAlgebraToQuery (TRef  r)            m = From r 
-transAlgebraToQuery (Empty)              m = EmptyQuery
+  in Select (map lift opAttrList) (transAlgebraToQuery' a m' s)
+transAlgebraToQuery' (Sel   cond  a)      m s = 
+  let cond' = updateCond cond m
+      s' = cond'  
+  in transAlgebraToQuery' a m s'
+transAlgebraToQuery' (AChc  f a1 a2)      m s = undefined    
+transAlgebraToQuery' (TRef  r)            m s = Where ( Just s) (From r)       -- ToDO : update where condition according to environment 
+transAlgebraToQuery' (Empty)              m s = EmptyQuery
+ 
+transAlgebraToQuery :: Algebra -> Query 
+transAlgebraToQuery a = transAlgebraToQuery' a Map.empty (Lit True)
 
---| transfer condition into target condition. (condition + SAT FeatureExpr)
-updateCond :: C.Condtion -> FeatureEnv -> T.Condition 
-updateCond (CChc f cond1 cond2 ) m = undefined
-updateCond _                     m = undefined -- SAT
+data Condition
+   = Lit  Bool
+   | Comp CompOp Atom Atom
+   | Not  Condition
+   | Or   Condition Condition
+   | And  Condition Condition
+   | CChc FeatureExpr Condition Condition
+-- | transfer condition into target condition. (condition + SAT FeatureExpr)
+updateCond :: C.Condition -> FeatureEnv -> T.Condition 
+updateCond (C.Lit  b)              m = T.Lit b
+updateCond (C.Comp op a1 a2)       m = T.Comp op a1 a2 
+updateCond (C.Not  cond)           m = T.Not  cond
+updateCond (C.Or   cond1 cond2)    m = T.Or cond1 cond2
+updateCond (C.And  cond1 cond2)    m = T.And cond1 cond2
+updateCond (C.CChc f cond1 cond2 ) m = undefined -- SAT  
+
 
 -- | translate sql query AST to plain sql string with counter 
 transQueryToSql' :: Query -> SqlQuery -> Int -> (SqlQuery, TableAlias, Int )
@@ -112,19 +134,9 @@ transQueryToSql' (empty) p c              = undefined
 transQueryToSql :: Query -> (SqlQuery, TableAlias, Int )
 transQueryToSql q = transQueryToSql' q " " 0
 
--- | abstract plain sql query from *plain sql query with counter*
--- sendToPosgreSQL :: Query -> QueryClause
--- sendToPosgreSQL (QueryOp Prod q1 q2)  = sendToPosgreSQL q1 ++ sendToPosgreSQL q2
--- sendToPosgreSQL (QueryOp Diff q1 q2)  = undefined
--- sendToPosgreSQL (QueryOp Union q1 q2) = undefined
--- sendToPosgreSQL (Select attrList q)   = buildQuery [" SELECT ", prettyAttrList attrList, sendToPosgreSQL q]
--- sendToPosgreSQL (From r )              = buildQuery [" FROM ", prettyRel r, " as ", prettyRel r]
--- sendToPosgreSQL (From r (Just cond)) = undefined
-
 -- | lift the a from *opt a* 
 lift :: Opt a  -> a  
 lift (_,a)= a 
-
 
 -- | pretty print the condition in module target
 prettyCond :: T.Condition -> QueryClause
@@ -174,10 +186,13 @@ a1 = Attribute {attributeName = "course"}
 a2 = Attribute {attributeName = "professor"}
 f0 = (Feature {featureName = "US"})
 
+c1 = (C.Comp GT (C.Attr a1) (C.Val (I 5)))
+
 q1 = Select [a1,a2] $ From t0 
 q2 = Select [a1,a2] $ QueryOp Prod (From t0 ) (From t1)
 
 q3 = Select [a1,a2] $ Where (Just (T.Comp GT (C.Attr a1) (C.Val (I 5))) ) $ From t0 
+e_4 = Proj [(F.Ref (Feature {featureName = "A"}),a1)] $ Sel c1 $ (TRef t0)
 q4 = Select [a1,a2] $ Where (Just (T.SAT (F.Ref f0 ))) $ From t0 
 
 w1 = Where (Just (T.SAT (F.Ref f0 ))) $ From t0 
@@ -211,4 +226,31 @@ e3 =  Proj [(F.And
                             (TRef (Relation {relationName = "2"})) 
                              Empty) 
                        Empty))
+
+
+-- | translate variational algebra to sql query AST ** condition as a Set 
+-- transAlgebraToQuery' :: Algebra -> FeatureEnv -> ConditionEnv -> Query  
+-- transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
+-- transAlgebraToQuery' (SetOp Diff  a1 a2)  m s = QueryOp Diff (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)  
+-- transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)   
+-- transAlgebraToQuery' (Proj  opAttrList a) m s = 
+--   let m' = foldl (\m-> \(f,a) -> Map.insert a f m ) Map.empty opAttrList 
+--   in Select (map lift opAttrList) (transAlgebraToQuery' a m' s)
+-- transAlgebraToQuery' (Sel   cond  a)      m s = 
+--   let cond' = updateCond cond m
+--       s' = Set.insert cond' s 
+--   in transAlgebraToQuery' a m s'
+-- transAlgebraToQuery' (AChc  f a1 a2)      m s = undefined    
+-- transAlgebraToQuery' (TRef  r)            m s = Where From r       -- ToDO : update where condition according to environment 
+-- transAlgebraToQuery' (Empty)              m s = EmptyQuery
+
+
+-- | abstract plain sql query from *plain sql query with counter*
+-- sendToPosgreSQL :: Query -> QueryClause
+-- sendToPosgreSQL (QueryOp Prod q1 q2)  = sendToPosgreSQL q1 ++ sendToPosgreSQL q2
+-- sendToPosgreSQL (QueryOp Diff q1 q2)  = undefined
+-- sendToPosgreSQL (QueryOp Union q1 q2) = undefined
+-- sendToPosgreSQL (Select attrList q)   = buildQuery [" SELECT ", prettyAttrList attrList, sendToPosgreSQL q]
+-- sendToPosgreSQL (From r )              = buildQuery [" FROM ", prettyRel r, " as ", prettyRel r]
+-- sendToPosgreSQL (From r (Just cond)) = undefined
 
