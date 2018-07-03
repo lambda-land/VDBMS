@@ -86,28 +86,26 @@ transAlgebraToQuery' (Sel   cond  a)      m s =
   let cond' = updateCond cond m
       s' = cond'  
   in transAlgebraToQuery' a m s'
-transAlgebraToQuery' (AChc  f a1 a2)      m s = undefined    
-transAlgebraToQuery' (TRef  r)            m s = Where ( Just s) (From r)       -- ToDO : update where condition according to environment 
+transAlgebraToQuery' (AChc f l r)       m s =
+  let l' = transAlgebraToQuery' l m (T.SAT f) 
+      r' = transAlgebraToQuery' r m (T.SAT (F.Not f)) 
+  in QueryOp Union l' r'    
+transAlgebraToQuery' (TRef  r)            m s = Where (Just s) (From r)       -- ToDO : update where condition according to environment 
 transAlgebraToQuery' (Empty)              m s = EmptyQuery
- 
+
+
 transAlgebraToQuery :: Algebra -> Query 
 transAlgebraToQuery a = transAlgebraToQuery' a Map.empty (Lit True)
 
-data Condition
-   = Lit  Bool
-   | Comp CompOp Atom Atom
-   | Not  Condition
-   | Or   Condition Condition
-   | And  Condition Condition
-   | CChc FeatureExpr Condition Condition
+
 -- | transfer condition into target condition. (condition + SAT FeatureExpr)
 updateCond :: C.Condition -> FeatureEnv -> T.Condition 
 updateCond (C.Lit  b)              m = T.Lit b
 updateCond (C.Comp op a1 a2)       m = T.Comp op a1 a2 
-updateCond (C.Not  cond)           m = T.Not  cond
-updateCond (C.Or   cond1 cond2)    m = T.Or cond1 cond2
-updateCond (C.And  cond1 cond2)    m = T.And cond1 cond2
-updateCond (C.CChc f cond1 cond2 ) m = undefined -- SAT  
+updateCond (C.Not  cond)           m = T.Not (updateCond cond m)
+updateCond (C.Or   cond1 cond2)    m = T.Or (updateCond cond1 m) (updateCond cond2 m)
+updateCond (C.And  cond1 cond2)    m = T.And (updateCond cond1 m) (updateCond cond2 m)
+updateCond (C.CChc f cond1 cond2 ) m = undefined   
 
 
 -- | translate sql query AST to plain sql string with counter 
@@ -125,11 +123,19 @@ transQueryToSql' (Where Nothing q) p c  = transQueryToSql' q p c
 transQueryToSql' (Where (Just cond) q) p c  =   
   let t = "T" ++ show c 
       (p',q',c') = transQueryToSql' q p c
-  in (p' ++ buildQuery [" WHERE ", prettyCond cond], t, c')
+  in (buildQuery ["( ", p' , " WHERE ", prettyCond cond, " )", " as ", t], t, c'+1)
 transQueryToSql' (From r) p c = 
   let t = "T" ++ show c 
-  in (buildQuery [" (SELECT * ", " FROM ",relationName r," )", " as ", t], t, c+1)
-transQueryToSql' (empty) p c              = undefined
+  in (buildQuery [" SELECT * ", " FROM ",relationName r], t, c+1)
+transQueryToSql' (EmptyQuery) p c              = (" ", p , c )  
+transQueryToSql' (QueryOp Union l EmptyQuery) p c = 
+  let (l', pr ,cr) = (transQueryToSql' l p c)
+      t = "T" ++ show c
+  in (l', t, c+1 )
+transQueryToSql' (QueryOp Union EmptyQuery r) p c = 
+  let (r', pr ,cr) = transQueryToSql' r p c
+      t = "T" ++ show c
+  in (r', t, c+1 )
 
 transQueryToSql :: Query -> (SqlQuery, TableAlias, Int )
 transQueryToSql q = transQueryToSql' q " " 0
@@ -145,7 +151,7 @@ prettyCond (T.Comp compOp a1 a2)      = prettyAtom a1 ++ prettyCompOp compOp ++ 
 prettyCond (T.Not  cond)              = undefined
 prettyCond (T.Or   cond1 cond2)       = undefined
 prettyCond (T.And  cond1 cond2)       = undefined
-prettyCond (T.SAT  f)                 = "SAT(" ++ F.prettyFeatureExpr f ++ ") "
+prettyCond (T.SAT  f)                 = "SAT(" ++ F.prettyFeatureExpr f ++ ")"
 
 -- | pretty print the compare operator 
 prettyCompOp :: CompOp ->QueryClause
@@ -211,21 +217,19 @@ e2 = Proj [(F.And
 
 e3 =  Proj [(F.And 
                     (F.Ref (Feature {featureName = "A"})) 
-                    (F.Ref (Feature {featureName = "A"})), 
-                   Attribute {attributeName = "1"})
+                    (F.Ref (Feature {featureName = "B"})), 
+                   Attribute {attributeName = "a1"})
                  ,
                   (F.Ref (Feature {featureName = "B"}),
-                   Attribute {attributeName = "2"})
+                   Attribute {attributeName = "a2"})
                  ] 
           (SetOp Prod 
-                (AChc (F.Ref (Feature {featureName = " B"})) 
-                      (TRef (Relation {relationName = "1"})) 
+                (AChc (F.Ref (Feature {featureName = " FB"})) 
+                      (TRef (Relation {relationName = "r1"})) 
                        Empty) 
-                (SetOp Prod 
-                      (AChc (F.Ref (Feature {featureName = "C"})) 
-                            (TRef (Relation {relationName = "2"})) 
-                             Empty) 
-                       Empty))
+                (AChc (F.Ref (Feature {featureName = "FC"})) 
+                            (TRef (Relation {relationName = "r2"})) 
+                             Empty))
 
 
 -- | translate variational algebra to sql query AST ** condition as a Set 
