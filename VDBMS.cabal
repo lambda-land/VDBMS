@@ -39,7 +39,7 @@ library
     , megaparsec
     , parsec
     , HDBC
-    , HDBC-postgresql
+
   exposed-modules:
       VDB.Algebra
     , VDB.Config
@@ -76,5 +76,5 @@ test-suite test
     , megaparsec
     , parsec
   other-modules:
-      TestParser
-      TestTranslater
+      TestTranslater_Phase1
+    , TestTranslater_Phase2

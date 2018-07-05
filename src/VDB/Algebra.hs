@@ -10,7 +10,7 @@ import VDB.Condition
 
 -- | Basic set operations.
 data SetOp = Union | Diff | Prod
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Show,Typeable, Ord)
 
 -- | Variational relational algebra.
 data Algebra
@@ -20,7 +20,7 @@ data Algebra
    | AChc  FeatureExpr Algebra Algebra
    | TRef  Relation
    | Empty 
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Show,Typeable,Ord)
 
 
 instance Variational Algebra where

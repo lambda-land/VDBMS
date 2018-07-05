@@ -14,7 +14,7 @@ import VDB.Variational
 data Atom
    = Val  Value
    | Attr Attribute
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | Variational conditions.
 data Condition
@@ -24,7 +24,7 @@ data Condition
    | Or   Condition Condition
    | And  Condition Condition
    | CChc FeatureExpr Condition Condition
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Show,Typeable,Ord)
 
 instance Variational Condition where
 

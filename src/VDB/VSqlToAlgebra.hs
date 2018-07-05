@@ -11,8 +11,8 @@ import VDB.Value
 
 -- | Translate variational SQL into Variational relational algebra
 vsqlToAlgebra :: VQuery -> Algebra 
-vsqlToAlgebra (Select as rs Nothing)     = Proj as $ transRelationList rs
-vsqlToAlgebra (Select as rs (Just cond)) = Proj as $ Sel cond $ transRelationList rs
+vsqlToAlgebra (VSelect as rs Nothing)     = Proj as $ transRelationList rs
+vsqlToAlgebra (VSelect as rs (Just cond)) = Proj as $ Sel cond $ transRelationList rs
 vsqlToAlgebra (QChc f l r)               = AChc f (vsqlToAlgebra l) (vsqlToAlgebra r) 
 
 -- | A helper function to translate RealtionList to the version of Algebra

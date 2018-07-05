@@ -21,7 +21,7 @@ data FeatureExpr
    | Not FeatureExpr
    | And FeatureExpr FeatureExpr
    | Or  FeatureExpr FeatureExpr
-  deriving (Data,Eq,Typeable)
+  deriving (Data,Eq,Typeable,Ord)
 
 -- | The set of features referenced in a feature expression.
 features :: FeatureExpr -> Set Feature

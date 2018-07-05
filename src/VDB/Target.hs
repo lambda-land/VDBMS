@@ -17,7 +17,7 @@ data Condition
    | And  Condition Condition
    | SAT  FeatureExpr  -- TODO: if all SAT problems have similar structure,
                        -- make this more specific (e.g. two FeatureExpr args)
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | Query expression. SELECT ... FROM ... WHERE ...
 -- data Query = 
