@@ -12,7 +12,7 @@ import VDB.Variational
 import VDB.Value  
 
 import Database.HDBC
-import Database.HDBC.PostgreSQL
+-- import Database.HDBC.PostgreSQL
 
 import Data.Map(Map)
 import qualified Data.Map as Map 
@@ -48,18 +48,12 @@ sqlRowToString = map (fromSql :: SqlValue -> String)
 --         result <- quickQuery conn (q0) []
 --         mapM_ print $ map sqlRowToString result
 
--- data Query = QueryOp SetOp Query Query 
---            | Select [Attribute] Query 
---            | From Relation (Maybe T.Condition)            
---            | EmptyQuery
---   deriving (Show)
-
 data Query = QueryOp SetOp Query Query 
            | Select [Attribute] Query 
            | Where (Maybe T.Condition) Query 
            | From Relation            
            | EmptyQuery
-  deriving (Show)
+  deriving (Show,Eq)
 
 -- | TO DO: update predence condition
 type SqlQuery = String 
@@ -71,8 +65,14 @@ type ConditionEnv = Set T.Condition
 
 -- ToDo: Make enviroment as condition + featureExpr
 
--- | TO DO : 1. make a map for feature expression for each attribute
---           2. variational queries
+-- | TO DO : 1. make a map for feature expression for each attribute -- (half done;)
+--           2. variational queries -- Done; (use Union)
+
+-- | translation from algebra to plain sql query
+translate :: Algebra -> SqlQuery
+translate a = let (q, t, i ) = transQueryToSql $ transAlgebraToQuery a 
+              in q 
+
 
 -- | translate variational algebra to sql query AST
 transAlgebraToQuery' :: Algebra -> FeatureEnv -> T.Condition -> Query  
@@ -82,15 +82,17 @@ transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQue
 transAlgebraToQuery' (Proj  opAttrList a) m s = 
   let m' = foldl (\m-> \(f,a) -> Map.insert a f m ) Map.empty opAttrList 
   in Select (map lift opAttrList) (transAlgebraToQuery' a m' s)
-transAlgebraToQuery' (Sel   cond  a)      m s = 
-  let cond' = updateCond cond m
-      s' = cond'  
-  in transAlgebraToQuery' a m s'
+transAlgebraToQuery' (Sel cond  a)        m s = 
+  case cond of 
+    (C.CChc f cond1 cond2 ) -> let newAlgebra = AChc f (Sel cond1 a) (Sel cond2 a) 
+                               in  transAlgebraToQuery' newAlgebra m s
+    _                       -> let cond' = updateCond cond m
+                               in transAlgebraToQuery' a m (T.And cond' s)
 transAlgebraToQuery' (AChc f l r)       m s =
-  let l' = transAlgebraToQuery' l m (T.SAT f) 
-      r' = transAlgebraToQuery' r m (T.SAT (F.Not f)) 
+  let l' = transAlgebraToQuery' l m (T.And (T.SAT f) s) 
+      r' = transAlgebraToQuery' r m (T.And (T.SAT (F.Not f)) s)
   in QueryOp Union l' r'    
-transAlgebraToQuery' (TRef  r)            m s = Where (Just s) (From r)       -- ToDO : update where condition according to environment 
+transAlgebraToQuery' (TRef  r)            m s = Where (Just s) (From r)       -- ToDO : update where condition according to environment(fetureExpr) 
 transAlgebraToQuery' (Empty)              m s = EmptyQuery
 
 
@@ -105,7 +107,6 @@ updateCond (C.Comp op a1 a2)       m = T.Comp op a1 a2
 updateCond (C.Not  cond)           m = T.Not (updateCond cond m)
 updateCond (C.Or   cond1 cond2)    m = T.Or (updateCond cond1 m) (updateCond cond2 m)
 updateCond (C.And  cond1 cond2)    m = T.And (updateCond cond1 m) (updateCond cond2 m)
-updateCond (C.CChc f cond1 cond2 ) m = undefined   
 
 
 -- | translate sql query AST to plain sql string with counter 
@@ -139,6 +140,8 @@ transQueryToSql' (QueryOp Union EmptyQuery r) p c =
 
 transQueryToSql :: Query -> (SqlQuery, TableAlias, Int )
 transQueryToSql q = transQueryToSql' q " " 0
+
+
 
 -- | lift the a from *opt a* 
 lift :: Opt a  -> a  
@@ -191,14 +194,14 @@ t1 = (Relation {relationName = "courselevel"})
 a1 = Attribute {attributeName = "course"}
 a2 = Attribute {attributeName = "professor"}
 f0 = (Feature {featureName = "US"})
-
-c1 = (C.Comp GT (C.Attr a1) (C.Val (I 5)))
+f1 = (Feature {featureName = "F"})
+cond1 = (C.Comp GT (C.Attr a1) (C.Val (I 5)))
 
 q1 = Select [a1,a2] $ From t0 
 q2 = Select [a1,a2] $ QueryOp Prod (From t0 ) (From t1)
 
 q3 = Select [a1,a2] $ Where (Just (T.Comp GT (C.Attr a1) (C.Val (I 5))) ) $ From t0 
-e_4 = Proj [(F.Ref (Feature {featureName = "A"}),a1)] $ Sel c1 $ (TRef t0)
+e_4 = Proj [(F.Ref (Feature {featureName = "A"}),a1)] $ Sel cond1 $ (TRef t0)
 q4 = Select [a1,a2] $ Where (Just (T.SAT (F.Ref f0 ))) $ From t0 
 
 w1 = Where (Just (T.SAT (F.Ref f0 ))) $ From t0 
@@ -207,11 +210,11 @@ e1 = SetOp Prod (TRef "r1") (TRef "r2")
 
 e2 = Proj [(F.And 
                     (F.Ref (Feature {featureName = "A"})) 
-                    (F.Ref (Feature {featureName = "A"})), 
-                   Attribute {attributeName = "1"})
+                    (F.Ref (Feature {featureName = "B"})), 
+                   Attribute {attributeName = "a1"})
                  ,
-                  (F.Ref (Feature {featureName = "B"}),
-                   Attribute {attributeName = "2"})
+                  (F.Ref (Feature {featureName = "C"}),
+                   Attribute {attributeName = "a2"})
                  ] 
           (TRef "Table1")
 
@@ -231,7 +234,25 @@ e3 =  Proj [(F.And
                             (TRef (Relation {relationName = "r2"})) 
                              Empty))
 
+e4 = Proj [((F.Lit True),a1)] (Sel cond2 (TRef t0))
 
+cond2 = C.CChc (F.Ref f1) (C.Comp GT (C.Attr a1) (C.Val (I 5))) (C.Comp LT (C.Attr a1) (C.Val (I 5)))
+
+test1 =  Proj [(F.Lit True, 
+                   Attribute {attributeName = "a1"})
+               ,(F.Lit True,
+                   Attribute {attributeName = "a2"})
+               ] 
+          (TRef "Table1") 
+test3 = Proj [(F.Lit True, Attribute {attributeName = "a1"})] $ 
+            Sel (C.CChc (F.Ref (Feature {featureName = "F"}))
+                       (C.Comp GT (C.Attr a1) (C.Val (I 5))) 
+                       (C.Comp LT (C.Attr a1) (C.Val (I 5)))) $ 
+            (TRef (Relation {relationName = "Table2"}))
+
+test4 = AChc (F.Ref (Feature {featureName = "F"})) 
+             (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"}))) 
+             (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"})))
 -- | translate variational algebra to sql query AST ** condition as a Set 
 -- transAlgebraToQuery' :: Algebra -> FeatureEnv -> ConditionEnv -> Query  
 -- transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 

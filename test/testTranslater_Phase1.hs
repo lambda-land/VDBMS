@@ -1,4 +1,4 @@
-module TestTranslater where 
+module TestTranslater_Phase1 where 
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -19,7 +19,7 @@ testTranslater = testGroup "Test V-Query to V-Algebra"
     [  testCase "- SELECT.. FROM.. " $
         do output <- return $ 
 
-             vsqlToAlgebra $ (Select [((F.And 
+             vsqlToAlgebra $ (VSelect [((F.And 
                                         (F.Ref (Feature { featureName = "A" }) )  
                                         (F.Ref (Feature { featureName = "A" }) )), (Attribute { attributeName = "1" }))
                                     , 
@@ -54,7 +54,7 @@ testTranslater = testGroup "Test V-Query to V-Algebra"
      testGroup "2) Condition Involved"
     [  testCase "- SELECT.. FROM.. WHERE isEncrypted = true" $
         do output <- return $ 
-              vsqlToAlgebra $  Select [ ( (F.Lit True), (Attribute {attributeName = "mid"}) ), 
+              vsqlToAlgebra $  VSelect [ ( (F.Lit True), (Attribute {attributeName = "mid"}) ), 
                                    (  (F.Ref (Feature {featureName = "encrypt"})) ,(Attribute {attributeName = "isEncrypted"})),
                                    ((F.Lit True),(Attribute {attributeName = "mid"}))
                                   ]

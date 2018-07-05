@@ -3,11 +3,14 @@ module Main where
 import Test.Tasty
 
 import TestParser 
-import TestTranslater
+import TestTranslater_Phase1
+import TestTranslater_Phase2
 
 main :: IO ()
 main = defaultMain $ testGroup ""
-         [testTranslater]
+        [testTransAlgebraToQuery]
+         -- [ testTranslater_Phase1
+         -- , testTranslater_Phase2]
   -- [ testFeatureExpr
   -- , testCondition
   -- , testFromExpr
