@@ -55,7 +55,6 @@ data Query = QueryOp SetOp Query Query
            | EmptyQuery
   deriving (Show,Eq)
 
--- | TO DO: update predence condition
 type SqlQuery = String 
 
 type TableAlias = String 
@@ -63,10 +62,11 @@ type TableAlias = String
 type FeatureEnv = Map Attribute F.FeatureExpr
 type ConditionEnv = Set T.Condition
 
--- ToDo: Make enviroment as condition + featureExpr
 
--- | TO DO : 1. make a map for feature expression for each attribute -- (half done;)
---           2. variational queries -- Done; (use Union)
+
+-- | TO DO: 1. update predence condition
+--          2. update where condition according to environment(fetureExpr) 
+
 
 -- | translation from algebra to plain sql query
 translate :: Algebra -> SqlQuery
@@ -111,15 +111,29 @@ updateCond (C.And  cond1 cond2)    m = T.And (updateCond cond1 m) (updateCond co
 
 -- | translate sql query AST to plain sql string with counter 
 transQueryToSql' :: Query -> SqlQuery -> Int -> (SqlQuery, TableAlias, Int )
-transQueryToSql' (Select attrList q) p c =
-  let t =  "T" ++ show c 
-      (p',q',c') = transQueryToSql' q p (c+1)
-  in ((buildQuery [" SELECT ", prettyAttrList attrList, " FROM ", p']), t, c')
+transQueryToSql' (QueryOp Union l EmptyQuery) p c = 
+  let (l', pr ,cr) = (transQueryToSql' l p c)
+      t = "T" ++ show c
+  in (l', t, c+1 )
+transQueryToSql' (QueryOp Union EmptyQuery r) p c = 
+  let (r', pr ,cr) = transQueryToSql' r p c
+      t = "T" ++ show c
+  in (r', t, c+1 )
+transQueryToSql' (QueryOp Union l r) p c = 
+  let (l', pl ,cl) = transQueryToSql' l p c
+      (r', pr, cr) = transQueryToSql' r pl cl
+      q = buildQuery [l', " UNION ", r']
+      t = "T" ++ show c
+  in (q, t, c+2 )
 transQueryToSql' (QueryOp Prod l r) p c = 
   let t = "T" ++ show c
       (pl,ql,cl) = transQueryToSql' l p (c+1)
       (pr,qr,cr) = transQueryToSql' r pl cl   
   in ((buildQuery [" (SELECT * ", " FROM ", pl, " , ", pr, " ) "]), t, cr)
+transQueryToSql' (Select attrList q) p c =
+  let t =  "T" ++ show c 
+      (p',q',c') = transQueryToSql' q p (c+1)
+  in ((buildQuery [" SELECT ", prettyAttrList attrList, " FROM ", p']), t, c')
 transQueryToSql' (Where Nothing q) p c  = transQueryToSql' q p c 
 transQueryToSql' (Where (Just cond) q) p c  =   
   let t = "T" ++ show c 
@@ -129,19 +143,10 @@ transQueryToSql' (From r) p c =
   let t = "T" ++ show c 
   in (buildQuery [" SELECT * ", " FROM ",relationName r], t, c+1)
 transQueryToSql' (EmptyQuery) p c              = (" ", p , c )  
-transQueryToSql' (QueryOp Union l EmptyQuery) p c = 
-  let (l', pr ,cr) = (transQueryToSql' l p c)
-      t = "T" ++ show c
-  in (l', t, c+1 )
-transQueryToSql' (QueryOp Union EmptyQuery r) p c = 
-  let (r', pr ,cr) = transQueryToSql' r p c
-      t = "T" ++ show c
-  in (r', t, c+1 )
+
 
 transQueryToSql :: Query -> (SqlQuery, TableAlias, Int )
 transQueryToSql q = transQueryToSql' q " " 0
-
-
 
 -- | lift the a from *opt a* 
 lift :: Opt a  -> a  
@@ -151,9 +156,9 @@ lift (_,a)= a
 prettyCond :: T.Condition -> QueryClause
 prettyCond (T.Lit  b)                 = show b
 prettyCond (T.Comp compOp a1 a2)      = prettyAtom a1 ++ prettyCompOp compOp ++ prettyAtom a2
-prettyCond (T.Not  cond)              = undefined
-prettyCond (T.Or   cond1 cond2)       = undefined
-prettyCond (T.And  cond1 cond2)       = undefined
+prettyCond (T.Not  cond)              = buildQuery [" NOT ",  (prettyCond cond)]
+prettyCond (T.Or   cond1 cond2)       = buildQuery [(prettyCond cond1), " OR ",  (prettyCond cond2)]
+prettyCond (T.And  cond1 cond2)       = buildQuery [(prettyCond cond1), " AND ",  (prettyCond cond2)]
 prettyCond (T.SAT  f)                 = "SAT(" ++ F.prettyFeatureExpr f ++ ")"
 
 -- | pretty print the compare operator 
@@ -253,6 +258,7 @@ test3 = Proj [(F.Lit True, Attribute {attributeName = "a1"})] $
 test4 = AChc (F.Ref (Feature {featureName = "F"})) 
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"}))) 
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"})))
+
 -- | translate variational algebra to sql query AST ** condition as a Set 
 -- transAlgebraToQuery' :: Algebra -> FeatureEnv -> ConditionEnv -> Query  
 -- transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
