@@ -8,18 +8,18 @@ import Data.Data (Data,Typeable)
 
 -- | Primitive types.
 data Type = TInt | TBool | TString
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | Primitive values.
 data Value
    = I Int
    | B Bool
    | S String
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | Comparison operations.
 data CompOp = EQ | NEQ | LT | LTE | GTE | GT
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | Get the type of a value.
 typeOf :: Value -> Type

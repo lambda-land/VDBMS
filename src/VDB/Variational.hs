@@ -16,6 +16,7 @@ import VDB.Name
 --   a presence condition.
 type Opt a = (FeatureExpr, a)
 
+
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a
 selectOpt f b (e,a) = (selectFeatureExpr f b e, a)
@@ -34,6 +35,7 @@ configureOptList c os = catMaybes (map (configureOpt c) os)
 --
 -- * Variational type class
 --
+
 
 -- | A type class for variational things.
 class Variational a where
@@ -59,6 +61,8 @@ selectHelper f b e l r = case selectFeatureExpr f b e of
     Lit b -> if b then l else r
     e'    -> choice e' l r
 
+-- | original: Lit b -> if b then l else r
 -- | A helper function to implement configure for data types with simple choices.
 configureHelper :: Config Bool -> FeatureExpr -> a -> a -> a
 configureHelper c f l r = if evalFeatureExpr c f then l else r
+

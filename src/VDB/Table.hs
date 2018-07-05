@@ -22,6 +22,7 @@ type Table = [Tuple]
 --   the corresponding attribute is not present in this configuration.
 type Tuple = Opt [Maybe Value]
 
+
 -- | Check a value against the attribute-type pair in a row type.
 checkValue :: FeatureExpr -> Opt (Attribute,Type) -> Maybe Value -> Bool
 checkValue ctx (p,_)     Nothing  = unsatisfiable (And ctx p)
@@ -44,3 +45,4 @@ checkDatabase (fm,rows) db = M.size rows == M.size db
     checkRelation name (p,row)
       | Just table <- M.lookup name db = checkTable (And fm p) row table
       | otherwise = False
+ 

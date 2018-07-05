@@ -14,7 +14,6 @@ import VDB.Config
 import VDB.Name
 import VDB.SAT
 
-
 -- | Boolean expressions over features.
 data FeatureExpr
    = Lit Bool
@@ -22,7 +21,7 @@ data FeatureExpr
    | Not FeatureExpr
    | And FeatureExpr FeatureExpr
    | Or  FeatureExpr FeatureExpr
-  deriving (Data,Eq,Typeable)
+  deriving (Data,Eq,Typeable,Ord)
 
 -- | The set of features referenced in a feature expression.
 features :: FeatureExpr -> Set Feature
@@ -53,6 +52,7 @@ selectFeatureExpr f b e = shrinkFeatureExpr (select e)
     select (Or  l r)  = Or  (select l) (select r)
 
 -- | Pretty print a feature expression.
+
 prettyFeatureExpr :: FeatureExpr -> String
 prettyFeatureExpr = top
   where
@@ -100,3 +100,5 @@ instance SAT FeatureExpr where
 
 instance Show FeatureExpr where
   show = prettyFeatureExpr
+
+
