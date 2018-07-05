@@ -28,9 +28,7 @@ querySFW al rl cond = if length cond == 0
                     then buildQuery ["SELECT ", al , " FROM ",rl ]
                     else buildQuery ["SELECT ", al , " FROM ",rl , " WHERE ", cond ]
 
--- | build a list of string into Query clause
-buildQuery :: [String] -> String 
-buildQuery list = filter (/= '\n') $ unlines list
+
 
 -- | transfer sql value to string 
 sqlRowToString = map (fromSql :: SqlValue -> String)
@@ -152,6 +150,10 @@ transQueryToSql q = transQueryToSql' q " " 0
 lift :: Opt a  -> a  
 lift (_,a)= a 
 
+-- | build a list of string into Query clause
+buildQuery :: [String] -> String 
+buildQuery list = filter (/= '\n') $ unlines list
+
 -- | pretty print the condition in module target
 prettyCond :: T.Condition -> QueryClause
 prettyCond (T.Lit  b)                 = show b
@@ -159,7 +161,7 @@ prettyCond (T.Comp compOp a1 a2)      = prettyAtom a1 ++ prettyCompOp compOp ++ 
 prettyCond (T.Not  cond)              = buildQuery [" NOT ",  (prettyCond cond)]
 prettyCond (T.Or   cond1 cond2)       = buildQuery [(prettyCond cond1), " OR ",  (prettyCond cond2)]
 prettyCond (T.And  cond1 cond2)       = buildQuery [(prettyCond cond1), " AND ",  (prettyCond cond2)]
-prettyCond (T.SAT  f)                 = "SAT(" ++ F.prettyFeatureExpr f ++ ")"
+prettyCond (T.SAT  f)                 = buildQuery ["SAT(" , F.prettyFeatureExpr f , ")"]
 
 -- | pretty print the compare operator 
 prettyCompOp :: CompOp ->QueryClause
