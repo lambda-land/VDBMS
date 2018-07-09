@@ -56,12 +56,17 @@ selectFeatureExpr f b e = shrinkFeatureExpr (select e)
 prettyFeatureExpr :: FeatureExpr -> String
 prettyFeatureExpr = top
   where
-    top (And l r) = sub l ++ "∧" ++ sub r
-    top (Or  l r) = sub l ++ "∨" ++ sub r
+    -- top (And l r) = sub l ++ "∧" ++ sub r
+    -- top (Or  l r) = sub l ++ "∨" ++ sub r
+    top (And l r) = sub l ++ " AND " ++ sub r
+    top (Or  l r) = sub l ++ " OR " ++ sub r
     top e         = sub e
-    sub (Lit b)   = if b then "#T" else "#F"
+    -- sub (Lit b)   = if b then "#T" else "#F"
+    sub (Lit b)   = if b then "TRUE" else "FAlSE"
+
     sub (Ref f)   = featureName f
-    sub (Not e)   = "¬" ++ sub e
+    -- sub (Not e)   = "¬" ++ sub e
+    sub (Not e)   = "NOT " ++ sub e
     sub e         = "(" ++ top e ++ ")"
 
 -- | Generate a symbolic predicate for a feature expression.

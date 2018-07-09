@@ -57,13 +57,14 @@ type SqlQuery = String
 
 type TableAlias = String 
 
-type FeatureEnv = Map Attribute F.FeatureExpr
+type AttrFeatureEnv = Map Attribute F.FeatureExpr
 type ConditionEnv = Set T.Condition
 
 
 
 -- | TO DO: 1. update predence condition
 --          2. update where condition according to environment(fetureExpr) 
+--          3. If query have condition (not includring Lit True), then should cancel the Lit true as condition.  
 
 
 -- | translation from algebra to plain sql query
@@ -73,12 +74,12 @@ translate a = let (q, t, i ) = transQueryToSql $ transAlgebraToQuery a
 
 
 -- | translate variational algebra to sql query AST
-transAlgebraToQuery' :: Algebra -> FeatureEnv -> T.Condition -> Query  
+transAlgebraToQuery' :: Algebra -> AttrFeatureEnv -> T.Condition -> Query  
 transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
 transAlgebraToQuery' (SetOp Diff  a1 a2)  m s = QueryOp Diff (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)  
 transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)   
 transAlgebraToQuery' (Proj  opAttrList a) m s = 
-  let m' = foldl (\m-> \(f,a) -> Map.insert a f m ) Map.empty opAttrList 
+  let m' = foldl (\m -> \(f,a) -> Map.insert a f m ) Map.empty opAttrList 
   in Select (map lift opAttrList) (transAlgebraToQuery' a m' s)
 transAlgebraToQuery' (Sel cond  a)        m s = 
   case cond of 
@@ -90,16 +91,25 @@ transAlgebraToQuery' (AChc f l r)       m s =
   let l' = transAlgebraToQuery' l m (T.And (T.SAT f) s) 
       r' = transAlgebraToQuery' r m (T.And (T.SAT (F.Not f)) s)
   in QueryOp Union l' r'    
-transAlgebraToQuery' (TRef  r)            m s = Where (Just s) (From r)       -- ToDO : update where condition according to environment(fetureExpr) 
+transAlgebraToQuery' (TRef  r)            m s = 
+  let sat_cond = takeAttrFeatureExpr m s 
+  in Where (Just sat_cond) (From r)       -- ToDO : update where condition according to environment(fetureExpr) 
 transAlgebraToQuery' (Empty)              m s = EmptyQuery
 
+-- | make featureExpr in attribute list has Or realtion between each others.
+takeAttrFeatureExpr :: AttrFeatureEnv -> T.Condition -> T.Condition 
+takeAttrFeatureExpr m (T.Lit True) =   
+  let f a b  = T.Or a (T.SAT b) 
+  in Map.foldl f (T.Lit False) m  -- make sense to Or relation 
+takeAttrFeatureExpr m s  = 
+  let f a b  = T.Or a (T.SAT b) 
+  in Map.foldl f s m       
 
 transAlgebraToQuery :: Algebra -> Query 
 transAlgebraToQuery a = transAlgebraToQuery' a Map.empty (Lit True)
 
-
 -- | transfer condition into target condition. (condition + SAT FeatureExpr)
-updateCond :: C.Condition -> FeatureEnv -> T.Condition 
+updateCond :: C.Condition -> AttrFeatureEnv -> T.Condition 
 updateCond (C.Lit  b)              m = T.Lit b
 updateCond (C.Comp op a1 a2)       m = T.Comp op a1 a2 
 updateCond (C.Not  cond)           m = T.Not (updateCond cond m)
@@ -262,7 +272,7 @@ test4 = AChc (F.Ref (Feature {featureName = "F"}))
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"})))
 
 -- | translate variational algebra to sql query AST ** condition as a Set 
--- transAlgebraToQuery' :: Algebra -> FeatureEnv -> ConditionEnv -> Query  
+-- transAlgebraToQuery' :: Algebra -> AttrFeatureEnv -> ConditionEnv -> Query  
 -- transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
 -- transAlgebraToQuery' (SetOp Diff  a1 a2)  m s = QueryOp Diff (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)  
 -- transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)   
