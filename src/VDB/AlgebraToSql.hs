@@ -66,6 +66,7 @@ type ConditionEnv = Set T.Condition
 --          2. update where condition according to environment(fetureExpr) 
 --          3. If query have condition (not includring Lit True), then should cancel the Lit true as condition.  
 
+-- | NOTE : 1. opt True --> do not insert feature Expr in attrFeatureEnv
 
 -- | translation from algebra to plain sql query
 translate :: Algebra -> SqlQuery
@@ -79,7 +80,8 @@ transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuer
 transAlgebraToQuery' (SetOp Diff  a1 a2)  m s = QueryOp Diff (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)  
 transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)   
 transAlgebraToQuery' (Proj  opAttrList a) m s = 
-  let m' = foldl (\m -> \(f,a) -> Map.insert a f m ) Map.empty opAttrList 
+  -- let m' = foldl (\m -> \(f,a) -> Map.insert a f m ) Map.empty opAttrList
+  let m' = foldl insertAttrFeatureExpr Map.empty opAttrList 
   in Select (map lift opAttrList) (transAlgebraToQuery' a m' s)
 transAlgebraToQuery' (Sel cond  a)        m s = 
   case cond of 
@@ -96,14 +98,17 @@ transAlgebraToQuery' (TRef  r)            m s =
   in Where (Just sat_cond) (From r)       -- ToDO : update where condition according to environment(fetureExpr) 
 transAlgebraToQuery' (Empty)              m s = EmptyQuery
 
+-- | insert feature Expr into Map. Make sure do not insert True into Map. 
+insertAttrFeatureExpr :: AttrFeatureEnv -> Opt Attribute -> AttrFeatureEnv
+insertAttrFeatureExpr m (F.Lit True, a) = m -- env unchange 
+insertAttrFeatureExpr m (f,a)= Map.insert a f m 
+
 -- | make featureExpr in attribute list has Or realtion between each others.
+
 takeAttrFeatureExpr :: AttrFeatureEnv -> T.Condition -> T.Condition 
-takeAttrFeatureExpr m (T.Lit True) =   
-  let f a b  = T.Or a (T.SAT b) 
-  in Map.foldl f (T.Lit False) m  -- make sense to Or relation 
 takeAttrFeatureExpr m s  = 
   let f a b  = T.Or a (T.SAT b) 
-  in Map.foldl f s m       
+  in Map.foldl f s m    
 
 transAlgebraToQuery :: Algebra -> Query 
 transAlgebraToQuery a = transAlgebraToQuery' a Map.empty (Lit True)
@@ -166,12 +171,12 @@ buildQuery list = filter (/= '\n') $ unlines list
 
 -- | pretty print the condition in module target
 prettyCond :: T.Condition -> QueryClause
-prettyCond (T.Lit  b)                 = show b
-prettyCond (T.Comp compOp a1 a2)      = prettyAtom a1 ++ prettyCompOp compOp ++ prettyAtom a2
-prettyCond (T.Not  cond)              = buildQuery [" NOT ",  (prettyCond cond)]
-prettyCond (T.Or   cond1 cond2)       = buildQuery [(prettyCond cond1), " OR ",  (prettyCond cond2)]
-prettyCond (T.And  cond1 cond2)       = buildQuery [(prettyCond cond1), " AND ",  (prettyCond cond2)]
-prettyCond (T.SAT  f)                 = buildQuery ["SAT(" , F.prettyFeatureExpr f , ")"]
+prettyCond (T.Lit  b)            = show b
+prettyCond (T.Comp compOp a1 a2) = prettyAtom a1 ++ prettyCompOp compOp ++ prettyAtom a2
+prettyCond (T.Not  cond)         = buildQuery [" NOT ",  (prettyCond cond)]
+prettyCond (T.Or   cond1 cond2)  = buildQuery [(prettyCond cond1), " OR ",  (prettyCond cond2)]
+prettyCond (T.And  cond1 cond2)  = buildQuery [(prettyCond cond1), " AND ",  (prettyCond cond2)]
+prettyCond (T.SAT  f)            = buildQuery ["SAT(" , F.prettyFeatureExpr f , ")"]
 
 -- | pretty print the compare operator 
 prettyCompOp :: CompOp ->QueryClause
@@ -296,4 +301,21 @@ test4 = AChc (F.Ref (Feature {featureName = "F"}))
 -- sendToPosgreSQL (Select attrList q)   = buildQuery [" SELECT ", prettyAttrList attrList, sendToPosgreSQL q]
 -- sendToPosgreSQL (From r )              = buildQuery [" FROM ", prettyRel r, " as ", prettyRel r]
 -- sendToPosgreSQL (From r (Just cond)) = undefined
+
+-- | pretty print the condition in module target
+-- prettyCond :: T.Condition -> QueryClause
+-- prettyCond (T.Lit  b)            = show b
+-- prettyCond (T.Comp compOp a1 a2) = prettyAtom a1 ++ prettyCompOp compOp ++ prettyAtom a2
+-- prettyCond (T.Not  cond)         = buildQuery [" NOT ",  (prettyCond cond)]
+-- prettyCond (T.Or   cond1 cond2)  = case (cond1, cond2) of 
+--                                        ((T.Lit False), (T.Lit False)) -> ""
+--                                        (_            , (T.Lit False)) -> buildQuery [prettyCond cond1]
+--                                        ((T.Lit False), _             )-> buildQuery [prettyCond cond2]
+--                                        (_            , _             )-> buildQuery [(prettyCond cond1), " OR ",  (prettyCond cond2)]
+-- prettyCond (T.And  cond1 cond2)  = case (cond1, cond2) of 
+--                                       ((T.Lit True), (T.Lit True)) ->  ""
+--                                       (_            ,(T.Lit True)) -> buildQuery [prettyCond cond1]
+--                                       ((T.Lit True), _           ) -> buildQuery [prettyCond cond2]
+--                                       (_           , _           ) -> buildQuery [(prettyCond cond1), " AND ",  (prettyCond cond2)]
+-- prettyCond (T.SAT  f)            = buildQuery ["SAT(" , F.prettyFeatureExpr f , ")"]
 
