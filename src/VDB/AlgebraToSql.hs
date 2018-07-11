@@ -64,8 +64,9 @@ type ConditionEnv = Set T.Condition
 
 -- | TO DO: 1. update predence condition
 --          2. update where condition according to environment(fetureExpr) 
---          3. If query have condition (not includring Lit True), then should cancel the Lit true as condition.  
-
+--          3. original condition is true in T.Condition, make sure it is not use AND to concatenate with feature expressiion.
+--          -- fixed 4. If query have condition (not includring Lit True), then should cancel the Lit true as condition.  
+--          
 -- | NOTE : 1. opt True --> do not insert feature Expr in attrFeatureEnv
 
 -- | translation from algebra to plain sql query
@@ -75,7 +76,7 @@ translate a = let (q, t, i ) = transQueryToSql $ transAlgebraToQuery a
 
 
 -- | translate variational algebra to sql query AST
-transAlgebraToQuery' :: Algebra -> AttrFeatureEnv -> T.Condition -> Query  
+transAlgebraToQuery' :: Algebra -> AttrFeatureEnv -> Maybe T.Condition -> Query  
 transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
 transAlgebraToQuery' (SetOp Diff  a1 a2)  m s = QueryOp Diff (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)  
 transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)   
@@ -83,20 +84,29 @@ transAlgebraToQuery' (Proj  opAttrList a) m s =
   -- let m' = foldl (\m -> \(f,a) -> Map.insert a f m ) Map.empty opAttrList
   let m' = foldl insertAttrFeatureExpr Map.empty opAttrList 
   in Select (map lift opAttrList) (transAlgebraToQuery' a m' s)
+
 transAlgebraToQuery' (Sel cond  a)        m s = 
   case cond of 
     (C.CChc f cond1 cond2 ) -> let newAlgebra = AChc f (Sel cond1 a) (Sel cond2 a) 
                                in  transAlgebraToQuery' newAlgebra m s
-    _                       -> let cond' = updateCond cond m
-                               in transAlgebraToQuery' a m (T.And cond' s)
+    _                       -> case s of 
+                                 Nothing -> transAlgebraToQuery' a m s 
+                                 Just s' -> let cond' = updateCond cond m
+                                            in transAlgebraToQuery' a m (Just (T.And cond' s'))
 transAlgebraToQuery' (AChc f l r)       m s =
-  let l' = transAlgebraToQuery' l m (T.And (T.SAT f) s) 
-      r' = transAlgebraToQuery' r m (T.And (T.SAT (F.Not f)) s)
-  in QueryOp Union l' r'    
+  case s of 
+    Nothing -> let l' = transAlgebraToQuery' l m (Just (T.SAT f) ) 
+                   r' = transAlgebraToQuery' r m (Just (T.SAT (F.Not f)))
+               in QueryOp Union l' r'    
+    Just s' -> let l' = transAlgebraToQuery' l m (Just (T.And (T.SAT f) s') )
+                   r' = transAlgebraToQuery' r m (Just (T.And (T.SAT (F.Not f)) s'))
+               in QueryOp Union l' r'    
 transAlgebraToQuery' (TRef  r)            m s = 
   let sat_cond = takeAttrFeatureExpr m s 
-  in Where (Just sat_cond) (From r)       -- ToDO : update where condition according to environment(fetureExpr) 
+  in Where (sat_cond) (From r)       -- ToDO : update where condition according to environment(fetureExpr) 
 transAlgebraToQuery' (Empty)              m s = EmptyQuery
+
+
 
 -- | insert feature Expr into Map. Make sure do not insert True into Map. 
 insertAttrFeatureExpr :: AttrFeatureEnv -> Opt Attribute -> AttrFeatureEnv
@@ -105,13 +115,22 @@ insertAttrFeatureExpr m (f,a)= Map.insert a f m
 
 -- | make featureExpr in attribute list has Or realtion between each others.
 
-takeAttrFeatureExpr :: AttrFeatureEnv -> T.Condition -> T.Condition 
-takeAttrFeatureExpr m s  = 
-  let f a b  = T.Or a (T.SAT b) 
-  in Map.foldl f s m    
+takeAttrFeatureExpr :: AttrFeatureEnv -> Maybe T.Condition -> Maybe T.Condition 
+takeAttrFeatureExpr empty Nothing = Nothing 
+takeAttrFeatureExpr m Nothing         = Just (T.SAT (flatFeatureExprMap (Map.elems m))) 
+takeAttrFeatureExpr m (Just s)        = 
+  let sat = T.SAT (flatFeatureExprMap (Map.elems m))
+  in Just (T.And sat s ) 
+
+  -- let f a b  = T.Or a (T.SAT b) 
+  -- in Just (Map.foldl f s m)
+
+flatFeatureExprMap :: [F.FeatureExpr] -> F.FeatureExpr
+flatFeatureExprMap []     = F.Lit False
+flatFeatureExprMap (x:xs) = (F.Or x (flatFeatureExprMap xs))
 
 transAlgebraToQuery :: Algebra -> Query 
-transAlgebraToQuery a = transAlgebraToQuery' a Map.empty (Lit True)
+transAlgebraToQuery a = transAlgebraToQuery' a Map.empty Nothing 
 
 -- | transfer condition into target condition. (condition + SAT FeatureExpr)
 updateCond :: C.Condition -> AttrFeatureEnv -> T.Condition 
