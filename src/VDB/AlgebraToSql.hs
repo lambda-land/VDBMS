@@ -64,7 +64,9 @@ type ConditionEnv = Set T.Condition
 
 -- | TO DO: 1. update predence condition
 --          2. update where condition according to environment(fetureExpr) 
---          3. original condition is true in T.Condition, make sure it is not use AND to concatenate with feature expressiion.
+--          3. SAT(False), since in env [] -> False
+--          4. Where always in the inner most level
+--          -- fixed 3. original condition is true in T.Condition, make sure it is not use AND to concatenate with feature expressiion.
 --          -- fixed 4. If query have condition (not includring Lit True), then should cancel the Lit true as condition.  
 --          
 -- | NOTE : 1. opt True --> do not insert feature Expr in attrFeatureEnv
@@ -90,7 +92,8 @@ transAlgebraToQuery' (Sel cond  a)        m s =
     (C.CChc f cond1 cond2 ) -> let newAlgebra = AChc f (Sel cond1 a) (Sel cond2 a) 
                                in  transAlgebraToQuery' newAlgebra m s
     _                       -> case s of 
-                                 Nothing -> transAlgebraToQuery' a m s 
+                                 Nothing -> let cond' = updateCond cond m
+                                            in transAlgebraToQuery' a m (Just cond') 
                                  Just s' -> let cond' = updateCond cond m
                                             in transAlgebraToQuery' a m (Just (T.And cond' s'))
 transAlgebraToQuery' (AChc f l r)       m s =
@@ -101,30 +104,31 @@ transAlgebraToQuery' (AChc f l r)       m s =
     Just s' -> let l' = transAlgebraToQuery' l m (Just (T.And (T.SAT f) s') )
                    r' = transAlgebraToQuery' r m (Just (T.And (T.SAT (F.Not f)) s'))
                in QueryOp Union l' r'    
-transAlgebraToQuery' (TRef  r)            m s = 
+transAlgebraToQuery'  (TRef  r)            m s = 
   let sat_cond = takeAttrFeatureExpr m s 
   in Where (sat_cond) (From r)       -- ToDO : update where condition according to environment(fetureExpr) 
-transAlgebraToQuery' (Empty)              m s = EmptyQuery
+transAlgebraToQuery'  (Empty)              m s = EmptyQuery
 
 
 
 -- | insert feature Expr into Map. Make sure do not insert True into Map. 
 insertAttrFeatureExpr :: AttrFeatureEnv -> Opt Attribute -> AttrFeatureEnv
-insertAttrFeatureExpr m (F.Lit True, a) = m -- env unchange 
+insertAttrFeatureExpr m (F.Lit True, a) = m      -- env unchange if the featureExpr is true 
 insertAttrFeatureExpr m (f,a)= Map.insert a f m 
 
--- | make featureExpr in attribute list has Or realtion between each others.
+-- | make featureExpr in attribute list has Or realtion between each others and then combine with where condition.
 
 takeAttrFeatureExpr :: AttrFeatureEnv -> Maybe T.Condition -> Maybe T.Condition 
-takeAttrFeatureExpr empty Nothing = Nothing 
-takeAttrFeatureExpr m Nothing         = Just (T.SAT (flatFeatureExprMap (Map.elems m))) 
+takeAttrFeatureExpr m Nothing         = case Map.null m of 
+                                          True  -> Nothing 
+                                          False ->  Just (T.SAT (flatFeatureExprMap (Map.elems m))) 
 takeAttrFeatureExpr m (Just s)        = 
   let sat = T.SAT (flatFeatureExprMap (Map.elems m))
   in Just (T.And sat s ) 
 
   -- let f a b  = T.Or a (T.SAT b) 
   -- in Just (Map.foldl f s m)
-
+-- | use T.Or concatenate the attribute featureExpr 
 flatFeatureExprMap :: [F.FeatureExpr] -> F.FeatureExpr
 flatFeatureExprMap []     = F.Lit False
 flatFeatureExprMap (x:xs) = (F.Or x (flatFeatureExprMap xs))
@@ -154,7 +158,7 @@ transQueryToSql' (QueryOp Union EmptyQuery r) p c =
 transQueryToSql' (QueryOp Union l r) p c = 
   let (l', pl ,cl) = transQueryToSql' l p c
       (r', pr, cr) = transQueryToSql' r pl cl
-      q = buildQuery [l', " UNION ", r']
+      q = buildQuery ["( ", l', " )", " UNION ", "( ", r', " ) "]
       t = "T" ++ show c
   in (q, t, c+2 )
 transQueryToSql' (QueryOp Prod l r) p c = 
@@ -170,7 +174,7 @@ transQueryToSql' (Where Nothing q) p c  = transQueryToSql' q p c
 transQueryToSql' (Where (Just cond) q) p c  =   
   let t = "T" ++ show c 
       (p',q',c') = transQueryToSql' q p c
-  in (buildQuery ["( ", p' , " WHERE ", prettyCond cond, " )", " as ", t], t, c'+1)
+  in (buildQuery [ "( ", p' , " WHERE ", prettyCond cond, " )", " as ", t], t, c'+1)
 transQueryToSql' (From r) p c = 
   let t = "T" ++ show c 
   in (buildQuery [" SELECT * ", " FROM ",relationName r], t, c+1)
@@ -259,6 +263,15 @@ e2 = Proj [(F.And
                  ] 
           (TRef "Table1")
 
+alist = [(F.And 
+                    (F.Ref (Feature {featureName = "A"})) 
+                    (F.Ref (Feature {featureName = "B"})), 
+                   Attribute {attributeName = "a1"})
+                 ,
+                  (F.Ref (Feature {featureName = "C"}),
+                   Attribute {attributeName = "a2"})
+                 ]
+
 e3 =  Proj [(F.And 
                     (F.Ref (Feature {featureName = "A"})) 
                     (F.Ref (Feature {featureName = "B"})), 
@@ -274,6 +287,16 @@ e3 =  Proj [(F.And
                 (AChc (F.Ref (Feature {featureName = "FC"})) 
                             (TRef (Relation {relationName = "r2"})) 
                              Empty))
+-- | tranlsate e3
+--  SELECT a1,a2 
+--  FROM  (SELECT *  
+--         FROM (  SELECT *  
+--                 FROM r1 
+--                 WHERE SAT((A AND B) OR (B OR FAlSE)) AND SAT(FB) ) as T2 
+--        , 
+--        (SELECT *  
+--         FROM r2 
+--         WHERE SAT((A AND B) OR (B OR FAlSE)) AND SAT(FC) ) as T3 
 
 e4 = Proj [((F.Lit True),a1)] (Sel cond2 (TRef t0))
 
@@ -285,12 +308,25 @@ test1 =  Proj [(F.Lit True,
                    Attribute {attributeName = "a2"})
                ] 
           (TRef "Table1") 
+
+test2 = Proj [(F.Lit True, Attribute {attributeName = "a1"})] $ 
+            Sel (C.Comp GT 
+                  (C.Attr (Attribute {attributeName = "a1"})) 
+                  (C.Val (I 5))) $ 
+            (TRef (Relation {relationName = "Table2"}))
+
+-- SELECT a1 
+-- FROM  (SELECT *  FROM Table2 )  as T1 
+-- WHERE SAT(FAlSE) AND a1>5
+
 test3 = Proj [(F.Lit True, Attribute {attributeName = "a1"})] $ 
             Sel (C.CChc (F.Ref (Feature {featureName = "F"}))
                        (C.Comp GT (C.Attr a1) (C.Val (I 5))) 
                        (C.Comp LT (C.Attr a1) (C.Val (I 5)))) $ 
             (TRef (Relation {relationName = "Table2"}))
-
+-- SELECT a1 
+-- FROM  (SELECT *  FROM Table2 )  as T1 
+--       WHERE SAT(FAlSE) AND course>5 AND SAT(F) UNION  (SELECT *  FROM Table2 )  as T3 WHERE SAT(FAlSE) AND course<5 AND SAT(NOT F)"
 test4 = AChc (F.Ref (Feature {featureName = "F"})) 
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"}))) 
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"})))
