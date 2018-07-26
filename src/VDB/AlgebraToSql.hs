@@ -331,6 +331,7 @@ test4 = AChc (F.Ref (Feature {featureName = "F"}))
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"}))) 
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"})))
 
+fexpr = Feature {featureName = "F"}
 -- | translate variational algebra to sql query AST ** condition as a Set 
 -- transAlgebraToQuery' :: Algebra -> AttrFeatureEnv -> ConditionEnv -> Query  
 -- transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
