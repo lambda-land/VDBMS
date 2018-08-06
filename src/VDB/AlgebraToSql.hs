@@ -73,8 +73,8 @@ type ConditionEnv = Set T.Condition
 
 -- | translation from algebra to plain sql query
 translate :: Algebra -> SqlQuery
-translate a = let (q, t, i ) = transQueryToSql $ transAlgebraToQuery a 
-              in q 
+translate a = transQueryToSql $ transAlgebraToQuery a 
+              
 
 
 -- | translate variational algebra to sql query AST
@@ -181,8 +181,9 @@ transQueryToSql' (From r) p c =
 transQueryToSql' (EmptyQuery) p c              = (" ", p , c )  
 
 
-transQueryToSql :: Query -> (SqlQuery, TableAlias, Int )
-transQueryToSql q = transQueryToSql' q " " 0
+transQueryToSql :: Query -> SqlQuery
+transQueryToSql q = let (a,b,c) = transQueryToSql' q " " 0
+                    in a
 
 -- | lift the a from *opt a* 
 lift :: Opt a  -> a  
@@ -239,7 +240,7 @@ t1 = (Relation {relationName = "courselevel"})
 a1 = Attribute {attributeName = "course"}
 a2 = Attribute {attributeName = "professor"}
 f0 = (Feature {featureName = "US"})
-f1 = (Feature {featureName = "F"})
+f1 = (Feature {featureName = "C"})
 cond1 = (C.Comp GT (C.Attr a1) (C.Val (I 5)))
 
 q1 = Select [a1,a2] $ From t0 
@@ -287,6 +288,9 @@ e3 =  Proj [(F.And
                 (AChc (F.Ref (Feature {featureName = "FC"})) 
                             (TRef (Relation {relationName = "r2"})) 
                              Empty))
+achc =            (AChc (F.Ref (Feature {featureName = " FB"})) 
+                      (TRef (Relation {relationName = "r1"})) 
+                       Empty)
 -- | tranlsate e3
 --  SELECT a1,a2 
 --  FROM  (SELECT *  

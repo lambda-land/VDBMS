@@ -33,9 +33,9 @@ instance Variational Algebra where
   choiceMap g (AChc f l r)  = g f l r
   choiceMap _ (TRef r)      = TRef r
   choiceMap _ Empty         = Empty
-  select = undefined
+  -- select = undefined
 
-  configure = undefined
+  -- configure = undefined
 
 
 
