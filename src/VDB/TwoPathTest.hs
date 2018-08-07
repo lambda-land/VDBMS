@@ -56,14 +56,16 @@ qc_main = quickCheck prop_twoPath_equal
 
 -- data Algebra
 --    = SetOp SetOp Algebra Algebra
---    | Proj  [Opt Attribute] Algebra
+--    | r
 --    | Sel   Condition Algebra
 --    | AChc  FeatureExpr Algebra Algebra
 --    | TRef  Relation
 --    | Empty 
 --   deriving (Data,Eq,Show,Typeable,Ord)
+
 instance Arbitrary Algebra where
-  -- arbitrary = oneof []
+  -- arbitrary = sized algebra'
+  --   where algebra' 0 = liftM 
 
 instance Arbitrary (Config a) where 
   -- arbitrary = undefined 
