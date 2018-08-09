@@ -1,7 +1,6 @@
 module VDB.AlgebraToSql where 
 
-import Prelude hiding (EQ, NEQ ,LT ,LTE , GTE ,GT)
-import VDB.Target 
+import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 
 import VDB.Algebra
 import VDB.Name
@@ -18,7 +17,7 @@ import Data.Map(Map)
 import qualified Data.Map as Map 
 
 import Data.Set (Set)
-import qualified Data.Set as Set
+
 
 type QueryClause = String 
 
@@ -82,7 +81,7 @@ transAlgebraToQuery' :: Algebra -> AttrFeatureEnv -> Maybe T.Condition -> Query
 transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
 transAlgebraToQuery' (SetOp Diff  a1 a2)  m s = QueryOp Diff (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)  
 transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)   
-transAlgebraToQuery' (Proj  opAttrList a) m s = 
+transAlgebraToQuery' (Proj  opAttrList a) _ s = 
   -- let m' = foldl (\m -> \(f,a) -> Map.insert a f m ) Map.empty opAttrList
   let m' = foldl insertAttrFeatureExpr Map.empty opAttrList 
   in Select (map lift opAttrList) (transAlgebraToQuery' a m' s)
@@ -107,13 +106,13 @@ transAlgebraToQuery' (AChc f l r)       m s =
 transAlgebraToQuery'  (TRef  r)            m s = 
   let sat_cond = takeAttrFeatureExpr m s 
   in Where (sat_cond) (From r)       -- ToDO : update where condition according to environment(fetureExpr) 
-transAlgebraToQuery'  (Empty)              m s = EmptyQuery
+transAlgebraToQuery'  (Empty)              _ _ = EmptyQuery
 
 
 
 -- | insert feature Expr into Map. Make sure do not insert True into Map. 
 insertAttrFeatureExpr :: AttrFeatureEnv -> Opt Attribute -> AttrFeatureEnv
-insertAttrFeatureExpr m (F.Lit True, a) = m      -- env unchange if the featureExpr is true 
+insertAttrFeatureExpr m (F.Lit True, _) = m      -- env unchange if the featureExpr is true 
 insertAttrFeatureExpr m (f,a)= Map.insert a f m 
 
 -- | make featureExpr in attribute list has Or realtion between each others and then combine with where condition.
@@ -138,51 +137,51 @@ transAlgebraToQuery a = transAlgebraToQuery' a Map.empty Nothing
 
 -- | transfer condition into target condition. (condition + SAT FeatureExpr)
 updateCond :: C.Condition -> AttrFeatureEnv -> T.Condition 
-updateCond (C.Lit  b)              m = T.Lit b
-updateCond (C.Comp op a1 a2)       m = T.Comp op a1 a2 
+updateCond (C.Lit  b)              _ = T.Lit b
+updateCond (C.Comp op a1 a2)       _ = T.Comp op a1 a2 
 updateCond (C.Not  cond)           m = T.Not (updateCond cond m)
 updateCond (C.Or   cond1 cond2)    m = T.Or (updateCond cond1 m) (updateCond cond2 m)
 updateCond (C.And  cond1 cond2)    m = T.And (updateCond cond1 m) (updateCond cond2 m)
-
+updateCond (C.CChc _ _ _ )         _ = undefined
 
 -- | translate sql query AST to plain sql string with counter 
 transQueryToSql' :: Query -> SqlQuery -> Int -> (SqlQuery, TableAlias, Int )
 transQueryToSql' (QueryOp Union l EmptyQuery) p c = 
-  let (l', pr ,cr) = (transQueryToSql' l p c)
+  let (l', _ ,_) = (transQueryToSql' l p c)
       t = "T" ++ show c
   in (l', t, c+1 )
 transQueryToSql' (QueryOp Union EmptyQuery r) p c = 
-  let (r', pr ,cr) = transQueryToSql' r p c
+  let (r', _ ,_) = transQueryToSql' r p c
       t = "T" ++ show c
   in (r', t, c+1 )
 transQueryToSql' (QueryOp Union l r) p c = 
   let (l', pl ,cl) = transQueryToSql' l p c
-      (r', pr, cr) = transQueryToSql' r pl cl
+      (r', _, _) = transQueryToSql' r pl cl
       q = buildQuery ["( ", l', " )", " UNION ", "( ", r', " ) "]
       t = "T" ++ show c
   in (q, t, c+2 )
 transQueryToSql' (QueryOp Prod l r) p c = 
   let t = "T" ++ show c
-      (pl,ql,cl) = transQueryToSql' l p (c+1)
-      (pr,qr,cr) = transQueryToSql' r pl cl   
+      (pl,_,cl) = transQueryToSql' l p (c+1)
+      (pr,_,cr) = transQueryToSql' r pl cl   
   in ((buildQuery [" (SELECT * ", " FROM ", pl, " , ", pr, " ) "]), t, cr)
 transQueryToSql' (Select attrList q) p c =
   let t =  "T" ++ show c 
-      (p',q',c') = transQueryToSql' q p (c+1)
+      (p',_,c') = transQueryToSql' q p (c+1)
   in ((buildQuery [" SELECT ", prettyAttrList attrList, " FROM ", p']), t, c')
 transQueryToSql' (Where Nothing q) p c  = transQueryToSql' q p c 
 transQueryToSql' (Where (Just cond) q) p c  =   
   let t = "T" ++ show c 
-      (p',q',c') = transQueryToSql' q p c
+      (p',_ ,c') = transQueryToSql' q p c
   in (buildQuery [ "( ", p' , " WHERE ", prettyCond cond, " )", " as ", t], t, c'+1)
-transQueryToSql' (From r) p c = 
+transQueryToSql' (From r) _ c = 
   let t = "T" ++ show c 
   in (buildQuery [" SELECT * ", " FROM ",relationName r], t, c+1)
 transQueryToSql' (EmptyQuery) p c              = (" ", p , c )  
-
+transQueryToSql' (QueryOp Diff _ _) _ _              = undefined
 
 transQueryToSql :: Query -> SqlQuery
-transQueryToSql q = let (a,b,c) = transQueryToSql' q " " 0
+transQueryToSql q = let (a,_,_) = transQueryToSql' q " " 0
                     in a
 
 -- | lift the a from *opt a* 

@@ -56,6 +56,9 @@ library
     , VDB.VSqlToAlgebra
     , VDB.Target
     , VDB.AlgebraToSql
+    , VDB.Example.TwoOption
+    , VDB.TypeSystem.Semantics
+    , VDB.TypeSystem.TypeChecking
 
 test-suite test
   hs-source-dirs:   test

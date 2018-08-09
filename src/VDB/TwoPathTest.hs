@@ -4,6 +4,7 @@ import VDB.AlgebraToSql
 import VDB.Config
 import VDB.Algebra
 import VDB.Variational 
+import VDB.Name 
 
 import qualified Data.Map as Map
 
@@ -12,6 +13,7 @@ import Database.HDBC.PostgreSQL
 
 import Test.QuickCheck 
 import Test.QuickCheck.Monadic
+import Control.Monad (liftM3,liftM2)
 
 -- | configuration from Vquery to Query 
 --   used in the path1: Vquery --> Query --> SQL --> Result 
@@ -44,34 +46,50 @@ queryVDB sqlQ = do
                  -- mapM_ print $ map sqlRowToString result
 
 -- | Property1:
-prop_twoPath_equal algebra config = monadicIO $ do
-    let sqlQ  = transQueryToSql $ configFromVQuery config algebra  
-    l <- run $ queryDB sqlQ 
-    let vsqlQ = translate algebra
-        vrel  = queryVDB vsqlQ     
-    r <- run $ configFromVResult config vrel                        
-    assert (l == r )
+-- prop_twoPath_equal algebra config = monadicIO $ do
+--     let sqlQ  = transQueryToSql $ configFromVQuery config algebra  
+--     l <- run $ queryDB sqlQ 
+--     let vsqlQ = translate algebra
+--         vrel  = queryVDB vsqlQ     
+--     r <- run $ configFromVResult config vrel                        
+--     assert (l == r )
 
-qc_main = quickCheck prop_twoPath_equal
+-- qc_main = quickCheck prop_twoPath_equal
+
+
+instance Arbitrary Algebra where
+  arbitrary = undefined 
+
+instance  Arbitrary Relation where
+    arbitrary = undefined
+-- instance Arbitrary (Config a) where 
+--   arbitrary = undefined 
 
 -- data Algebra
 --    = SetOp SetOp Algebra Algebra
---    | r
+--    | Proj  [Opt Attribute] Algebra
 --    | Sel   Condition Algebra
 --    | AChc  FeatureExpr Algebra Algebra
 --    | TRef  Relation
 --    | Empty 
---   deriving (Data,Eq,Show,Typeable,Ord)
 
-instance Arbitrary Algebra where
-  -- arbitrary = sized algebra'
-  --   where algebra' 0 = liftM 
+genSetOp :: Gen SetOp
+genSetOp = elements [Union, Diff, Prod]
 
-instance Arbitrary (Config a) where 
-  -- arbitrary = undefined 
+genAttribute :: Gen Attribute
+genAttribute = elements . fmap Attribute . 
+                zipWith (:) (repeat 'a') $ fmap show [1..16]
+
+genBase :: Gen Algebra
+genBase = undefined
 
 
 
+genAlgebra :: Int -> Gen Algebra
+genAlgebra 0 = return Empty 
+genAlgebra n | n>0 = oneof [ liftM3 SetOp genSetOp l r]
+    where l = genAlgebra (n `div` 2)
+          r = genAlgebra (n `div` 2)
 
 
 
