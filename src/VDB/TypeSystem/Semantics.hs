@@ -9,16 +9,13 @@ import VDB.Variational
 import VDB.Value  
 import VDB.Schema
 import VDB.Config 
-
+import VDB.AlgebraToSql
 
 import Data.Map(Map)
 import qualified Data.Map as Map 
 
 import Control.Monad.State
 import Control.Monad (liftM2)
-
- 
-
 
 import Data.Set(Set) 
 import qualified Data.Set as Set 
@@ -102,7 +99,7 @@ semVquery  (Proj  opAttrs a)   = do st <- get
                                     let newMap = Map.fromList newAList
                                     put $ Map.union st newMap 
                                     semVquery a
-semVquery  (Sel   cond a)      = do st <- get
+semVquery  (Sel   cond a)      =undefined
                                     
 semVquery  (TRef  r)           = undefined
 semVquery   Empty              = undefined
