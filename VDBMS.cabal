@@ -39,7 +39,7 @@ library
     , megaparsec
     , parsec
     , HDBC
-
+    , mtl
   exposed-modules:
       VDB.Algebra
     , VDB.Config
