@@ -1,3 +1,4 @@
+-- | The variational condition in the Target status. (SQL + SAT())
 module VDB.Target where
 
 import Data.Data (Data,Typeable)

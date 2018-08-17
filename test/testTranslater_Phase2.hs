@@ -45,8 +45,7 @@ testTransAlgebraToQuery = testGroup "Test transAlgebraToQuery"
             (TRef (Relation {relationName = "Table1"})) )
           expectVal <- return $
             Select [Attribute {attributeName = "a1"}, Attribute {attributeName = "a2"}] 
-            (Where (Just (Lit True)) 
-            (From (Relation {relationName = "Table1"})))
+            (Where Nothing (From (Relation {relationName = "Table1"})))
           expectVal @=? output
     ]
   , testGroup "2) projection with selection"
@@ -58,7 +57,9 @@ testTransAlgebraToQuery = testGroup "Test transAlgebraToQuery"
                   (C.Val (I 5))) $ 
             (TRef (Relation {relationName = "Table2"}))
           expectVal <- return $
-            Select [Attribute {attributeName = "a1"}] (Where (Just (And (Comp GT (C.Attr (Attribute {attributeName = "a1"})) (C.Val (I 5))) (Lit True))) (From (Relation {relationName = "Table2"})))
+            Select [Attribute {attributeName = "a1"}] 
+            (Where (Just (And (T.SAT (F.Lit False )) (Comp GT (C.Attr (Attribute {attributeName = "a1"})) (C.Val (I 5))))) 
+            (From (Relation {relationName = "Table2"})))
 
           expectVal @=? output
     ]
@@ -70,15 +71,18 @@ testTransAlgebraToQuery = testGroup "Test transAlgebraToQuery"
                        (C.Comp GT (C.Attr a1) (C.Val (I 5))) 
                        (C.Comp LT (C.Attr a1) (C.Val (I 5)))) $ 
             (TRef (Relation {relationName = "Table2"}))
-          expectVal <- return $
+          expectVal <- return $ 
             Select [Attribute {attributeName = "a1"}] 
             (QueryOp Union 
-                (Where (Just (And (Comp GT (C.Attr (Attribute {attributeName = "course"})) (C.Val (I 5))) 
-                               (And (SAT (F.Ref (Feature {featureName = "F"}))) (Lit True)))) 
-                  (From (Relation {relationName = "Table2"}))) 
-                (Where (Just (And (Comp LT (C.Attr (Attribute {attributeName = "course"})) (C.Val (I 5))) 
-                               (And (SAT (F.Not (F.Ref (Feature {featureName = "F"})))) (Lit True)))) 
-                  (From (Relation {relationName = "Table2"}))))
+              (Where (Just (And (T.SAT (F.Lit False )) 
+                                (And (Comp GT (C.Attr (Attribute {attributeName = "course"})) (C.Val (I 5))) 
+                                     (T.SAT (F.Ref (Feature "F"))) ))) 
+                (From (Relation {relationName = "Table2"}))) 
+              (Where (Just (And (T.SAT (F.Lit False ))  
+                                (And (Comp LT (C.Attr (Attribute {attributeName = "course"})) (C.Val (I 5))) 
+                                    (T.SAT (F.Not (F.Ref (Feature "F")))) ))) 
+                (From (Relation {relationName = "Table2"}))))
+
           expectVal @=? output
     ]
     , testGroup "4) variational query "
@@ -90,11 +94,12 @@ testTransAlgebraToQuery = testGroup "Test transAlgebraToQuery"
           expectVal <- return $
             QueryOp Union 
               (Select [Attribute {attributeName = "a1"}] 
-                (Where (Just (And (SAT (F.Ref (Feature {featureName = "F"}))) (Lit True))) 
-                (From (Relation {relationName = "Table2"})))) 
+                (Where (Just (And (T.SAT (F.Lit False ))   (T.SAT (F.Ref (Feature "F"))) ))  
+                  (From (Relation {relationName = "Table2"})))) 
               (Select [Attribute {attributeName = "a1"}] 
-                (Where (Just (And (SAT (F.Not (F.Ref (Feature {featureName = "F"})))) (Lit True))) 
-                (From (Relation {relationName = "Table2"}))))
+                (Where (Just (And (T.SAT (F.Lit False ))   
+                                  (T.SAT (F.Not (F.Ref (Feature "F")))) ))   
+                (From (Relation {relationName = "Table2"})) ))
           expectVal @=? output
     ]
 

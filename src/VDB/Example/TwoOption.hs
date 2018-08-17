@@ -1,3 +1,4 @@
+-- | A example Schema which has 2 option feature expression.
 module VDB.Example.TwoOption where
 
 import VDB.Schema
@@ -8,7 +9,7 @@ import VDB.Value
 import qualified Data.Map as Map 
 
 
--- | a table with 2 feature expresion a and b invovled
+-- | A table with 2 feature expresion a and b invovled
 tableWithTwoOption :: RowType 
 tableWithTwoOption = [ ( Lit False,                          (Attribute "a1", TInt))
                      , ( And a b,                            (Attribute "a2", TInt))
@@ -27,13 +28,17 @@ tableWithTwoOption = [ ( Lit False,                          (Attribute "a1", TI
                      , ( Or (Not a) (Not b),                 (Attribute "a15", TInt))
                      , ( Lit True,                           (Attribute "a16", TInt))]
 
-schemaEg1 = (Lit True, Map.fromList [((Relation "t1"), (Lit True, tableWithTwoOption))] )
+twoOptionSchema = (Lit True, Map.fromList [((Relation "t1"), (Lit True, tableWithTwoOption))])
+
+
 -- | "a"/"b" is a feature expression refrencing feature "A"/"B"
 a :: FeatureExpr
 a = Ref (Feature "A")
 
 b :: FeatureExpr
 b = Ref (Feature "B")
+
+
 
 
 

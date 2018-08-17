@@ -58,7 +58,7 @@ library
     , VDB.AlgebraToSql
     , VDB.Example.TwoOption
     , VDB.TypeSystem.Semantics
-    , VDB.TypeSystem.TypeChecking
+
 
 test-suite test
   hs-source-dirs:   test
@@ -81,3 +81,4 @@ test-suite test
   other-modules:
       TestTranslater_Phase1
     , TestTranslater_Phase2
+    , TestTwoOptionExample

@@ -28,7 +28,7 @@ import qualified Data.Set as Set
 
 -- | semantics of variational attributes
 semOptAttr :: [Opt Attribute] -> Config Bool -> [Attribute]
-semOptAttr []              _ = []
+semOptAttr []        _ = []
 semOptAttr as        c = configureOptList c as 
 
 -- | semantics of variational relation
@@ -54,15 +54,9 @@ traverseRelMap relM = Map.mapMaybe (\v -> v) relM
 -- * Variational Relational Algebra Validation Semantics / Type System
 --
 
-
-
 -- | type enviroment is a mapping from variational objects to their presence conditions
 -- data Env a = Map Objects a 
 
-
-
-
--- type Schema = Opt (Map Relation (Opt RowType))
 -- type RowType = [Opt (Attribute,Type)]
 
 type RowTypeP = [(Attribute, Type)]
@@ -73,20 +67,11 @@ data Objects = TAttr Attribute
              | TSch  SchemaP
              deriving (Show, Eq,Ord)
 
+-- type Schema = Opt (Map Relation (Opt RowType))
 
 -- | s: a mapping from objects to presence condition (featureExpr)
 -- | result: presence condition (featureExpr)
 type Env = StateT (Map Objects F.FeatureExpr) Maybe 
-
-
--- | static semantics for V-conditions
-semVcond :: C.Condition -> Env Schema 
-semVcond (C.Lit b)             = undefined
-semVcond (C.Comp op a1 a2)     = undefined 
-semVcond (C.Not  cond)         = undefined
-semVcond (C.Or   cond1 cond2)  = undefined
-semVcond (C.And  cond1 cond2)  = undefined
-semVcond (C.CChc _ _ _ )       = undefined
 
 -- | static semantics for V-query
 semVquery :: Algebra -> Env Schema
@@ -99,11 +84,23 @@ semVquery  (Proj  opAttrs a)   = do st <- get
                                     let newMap = Map.fromList newAList
                                     put $ Map.union st newMap 
                                     semVquery a
-semVquery  (Sel   cond a)      =undefined
-                                    
-semVquery  (TRef  r)           = undefined
+semVquery  (Sel   cond a)      = undefined
+    -- do st <- get 
+    --                                 let newMap = semVcond cond 
+    --                                 newMap' <- newMap
+    --                                 put $ Map.union st newMap'
+    --                                 semVquery a
+semVquery  (TRef  r)           = undefined   
 semVquery   Empty              = undefined
 
+-- | static semantics for V-conditions
+semVcond :: C.Condition -> Env Schema 
+semVcond (C.Lit b)             = undefined
+semVcond (C.Comp op a1 a2)     = undefined 
+semVcond (C.Not  cond)         = undefined
+semVcond (C.Or   cond1 cond2)  = undefined
+semVcond (C.And  cond1 cond2)  = undefined
+semVcond (C.CChc _ _ _ )       = undefined
 
 
 

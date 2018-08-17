@@ -1,3 +1,14 @@
+-- | translation from variational relational algebra to ** SQL + SAT() **
+
+-- | TO DO: 1. add update predence condition into TRANSLATED SQL
+--          2. update where condition according to environment(fetureExpr) 
+--          3. SAT(False), since in env [] -> False
+--          4. "Where" always in the inner most level
+--          -- fixed 3. original condition is true in T.Condition, make sure it is not use AND to concatenate with feature expressiion.
+--          -- fixed 4. If query have condition (not includring Lit True), then should cancel the Lit true as condition.  
+--          
+-- | NOTE : 1. opt True --> do not insert feature Expr in attrFeatureEnv
+
 module VDB.AlgebraToSql where 
 
 import Prelude hiding (EQ ,LT ,GT)
@@ -61,14 +72,6 @@ type ConditionEnv = Set T.Condition
 
 
 
--- | TO DO: 1. update predence condition
---          2. update where condition according to environment(fetureExpr) 
---          3. SAT(False), since in env [] -> False
---          4. Where always in the inner most level
---          -- fixed 3. original condition is true in T.Condition, make sure it is not use AND to concatenate with feature expressiion.
---          -- fixed 4. If query have condition (not includring Lit True), then should cancel the Lit true as condition.  
---          
--- | NOTE : 1. opt True --> do not insert feature Expr in attrFeatureEnv
 
 -- | translation from algebra to plain sql query
 translate :: Algebra -> SqlQuery
@@ -231,6 +234,7 @@ prettyValue (I i) = show i
 prettyValue (B b) = show b 
 prettyValue (S s) = s
 
+
 -- 
 --  Examples
 -- 
@@ -290,16 +294,7 @@ e3 =  Proj [(F.And
 achc =            (AChc (F.Ref (Feature {featureName = " FB"})) 
                       (TRef (Relation {relationName = "r1"})) 
                        Empty)
--- | tranlsate e3
---  SELECT a1,a2 
---  FROM  (SELECT *  
---         FROM (  SELECT *  
---                 FROM r1 
---                 WHERE SAT((A AND B) OR (B OR FAlSE)) AND SAT(FB) ) as T2 
---        , 
---        (SELECT *  
---         FROM r2 
---         WHERE SAT((A AND B) OR (B OR FAlSE)) AND SAT(FC) ) as T3 
+
 
 e4 = Proj [((F.Lit True),a1)] (Sel cond2 (TRef t0))
 
@@ -318,63 +313,17 @@ test2 = Proj [(F.Lit True, Attribute {attributeName = "a1"})] $
                   (C.Val (I 5))) $ 
             (TRef (Relation {relationName = "Table2"}))
 
--- SELECT a1 
--- FROM  (SELECT *  FROM Table2 )  as T1 
--- WHERE SAT(FAlSE) AND a1>5
-
 test3 = Proj [(F.Lit True, Attribute {attributeName = "a1"})] $ 
             Sel (C.CChc (F.Ref (Feature {featureName = "F"}))
                        (C.Comp GT (C.Attr a1) (C.Val (I 5))) 
                        (C.Comp LT (C.Attr a1) (C.Val (I 5)))) $ 
             (TRef (Relation {relationName = "Table2"}))
--- SELECT a1 
--- FROM  (SELECT *  FROM Table2 )  as T1 
---       WHERE SAT(FAlSE) AND course>5 AND SAT(F) UNION  (SELECT *  FROM Table2 )  as T3 WHERE SAT(FAlSE) AND course<5 AND SAT(NOT F)"
+
+test3_sub = (AChc (F.Ref (Feature {featureName = " FB"})) 
+                      (TRef (Relation {relationName = "r1"})) 
+                       Empty) 
 test4 = AChc (F.Ref (Feature {featureName = "F"})) 
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"}))) 
              (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"})))
 
 fexpr = Feature {featureName = "F"}
--- | translate variational algebra to sql query AST ** condition as a Set 
--- transAlgebraToQuery' :: Algebra -> AttrFeatureEnv -> ConditionEnv -> Query  
--- transAlgebraToQuery' (SetOp Prod  a1 a2)  m s = QueryOp Prod (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s) 
--- transAlgebraToQuery' (SetOp Diff  a1 a2)  m s = QueryOp Diff (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)  
--- transAlgebraToQuery' (SetOp Union a1 a2)  m s = QueryOp Union (transAlgebraToQuery' a1 m s) (transAlgebraToQuery' a2 m s)   
--- transAlgebraToQuery' (Proj  opAttrList a) m s = 
---   let m' = foldl (\m-> \(f,a) -> Map.insert a f m ) Map.empty opAttrList 
---   in Select (map lift opAttrList) (transAlgebraToQuery' a m' s)
--- transAlgebraToQuery' (Sel   cond  a)      m s = 
---   let cond' = updateCond cond m
---       s' = Set.insert cond' s 
---   in transAlgebraToQuery' a m s'
--- transAlgebraToQuery' (AChc  f a1 a2)      m s = undefined    
--- transAlgebraToQuery' (TRef  r)            m s = Where From r       -- ToDO : update where condition according to environment 
--- transAlgebraToQuery' (Empty)              m s = EmptyQuery
-
-
--- | abstract plain sql query from *plain sql query with counter*
--- sendToPosgreSQL :: Query -> QueryClause
--- sendToPosgreSQL (QueryOp Prod q1 q2)  = sendToPosgreSQL q1 ++ sendToPosgreSQL q2
--- sendToPosgreSQL (QueryOp Diff q1 q2)  = undefined
--- sendToPosgreSQL (QueryOp Union q1 q2) = undefined
--- sendToPosgreSQL (Select attrList q)   = buildQuery [" SELECT ", prettyAttrList attrList, sendToPosgreSQL q]
--- sendToPosgreSQL (From r )              = buildQuery [" FROM ", prettyRel r, " as ", prettyRel r]
--- sendToPosgreSQL (From r (Just cond)) = undefined
-
--- | pretty print the condition in module target
--- prettyCond :: T.Condition -> QueryClause
--- prettyCond (T.Lit  b)            = show b
--- prettyCond (T.Comp compOp a1 a2) = prettyAtom a1 ++ prettyCompOp compOp ++ prettyAtom a2
--- prettyCond (T.Not  cond)         = buildQuery [" NOT ",  (prettyCond cond)]
--- prettyCond (T.Or   cond1 cond2)  = case (cond1, cond2) of 
---                                        ((T.Lit False), (T.Lit False)) -> ""
---                                        (_            , (T.Lit False)) -> buildQuery [prettyCond cond1]
---                                        ((T.Lit False), _             )-> buildQuery [prettyCond cond2]
---                                        (_            , _             )-> buildQuery [(prettyCond cond1), " OR ",  (prettyCond cond2)]
--- prettyCond (T.And  cond1 cond2)  = case (cond1, cond2) of 
---                                       ((T.Lit True), (T.Lit True)) ->  ""
---                                       (_            ,(T.Lit True)) -> buildQuery [prettyCond cond1]
---                                       ((T.Lit True), _           ) -> buildQuery [prettyCond cond2]
---                                       (_           , _           ) -> buildQuery [(prettyCond cond1), " AND ",  (prettyCond cond2)]
--- prettyCond (T.SAT  f)            = buildQuery ["SAT(" , F.prettyFeatureExpr f , ")"]
-

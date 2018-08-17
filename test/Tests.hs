@@ -5,12 +5,15 @@ import Test.Tasty
 import TestParser 
 import TestTranslater_Phase1
 import TestTranslater_Phase2
+import TestTwoOptionExample
 
 main :: IO ()
 main = defaultMain $ testGroup ""
-        [testTransAlgebraToQuery]
-         -- [ testTranslater_Phase1
-         -- , testTranslater_Phase2]
+        [ testTwoOptionExample
+        , testTransAlgebraToQuery
+        -- , testTranslater -- after editing syntax, all test case broken
+        ]
+
   -- [ testFeatureExpr
   -- , testCondition
   -- , testFromExpr

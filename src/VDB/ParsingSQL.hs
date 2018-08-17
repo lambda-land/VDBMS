@@ -1,4 +1,4 @@
-
+-- | Parser for parsing VSQL
 module VDB.ParsingSQL where 
 
 

@@ -1,3 +1,4 @@
+-- | translation from V-SQL Query to Variational Relational Algebra
 module VDB.VSqlToAlgebra where 
 
 import VDB.SQL 
@@ -6,7 +7,6 @@ import VDB.Name
 import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C
 import VDB.Variational
-import VDB.Value
 
 
 -- | Translate variational SQL into Variational relational algebra
