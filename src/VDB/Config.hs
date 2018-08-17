@@ -20,6 +20,7 @@ disableAll :: Boolean b => Config b
 disableAll _ = false
 
 -- | Override a configuration to enable an option.
+-- enable :: Boolean b => Feature -> (Feature -> b) -> (Feature -> b)
 enable :: Boolean b => Feature -> Config b -> Config b
 enable this c f
     | f == this = true

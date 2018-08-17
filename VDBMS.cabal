@@ -38,6 +38,8 @@ library
     , text
     , megaparsec
     , parsec
+    , HDBC
+    , mtl
   exposed-modules:
       VDB.Algebra
     , VDB.Config
@@ -50,6 +52,13 @@ library
     , VDB.Variational
     , VDB.Value
     , VDB.ParsingSQL
+    , VDB.SQL
+    , VDB.VSqlToAlgebra
+    , VDB.Target
+    , VDB.AlgebraToSql
+    , VDB.Example.TwoOption
+    , VDB.TypeSystem.Semantics
+
 
 test-suite test
   hs-source-dirs:   test
@@ -70,4 +79,6 @@ test-suite test
     , megaparsec
     , parsec
   other-modules:
-      TestParser
+      TestTranslater_Phase1
+    , TestTranslater_Phase2
+    , TestTwoOptionExample

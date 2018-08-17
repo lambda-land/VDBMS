@@ -25,3 +25,5 @@ featureModel (f,_) = f
 -- | Get the type of a relation in the database.
 lookupRowType :: Relation -> Schema -> Maybe (Opt RowType)
 lookupRowType r (_,m) = M.lookup r m
+
+
