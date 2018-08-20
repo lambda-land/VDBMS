@@ -1,7 +1,6 @@
 -- | To Do: 1. Quick check for generating randomly v-query
 --          2. Need to connect to VDB of PostgreSql
 
-
 module VDB.TwoPathTest where 
 
 import VDB.AlgebraToSql
@@ -59,12 +58,6 @@ queryVDB sqlQ = do
 --     assert (l == r )
 
 -- qc_main = quickCheck prop_twoPath_equal
-
-
-
-
-
-
 
 
 -- 
