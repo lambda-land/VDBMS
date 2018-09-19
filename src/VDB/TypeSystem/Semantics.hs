@@ -77,12 +77,12 @@ typeOfVquery (SetOp Prod q q')  f s = case (typeOfVquery q f s, typeOfVquery q' 
 typeOfVquery (Proj [] q)        f _ = undefined
 typeOfVquery (Proj (a:as) q)    f _ = undefined
 typeOfVquery (Sel c q)          f s = case typeOfVquery q f s of
-                                      Just t | typeOfVcond c (f, t) == True -> Just (cxtAppType f t)
+                                      Just t | typeOfVcond c (f, t) -> Just (cxtAppType f t)
                                       _ -> Nothing
 typeOfVquery (AChc d q q')      f _ = undefined
-typeOfVquery (TRef r)           f s = undefined
---	case M.lookup (Right r) s of 
---                                        Just f' -> 
+typeOfVquery (TRef r)           f s = case M.lookup (Right r) s of 
+                                        Just f' | satisfiable (F.And f f') -> Just (cxtAppType f s)
+                                        _ -> Nothing
 typeOfVquery Empty              f s = Just s
 
 -- context appication to type enviornment
