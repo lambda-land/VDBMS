@@ -1,0 +1,100 @@
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 3ea5c9d2ee816dfa02faeba13152957d57baf6f80d8cb51396c765bc4cec7060
+
+name:           vdbms
+version:        0.1.0.0
+synopsis:       A variational database management system
+description:    Please see the README on Github at <https://github.com/githubuser/my-app#readme>
+category:       Language
+homepage:       http://github.com/lambda-land/VDBMS
+author:         OSU DB-PL
+maintainer:     walkiner@oregonstate.edu
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      VDB.Algebra
+      VDB.AlgebraToSql
+      VDB.Condition
+      VDB.Config
+      VDB.Example.TwoOption
+      VDB.FeatureExpr
+      VDB.Name
+      VDB.ParsingSQL
+      VDB.SAT
+      VDB.Schema
+      VDB.SQL
+      VDB.Table
+      VDB.Target
+      VDB.TypeSystem.Semantics
+      VDB.Value
+      VDB.Variational
+      VDB.VSqlToAlgebra
+  other-modules:
+      Paths_vdbms
+  hs-source-dirs:
+      src
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses
+  build-depends:
+      HDBC
+    , QuickCheck
+    , base >=4.7 && <5
+    , containers >=0.5
+    , megaparsec
+    , mtl
+    , parsec
+    , sbv
+    , text
+  default-language: Haskell2010
+
+executable vdbms
+  main-is: Main.hs
+  other-modules:
+      Paths_vdbms
+  hs-source-dirs:
+      app
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
+  build-depends:
+      HDBC
+    , QuickCheck
+    , base >=4.7 && <5
+    , containers >=0.5
+    , megaparsec
+    , mtl
+    , parsec
+    , sbv
+    , text
+    , vdbms
+  default-language: Haskell2010
+
+test-suite vsat-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Tests
+      Paths_vdbms
+  hs-source-dirs:
+      test
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HDBC
+    , QuickCheck
+    , base >=4.7 && <5
+    , containers >=0.5
+    , megaparsec
+    , mtl
+    , parsec
+    , sbv
+    , text
+    , vdbms
+  default-language: Haskell2010

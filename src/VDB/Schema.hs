@@ -26,4 +26,33 @@ featureModel (f,_) = f
 lookupRowType :: Relation -> Schema -> Maybe (Opt RowType)
 lookupRowType r (_,m) = M.lookup r m
 
+-- | Get the feature expression of a relation
+lookupRelation :: Relation -> Schema -> Maybe FeatureExpr
+lookupRelation r s = case lookupRowType r s of 
+                       Just (f,_) -> Just f
+                       _ -> Nothing
+
+-- | helper func for lookupAttInRel
+retrieve :: Eq b => [(a,(b,c))] -> b -> Maybe (a,(b,c))
+retrieve [] _ = Nothing
+retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,(y,z))) else retrieve xs v
+
+-- | Get all info of an attribute from a rowtype
+lookupAttInRel :: Attribute -> Relation -> Schema -> Maybe (Opt (Attribute,Type))
+lookupAttInRel a r s = case lookupRowType r s of
+                         Just (f,m) -> retrieve m a 
+                         _ -> Nothing
+
+-- | lookup an attribute of a specific relation in database
+lookupAtt :: Attribute -> Relation -> Schema -> Maybe (Opt (Attribute,Type))
+lookupAtt a r s = case lookupRowType r s of 
+                    Just (f,l) -> lookupAttInRel a r s
+--                    Just (o,(a,t))
+                    _ -> Nothing
+
+-- | Get the type of an attribute in the database
+lookupAttPresCond :: Attribute -> Relation -> Schema -> Maybe FeatureExpr
+lookupAttPresCond a r s = case lookupAtt a r s of
+                            Just (f,_) -> Just f
+                            _ -> Nothing
 

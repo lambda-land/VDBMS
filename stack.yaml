@@ -5,3 +5,10 @@
 # in the Cabal build file.
 # https://www.stackage.org/lts-10.8
 resolver: lts-10.8
+
+system-ghc: false
+packages: 
+- .
+flags: {}
+extra-deps: []
+   

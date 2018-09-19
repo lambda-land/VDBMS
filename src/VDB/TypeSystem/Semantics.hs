@@ -10,9 +10,13 @@ import VDB.Value
 import VDB.Schema
 import VDB.Config 
 import VDB.AlgebraToSql
+import VDB.SAT
 
 import Data.Map(Map)
-import qualified Data.Map as Map 
+import qualified Data.Map as M 
+import qualified Data.Map.Internal as IM
+
+--import Data.Traversable
 
 import Control.Monad.State
 import Control.Monad (liftM2)
@@ -21,6 +25,117 @@ import Data.Set(Set)
 import qualified Data.Set as Set 
 
 -- import Data.Maybe(catMaybes)
+
+
+type VariationalContext = F.FeatureExpr
+
+
+type TypeEnv = Map (Either Attribute Relation) F.FeatureExpr
+
+--
+-- * static semantics of variational conditions:
+--
+typeOfVcond :: C.Condition -> (VariationalContext, TypeEnv) -> Bool
+typeOfVcond (C.Lit True)      _ = True
+typeOfVcond (C.Lit False)     _ = True
+typeOfVcond (C.Comp _ l r)   (f, t) = case (l, r) of 
+                                      (C.Attr a, C.Val v)  -> case (M.lookup (Left a) t) of
+                                                                Just f' -> satisfiable (F.And f f')
+                                                                _ -> False
+                                      (C.Attr a, C.Attr a') -> case ((M.lookup (Left a) t), (M.lookup (Left a') t)) of
+                                                                (Just f', Just f'') -> satisfiable (F.And (F.And f f') f'')
+                                                                _ -> False
+                                      _ -> False
+typeOfVcond (C.Not c)      e = typeOfVcond c e
+typeOfVcond (C.Or l r)     e = typeOfVcond l e && typeOfVcond r e
+typeOfVcond (C.And l r)    e = typeOfVcond l e && typeOfVcond r e
+typeOfVcond (C.CChc d l r) (f, t) = typeOfVcond l (F.shrinkFeatureExpr (F.And f d), t) && typeOfVcond r (F.shrinkFeatureExpr (F.And f (F.Not d)), t)
+--double check the last case, maybe you need to simplify the feature expression!!! do I need to shrink or not????
+
+
+--
+
+-- set the variational context at the beginning
+--
+setInitialTypeEnv :: Schema -> TypeEnv
+setInitialTypeEnv = undefined
+
+--
+-- * static semantics of variational queires
+--
+typeOfVquery :: Algebra -> VariationalContext -> TypeEnv -> Maybe TypeEnv
+typeOfVquery (SetOp Union q q') f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+                                      (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') == True -> Just t
+                                      _ -> Nothing
+typeOfVquery (SetOp Diff q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+                                      (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') == True -> Just t
+                                      _ -> Nothing
+typeOfVquery (SetOp Prod q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+                                      (Just t, Just t') ->  typeProd t t'
+--                                      ! (conflictValMerge t t') -> Just (M.unionWith t t')
+                                      _ -> Nothing
+typeOfVquery (Proj [] q)        f _ = undefined
+typeOfVquery (Proj (a:as) q)    f _ = undefined
+typeOfVquery (Sel c q)          f s = case typeOfVquery q f s of
+                                      Just t | typeOfVcond c (f, t) == True -> Just (cxtAppType f t)
+                                      _ -> Nothing
+typeOfVquery (AChc d q q')      f _ = undefined
+typeOfVquery (TRef r)           f s = undefined
+--	case M.lookup (Right r) s of 
+--                                        Just f' -> 
+typeOfVquery Empty              f s = Just s
+
+-- context appication to type enviornment
+cxtAppType :: VariationalContext -> TypeEnv -> TypeEnv
+cxtAppType f t = M.map (\f' -> (F.And f f')) t
+-- cxtAppType f t = M.map (\f' -> F.shrinkFeatureExpr (F.And f f')) t
+
+-- type enviornment equilvanecy 
+typeEq :: TypeEnv -> TypeEnv -> Bool
+typeEq t t' = M.isSubmapOfBy (\f f' -> equivalent f f') t t'
+
+-- type enviornment production
+typeProd :: TypeEnv -> TypeEnv -> Maybe TypeEnv
+typeProd = unionWithA combineFeatureExprs 
+
+-- | Union two maps, applying some effectful function to duplicates.
+unionWithA :: (Applicative f, Ord k) => (k -> a -> a -> f a) -> Map k a -> Map k a -> f (Map k a)
+unionWithA f m1 m2 =
+  IM.mergeA
+    IM.preserveMissing -- Preserve keys found in m1 but not m2
+    IM.preserveMissing -- Preserve keys found in m2 but not m1
+    (IM.zipWithAMatched f) -- Apply f when keys in both m1 and m2
+    m1
+    m2
+
+-- helper function for type enviornment production
+-- takes two feature exprs and if they're equivalent
+-- returns one of them otherwise fails
+combineFeatureExprs :: SAT a => k -> a -> a -> Maybe a
+combineFeatureExprs _ f f' = case equivalent f f' of 
+                             True -> Just f 
+                             False -> Nothing
+
+{--conflictValMerge :: TypeEnv -> TypeEnv -> Bool
+conflictValMerge = undefined
+
+traverseMaybeMap :: Map (Either Attribute Relation) (Maybe F.FeatureExpr) -> Bool
+
+
+filterUnion :: (Ord k, SAT a) => (a -> a -> Maybe a) -> Map k a -> Map k a -> Map k (Maybe a)
+filterUnion  = (\f f' -> 
+
+
+
+typeUnion :: TypeEnv -> TypeEnv -> TypeEnv
+typeUnion = M.unionWith (\f f' -> case equivalent f f' of 
+                                      True -> f
+                                      False )
+--}
+
+
+typesub :: TypeEnv -> TypeEnv -> Bool
+typesub t t' = undefined
 
 -- 
 -- * dynamic semantics of variational objects:
@@ -39,15 +154,15 @@ semOptRel vrel c = case configureOpt c vrel of
 
 -- | semantics of variational Schema
 semVsch :: Schema -> Config Bool -> (Map Relation [(Attribute, Type)])
-semVsch s@(_,m)  c = case Map.null m of 
-                         True  -> Map.empty
+semVsch s@(_,m)  c = case M.null m of 
+                         True  -> M.empty
                          _     -> case configureOpt c s of 
-                                Just m ->  Map.map ((flip semOptRel) c) m
-                                Nothing -> Map.empty 
+                                Just m ->  M.map ((flip semOptRel) c) m
+                                Nothing -> M.empty 
 
 -- | Traverse the Map and collect the Just results.
 traverseRelMap :: Map Relation (Maybe RowType) -> Map Relation RowType 
-traverseRelMap relM = Map.mapMaybe (\v -> v) relM   
+traverseRelMap relM = M.mapMaybe (\v -> v) relM   
 
 
 --
@@ -81,14 +196,14 @@ semVquery  (SetOp Union l r)   = undefined
 semVquery  (SetOp Diff l r)    = undefined
 semVquery  (Proj  opAttrs a)   = do st <- get
                                     let newAList = map (\(f,a) ->  (TAttr a,f)) opAttrs
-                                    let newMap = Map.fromList newAList
-                                    put $ Map.union st newMap 
+                                    let newMap = M.fromList newAList
+                                    put $ M.union st newMap 
                                     semVquery a
 semVquery  (Sel   cond a)      = undefined
     -- do st <- get 
     --                                 let newMap = semVcond cond 
     --                                 newMap' <- newMap
-    --                                 put $ Map.union st newMap'
+    --                                 put $ M.union st newMap'
     --                                 semVquery a
 semVquery  (TRef  r)           = undefined   
 semVquery   Empty              = undefined
