@@ -30,7 +30,18 @@ import qualified Data.Set as Set
 type VariationalContext = F.FeatureExpr
 
 
-type TypeEnv = Map (Either Attribute Relation) F.FeatureExpr
+type TypeEnv = Opt RowType
+
+-- | Get an attribute prescence condition from the type env
+lookupAttPresCondInTypeEnv :: Attribute -> TypeEnv -> Maybe F.FeatureExpr
+lookupAttPresCondInTypeEnv a (f, r) = case retrieve r a of 
+                               Just (f',_) -> Just f'
+                               _ -> Nothing
+
+lookupAttPresAndType :: Attribute -> TypeEnv -> Maybe (F.FeatureExpr, Type)
+lookupAttPresAndType a (f, r) = case retrieve r a of 
+                                  Just (f', (_, t)) -> Just (f', t)
+                                  _ -> Nothing
 
 --
 -- * static semantics of variational conditions:
@@ -39,60 +50,96 @@ typeOfVcond :: C.Condition -> (VariationalContext, TypeEnv) -> Bool
 typeOfVcond (C.Lit True)      _ = True
 typeOfVcond (C.Lit False)     _ = True
 typeOfVcond (C.Comp _ l r)   (f, t) = case (l, r) of 
-                                      (C.Attr a, C.Val v)  -> case (M.lookup (Left a) t) of
-                                                                Just f' -> satisfiable (F.And f f')
-                                                                _ -> False
-                                      (C.Attr a, C.Attr a') -> case ((M.lookup (Left a) t), (M.lookup (Left a') t)) of
-                                                                (Just f', Just f'') -> satisfiable (F.And (F.And f f') f'')
-                                                                _ -> False
-                                      _ -> False
+  (C.Attr a, C.Val v)  -> case lookupAttPresCondInTypeEnv a t of 
+                            Just f' -> tautology (F.imply f f')
+                            _ -> False
+  (C.Attr a, C.Attr a') -> case (lookupAttPresAndType a t, lookupAttPresAndType a' t) of 
+                             (Just (f',t'), Just (f'',t'')) -> tautology (F.imply f f') && 
+                                                               tautology (F.imply f f'') &&
+                                                               t' == t''
+                             _ -> False
 typeOfVcond (C.Not c)      e = typeOfVcond c e
 typeOfVcond (C.Or l r)     e = typeOfVcond l e && typeOfVcond r e
 typeOfVcond (C.And l r)    e = typeOfVcond l e && typeOfVcond r e
-typeOfVcond (C.CChc d l r) (f, t) = typeOfVcond l (F.shrinkFeatureExpr (F.And f d), t) && typeOfVcond r (F.shrinkFeatureExpr (F.And f (F.Not d)), t)
---double check the last case, maybe you need to simplify the feature expression!!! do I need to shrink or not????
+typeOfVcond (C.CChc d l r) (f, t) = typeOfVcond l ((F.And f d), t) && typeOfVcond r ((F.And f (F.Not d)), t)
 
 
---
+
 
 -- set the variational context at the beginning
 --
-setInitialTypeEnv :: Schema -> TypeEnv
-setInitialTypeEnv = undefined
+initialVarCtxt :: Schema -> VariationalContext
+initialVarCtxt (f,_) = f
 
+{--
 --
 -- * static semantics of variational queires
 --
-typeOfVquery :: Algebra -> VariationalContext -> TypeEnv -> Maybe TypeEnv
+typeOfVquery :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv
 typeOfVquery (SetOp Union q q') f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+  (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
+  _ -> Nothing
+typeOfVquery (SetOp Diff q q')  f s = undefined
+typeOfVquery (SetOp Prod q q')  f s = undefined
+typeOfVquery (Proj as q)        f s = undefined
+typeOfVquery (Sel c q)          f s = undefined
+typeOfVquery (AChc d q q')      f s = undefined
+typeOfVquery (TRef r)           f s = undefined
+typeOfVquery Empty              f s = Just (f,[])
+
+
+-- | context appication to type enviornment
+cxtAppType :: VariationalContext -> TypeEnv -> TypeEnv
+cxtAppType f (r,as) = (r, map (\(f',(a,t)) -> ((F.And f f'),(a,t))) as) 
+-- cxtAppType f t = M.map (\f' -> F.shrinkFeatureExpr (F.And f f')) t
+
+-- | helper function for typeEq
+--   take two rowtypes and makes sure the attribute and types
+--   are the same in both rowtypes
+attTypeEq :: RowType -> RowType -> Bool
+attTypeEq r r' = map snd r == map snd r' 
+
+-- | helper function for typeEq
+--   check the equivalency of presence conditions of the same 
+--   attributes
+equivAttPresCond :: RowType -> RowType -> Bool
+equivAttPresCond r r' = undefined
+
+-- | type enviornment equilvanecy 
+typeEq :: TypeEnv -> TypeEnv -> Bool
+typeEq (r,as) (r',as') = equivalent r r' && attTypeEq as as'
+--}
+
+--  M.isSubmapOfBy (\f f' -> equivalent f f') t t'
+--as : [(f,(a,t))] 
+{--
+typeOfVquery' :: Algebra -> VariationalContext -> TypeEnv -> Maybe TypeEnv
+typeOfVquery' (SetOp Union q q') f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
                                       (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') == True -> Just t
                                       _ -> Nothing
-typeOfVquery (SetOp Diff q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+typeOfVquery' (SetOp Diff q q')  f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
                                       (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') == True -> Just t
                                       _ -> Nothing
-typeOfVquery (SetOp Prod q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+typeOfVquery' (SetOp Prod q q')  f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
                                       (Just t, Just t') ->  typeProd t t'
 --                                      ! (conflictValMerge t t') -> Just (M.unionWith t t')
                                       _ -> Nothing
-typeOfVquery (Proj [] q)        f _ = undefined
-typeOfVquery (Proj (a:as) q)    f _ = undefined
-typeOfVquery (Sel c q)          f s = case typeOfVquery q f s of
+typeOfVquery' (Proj [] q)        f _ = undefined
+typeOfVquery' (Proj (a:as) q)    f _ = undefined
+typeOfVquery' (Sel c q)          f s = case typeOfVquery' q f s of
                                       Just t | typeOfVcond c (f, t) -> Just (cxtAppType f t)
                                       _ -> Nothing
-typeOfVquery (AChc d q q')      f _ = undefined
-typeOfVquery (TRef r)           f s = case M.lookup (Right r) s of 
+typeOfVquery' (AChc d q q')      f _ = undefined
+typeOfVquery' (TRef r)           f s = case M.lookup (Right r) s of 
                                         Just f' | satisfiable (F.And f f') -> Just (cxtAppType f s)
                                         _ -> Nothing
-typeOfVquery Empty              f s = Just s
+typeOfVquery' Empty              f s = Just s
 
--- context appication to type enviornment
-cxtAppType :: VariationalContext -> TypeEnv -> TypeEnv
-cxtAppType f t = M.map (\f' -> (F.And f f')) t
--- cxtAppType f t = M.map (\f' -> F.shrinkFeatureExpr (F.And f f')) t
 
 -- type enviornment equilvanecy 
 typeEq :: TypeEnv -> TypeEnv -> Bool
 typeEq t t' = M.isSubmapOfBy (\f f' -> equivalent f f') t t'
+typeEq = M.isSubmapOfBy equivalent 
 
 -- type enviornment production
 typeProd :: TypeEnv -> TypeEnv -> Maybe TypeEnv
@@ -163,6 +210,8 @@ semVsch s@(_,m)  c = case M.null m of
 -- | Traverse the Map and collect the Just results.
 traverseRelMap :: Map Relation (Maybe RowType) -> Map Relation RowType 
 traverseRelMap relM = M.mapMaybe (\v -> v) relM   
+
+--}
 
 
 --

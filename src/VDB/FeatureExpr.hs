@@ -31,6 +31,10 @@ features (Not e)   = features e
 features (And l r) = features l `Set.union` features r
 features (Or  l r) = features l `Set.union` features r
 
+-- | Syntactic sugar: implication
+imply :: FeatureExpr -> FeatureExpr -> FeatureExpr
+imply f f' = Or (Not f) f'
+
 -- | Evaluate a feature expression against a configuration.
 evalFeatureExpr :: Boolean b => Config b -> FeatureExpr -> b
 evalFeatureExpr _ (Lit b)   = if b then true else false
