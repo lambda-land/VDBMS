@@ -1,7 +1,5 @@
 module TestTranslater_Phase2 where
 
-
-
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -38,68 +36,68 @@ testTransAlgebraToQuery = testGroup "Test transAlgebraToQuery"
     [  testCase "- Proj a1,a2 (Table1)" $
        do output <- return $ transAlgebraToQuery (  
             Proj [(F.Lit True, 
-                   Attribute {attributeName = "a1"})
+                   Attribute "a1")
                ,(F.Lit True,
-                   Attribute {attributeName = "a2"})
+                   Attribute "a2")
                ] 
-            (TRef (Relation {relationName = "Table1"})) )
+            (TRef (Relation "Table1")) )
           expectVal <- return $
-            Select [Attribute {attributeName = "a1"}, Attribute {attributeName = "a2"}] 
-            (Where Nothing (From (Relation {relationName = "Table1"})))
+            Select [Attribute "a1", Attribute "a2"] 
+            (Where Nothing (From (Relation "Table1")))
           expectVal @=? output
     ]
   , testGroup "2) projection with selection"
     [  testCase "- Proj a1,a2 (Table1)" $
        do output <- return $ transAlgebraToQuery $
-            Proj [(F.Lit True, Attribute {attributeName = "a1"})] $ 
+            Proj [(F.Lit True, Attribute "a1")] $ 
             Sel (C.Comp GT 
-                  (C.Attr (Attribute {attributeName = "a1"})) 
+                  (C.Attr (Attribute "a1")) 
                   (C.Val (I 5))) $ 
-            (TRef (Relation {relationName = "Table2"}))
+            (TRef (Relation "Table2"))
           expectVal <- return $
-            Select [Attribute {attributeName = "a1"}] 
-            (Where (Just (And (T.SAT (F.Lit False )) (Comp GT (C.Attr (Attribute {attributeName = "a1"})) (C.Val (I 5))))) 
-            (From (Relation {relationName = "Table2"})))
+            Select [Attribute "a1"] 
+            (Where (Just (And (T.SAT (F.Lit False )) (Comp GT (C.Attr (Attribute "a1")) (C.Val (I 5))))) 
+            (From (Relation "Table2")))
 
           expectVal @=? output
     ]
     , testGroup "3) have variational condition  "
     [  testCase "- Proj a1 Sel F(a1 > 5, a1 < 5) (Table1)" $ 
        do output <- return $ transAlgebraToQuery $
-            Proj [(F.Lit True, Attribute {attributeName = "a1"})] $ 
-            Sel (C.CChc (F.Ref (Feature {featureName = "F"})) 
+            Proj [(F.Lit True, Attribute "a1")] $ 
+            Sel (C.CChc (F.Ref (Feature "F")) 
                        (C.Comp GT (C.Attr a1) (C.Val (I 5))) 
                        (C.Comp LT (C.Attr a1) (C.Val (I 5)))) $ 
-            (TRef (Relation {relationName = "Table2"}))
+            (TRef (Relation "Table2"))
           expectVal <- return $ 
-            Select [Attribute {attributeName = "a1"}] 
+            Select [Attribute "a1"] 
             (QueryOp Union 
               (Where (Just (And (T.SAT (F.Lit False )) 
-                                (And (Comp GT (C.Attr (Attribute {attributeName = "course"})) (C.Val (I 5))) 
+                                (And (Comp GT (C.Attr (Attribute "course")) (C.Val (I 5))) 
                                      (T.SAT (F.Ref (Feature "F"))) ))) 
-                (From (Relation {relationName = "Table2"}))) 
+                (From (Relation "Table2"))) 
               (Where (Just (And (T.SAT (F.Lit False ))  
-                                (And (Comp LT (C.Attr (Attribute {attributeName = "course"})) (C.Val (I 5))) 
+                                (And (Comp LT (C.Attr (Attribute "course")) (C.Val (I 5))) 
                                     (T.SAT (F.Not (F.Ref (Feature "F")))) ))) 
-                (From (Relation {relationName = "Table2"}))))
+                (From (Relation "Table2"))))
 
           expectVal @=? output
     ]
     , testGroup "4) variational query "
     [  testCase "- F<Proj a1 (Table1), Proj a2 (Table2)>" $ 
        do output <- return $ transAlgebraToQuery $
-            AChc (F.Ref (Feature {featureName = "F"})) 
-             (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"}))) 
-             (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"})))
+            AChc (F.Ref (Feature "F")) 
+             (Proj [(F.Lit True, Attribute "a1")] (TRef (Relation "Table2"))) 
+             (Proj [(F.Lit True, Attribute "a1")] (TRef (Relation "Table2")))
           expectVal <- return $
             QueryOp Union 
-              (Select [Attribute {attributeName = "a1"}] 
+              (Select [Attribute "a1"] 
                 (Where (Just (And (T.SAT (F.Lit False ))   (T.SAT (F.Ref (Feature "F"))) ))  
-                  (From (Relation {relationName = "Table2"})))) 
-              (Select [Attribute {attributeName = "a1"}] 
+                  (From (Relation "Table2")))) 
+              (Select [Attribute "a1"] 
                 (Where (Just (And (T.SAT (F.Lit False ))   
                                   (T.SAT (F.Not (F.Ref (Feature "F")))) ))   
-                (From (Relation {relationName = "Table2"})) ))
+                (From (Relation "Table2")) ))
           expectVal @=? output
     ]
 
