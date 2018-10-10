@@ -26,6 +26,7 @@ library
       VDB.Condition
       VDB.Config
       VDB.Example.TwoOption
+      VDB.Example.Query
       VDB.FeatureExpr
       VDB.Name
       VDB.ParsingSQL

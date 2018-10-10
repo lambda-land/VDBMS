@@ -9,7 +9,7 @@ main :: IO ()
 main = defaultMain $ testGroup ""
         [ testTwoOptionExample
         , testTransAlgebraToQuery
-        -- , testTranslater -- after editing syntax, all test case broken
+        , testTranslater -- after editing syntax, all test case broken
         ]
 
   -- [ testFeatureExpr
