@@ -238,12 +238,12 @@ prettyValue (S s) = s
 -- 
 --  Examples
 -- 
-t0 =  (Relation {relationName = "taughtby"})
-t1 = (Relation {relationName = "courselevel"})
-a1 = Attribute {attributeName = "course"}
-a2 = Attribute {attributeName = "professor"}
-f0 = (Feature {featureName = "US"})
-f1 = (Feature {featureName = "C"})
+t0 =  (Relation "taughtby")
+t1 = (Relation "courselevel")
+a1 = Attribute "course"
+a2 = Attribute "professor"
+f0 = (Feature "US")
+f1 = (Feature "C")
 cond1 = (C.Comp GT (C.Attr a1) (C.Val (I 5)))
 
 q1 = Select [a1,a2] $ From t0 
@@ -258,41 +258,41 @@ w1 = Where (Just (T.SAT (F.Ref f0 ))) $ From t0
 e1 = SetOp Prod (TRef "r1") (TRef "r2")
 
 e2 = Proj [(F.And 
-                    (F.Ref (Feature {featureName = "A"})) 
-                    (F.Ref (Feature {featureName = "B"})), 
-                   Attribute {attributeName = "a1"})
+                    (F.Ref (Feature "A")) 
+                    (F.Ref (Feature "B")), 
+                   Attribute "a1")
                  ,
-                  (F.Ref (Feature {featureName = "C"}),
-                   Attribute {attributeName = "a2"})
+                  (F.Ref (Feature "C"),
+                   Attribute "a2")
                  ] 
           (TRef "Table1")
 
 alist = [(F.And 
-                    (F.Ref (Feature {featureName = "A"})) 
-                    (F.Ref (Feature {featureName = "B"})), 
-                   Attribute {attributeName = "a1"})
+                    (F.Ref (Feature "A")) 
+                    (F.Ref (Feature "B")), 
+                   Attribute "a1")
                  ,
-                  (F.Ref (Feature {featureName = "C"}),
-                   Attribute {attributeName = "a2"})
+                  (F.Ref (Feature "C"),
+                   Attribute "a2")
                  ]
 
 e3 =  Proj [(F.And 
-                    (F.Ref (Feature {featureName = "A"})) 
-                    (F.Ref (Feature {featureName = "B"})), 
-                   Attribute {attributeName = "a1"})
+                    (F.Ref (Feature "A")) 
+                    (F.Ref (Feature "B")), 
+                   Attribute "a1")
                  ,
-                  (F.Ref (Feature {featureName = "B"}),
-                   Attribute {attributeName = "a2"})
+                  (F.Ref (Feature "B"),
+                   Attribute "a2")
                  ] 
           (SetOp Prod 
-                (AChc (F.Ref (Feature {featureName = " FB"})) 
-                      (TRef (Relation {relationName = "r1"})) 
+                (AChc (F.Ref (Feature " FB")) 
+                      (TRef (Relation "r1")) 
                        Empty) 
-                (AChc (F.Ref (Feature {featureName = "FC"})) 
-                            (TRef (Relation {relationName = "r2"})) 
+                (AChc (F.Ref (Feature "FC")) 
+                            (TRef (Relation "r2")) 
                              Empty))
-achc =            (AChc (F.Ref (Feature {featureName = " FB"})) 
-                      (TRef (Relation {relationName = "r1"})) 
+achc =            (AChc (F.Ref (Feature " FB")) 
+                      (TRef (Relation "r1")) 
                        Empty)
 
 
@@ -301,29 +301,29 @@ e4 = Proj [((F.Lit True),a1)] (Sel cond2 (TRef t0))
 cond2 = C.CChc (F.Ref f1) (C.Comp GT (C.Attr a1) (C.Val (I 5))) (C.Comp LT (C.Attr a1) (C.Val (I 5)))
 
 test1 =  Proj [(F.Lit True, 
-                   Attribute {attributeName = "a1"})
+                   Attribute "a1")
                ,(F.Lit True,
-                   Attribute {attributeName = "a2"})
+                   Attribute "a2")
                ] 
           (TRef "Table1") 
 
-test2 = Proj [(F.Lit True, Attribute {attributeName = "a1"})] $ 
+test2 = Proj [(F.Lit True, Attribute "a1")] $ 
             Sel (C.Comp GT 
-                  (C.Attr (Attribute {attributeName = "a1"})) 
+                  (C.Attr (Attribute "a1")) 
                   (C.Val (I 5))) $ 
-            (TRef (Relation {relationName = "Table2"}))
+            (TRef (Relation "Table2"))
 
-test3 = Proj [(F.Lit True, Attribute {attributeName = "a1"})] $ 
-            Sel (C.CChc (F.Ref (Feature {featureName = "F"}))
+test3 = Proj [(F.Lit True, Attribute "a1")] $ 
+            Sel (C.CChc (F.Ref (Feature "F"))
                        (C.Comp GT (C.Attr a1) (C.Val (I 5))) 
                        (C.Comp LT (C.Attr a1) (C.Val (I 5)))) $ 
-            (TRef (Relation {relationName = "Table2"}))
+            (TRef (Relation "Table2"))
 
-test3_sub = (AChc (F.Ref (Feature {featureName = " FB"})) 
-                      (TRef (Relation {relationName = "r1"})) 
+test3_sub = (AChc (F.Ref (Feature " FB")) 
+                      (TRef (Relation "r1")) 
                        Empty) 
-test4 = AChc (F.Ref (Feature {featureName = "F"})) 
-             (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"}))) 
-             (Proj [(F.Lit True, Attribute {attributeName = "a1"})] (TRef (Relation {relationName = "Table2"})))
+test4 = AChc (F.Ref (Feature  "F")) 
+             (Proj [(F.Lit True, Attribute "a1")] (TRef (Relation "Table2"))) 
+             (Proj [(F.Lit True, Attribute "a1")] (TRef (Relation "Table2")))
 
-fexpr = Feature {featureName = "F"}
+fexpr = Feature "F"
