@@ -40,11 +40,13 @@ lookupAttFexpEnv a r = case retrieve r a of
                               Just (f',_) -> Just f'
                               _ -> Nothing
 
+-- | Get an attribute type and presence condition from a type env
 lookupAttEnv :: Attribute -> TypeEnv -> Maybe (Opt Type)
 lookupAttEnv a r = retrieve r a
 
 --
 -- * static semantics of variational conditions:
+--   based on inference rules in the PVLDB paper 
 --
 typeOfVcond :: C.Condition -> VariationalContext -> TypeEnv -> Bool
 typeOfVcond (C.Lit True)     _ _ = True
@@ -67,6 +69,7 @@ typeOfVcond (C.CChc d l r) f t = typeOfVcond l (F.And f d) t
 
 
 -- | set the variational context at the beginning
+--   to the presence condition of the v-schema
 --
 initialVarCtxt :: Schema -> VariationalContext
 initialVarCtxt (f,_) = f
@@ -74,6 +77,11 @@ initialVarCtxt (f,_) = f
 
 --
 -- * static semantics of variational queires
+--   based on inference rules in the PVLDB paper
+--   f<q,q'> case: the shrinkTypeUnion removes the duplicate attributes
+--                 while the typeUnion keep the duplicates in the order of
+--                 the result of each query --> may need to adjust this 
+--                 based on the setting to represent the result to the user
 --
 typeOfVquery :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv
 typeOfVquery (SetOp Union q q') f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
@@ -118,14 +126,15 @@ attTypeEq r r' = map snd r == map snd r'
 -- | helper function for typeEq
 --   check the equivalency of presence conditions of the same 
 --   attributes
---   Assumption: the number and order of attributes are the same
+--   Assumption: the number and order of attributes are exactly
+--   the same in both row types
 equivAttFexp :: RowType -> RowType -> Bool
 equivAttFexp r r' = foldr (&&) True eqRes
   where 
     eqRes = map (\(f,f') -> equivalent f f') eq
-    eq = zip fr fr' 
-    fr = map fst r 
-    fr' = map fst r'
+    eq    = zip fr fr' 
+    fr    = map fst r 
+    fr'   = map fst r'
 
 -- | Type enviornment equilvanecy, checks that the vCtxt are 
 --   equivalent, both env have the same set of attributes,
@@ -141,27 +150,27 @@ typeProduct r r' = r ++ r'
 --  (F.And f f', r ++ r')
 
 -- | helper for rowTypePrj
--- unsafe, only use it where you're checking that a is an 
--- element of the rowtype!!
+--   unsafe, only use it where you're checking that a is an 
+--   element of the rowtype!!
 lookupFexpType :: Attribute -> RowType -> (F.FeatureExpr, Type)
 lookupFexpType a r = case retrieve r a of 
-  Just (f,t) -> (f,t)
+                       Just (f,t) -> (f,t)
 
 
 -- | helper function for typeProj
 rowTypePrj :: [Opt Attribute] -> RowType -> Maybe RowType
 rowTypePrj atts@((p,a):pas) r = case (elem a as, rowTypePrj pas r) of
-  (True, Just t) -> Just ((F.And p f,(a,at)):t)
+                                  (True, Just t) -> Just ((F.And p f,(a,at)):t)
   where 
-    as = map snd atts
+    as     = map snd atts
     (f,at) = lookupFexpType a r
-rowTypePrj [] r = Just []
+rowTypePrj []               r = Just []
 
--- | 
+-- | Projects a list of optional attributes from a type env
 typeProj :: [Opt Attribute] -> TypeEnv -> Maybe TypeEnv
 typeProj atts t = case rowTypePrj atts t of
                         Just t' -> Just t' 
-                        _ -> Nothing
+                        _       -> Nothing
 --case (elem a as, typeProj pas e) of
 --  (True, Just t)  -> Just (f,((F.And p f, a):t))
 --  (False, Just t) -> Just t
@@ -169,122 +178,60 @@ typeProj atts t = case rowTypePrj atts t of
 --  where as = map snd atts
 --typeProj []          (f,r)   = Just (f,[])
 
+-- | projecting a type env onto another type env,
+--   i.e. getting the attributes that exists in the first one from the 
+--   second one
+typeEnvPrj :: TypeEnv -> TypeEnv -> TypeEnv
+typeEnvPrj t t' = filter (\(_,(a,at)) -> elem (a,at) (getAttListFromTypeEnv t)) t'
 
--- |
+-- | t is subsumed by t'. according to the def. in PVLDB paper
 typeSubsume :: TypeEnv -> TypeEnv -> Bool
-typeSubsume t t' | null (at \\ at') = undefined
+typeSubsume t t' | null (at \\ at') = foldr (&&) True subRes
 --  if tautology (F.imply f f') then True
 --    else False
   where 
-    at = map snd t
-    at' = map snd t'
+    subRes = map (\(f,f') -> tautology (F.imply f f')) sub
+    sub    = zip fr fr' 
+    fr     = map fst t 
+    fr'    = map fst t''
+    t''    = typeEnvPrj t t'
+    at     = map snd t
+    at'    = map snd t'
 
-
--- | helper for rowUnion
---shrinkRowType :: RowType -> RowType
---shrinkRowType (att@(f,(a,t)):rt) = if elem att rt then 
---shrinkRowType [] = []
-
-
---inconsecutiveGroupBy :: (a -> a -> Bool) -> [a] -> [[a]]
---inconsecutiveGroupBy f (x:xs) = undefined
---inconsecutiveGroupBy f [x] = [[x]]
---inconsecutiveGroupBy f [] = [[]]
-
--- | helper for typeUnion
---rowUnion :: RowType -> RowType -> RowType
---rowUnion r r' = undefined
---    where
---    comb = groupBy 
---            (\(f,(a,t)) (f',(a',t')) -> if a == a' && t == t'
---                                        then True
---                                        else False) (r ++ r')
-
---  shrinkRowType (r ++ r')
-
+-- | get the list of attributes and their types from a type env
 getAttListFromTypeEnv :: TypeEnv -> [(Attribute,Type)]
 getAttListFromTypeEnv ((f,(a,t)):as) = [(a,t)] ++ getAttListFromTypeEnv as
-getAttListFromTypeEnv [] = []
+getAttListFromTypeEnv []             = []
 
+-- | get the presence condition of a pair of attribute and its type
+--   from a type env
 lookupAttTypeFexpEnv :: (Attribute,Type) -> TypeEnv -> Maybe F.FeatureExpr
-lookupAttTypeFexpEnv (a,t) ((f,(a',t')):as) = if a==a' && t==t' then (Just f) else lookupAttTypeFexpEnv (a,t) as
-lookupAttTypeFexpEnv _ [] = Nothing
+lookupAttTypeFexpEnv (a,t) ((f,(a',t')):as) = if a==a' && t==t' 
+                                              then (Just f) 
+                                              else lookupAttTypeFexpEnv (a,t) as
+lookupAttTypeFexpEnv _      []              = Nothing
 
 
                               
 -- | union two type and keep the order of attributes and allow duplicate 
---   attributes for now
+--   attributes. doesn't evaluate the feature expressions
 typeUnion :: TypeEnv -> TypeEnv -> TypeEnv
 typeUnion e e' = map (\(f,(a,t)) -> case lookupAttTypeFexpEnv (a,t) e' of 
                                       Just f' -> ((F.Or f f'),(a,t))
-                                      _ -> (f,(a,t))) e ++
+                                      _       -> (f,(a,t))) e ++
                  map (\(f,(a,t)) -> case lookupAttTypeFexpEnv (a,t) e of 
                                       Just f' -> ((F.Or f' f),(a,t))
-                                      _ -> (f,(a,t))) e'
+                                      _       -> (f,(a,t))) e'
 
 
-
+-- | shrinks a type by removing duplicates 
+--   duplicates are the pair of (f,(a,t)) that are
+--   exactly the same, i.e., the feature expression
+--   must be exactly the same propositional formula
+--   i.e. it doesn't check for equivalent feature expressions
+--   instead it looks for the exact same formulas
 shrinkTypeUnion :: TypeEnv -> TypeEnv
 shrinkTypeUnion = nub
-
-
-
---
--- * Variational Relational Algebra Validation Semantics / Type System
---
-
--- | type enviroment is a mapping from variational objects to their presence conditions
--- data Env a = Map Objects a 
-
--- type RowType = [Opt (Attribute,Type)]
-
-type RowTypeP = [(Attribute, Type)]
-type SchemaP = Map Relation RowTypeP
-
-data Objects = TAttr Attribute 
-             | TRel  Relation
-             | TSch  SchemaP
-             deriving (Show, Eq,Ord)
-
--- type Schema = Opt (Map Relation (Opt RowType))
-
--- | s: a mapping from objects to presence condition (featureExpr)
--- | result: presence condition (featureExpr)
-type Env = StateT (Map Objects F.FeatureExpr) Maybe 
-
--- | static semantics for V-query
-semVquery :: Algebra -> Env Schema
-semVquery  (AChc  f l r)       = undefined
-semVquery  (SetOp Prod l r)    = undefined 
-semVquery  (SetOp Union l r)   = undefined
-semVquery  (SetOp Diff l r)    = undefined
-semVquery  (Proj  opAttrs a)   = do st <- get
-                                    let newAList = map (\(f,a) ->  (TAttr a,f)) opAttrs
-                                    let newMap = M.fromList newAList
-                                    put $ M.union st newMap 
-                                    semVquery a
-semVquery  (Sel   cond a)      = undefined
-    -- do st <- get 
-    --                                 let newMap = semVcond cond 
-    --                                 newMap' <- newMap
-    --                                 put $ M.union st newMap'
-    --                                 semVquery a
-semVquery  (TRef  r)           = undefined   
-semVquery   Empty              = undefined
-
--- | static semantics for V-conditions
-semVcond :: C.Condition -> Env Schema 
-semVcond (C.Lit b)             = undefined
-semVcond (C.Comp op a1 a2)     = undefined 
-semVcond (C.Not  cond)         = undefined
-semVcond (C.Or   cond1 cond2)  = undefined
-semVcond (C.And  cond1 cond2)  = undefined
-semVcond (C.CChc _ _ _ )       = undefined
-
-
-
-
-
 
 
 
