@@ -9,7 +9,7 @@ import qualified VDB.Target as T
 import VDB.Variational
 import qualified VDB.Value as V
 
-import VDB.VSqlToAlgebra 
+import VDB.Translations.VSqlToAlgebra 
 
 -- | Basic compolent for Queryies 
 fA :: F.FeatureExpr 

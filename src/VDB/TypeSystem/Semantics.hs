@@ -9,7 +9,7 @@ import VDB.Variational
 import VDB.Value  
 import VDB.Schema
 import VDB.Config 
-import VDB.AlgebraToSql
+--import VDB.AlgebraToSql
 import VDB.SAT
 
 import Data.Map(Map)

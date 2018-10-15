@@ -22,7 +22,7 @@ extra-source-files:
 library
   exposed-modules:
       VDB.Algebra
-      VDB.AlgebraToSql
+      VDB.Translations.AlgebraToSql
       VDB.Condition
       VDB.Config
       VDB.Example.TwoOption
@@ -38,7 +38,8 @@ library
       VDB.TypeSystem.Semantics
       VDB.Value
       VDB.Variational
-      VDB.VSqlToAlgebra
+      VDB.Translations.VSqlToAlgebra
+      VDB.Translations.BruteForceAlg2Sql
   other-modules:
       Paths_vdbms
   hs-source-dirs:
