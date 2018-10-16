@@ -50,6 +50,7 @@ library
       HDBC
     , persistent >=2.9 && <3
     , persistent-sqlite
+    , persistent-template
     , QuickCheck
     , base >=4.7 && <5
     , containers >=0.5
@@ -72,6 +73,7 @@ executable vdbms
       HDBC
     , persistent >=2.9 && <3
     , persistent-sqlite
+    , persistent-template
     , QuickCheck
     , base >=4.7 && <5
     , containers >=0.5
@@ -100,6 +102,7 @@ test-suite vsat-test
       HDBC
     , persistent >=2.9 && <3
     , persistent-sqlite
+    , persistent-template
     , QuickCheck
     , base >=4.7 && <5
     , containers >=0.5
