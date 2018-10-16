@@ -40,13 +40,16 @@ library
       VDB.Variational
       VDB.Translations.VSqlToAlgebra
       VDB.Translations.BruteForceAlg2Sql
+      VDB.DBsetup.SqliteSetup
   other-modules:
       Paths_vdbms
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell
   build-depends:
       HDBC
+    , persistent >=2.9 && <3
+    , persistent-sqlite
     , QuickCheck
     , base >=4.7 && <5
     , containers >=0.5
@@ -63,10 +66,12 @@ executable vdbms
       Paths_vdbms
   hs-source-dirs:
       app
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       HDBC
+    , persistent >=2.9 && <3
+    , persistent-sqlite
     , QuickCheck
     , base >=4.7 && <5
     , containers >=0.5
@@ -89,10 +94,12 @@ test-suite vsat-test
     , TestTwoOptionExample
   hs-source-dirs:
       test
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HDBC
+    , persistent >=2.9 && <3
+    , persistent-sqlite
     , QuickCheck
     , base >=4.7 && <5
     , containers >=0.5
