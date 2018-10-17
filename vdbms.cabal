@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3ea5c9d2ee816dfa02faeba13152957d57baf6f80d8cb51396c765bc4cec7060
+-- hash: 3188df376c35003825ca4039a0392b0db48278d2d31d1c1faa2611ee5c0de294
 
 name:           vdbms
 version:        0.1.0.0
@@ -22,11 +22,12 @@ extra-source-files:
 library
   exposed-modules:
       VDB.Algebra
-      VDB.Translations.AlgebraToSql
       VDB.Condition
       VDB.Config
-      VDB.Example.TwoOption
+      VDB.DBsetup.SqliteSetup
       VDB.Example.Query
+      VDB.Example.TwoOption
+      VDB.Example.TwoPathTest
       VDB.FeatureExpr
       VDB.Name
       VDB.ParsingSQL
@@ -35,12 +36,12 @@ library
       VDB.SQL
       VDB.Table
       VDB.Target
+      VDB.Translations.AlgebraToSql
+      VDB.Translations.BruteForceAlg2Sql
+      VDB.Translations.VSqlToAlgebra
       VDB.TypeSystem.Semantics
       VDB.Value
       VDB.Variational
-      VDB.Translations.VSqlToAlgebra
-      VDB.Translations.BruteForceAlg2Sql
-      VDB.DBsetup.SqliteSetup
   other-modules:
       Paths_vdbms
   hs-source-dirs:
@@ -48,15 +49,16 @@ library
   default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell
   build-depends:
       HDBC
-    , persistent >=2.9 && <3
-    , persistent-sqlite
-    , persistent-template
     , QuickCheck
     , base >=4.7 && <5
+    , conduit
     , containers >=0.5
     , megaparsec
     , mtl
     , parsec
+    , persistent >=2.9 && <3
+    , persistent-sqlite
+    , persistent-template
     , sbv
     , text
   default-language: Haskell2010
@@ -71,15 +73,16 @@ executable vdbms
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       HDBC
-    , persistent >=2.9 && <3
-    , persistent-sqlite
-    , persistent-template
     , QuickCheck
     , base >=4.7 && <5
+    , conduit
     , containers >=0.5
     , megaparsec
     , mtl
     , parsec
+    , persistent >=2.9 && <3
+    , persistent-sqlite
+    , persistent-template
     , sbv
     , text
     , vdbms
@@ -90,28 +93,24 @@ test-suite vsat-test
   main-is: Spec.hs
   other-modules:
       Tests
-    , Paths_vdbms
-    , TestTranslater_Phase1
-    , TestTranslater_Phase2
-    , TestTwoOptionExample
+      Paths_vdbms
   hs-source-dirs:
       test
   default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HDBC
-    , persistent >=2.9 && <3
-    , persistent-sqlite
-    , persistent-template
     , QuickCheck
     , base >=4.7 && <5
+    , conduit
     , containers >=0.5
     , megaparsec
     , mtl
     , parsec
+    , persistent >=2.9 && <3
+    , persistent-sqlite
+    , persistent-template
     , sbv
     , text
     , vdbms
-    , tasty
-    , tasty-hunit
   default-language: Haskell2010

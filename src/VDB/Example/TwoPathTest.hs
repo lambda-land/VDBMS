@@ -1,9 +1,9 @@
 -- | To Do: 1. Quick check for generating randomly v-query
 --          2. Need to connect to VDB of PostgreSql
 
-module VDB.TwoPathTest where 
+module VDB.Example.TwoPathTest where 
 
-import VDB.AlgebraToSql
+import VDB.Translations.AlgebraToSql
 import VDB.Config
 import VDB.Algebra
 import VDB.Variational 
@@ -28,11 +28,13 @@ configFromVQuery c achc@(AChc _ _ _)  = configFromVQuery c $ configure c achc
 configFromVQuery _ (TRef  r)          = From r 
 configFromVQuery _ (Empty)            = EmptyQuery
 
+{-- commented the following since I was getting some errors
 type QResult =  [[SqlValue]]
 type VQResult = [[SqlValue]]
 
 configFromVResult :: Config Bool -> IO VQResult -> IO QResult 
 configFromVResult = undefined 
+--}
 
 {-queryDB :: SqlQuery -> IO [[SqlValue]]
 queryDB sqlQ = do

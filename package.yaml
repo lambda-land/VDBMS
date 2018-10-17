@@ -30,6 +30,10 @@ dependencies:
 - HDBC
 - QuickCheck
 - mtl
+- persistent >=2.9 && <3
+- persistent-sqlite
+- persistent-template
+- conduit
 
 library:
   source-dirs: src
@@ -42,6 +46,10 @@ default-extensions:
   - FlexibleInstances
   - DeriveDataTypeable
   - MultiParamTypeClasses
+  - GADTs 
+  - TypeFamilies 
+  - QuasiQuotes 
+  - TemplateHaskell
 
 
 executables:
