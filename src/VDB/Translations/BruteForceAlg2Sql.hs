@@ -22,6 +22,7 @@ import Data.Text as T (Text, pack, append, concat)
 
 bruteTrans :: Algebra -> [Text]
 -- TODO: refactor the first three cases and their helpers!!!!
+-- check1
 bruteTrans (SetOp Union l r) = [unionBruteAux lq rq | lq <- lres, rq <- rres]
   where 
     lres = bruteTrans l
@@ -40,6 +41,7 @@ bruteTrans (Proj oas q)       = map (\q' -> T.concat ["select ", as, " from ", q
     as = prjBruteAux oas
 bruteTrans (Sel c q)         = map (\q' -> T.concat ["select * from ", q', " where " , T.pack (show c)]) res
   where res = bruteTrans q
+-- check2
 bruteTrans (AChc f l r)      = lres ++ rres
   where 
     lres = bruteTrans l
@@ -62,6 +64,6 @@ unionBruteAux l r = T.concat [l, " union ", r]
 
 -- | helper function for the projection query
 prjBruteAux :: [Opt Attribute] -> Text
-prjBruteAux ((o,a):oas) = T.append (T.concat [T.pack(attributeName a), ", "]) (prjBruteAux oas)
 prjBruteAux [(o,a)] = T.pack (attributeName a)
+prjBruteAux ((o,a):oas) = T.append (T.concat [T.pack(attributeName a), ", "]) (prjBruteAux oas)
 prjBruteAux [] = " "
