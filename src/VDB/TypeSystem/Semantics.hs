@@ -146,7 +146,7 @@ typeEq as as' = attTypeEq as as' && equivAttFexp as as'
 
 -- | Type enviornment cross product
 typeProduct :: TypeEnv -> TypeEnv -> TypeEnv
-typeProduct r r' = r ++ r'
+typeProduct = (++)
 --  (F.And f f', r ++ r')
 
 -- | helper for rowTypePrj
