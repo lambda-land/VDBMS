@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 648cff984ea973d8d5334677678e6bf79f4ce53096d22daee1b37e3d1806a614
+-- hash: 7ab1248fc99aa44200c432ff7ec37485f78232e01a5386479c7faafa4f8f2a34
 
 name:           vdbms
 version:        0.1.0.0
@@ -24,7 +24,7 @@ library
       VDB.Algebra
       VDB.Condition
       VDB.Config
-      VDB.DBsetup.Main
+      VDB.DBsetup.EnronEmailDB
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest

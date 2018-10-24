@@ -9,7 +9,7 @@ module VDB.Translations.BruteForceAlg2Sql where
 -- import VDB.SQL 
 import VDB.Algebra
 import VDB.Name
---import qualified VDB.FeatureExpr as F
+import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C
 import qualified VDB.Target as T
 import VDB.Variational
@@ -22,31 +22,29 @@ import Database.Persist.Sql (rawQuery, insert)
 import Data.Text as T (Text, pack, append, concat)
 
 
-bruteTrans :: Algebra -> [Text]
-bruteTrans (SetOp s l r) = [bruteAux s lq rq | lq <- lres, rq <- rres]
+bruteTrans :: Algebra -> F.FeatureExpr -> [Opt Text]
+bruteTrans (SetOp s l r) ctxt = [bruteAux s lq rq | lq <- lres, rq <- rres]
   where 
-    lres = bruteTrans l
-    rres = bruteTrans r
-bruteTrans (Proj oas q)       = map (\q' -> T.concat ["select ", as, " from ", q']) res
+    lres = bruteTrans l ctxt
+    rres = bruteTrans r ctxt
+bruteTrans (Proj oas q)  ctxt = map (\(f, q') -> (f, T.concat ["select ", as, " from ", q'])) res
   where 
-    res = bruteTrans q
-    as = prjBruteAux oas
-bruteTrans (Sel c q)         = map (\q' -> T.concat ["select * from ", q', " where " , T.pack (show c)]) res
-  where res = bruteTrans q
--- check2 --> update the pres cond clm of tuples
--- returned result? var-table or multiple relational table? var table
-bruteTrans (AChc f l r)      = lres ++ rres
+    res = bruteTrans q ctxt
+    as  = prjBruteAux oas 
+bruteTrans (Sel c q)     ctxt = map (\(f, q') -> (f, T.concat ["select * from ", q', " where " , T.pack (show c)])) res
+  where res = bruteTrans q ctxt
+bruteTrans (AChc f l r)  ctxt = lres ++ rres
   where 
-    lres = bruteTrans l
-    rres = bruteTrans r
---but then I'm losing the correspondenct variation!
-bruteTrans (TRef r)          = [T.append "select * from " (T.pack (relationName r))]
-bruteTrans (Empty)           = ["select null"]
+    lres = bruteTrans l (F.And f ctxt)
+    rres = bruteTrans r (F.And (F.Not f) ctxt)
+bruteTrans (TRef r)      ctxt = [(ctxt, T.append "select * from " (T.pack (relationName r)))]
+bruteTrans (Empty)       ctxt = [(ctxt, "select null")]
 
-bruteAux :: SetOp -> Text -> Text -> Text
-bruteAux Union l r = T.concat [l, " union ", r]
-bruteAux Diff  l r = T.concat [l, " minus ", r]
-bruteAux Prod  l r = T.concat ["select * from (" , l, ") join (", r, ")"]
+-- | helper function for Setop queries, i.e., union, diff, prod
+bruteAux :: SetOp -> Opt Text -> Opt Text -> Opt Text
+bruteAux Union = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat [l, " union ", r])
+bruteAux Diff  = \(lo, l) (ro, r) -> ((F.And lo (F.Not ro)), T.concat [l, " minus ", r])
+bruteAux Prod  = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat ["select * from (" , l, ") join (", r, ")"])
 
 -- | helper function for the projection query
 prjBruteAux :: [Opt Attribute] -> Text
