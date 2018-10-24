@@ -83,13 +83,14 @@ main :: IO ()
 main = runSqlite "enronEmail.sqlite3" $ runMigration enronEmail
 
 {--
+
 main = runSqlite "test1.sqlite3" $ do
     runMigrationSilent migrateTables{-hi-}
-    insert $ Tutorial "Basic Haskell" "https://fpcomplete.com/school/basic-haskell-1" True{-/hi-}
+    insert $ PresCond "emp" "msg" "rec" "ref" {-/hi-}
     dumpTable
 
 
-dumpTable = rawQuery "select * from Tutorial" [] $$ CL.mapM_ (liftIO . print)
+dumpTable = rawQuery "select * from PresCond" [] $$ CL.mapM_ (liftIO . print)
 
 --}
 

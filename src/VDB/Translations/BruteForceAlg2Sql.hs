@@ -1,6 +1,8 @@
 -- Brute force translation of Variational relational algebra to SQL
 -- with raw queries, queries are written in sql as text and passed 
 -- to the rawQuery function
+-- Note that the result returned by the brute force approach is a
+-- variational table
 module VDB.Translations.BruteForceAlg2Sql where 
 
 --import Prelude hiding (EQ ,LT ,GT)
@@ -21,17 +23,7 @@ import Data.Text as T (Text, pack, append, concat)
 
 
 bruteTrans :: Algebra -> [Text]
--- TODO: refactor the first three cases and their helpers!!!!
--- check1
-bruteTrans (SetOp Union l r) = [unionBruteAux lq rq | lq <- lres, rq <- rres]
-  where 
-    lres = bruteTrans l
-    rres = bruteTrans r
-bruteTrans (SetOp Diff l r)  = [diffBruteAux lq rq | lq <- lres, rq <- rres]
-  where 
-    lres = bruteTrans l
-    rres = bruteTrans r
-bruteTrans (SetOp Prod l r)  = [prodBruteAux lq rq | lq <- lres, rq <- rres]
+bruteTrans (SetOp s l r) = [bruteAux s lq rq | lq <- lres, rq <- rres]
   where 
     lres = bruteTrans l
     rres = bruteTrans r
@@ -41,7 +33,8 @@ bruteTrans (Proj oas q)       = map (\q' -> T.concat ["select ", as, " from ", q
     as = prjBruteAux oas
 bruteTrans (Sel c q)         = map (\q' -> T.concat ["select * from ", q', " where " , T.pack (show c)]) res
   where res = bruteTrans q
--- check2
+-- check2 --> update the pres cond clm of tuples
+-- returned result? var-table or multiple relational table? var table
 bruteTrans (AChc f l r)      = lres ++ rres
   where 
     lres = bruteTrans l
@@ -50,17 +43,10 @@ bruteTrans (AChc f l r)      = lres ++ rres
 bruteTrans (TRef r)          = [T.append "select * from " (T.pack (relationName r))]
 bruteTrans (Empty)           = ["select null"]
 
--- | helper function for the product query
-prodBruteAux :: Text -> Text -> Text
-prodBruteAux l r = T.concat ["select * from (" , l, ") join (", r, ")"]
-
--- | helper function for the diff query
-diffBruteAux :: Text -> Text -> Text
-diffBruteAux l r = T.concat [l, " minus ", r]
-
--- | helper function for the union query
-unionBruteAux :: Text -> Text -> Text
-unionBruteAux l r = T.concat [l, " union ", r]
+bruteAux :: SetOp -> Text -> Text -> Text
+bruteAux Union l r = T.concat [l, " union ", r]
+bruteAux Diff  l r = T.concat [l, " minus ", r]
+bruteAux Prod  l r = T.concat ["select * from (" , l, ") join (", r, ")"]
 
 -- | helper function for the projection query
 prjBruteAux :: [Opt Attribute] -> Text
