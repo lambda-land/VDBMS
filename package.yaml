@@ -51,6 +51,7 @@ default-extensions:
   - TypeFamilies 
   - QuasiQuotes 
   - TemplateHaskell
+  - EmptyDataDecls
 
 
 executables:

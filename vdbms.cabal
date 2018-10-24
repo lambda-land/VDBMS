@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 48f01a6f005aff17ea7088e0d71260e4ed1363d308c98d7e2280b6973103754b
+-- hash: 648cff984ea973d8d5334677678e6bf79f4ce53096d22daee1b37e3d1806a614
 
 name:           vdbms
 version:        0.1.0.0
@@ -24,7 +24,7 @@ library
       VDB.Algebra
       VDB.Condition
       VDB.Config
-      VDB.DBsetup.EmailDBSqlite
+      VDB.DBsetup.Main
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
@@ -46,7 +46,7 @@ library
       Paths_vdbms
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls
   build-depends:
       HDBC
     , QuickCheck
@@ -70,7 +70,7 @@ executable vdbms
       Paths_vdbms
   hs-source-dirs:
       app
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       HDBC
@@ -98,7 +98,7 @@ test-suite vsat-test
       Paths_vdbms
   hs-source-dirs:
       test
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HDBC

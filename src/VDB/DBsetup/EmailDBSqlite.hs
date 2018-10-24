@@ -1,5 +1,5 @@
 -- Brute force translation of Variational relational algebra to SQL
-module VDB.DBsetup.EmailDBSqlite where 
+module VDB.DBsetup.Main where 
 
 --import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 
@@ -17,8 +17,8 @@ import Database.Persist.TH (mkPersist, mkMigrate, persistLowerCase,
        share, sqlSettings, mkSave)
 
 -- imports for dumpTable
---import Database.Persist.Sql (rawQuery, {-hi-}insert{-/hi-})
-import Database.Persist.Sql (rawQuery, insert)
+import Database.Persist.Sql (rawQuery, {-hi-}insert{-/hi-})
+--import Database.Persist.Sql (rawQuery, insert)
 import Data.Conduit (($$))
 import Data.Conduit.List as CL
 import Control.Monad.IO.Class (liftIO)
@@ -80,34 +80,32 @@ PresCond
 
 
 main :: IO ()
-main = runSqlite "enronEmail.sqlite3" $ runMigration enronEmail
+--main = runSqlite "/Users/Paris/Desktop/enronEmail.sqlite3" $ runMigration enronEmail
 
-{--
 
-main = runSqlite "test1.sqlite3" $ do
-    runMigrationSilent migrateTables{-hi-}
+{--main = runSqlite ":memory:" $ do
+    runMigration enronEmail{-hi-}
     insert $ PresCond "emp" "msg" "rec" "ref" {-/hi-}
     dumpTable
 
 
 dumpTable = rawQuery "select * from PresCond" [] $$ CL.mapM_ (liftIO . print)
-
 --}
 
-{-main = runSqlite "/src/VDB/DBsetup/test1.sqlite3" $ do
+-- main = do liftIO $ print "don't go there"
+
+main = runSqlite ":memory:" $ do
     buildDb
     dumpTable
 
 
 buildDb = do
-    runMigration migrateTables
-    insert $ Tutorial "Basic Haskell" "https://fpcomplete.com/school/basic-haskell-1" True
-    insert $ Tutorial "A monad tutorial" "https://fpcomplete.com/user/anne/monads" False
-    insert $ Tutorial "Yesod usage" "https://fpcomplete.com/school/basic-yesod" True
-    insert $ Tutorial "Putting the FUN in functors" "https://fpcomplete.com/user/anne/functors" False
-    insert $ Tutorial "Basic Haskell" "https://fpcomplete/user/anne/basics" False
+    runMigration enronEmail
+    insert $ PresCond "emp" "msg" "rec" "ref" 
+    insert $ PresCond "emp" "msg" "rec" "ref" 
+    insert $ PresCond "emp" "msg" "rec" "ref" 
 
 
 
-dumpTable = rawQuery "select * from Tutorial" [] $$ CL.mapM_ (liftIO . print)
--}
+dumpTable = rawQuery "select * from PresCond" [] $$ CL.mapM_ (liftIO . print)
+
