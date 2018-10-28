@@ -6,3 +6,4 @@ dist
 .tar.gz
 .pgsql
 .sql
+.csv
