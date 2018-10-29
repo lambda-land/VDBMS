@@ -1,5 +1,4 @@
 -- Brute force translation of Variational relational algebra to SQL
--- this must be in the main file!!
 module VDB.DBsetup.EnronEmailDB where 
 
 --import Prelude hiding (EQ ,LT ,GT)
@@ -80,7 +79,7 @@ PresCond
 |]
 
 
-main :: IO ()
+--main :: IO ()
 --main = runSqlite "/Users/Paris/Desktop/enronEmail.sqlite3" $ runMigration enronEmail
 
 
@@ -94,8 +93,8 @@ dumpTable = rawQuery "select * from PresCond" [] $$ CL.mapM_ (liftIO . print)
 --}
 
 -- main = do liftIO $ print "don't go there"
-
-main = runSqlite ":memory:" $ do
+enronEmailEncode :: IO ()
+enronEmailEncode = runSqlite ":memory:" $ do
     buildDb
     dumpTable
 
@@ -108,5 +107,5 @@ buildDb = do
 
 
 
-dumpTable = rawQuery "select * from PresCond" [] $$ CL.mapM_ (liftIO . print)
+dumpTable = rawQuery "select * from pres_cond" [] $$ CL.mapM_ (liftIO . print)
 

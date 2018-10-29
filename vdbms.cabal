@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7ab1248fc99aa44200c432ff7ec37485f78232e01a5386479c7faafa4f8f2a34
+-- hash: 3d14f9cef854ae1258e31a4018fbb0159f10dcdebfd88d67dad6aa18319792bd
 
 name:           vdbms
 version:        0.1.0.0
@@ -22,6 +22,9 @@ extra-source-files:
 library
   exposed-modules:
       VDB.Algebra
+      VDB.BruteForce.BruteForceAlg2Sql
+      VDB.BruteForce.BruteForceAppSat
+      VDB.BruteForce.BruteForceSendQs
       VDB.Condition
       VDB.Config
       VDB.DBsetup.EnronEmailDB
@@ -37,7 +40,6 @@ library
       VDB.Table
       VDB.Target
       VDB.Translations.AlgebraToSql
-      VDB.Translations.BruteForceAlg2Sql
       VDB.Translations.VSqlToAlgebra
       VDB.TypeSystem.Semantics
       VDB.Value
