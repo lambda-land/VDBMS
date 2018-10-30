@@ -18,8 +18,8 @@ vsqlToAlgebra (QChc f l r)                = AChc f (vsqlToAlgebra l) (vsqlToAlge
 -- | A helper function to translate RealtionList to the version of Algebra
 transRelationList :: [(F.FeatureExpr, Relation)]-> Algebra
 transRelationList []     = Empty
-transRelationList [x]    = SetOp Prod (transOptRelation x) Empty  -- ?
-transReltaionList (x:xs) = SetOp Prod (transOptRelation x) (transRelationList xs)  
+-- transRelationList [x]    = SetOp Prod (transOptRelation x) Empty  -- ?
+transRelationList (x:xs) = SetOp Prod (transOptRelation x) (transRelationList xs)  
 
 -- | A helper function to translate Relation to the version of Algebra
 transOptRelation :: Opt Relation -> Algebra
