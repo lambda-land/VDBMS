@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3d14f9cef854ae1258e31a4018fbb0159f10dcdebfd88d67dad6aa18319792bd
+-- hash: 19f881f28a0c23e54175b04b9d46e89404624936bc479d6401ef989b41080ec7
 
 name:           vdbms
 version:        0.1.0.0
@@ -24,10 +24,13 @@ library
       VDB.Algebra
       VDB.BruteForce.BruteForceAlg2Sql
       VDB.BruteForce.BruteForceAppSat
+      VDB.BruteForce.BruteForceAppSatPersist
       VDB.BruteForce.BruteForceSendQs
+      VDB.BruteForce.BruteForceSendQsPersist
       VDB.Condition
       VDB.Config
       VDB.DBsetup.EnronEmailDB
+      VDB.DBsetup.EnronEmailDBPersist
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
@@ -51,10 +54,12 @@ library
   default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls
   build-depends:
       HDBC
+    , HDBC-sqlite3 >=2.3.3.1
     , QuickCheck
     , base >=4.7 && <5
     , conduit
     , containers >=0.5
+    , direct-sqlite
     , megaparsec
     , mtl
     , parsec
@@ -76,10 +81,12 @@ executable vdbms
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       HDBC
+    , HDBC-sqlite3 >=2.3.3.1
     , QuickCheck
     , base >=4.7 && <5
     , conduit
     , containers >=0.5
+    , direct-sqlite
     , megaparsec
     , mtl
     , parsec
@@ -104,10 +111,12 @@ test-suite vsat-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HDBC
+    , HDBC-sqlite3 >=2.3.3.1
     , QuickCheck
     , base >=4.7 && <5
     , conduit
     , containers >=0.5
+    , direct-sqlite
     , megaparsec
     , mtl
     , parsec
