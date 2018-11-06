@@ -24,9 +24,24 @@ import Database.HDBC.SqlValue
 -- type Table = [Row]
 -- type Vtable = Opt Table
 
+-- type ClmNameIncludedRow = [(String, SqlValue)]
+-- type ClmNameIncludedTable = [ClmNameIncludedRow]
+-- type ClmNameIncludedVtable = Opt ClmNameIncludedTable
+
+-- type ClmRowMap = Map String SqlValue
+-- type ClmTableMap = [ClmRowMap]
+-- type ClmVtableMap = Opt ClmTableMap
+
 -- type Query = T.Text
 -- type Vquery = Opt Query
 
 
-checkSatBrute :: Vtable -> Vtable
-checkSatBrute = undefined 
+checkSatClmRow :: ClmNameIncludedRow -> F.FeatureExpr -> ClmNameIncludedRow
+checkSatClmRow = undefined
+
+checkSatVtable :: ClmNameIncludedVtable -> ClmNameIncludedVtable
+checkSatVtable = undefined 
+
+
+checkSatVtableMap :: ClmVtableMap -> ClmVtableMap
+checkSatVtableMap = undefined
