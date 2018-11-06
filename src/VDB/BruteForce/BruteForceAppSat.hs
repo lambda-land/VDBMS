@@ -11,41 +11,22 @@ import qualified VDB.Target as T
 import VDB.Variational
 import VDB.Value  
 
-import Database.Persist
-import Database.Persist.Sqlite
-import Database.Persist.Sql (rawQuery, insert)
+import VDB.BruteForce.BruteForceSendQs
+--import VDB.BruteForce.BruteForceAlg2Sql
 
-import Data.Text as T (Text, pack, append, concat)
+--import Data.Text as T (Text, pack, append, concat)
+import Data.SBV 
 
-{--
-bruteTrans :: Algebra -> F.FeatureExpr -> [Opt Text]
-bruteTrans (SetOp s l r) ctxt = [bruteAux s lq rq | lq <- lres, rq <- rres]
-  where 
-    lres = bruteTrans l ctxt
-    rres = bruteTrans r ctxt
-bruteTrans (Proj oas q)  ctxt = map (\(f, q') -> (f, T.concat ["select ", as, " from ", q'])) res
-  where 
-    res = bruteTrans q ctxt
-    as  = prjBruteAux oas 
-bruteTrans (Sel c q)     ctxt = map (\(f, q') -> (f, T.concat ["select * from ", q', " where " , T.pack (show c)])) res
-  where res = bruteTrans q ctxt
-bruteTrans (AChc f l r)  ctxt = lres ++ rres
-  where 
-    lres = bruteTrans l (F.And f ctxt)
-    rres = bruteTrans r (F.And (F.Not f) ctxt)
-bruteTrans (TRef r)      ctxt = [(ctxt, T.append "select * from " (T.pack (relationName r)))]
-bruteTrans (Empty)       ctxt = [(ctxt, "select null")]
+import Database.HDBC
+import Database.HDBC.SqlValue
 
--- | helper function for Setop queries, i.e., union, diff, prod
-bruteAux :: SetOp -> Opt Text -> Opt Text -> Opt Text
-bruteAux Union = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat [l, " union ", r])
-bruteAux Diff  = \(lo, l) (ro, r) -> ((F.And lo (F.Not ro)), T.concat [l, " minus ", r])
-bruteAux Prod  = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat ["select * from (" , l, ") join (", r, ")"])
+-- type Row = [SqlValue]
+-- type Table = [Row]
+-- type Vtable = Opt Table
 
--- | helper function for the projection query
-prjBruteAux :: [Opt Attribute] -> Text
-prjBruteAux [(o,a)] = T.pack (attributeName a)
-prjBruteAux ((o,a):oas) = T.append (T.concat [T.pack(attributeName a), ", "]) (prjBruteAux oas)
-prjBruteAux [] = " 
+-- type Query = T.Text
+-- type Vquery = Opt Query
 
---}
+
+checkSatBrute :: Vtable -> Vtable
+checkSatBrute = undefined 

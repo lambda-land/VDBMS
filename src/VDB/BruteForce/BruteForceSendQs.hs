@@ -17,6 +17,7 @@ import VDB.Value
 import Control.Monad
 
 import Data.Text as T (Text, pack, append, concat, unpack)
+import Data.Map
 
 --import Database.HDBC.Sqlite3
 import Database.HDBC
@@ -25,6 +26,14 @@ import Database.HDBC
 type Row = [SqlValue]
 type Table = [Row]
 type Vtable = Opt Table
+
+type ClmNameIncludedRow = [(String, SqlValue)]
+type ClmNameIncludedTable = [ClmNameIncludedRow]
+type ClmNameIncludedVtable = Opt ClmNameIncludedTable
+
+type ClmRowMap = Map String SqlValue
+type ClmTableMap = [ClmRowMap]
+type ClmVtableMap = Opt ClmTableMap
 
 type Query = T.Text
 type Vquery = Opt Query
@@ -45,7 +54,7 @@ mkStatement  = flip prepare . T.unpack
 -- fetchAllRows :: Statement -> IO [[SqlValue]]
 -- | gets a query with its assigned fexp and returns the result
 --  with the table pres cond attached to it
-runBruteQ :: IConnection conn => Vquery -> conn -> IO (Vtable)
+runBruteQ :: IConnection conn => Vquery -> conn -> IO Vtable
 runBruteQ (o,t) conn = do 
   q <- mkStatement t conn
   r <- fetchAllRows q 
@@ -55,3 +64,31 @@ runBruteQ (o,t) conn = do
 --  and returns their results with the table pres cond
 runBruteQs :: IConnection conn => [Vquery] -> conn -> IO [Vtable]
 runBruteQs qs conn = mapM ((flip runBruteQ) conn) qs
+
+-- fetchAllRowsAL :: Statement -> IO [[(String, SqlValue)]]
+-- | gets a vquery and returns a vtable where column names are included
+runBruteQclm :: IConnection conn => Vquery -> conn -> IO ClmNameIncludedVtable
+runBruteQclm (o,t) conn = do
+  q <- mkStatement t conn
+  r <- fetchAllRowsAL q
+  return (o,r)
+
+
+-- | gets a list of vqueries and returns a vtable where column names 
+--   are included
+runBruteQsClm :: IConnection conn => [Vquery] -> conn -> IO [ClmNameIncludedVtable]
+runBruteQsClm qs conn = mapM ((flip runBruteQclm) conn) qs
+
+-- fetchAllRowsMap :: Statement -> IO [Map String SqlValue]
+-- | gets a vquery and returns a table where each row is a map of 
+--   attribute name to value (might be more efficient! double check
+--   with Eric)
+runBruteQclmMap :: IConnection conn => Vquery -> conn -> IO ClmVtableMap
+runBruteQclmMap (o,t) conn = do
+  q <- mkStatement t conn
+  r <- fetchAllRowsMap q
+  return (o,r)
+
+runBruteQsClmMap :: IConnection conn => [Vquery] -> conn -> IO [ClmVtableMap]
+runBruteQsClmMap qs conn = mapM ((flip runBruteQclmMap) conn) qs
+
