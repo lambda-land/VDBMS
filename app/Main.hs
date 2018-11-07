@@ -2,5 +2,8 @@ module Main where
 
 import VDB.DBsetup.EnronEmailDB
 
-main :: IO ()
-main = enronEmailEncode
+import Database.HDBC.Sqlite3
+
+main :: IO Connection
+main = enronEmail
+--main = return ()

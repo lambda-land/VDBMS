@@ -35,6 +35,10 @@ dependencies:
 - persistent-template
 - conduit
 - time
+- direct-sqlite
+- HDBC-sqlite3 >= 2.3.3.1 
+- convertible
+- bytestring
 
 library:
   source-dirs: src
