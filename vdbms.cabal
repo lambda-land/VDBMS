@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f076a178b27e004334cc1865fe94f11fb5279c7dd6017260c325b71a4930305a
+-- hash: 6a001479cd0a2470088c092a781b6b37109e47764f3d22b38b7428dba26fda6d
 
 name:           vdbms
 version:        0.1.0.0
@@ -58,8 +58,10 @@ library
     , HDBC-sqlite3 >=2.3.3.1
     , QuickCheck
     , base >=4.7 && <5
+    , bytestring
     , conduit
     , containers >=0.5
+    , convertible
     , direct-sqlite
     , megaparsec
     , mtl
@@ -85,8 +87,10 @@ executable vdbms
     , HDBC-sqlite3 >=2.3.3.1
     , QuickCheck
     , base >=4.7 && <5
+    , bytestring
     , conduit
     , containers >=0.5
+    , convertible
     , direct-sqlite
     , megaparsec
     , mtl
@@ -115,8 +119,10 @@ test-suite vsat-test
     , HDBC-sqlite3 >=2.3.3.1
     , QuickCheck
     , base >=4.7 && <5
+    , bytestring
     , conduit
     , containers >=0.5
+    , convertible
     , direct-sqlite
     , megaparsec
     , mtl
