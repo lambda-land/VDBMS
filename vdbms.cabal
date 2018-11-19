@@ -34,7 +34,8 @@ library
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
-      VDB.Example.EmployeeSchema
+      VDB.Example.EmployeeUseCase.EmployeeSchema
+      VDB.Example.EmployeeUseCase.EmployeeQuery
       VDB.FeatureExpr
       VDB.Name
       VDB.ParsingSQL

@@ -1,5 +1,5 @@
--- | A example schema revolution in an employee data base
-module VDB.Example.EmployeeSchema where
+ -- | A example schema revolution in an employee data base
+module VDB.Example.EmployeeUseCase.EmployeeSchema where
 
 import VDB.Schema
 import VDB.FeatureExpr
