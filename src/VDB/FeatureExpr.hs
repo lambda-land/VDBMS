@@ -14,6 +14,8 @@ import Data.SBV
 
 import Database.HDBC
 
+--import Text.Megaparsec
+
 import VDB.Config
 import VDB.Name
 import VDB.SAT
@@ -156,7 +158,7 @@ extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
     source     = "some SqlValue"
     sourceType = "SqlValue"
     destType   = "FeatureExpr"
-     msg        = "types went wrong: should be SqlByteString sth"
+    msg        = "types went wrong: should be SqlByteString sth"
 
 instance Boolean FeatureExpr where
   true  = Lit True
