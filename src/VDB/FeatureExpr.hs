@@ -80,6 +80,7 @@ prettyFeatureExpr = top
     sub e         = "(" ++ top e ++ ")"
 
 -- | not very pretty pretty print of a feature expression.
+--   wrote it for the parser but don't need but i'm going to keep it!
 prettyFeatureExpr' :: FeatureExpr -> String
 prettyFeatureExpr' = top
   where
@@ -136,7 +137,7 @@ shrinkFeatureExpr e = e
 --   which is constructed by the SqlByteString data constructor
 -- type ConvertResult a = Either ConvertError a
 sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
-sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr'
+sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
 -- sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
 -- sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
 -- sqlFeatureExp (Not f)   = case sqlFeatureExp f of
