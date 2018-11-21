@@ -13,7 +13,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 import VDB.SQL
 import VDB.Condition
-import VDB.FeatureExpr
+-- import VDB.FeatureExpr 
 import VDB.Name
 import VDB.Variational 
 import VDB.Value

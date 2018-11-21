@@ -7,16 +7,28 @@ import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
-import Data.ByteString.Char8 as BC (pack)
+import Data.ByteString.Char8 as BC (pack, unpack)
 import qualified Data.ByteString as B 
 import Data.Convertible.Base
 import Data.SBV
+import Data.Void
 
 import Database.HDBC
+
+--import Control.Monad (void)
+import Control.Applicative (empty)
+-- import Control.Monad.Combinators.Expr
+
+import Text.Megaparsec
+import Text.Megaparsec.Expr
+import qualified Text.Megaparsec.Byte.Lexer as L
+import Text.Megaparsec.Byte 
+
 
 import VDB.Config
 import VDB.Name
 import VDB.SAT
+-- import VDB.FeatureExprParser (fexpParser)
 
 
 -- | Boolean expressions over features.
@@ -78,6 +90,7 @@ prettyFeatureExpr = top
     sub e         = "(" ++ top e ++ ")"
 
 -- | not very pretty pretty print of a feature expression.
+--   wrote it for the parser but don't need but i'm going to keep it!
 prettyFeatureExpr' :: FeatureExpr -> String
 prettyFeatureExpr' = top
   where
@@ -120,19 +133,22 @@ shrinkFeatureExpr (Or l r)
 shrinkFeatureExpr e = e
 
 
+{-
 -- | Helper function for converting bool to bytestring
--- bool2ByteString :: Bool -> B.ByteString
--- bool2ByteString = BC.pack . show
--- bool2ByteString True = "True"
--- bool2ByteString False = "False"
+bool2ByteString :: Bool -> B.ByteString
+bool2ByteString = BC.pack . show
+bool2ByteString True = "True"
+bool2ByteString False = "False"
 
 -- | Helper function for converting string to bytestring
--- feature2ByteString :: Feature -> B.ByteString
--- feature2ByteString = BC.pack . featureName
+feature2ByteString :: Feature -> B.ByteString
+feature2ByteString = BC.pack . featureName
+-}
 
 -- | gets a feature expression and represents it as a sqlvalue, 
 --   which is constructed by the SqlByteString data constructor
 -- type ConvertResult a = Either ConvertError a
+
 -- sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
 -- sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr'
 -- sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
@@ -158,6 +174,40 @@ shrinkFeatureExpr e = e
 --     destType   = "FeatureExpr"
 --      msg        = "types went wrong: should be SqlByteString sth"
 
+sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
+sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
+{-sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
+sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
+sqlFeatureExp (Not f)   = case sqlFeatureExp f of
+  Right (SqlByteString fsql) -> return . SqlByteString $ B.concat ["Not (", fsql, ")"]
+  _ -> Left $ ConvertError source sourceType destType msg
+    where 
+      source     = show f
+      sourceType = "FeatureExpr"
+      destType   = "SqlValue"
+      msg        = "types went wrong: is not of type FeatureExp in sqlFeatureExp"
+sqlFeatureExp (And l r) = case (sqlFeatureExp r, sqlFeatureExp l) of
+  (Right (SqlByteString rsql), Right (SqlByteString lsql)) -> return . SqlByteString $ B.concat ["And (", rsql, " ) ", "( ", lsql, " )"]
+sqlFeatureExp (Or l r)  = undefined-}
+
+extractFeatureExp :: SqlValue -> Either ConvertError FeatureExpr
+extractFeatureExp (SqlByteString s) = 
+  case runParser fexpParser "" s of
+    Right fexp -> Right fexp  
+    _ -> Left $ ConvertError source sourceType destType msg
+    where 
+      source     = "some SqlValue"
+      sourceType = "SqlValue"
+      destType   = "FeatureExpr"
+      msg        = "error in parsing the bytestring stored as fexp!!"
+extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
+   where 
+    source     = "some SqlValue"
+    sourceType = "SqlValue"
+    destType   = "FeatureExpr"
+    msg        = "types went wrong: should be SqlByteString sth"
+>>>>>>> 770ccdeb67228f1a450c46cbaa575e5a4689fedd
+
 instance Boolean FeatureExpr where
   true  = Lit True
   false = Lit False
@@ -177,4 +227,57 @@ instance Show FeatureExpr where
 
 -- instance Convertible SqlValue FeatureExpr where 
 --   safeConvert = extractFeatureExp
+
+
+-- feature expression parser
+type Parser = Parsec Void B.ByteString
+-- type Parser' = ParsecT Void B.ByteString (Either )
+
+spaceConsumer :: Parser ()
+spaceConsumer = L.space space1 empty empty
+-- (L.skipLineComment "line comment") 
+-- (L.skipBlockComment "starting block comment" "end block comment")
+
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme spaceConsumer
+
+symbol :: B.ByteString -> Parser B.ByteString
+symbol = L.symbol spaceConsumer
+
+parens :: Parser a -> Parser a
+parens = between (symbol "(") (symbol ")")
+
+rservedWord :: B.ByteString -> Parser ()
+rservedWord w = (lexeme . try) (string w *> notFollowedBy alphaNumChar)
+
+reservedWords :: [B.ByteString]
+reservedWords = ["not", "true", "false", "and", "or"]
+
+identifier :: Parser String
+identifier = BC.unpack <$> (lexeme . try) (p >>= check)
+  where
+    p = B.cons <$> letterChar <*> (B.pack <$> many alphaNumChar)
+    -- p = (:) <$> letterChar <*> many alphaNumChar
+
+    check x
+      | x `elem` reservedWords = fail $ "keyword " ++ show x ++ " is reserved"
+      | otherwise = return x
+
+fexpParser :: Parser FeatureExpr
+fexpParser = makeExprParser fExp fOperators
+
+
+fOperators :: [[Operator Parser FeatureExpr]]
+fOperators =
+  [ [Prefix (Not <$ rservedWord "not") ]
+  , [InfixL (And <$ rservedWord "and")
+    , InfixL (Or <$ rservedWord "or") ]
+  ]
+
+
+fExp :: Parser FeatureExpr
+fExp =  parens fexpParser
+  <|> (Lit True  <$ rservedWord "true")
+  <|> (Lit False <$ rservedWord "false")
+  <|> Ref . Feature <$> identifier
 

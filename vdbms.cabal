@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6a001479cd0a2470088c092a781b6b37109e47764f3d22b38b7428dba26fda6d
+-- hash: 30913a869e122ceaf5f6c1766e3e1a19b8618d0a519af9a1c02e3b8479cbd276
 
 name:           vdbms
 version:        0.1.0.0
@@ -37,6 +37,7 @@ library
       VDB.Example.EmployeeUseCase.EmployeeSchema
       VDB.Example.EmployeeUseCase.EmployeeQuery
       VDB.FeatureExpr
+      VDB.FeatureExprParser
       VDB.Name
       VDB.ParsingSQL
       VDB.SAT
