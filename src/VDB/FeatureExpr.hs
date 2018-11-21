@@ -133,41 +133,47 @@ shrinkFeatureExpr (Or l r)
 shrinkFeatureExpr e = e
 
 
+{-
 -- | Helper function for converting bool to bytestring
--- bool2ByteString :: Bool -> B.ByteString
--- bool2ByteString = BC.pack . show
--- bool2ByteString True = "True"
--- bool2ByteString False = "False"
+bool2ByteString :: Bool -> B.ByteString
+bool2ByteString = BC.pack . show
+bool2ByteString True = "True"
+bool2ByteString False = "False"
 
 -- | Helper function for converting string to bytestring
--- feature2ByteString :: Feature -> B.ByteString
--- feature2ByteString = BC.pack . featureName
+feature2ByteString :: Feature -> B.ByteString
+feature2ByteString = BC.pack . featureName
+-}
 
 -- | gets a feature expression and represents it as a sqlvalue, 
 --   which is constructed by the SqlByteString data constructor
 -- type ConvertResult a = Either ConvertError a
 sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
 sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
--- sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
--- sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
--- sqlFeatureExp (Not f)   = case sqlFeatureExp f of
---   Right (SqlByteString fsql) -> return . SqlByteString $ B.concat ["Not (", fsql, ")"]
---   _ -> Left $ ConvertError source sourceType destType msg
---     where 
---       source     = show f
---       sourceType = "FeatureExpr"
---       destType   = "SqlValue"
---       msg        = "types went wrong: is not of type FeatureExp in sqlFeatureExp"
--- sqlFeatureExp (And l r) = case (sqlFeatureExp r, sqlFeatureExp l) of
---   (Right (SqlByteString rsql), Right (SqlByteString lsql)) -> return . SqlByteString $ B.concat ["And (", rsql, " ) ", "( ", lsql, " )"]
--- sqlFeatureExp (Or l r)  = undefined
+{-sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
+sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
+sqlFeatureExp (Not f)   = case sqlFeatureExp f of
+  Right (SqlByteString fsql) -> return . SqlByteString $ B.concat ["Not (", fsql, ")"]
+  _ -> Left $ ConvertError source sourceType destType msg
+    where 
+      source     = show f
+      sourceType = "FeatureExpr"
+      destType   = "SqlValue"
+      msg        = "types went wrong: is not of type FeatureExp in sqlFeatureExp"
+sqlFeatureExp (And l r) = case (sqlFeatureExp r, sqlFeatureExp l) of
+  (Right (SqlByteString rsql), Right (SqlByteString lsql)) -> return . SqlByteString $ B.concat ["And (", rsql, " ) ", "( ", lsql, " )"]
+sqlFeatureExp (Or l r)  = undefined-}
 
 extractFeatureExp :: SqlValue -> Either ConvertError FeatureExpr
-extractFeatureExp (SqlByteString s) = undefined
-  -- do (s', res) <- runParser' fexpParser (State s)
-  --    case res of
-  --      Right fexp -> return (Right fexp)
-  --      Left err -> error "feature exp parser err"
+extractFeatureExp (SqlByteString s) = 
+  case runParser fexpParser "" s of
+    Right fexp -> Right fexp  
+    _ -> Left $ ConvertError source sourceType destType msg
+    where 
+      source     = "some SqlValue"
+      sourceType = "SqlValue"
+      destType   = "FeatureExpr"
+      msg        = "error in parsing the bytestring stored as fexp!!"
 extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
    where 
     source     = "some SqlValue"
