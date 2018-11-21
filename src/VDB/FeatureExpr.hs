@@ -163,11 +163,11 @@ sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
 -- sqlFeatureExp (Or l r)  = undefined
 
 extractFeatureExp :: SqlValue -> Either ConvertError FeatureExpr
-extractFeatureExp (SqlByteString s) = 
-  do (s', res) <- runParser' fexpParser (State s)
-     case res of
-       | Right fexp -> return (Right fexp)
-       | Left err -> error "feature exp parser err"
+extractFeatureExp (SqlByteString s) = undefined
+  -- do (s', res) <- runParser' fexpParser (State s)
+  --    case res of
+  --      Right fexp -> return (Right fexp)
+  --      Left err -> error "feature exp parser err"
 extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
    where 
     source     = "some SqlValue"
@@ -198,7 +198,7 @@ instance Convertible SqlValue FeatureExpr where
 
 -- feature expression parser
 type Parser = Parsec Void B.ByteString
-type Parser' = ParsecT Void B.ByteString (Either )
+-- type Parser' = ParsecT Void B.ByteString (Either )
 
 spaceConsumer :: Parser ()
 spaceConsumer = L.space space1 empty empty
