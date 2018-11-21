@@ -15,6 +15,15 @@ import VDB.Value
 
 -- | Type of a relation in the database.
 type RowType = [Opt (Attribute, Type)]
+-- 
+-- | Better representation:
+--   Advantage: could gurantee we only have one attribute in schema, 
+--              instead of something like: [(v1, (A1,T1)), (v2, (A1,T2))] 
+--   Disadvantage: we didn't use Choice representation else where in our implementation,
+--                 it'll need to introduce another terminology in our thoery if we use it.
+
+--   type RowType = Map Attribute (V (Maybe Type))
+
 
 
 -- | Attributes must be unique in a table. The pair (Int, Attribute)
