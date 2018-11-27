@@ -63,17 +63,24 @@ pushFeatureToRowType f rowlist = map (\(_, attr) -> (f, attr)) rowlist
 
 -- | Merge and update the featureExpr of two Rel Map
 mergeRelMapFeatureExpr :: Map Relation (Opt RowType) -> Map Relation (Opt RowType) -> Map Relation (Opt RowType)
-mergeRelMapFeatureExpr lRelMap rRelMap = M.unionWith unionWithRelHelper lRelMap rRelMap
+mergeRelMapFeatureExpr lRelMap rRelMap = M.unionWith unionRelFeatureExpr lRelMap rRelMap
+-- mergeRelMapFeatureExpr lRelMap rRelMap = M.unionWith unionWithRelHelper lRelMap rRelMap
 
 -- | Union FeatureExpr 
-unionWithRelHelper :: (FeatureExpr, RowType) -> (FeatureExpr, RowType) -> (FeatureExpr, RowType)
-unionWithRelHelper (Lit True, l)  (_, r)   = (Lit True  , unionBy unionByRowTypesHelper l r)
-unionWithRelHelper (lf,l)         (rf,r)   = (lf `Or` rf, unionBy unionByRowTypesHelper l r ) 
+unionRelFeatureExpr :: (FeatureExpr, RowType) -> (FeatureExpr, RowType) -> (FeatureExpr, RowType)
+unionRelFeatureExpr (Lit True, l)  (_, r)   = (Lit True  , unionRowType l r )
+unionRelFeatureExpr (lf,l)         (rf,r)   = (lf `Or` rf, unionRowType l r )
 
--- | Union RowTypes 
-unionByRowTypesHelper :: Opt (Attribute, Type)-> Opt (Attribute, Type) -> Bool
-unionByRowTypesHelper = undefined 
+-- | union Rowtype 
+unionRowType :: RowType -> RowType -> RowType
+unionRowType l r = let l' = M.fromList (map swap l)
+                       r' = M.fromList (map swap r)
+                   in  map swap (M.toList (M.unionWith unionRowtypeHelper l' r') ) 
 
+-- | Helper function for unionRowtype 
+unionRowtypeHelper :: FeatureExpr -> FeatureExpr ->   FeatureExpr
+unionRowtypeHelper (Lit True)  _  = Lit True
+unionRowtypeHelper lf        rf  = lf `Or` rf
 
 
 --
@@ -81,11 +88,11 @@ unionByRowTypesHelper = undefined
 --
 
 -- | small test for unionRelFeatureExpr 
-testunionFeatureExpr :: Map Relation (FeatureExpr, RowType)
-testunionFeatureExpr = M.unionWith unionWithRelHelper s1RelMap s2RelMap
+-- testunionFeatureExpr :: Map Relation (FeatureExpr, RowType)
+-- testunionFeatureExpr = M.unionWith unionWithRelHelper s1RelMap s2RelMap
 
-testunionFeatureExpr2 :: Map Relation (FeatureExpr, RowType)
-testunionFeatureExpr2 = M.unionWith unionWithRelHelper s1RelMap (pushFeatureToRelMap v2 s2RelMap)
+-- testunionFeatureExpr2 :: Map Relation (FeatureExpr, RowType)
+-- testunionFeatureExpr2 = M.unionWith unionWithRelHelper s1RelMap (pushFeatureToRelMap v2 s2RelMap)
 
 
 -- | simple test case for variationize 
@@ -120,18 +127,6 @@ rowtypes2 :: RowType
 rowtypes2 = [ (v3, (Attribute "A1", TInt)), (v3, (Attribute "A3", TString))]
  
 -- instance Eq (Opt a) where
--- | Union FeatureExpr 
-unionRelFeatureExpr :: (FeatureExpr, RowType) -> (FeatureExpr, RowType) -> (FeatureExpr, RowType)
-unionRelFeatureExpr (Lit True, l)  (_, r)   = let l' = M.fromList (map swap l)
-                                                  r' = M.fromList (map swap r)
-                                              in  (Lit True  , map swap (M.toList (M.unionWith unionRowtypesFeatureExpr l' r') ) )
-unionRelFeatureExpr (lf,l)         (rf,r)   = let l' = M.fromList (map swap l)
-                                                  r' = M.fromList (map swap r) 
-                                              in (lf `Or` rf, map swap (M.toList (M.unionWith unionRowtypesFeatureExpr l' r') ) )
-
-unionRowtypesFeatureExpr :: FeatureExpr -> FeatureExpr ->   FeatureExpr
-unionRowtypesFeatureExpr (Lit True)  _  = Lit True
-unionRowtypesFeatureExpr lf        rf  = lf `Or` rf
 
 testRowtypes = [ (Lit True, (Attribute "A1", TInt)), (Lit True, (Attribute "A2", TString))]
 
@@ -139,4 +134,16 @@ l' = M.fromList (map swap rowtypes1)
 r' = M.fromList (map swap rowtypes2)
 
 -- testlr = M.unionWith unionRowtypesFeatureExpr l' r'
-testlr = map swap (M.toList (M.unionWith unionRowtypesFeatureExpr l' r') ) 
+-- testlr = map swap (M.toList (M.unionWith unionRowtypesFeatureExpr l' r') ) 
+
+
+
+-- | comment out funtion
+
+-- | Union FeatureExpr 
+-- unionWithRelHelper :: (FeatureExpr, RowType) -> (FeatureExpr, RowType) -> (FeatureExpr, RowType)
+-- unionWithRelHelper (Lit True, l)  (_, r)   = (Lit True  , unionBy unionByRowTypesHelper l r)
+-- unionWithRelHelper (lf,l)         (rf,r)   = (lf `Or` rf, unionBy unionByRowTypesHelper l r ) 
+-- | Union RowTypes 
+-- unionByRowTypesHelper :: Opt (Attribute, Type)-> Opt (Attribute, Type) -> Bool
+-- unionByRowTypesHelper = undefined 

@@ -206,7 +206,6 @@ extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
     sourceType = "SqlValue"
     destType   = "FeatureExpr"
     msg        = "types went wrong: should be SqlByteString sth"
->>>>>>> 770ccdeb67228f1a450c46cbaa575e5a4689fedd
 
 instance Boolean FeatureExpr where
   true  = Lit True
