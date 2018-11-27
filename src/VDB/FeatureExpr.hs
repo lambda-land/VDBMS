@@ -149,8 +149,8 @@ feature2ByteString = BC.pack . featureName
 --   which is constructed by the SqlByteString data constructor
 -- type ConvertResult a = Either ConvertError a
 
--- sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
--- sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr'
+sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
+sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr'
 -- sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
 -- sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
 -- sqlFeatureExp (Not f)   = case sqlFeatureExp f of
@@ -174,8 +174,8 @@ feature2ByteString = BC.pack . featureName
 --     destType   = "FeatureExpr"
 --      msg        = "types went wrong: should be SqlByteString sth"
 
-sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
-sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
+-- sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
+-- sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
 {-sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
 sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
 sqlFeatureExp (Not f)   = case sqlFeatureExp f of
@@ -221,21 +221,21 @@ instance Show FeatureExpr where
   show = prettyFeatureExpr
 
 -- safeConvert :: Convertible a b => a -> ConvertResult b
--- instance Convertible FeatureExpr SqlValue where
---   safeConvert = sqlFeatureExp
+instance Convertible FeatureExpr SqlValue where
+  safeConvert = sqlFeatureExp
 
--- instance Convertible SqlValue FeatureExpr where 
---   safeConvert = extractFeatureExp
+instance Convertible SqlValue FeatureExpr where 
+  safeConvert = extractFeatureExp
 
 
--- feature expression parser
+-- -- feature expression parser
 type Parser = Parsec Void B.ByteString
--- type Parser' = ParsecT Void B.ByteString (Either )
+-- -- type Parser' = ParsecT Void B.ByteString (Either )
 
 spaceConsumer :: Parser ()
 spaceConsumer = L.space space1 empty empty
--- (L.skipLineComment "line comment") 
--- (L.skipBlockComment "starting block comment" "end block comment")
+-- -- (L.skipLineComment "line comment") 
+-- -- (L.skipBlockComment "starting block comment" "end block comment")
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceConsumer
