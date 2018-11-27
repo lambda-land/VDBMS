@@ -2,8 +2,6 @@
 -- and gets the plain relational result
 module VDB.BruteForce.BruteForceSendQs where 
 
---import Prelude hiding (EQ ,LT ,GT)
--- import VDB.SQL 
 import VDB.Algebra
 import VDB.Name
 import qualified VDB.FeatureExpr as F
@@ -11,17 +9,13 @@ import qualified VDB.Condition as C
 import qualified VDB.Target as T
 import VDB.Variational
 import VDB.Value  
---import VDB.BruteForce.BruteForceAlg2Sql
---import VDB.DBsetup.EnronEmailDB
 
 import Control.Monad
 
 import Data.Text as T (Text, pack, append, concat, unpack)
 import Data.Map
 
---import Database.HDBC.Sqlite3
 import Database.HDBC
-
 
 type Row = [SqlValue]
 type Table = [Row]
