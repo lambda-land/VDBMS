@@ -24,6 +24,7 @@ import Database.HDBC
 import Database.HDBC.SqlValue
 
 type Vctxt = F.FeatureExpr
+type PresCondAttName = String
 
 -- type Row = [SqlValue]
 -- type Table = [Row]
@@ -45,18 +46,18 @@ type Vctxt = F.FeatureExpr
 --   returns the tuple with updated and shrinked pres cond, if not
 --   returns nothing
 --   one row returned by query -> name of pres cond attr -> vcontxt -> update the feature exp of tuple based on vctxt
-checkSatClmRow :: ClmNameIncludedRow -> String -> Vctxt -> Maybe ClmNameIncludedRow
-checkSatClmRow tuple presAttName vctxt = case myPresCond of 
+checkSatClmRow :: ClmNameIncludedRow -> PresCondAttName -> Vctxt -> Maybe ClmNameIncludedRow
+checkSatClmRow tuple p vctxt = case presCond of 
   Just pres -> case satisfiable comb of 
                  True -> Just $ map 
-                         (\(clm,val) -> if clm == presAttName 
+                         (\(clm,val) -> if clm == p 
                                         then (clm,F.fexp2sqlval (F.shrinkFeatureExpr comb))
                                         else (clm,val)) 
                          tuple
                  _ -> Nothing
                  where comb = F.And vctxt (F.sqlval2fexp pres)
   _ -> Nothing
-  where myPresCond = lookup presAttName tuple
+  where presCond = lookup p tuple
 
 -- * concat maybes
 -- * alternative 
@@ -67,15 +68,17 @@ checkSatClmRow tuple presAttName vctxt = case myPresCond of
 --   the variatinoal ctxt. note that the vctxt is coming from the vquery, i.e.
 --   it's the feature exp attached to the query that is being executed on the
 --   relational db
-checkSatTable :: ClmNameIncludedTable -> String -> Vctxt -> ClmNameIncludedTable
-checkSatTable t presAttName vctxt = catMaybes (checkSatTableMaybe t presAttName vctxt)
+checkSatTable :: ClmNameIncludedTable -> PresCondAttName -> Vctxt -> ClmNameIncludedTable
+checkSatTable t p vctxt = catMaybes (checkSatTableMaybe t p vctxt)
 
 
 -- | auxilary function for checkSatTable
-checkSatTableMaybe :: ClmNameIncludedTable -> String -> Vctxt -> [Maybe ClmNameIncludedRow]
-checkSatTableMaybe t presAttName vctxt = 
-  map ((flip4 checkSatClmRow) presAttName vctxt) t
+checkSatTableMaybe :: ClmNameIncludedTable -> PresCondAttName -> Vctxt -> [Maybe ClmNameIncludedRow]
+checkSatTableMaybe t p vctxt = map ((flip4 checkSatClmRow) p vctxt) t
 
+-- | aux func for checksatvtable 
+flip4 :: (a -> b -> c -> d) -> b -> c -> a -> d
+flip4 f b c a = f a b c
 
 -- | takes a vtable (i.d. opt table) and checks for satisfiability of 
 --   its pres cond with the vctxt, where again is coming from the vquery,
@@ -91,16 +94,17 @@ checkSatVtable (o,t) vctxt = case satisfiable comb of
 
 
 -- ** idea: check sat of pres of table first and then adjust it
---          then conjuct that with tuples!! 
-
--- |
-checkSatAllVtables :: [ClmNameIncludedVtable] -> String -> Vctxt -> [ClmNameIncludedVtable]
-checkSatAllVtables = undefined
+--          then conjuct that with tuples so the vctxt becomes 
+--          fexp attached to vquery conjucted with the pres cond of table
 
 
--- | aux func for checksatvtable 
-flip4 :: (a -> b -> c -> d) -> b -> c -> a -> d
-flip4 f b c a = f a b c
+-- | takes 
+checkSatVtables :: [(ClmNameIncludedVtable, Vctxt)] -> [Maybe ClmNameIncludedVtable]
+checkSatVtables = undefined
+
+
+checkSatAllVtables :: [ClmNameIncludedVtable] -> PresCondAttName -> [ClmNameIncludedVtable]
+
 
 -- checkSatVtableMap :: ClmVtableMap -> ClmVtableMap
 -- checkSatVtableMap = undefined
