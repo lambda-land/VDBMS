@@ -12,7 +12,6 @@ import qualified Data.Map as Map
 --  ** schema verison 1 
 --  
 
-
 schema1 :: Schema 
 schema1 = ( Ref "v1", Map.fromList [ (Relation "engineerpersonnel", (Lit True, engineerpersonnel_v1))
                                    , (Relation "otherpersonnel", (Lit True, otherpersonnel_v1))
