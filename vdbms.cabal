@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 30913a869e122ceaf5f6c1766e3e1a19b8618d0a519af9a1c02e3b8479cbd276
+-- hash: a4446f60f8571b8aa986eb3f854507ed1b3db3fa59a6015a7a0159269f25a112
 
 name:           vdbms
 version:        0.1.0.0
@@ -22,6 +22,7 @@ extra-source-files:
 library
   exposed-modules:
       VDB.Algebra
+      VDB.BruteForce.BruteForce
       VDB.BruteForce.BruteForceAlg2Sql
       VDB.BruteForce.BruteForceAppSat
       VDB.BruteForce.BruteForceAppSatPersist
@@ -41,7 +42,6 @@ library
       VDB.SAT
       VDB.Schema
       VDB.SQL
-      VDB.SqlString2Fexp
       VDB.Table
       VDB.Target
       VDB.Translations.AlgebraToSql

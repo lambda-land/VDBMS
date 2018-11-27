@@ -254,3 +254,11 @@ fExp =  parens fexpParser
   <|> (Lit False <$ rservedWord "false")
   <|> Ref . Feature <$> identifier
 
+
+sqlval2fexp :: SqlValue -> FeatureExpr
+sqlval2fexp = fromSql
+
+
+fexp2sqlval :: FeatureExpr -> SqlValue
+fexp2sqlval = toSql
+
