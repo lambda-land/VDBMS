@@ -3,7 +3,7 @@ module TestEmployee where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import VDB.VSqlToAlgebra
+import VDB.Translations.VSqlToAlgebra
 import VDB.SQL
 import VDB.Algebra
 import VDB.Name 
@@ -16,10 +16,13 @@ import VDB.Schema
 import VDB.Config
 import VDB.Value 
 
+import VDB.Example.EmployeeUseCase.EmployeeSchema
+import VDB.Example.EmployeeUseCase.EmployeeVSchema
 
-import VDB.Example.TwoOption
 import VDB.TypeSystem.Semantics
 import qualified Data.Map as Map 
+
+
 
 
 
@@ -28,55 +31,14 @@ import qualified Data.Map as Map
 --   and the underlying schema is the one from the Example.TwoOption
 testEmployee  :: TestTree
 testEmployee  = testGroup "Test the FeatureExpr evaluation among the schema"
-  [  
-    testGroup "1) disable all first."
+  [ testGroup "1) disable all first."
     [ testCase "enable v1" $
-      do output   <- return $ configureOptList (enable (Feature "v1") disableAll) [schema1,schema2,schema3,schema4, schema5]
-         expectVal <- return $ [Map.fromList [(Relation "engineerpersonnel",
-                                                  (TRUE,[(TRUE,(Attribute "empno",TInt)),
-                                                         (TRUE,(Attribute "name",TString)),
-                                                         (TRUE,(Attribute "hiredate",TString)),
-                                                         (TRUE,(Attribute "title",TString)),
-                                                         (TRUE,(Attribute "deptname",TString))])),
-                                               (Relation "job",
-                                                  (TRUE,[(TRUE,(Attribute "title",TString)),
-                                                         (TRUE,(Attribute "salary",TInt))])),
-                                               (Relation "otherpersonnel",
-                                                  (TRUE,[(TRUE,(Attribute "empno",TInt)),
-                                                         (TRUE,(Attribute "name",TString)),
-                                                         (TRUE,(Attribute "hiredate",TString)),
-                                                         (TRUE,(Attribute "title",TString)),
-                                                         (TRUE,(Attribute "deptname",TString))]))]]
-          expectVal @=? output
-    , testCase "enable v1 and v2" $
-       do output   <- return $ configureOptList (enableMany [(Feature "v1"), (Feature "v2")] disableAll) [schema1,schema2,schema3,schema4, schema5]
-          expectVal <- return $ [Map.fromList [(Relation "engineerpersonnel",
-                                                  (TRUE,[(TRUE,(Attribute "empno",TInt)),
-                                                         (TRUE,(Attribute "name",TString)),
-                                                         (TRUE,(Attribute "hiredate",TString)),
-                                                         (TRUE,(Attribute "title",TString)),
-                                                         (TRUE,(Attribute "deptname",TString))])),
-                                                (Relation "job",
-                                                  (TRUE,[(TRUE,(Attribute "title",TString)),
-                                                         (TRUE,(Attribute "salary",TInt))])),
-                                                (Relation "otherpersonnel",
-                                                  (TRUE,[(TRUE,(Attribute "empno",TInt)),
-                                                         (TRUE,(Attribute "name",TString)),
-                                                         (TRUE,(Attribute "hiredate",TString)),
-                                                         (TRUE,(Attribute "title",TString)),
-                                                         (TRUE,(Attribute "deptname",TString))]))],
-                                Map.fromList [(Relation "empacct",
-                                                (TRUE,[(TRUE,(Attribute "empno",TInt)),
-                                                       (TRUE,(Attribute "name",TString)),
-                                                       (TRUE,(Attribute "hiredate",TString)),
-                                                       (TRUE,(Attribute "title",TString)),
-                                                       (TRUE,(Attribute "deptname",TString))])),
-                                              (Relation "job",
-                                                (TRUE,[(TRUE,(Attribute "title",TString)),
-                                                       (TRUE,(Attribute "salary",TInt))]))]]
-          expectVal @=? output
+      do output    <- return $ configureOptList (enable (Feature "v1") disableAll) [schema1,schema2,schema3,schema4, schema5]
+         expectVal <- return $ []
 
+         expectVal @=? output
     ]
+  ]
   -- ,  
   --   testGroup "2) disable all first, then:"
   --   [ testCase "enable A" $
@@ -107,5 +69,4 @@ testEmployee  = testGroup "Test the FeatureExpr evaluation among the schema"
   --         expectVal @=? output
 
   --   ]
-    
-  ]
+  

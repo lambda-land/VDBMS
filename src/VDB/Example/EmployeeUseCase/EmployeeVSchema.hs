@@ -80,7 +80,7 @@ unionRowType l r = let l' = M.fromList (map swap l)
 -- | Helper function for unionRowtype 
 unionRowtypeHelper :: FeatureExpr -> FeatureExpr ->   FeatureExpr
 unionRowtypeHelper (Lit True)  _  = Lit True
-unionRowtypeHelper lf        rf  = lf `Or` rf
+unionRowtypeHelper lf         rf  = lf `Or` rf
 
 
 --
