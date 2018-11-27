@@ -104,6 +104,7 @@ checkSatVtables = undefined
 
 
 checkSatAllVtables :: [ClmNameIncludedVtable] -> PresCondAttName -> [ClmNameIncludedVtable]
+checkSatAllVtables = undefined
 
 
 -- checkSatVtableMap :: ClmVtableMap -> ClmVtableMap

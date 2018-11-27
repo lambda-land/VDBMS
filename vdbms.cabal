@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a4446f60f8571b8aa986eb3f854507ed1b3db3fa59a6015a7a0159269f25a112
+-- hash: c9fefc70db28a4ffb76b08f7b53bd8a2fb237451f9ca875f8aa807713bd6216a
 
 name:           vdbms
 version:        0.1.0.0
@@ -28,6 +28,7 @@ library
       VDB.BruteForce.BruteForceAppSatPersist
       VDB.BruteForce.BruteForceSendQs
       VDB.BruteForce.BruteForceSendQsPersist
+      VDB.BuildVres
       VDB.Condition
       VDB.Config
       VDB.DBsetup.EnronEmailDB
