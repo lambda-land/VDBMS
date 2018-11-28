@@ -148,8 +148,34 @@ feature2ByteString = BC.pack . featureName
 -- | gets a feature expression and represents it as a sqlvalue, 
 --   which is constructed by the SqlByteString data constructor
 -- type ConvertResult a = Either ConvertError a
+
 sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
-sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
+sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr'
+-- sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
+-- sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
+-- sqlFeatureExp (Not f)   = case sqlFeatureExp f of
+--   Right (SqlByteString fsql) -> return . SqlByteString $ B.concat ["Not (", fsql, ")"]
+--   _ -> Left $ ConvertError source sourceType destType msg
+--     where 
+--       source     = show f
+--       sourceType = "FeatureExpr"
+--       destType   = "SqlValue"
+--       msg        = "types went wrong: is not of type FeatureExp in sqlFeatureExp"
+-- sqlFeatureExp (And l r) = case (sqlFeatureExp r, sqlFeatureExp l) of
+--   (Right (SqlByteString rsql), Right (SqlByteString lsql)) -> return . SqlByteString $ B.concat ["And (", rsql, " ) ", "( ", lsql, " )"]
+-- sqlFeatureExp (Or l r)  = undefined
+
+-- extractFeatureExp :: SqlValue -> Either ConvertError FeatureExpr
+-- extractFeatureExp (SqlByteString s) = undefined
+-- extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
+--    where 
+--     source     = "some SqlValue"
+--     sourceType = "SqlValue"
+--     destType   = "FeatureExpr"
+--      msg        = "types went wrong: should be SqlByteString sth"
+
+-- sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
+-- sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
 {-sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
 sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
 sqlFeatureExp (Not f)   = case sqlFeatureExp f of
@@ -202,14 +228,14 @@ instance Convertible SqlValue FeatureExpr where
   safeConvert = extractFeatureExp
 
 
--- feature expression parser
+-- -- feature expression parser
 type Parser = Parsec Void B.ByteString
--- type Parser' = ParsecT Void B.ByteString (Either )
+-- -- type Parser' = ParsecT Void B.ByteString (Either )
 
 spaceConsumer :: Parser ()
 spaceConsumer = L.space space1 empty empty
--- (L.skipLineComment "line comment") 
--- (L.skipBlockComment "starting block comment" "end block comment")
+-- -- (L.skipLineComment "line comment") 
+-- -- (L.skipBlockComment "starting block comment" "end block comment")
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceConsumer

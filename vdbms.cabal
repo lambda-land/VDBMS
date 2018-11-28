@@ -36,8 +36,9 @@ library
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
+      VDB.Example.EmployeeUseCase.EmployeeSchema
+      VDB.Example.EmployeeUseCase.EmployeeVSchema
       VDB.FeatureExpr
-      VDB.FeatureExprParser
       VDB.Name
       VDB.ParsingSQL
       VDB.SAT
@@ -136,4 +137,6 @@ test-suite vsat-test
     , text
     , time
     , vdbms
+    , tasty
+    , tasty-hunit
   default-language: Haskell2010
