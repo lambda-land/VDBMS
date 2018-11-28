@@ -12,8 +12,8 @@ import qualified Data.Map as Map
 --  ** schema verison 1 
 --  
 
-schema1 :: Schema 
-schema1 = ( Ref "v1", Map.fromList [ (Relation "engineerpersonnel", (Lit True, engineerpersonnel_v1))
+empSchema1 :: Schema 
+empSchema1 = ( Ref (Feature "v1"), Map.fromList [ (Relation "engineerpersonnel", (Lit True, engineerpersonnel_v1))
                                    , (Relation "otherpersonnel", (Lit True, otherpersonnel_v1))
                                    , (Relation "job", (Lit True, job_v1))
                                    ]
@@ -48,8 +48,8 @@ job_v1 = [ (Lit True, (Attribute "title", TString))
 -- ** schema version 2 
 -- 
 
-schema2 :: Schema 
-schema2 = ( Ref "v2", Map.fromList [ (Relation "empacct", (Lit True, empacct_v2))
+empSchema2 :: Schema 
+empSchema2 = (Ref (Feature "v2"), Map.fromList [ (Relation "empacct", (Lit True, empacct_v2))
                                    , (Relation "job", (Lit True, job_v2))
                                    ]
           )
@@ -75,8 +75,8 @@ job_v2 = [ (Lit True, (Attribute "title", TString))
 --  ** schema version 3 
 -- 
 
-schema3 :: Schema 
-schema3 = ( Ref "v3", Map.fromList [ (Relation "empacct", (Lit True, empacct_v3))
+empSchema3 :: Schema 
+empSchema3 = (Ref (Feature "v3"), Map.fromList [ (Relation "empacct", (Lit True, empacct_v3))
                                    , (Relation "job", (Lit True, job_v3))
                                    , (Relation "dept", (Lit True, dept_v3))
                                    ]
@@ -108,8 +108,8 @@ dept_v3 = [ (Lit True, (Attribute "deptname", TString))
 -- ** schema version 4 
 --
 
-schema4 :: Schema 
-schema4 = ( Ref "v4", Map.fromList [ (Relation "empacct", (Lit True, empacct_v4))
+empSchema4 :: Schema 
+empSchema4 = (Ref (Feature "v4"), Map.fromList [ (Relation "empacct", (Lit True, empacct_v4))
                                    , (Relation "job", (Lit True, job_v4))
                                    , (Relation "dept", (Lit True, dept_v4))
                                    , (Relation "empbio", (Lit True, empbio_v4))
@@ -148,8 +148,8 @@ empbio_v4 = [ (Lit True, (Attribute "empno", TInt))
 -- ** schema version 5
 -- 
 
-schema5 :: Schema 
-schema5 = ( Ref "v5", Map.fromList [ (Relation "empacct", (Lit True, empacct_v5))
+empSchema5 :: Schema 
+empSchema5 = (Ref (Feature "v5"), Map.fromList [ (Relation "empacct", (Lit True, empacct_v5))
                                    , (Relation "dept", (Lit True, dept_v5))
                                    , (Relation "empbio", (Lit True, empbio_v5))
                                    ]

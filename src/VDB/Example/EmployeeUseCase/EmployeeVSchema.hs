@@ -38,8 +38,8 @@ employeeFeatureModel =  (v1 `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` (
 
 
 -- | fold a list of schema into one variational schema 
-variationize :: [Schema] -> Schema
-variationize = foldl variationize' emptySchema 
+variationizeSchema :: [Schema] -> Schema
+variationizeSchema = foldl variationize' emptySchema 
 
 -- | starting schmea for variationize
 emptySchema :: Schema 
@@ -73,12 +73,10 @@ pushFeatureToRowType f rowlist = map (\(_, attr) -> (f, attr)) rowlist
 -- | Merge and update the featureExpr of two Rel Map
 mergeRelMapFeatureExpr :: Map Relation (Opt RowType) -> Map Relation (Opt RowType) -> Map Relation (Opt RowType)
 mergeRelMapFeatureExpr lRelMap rRelMap = M.unionWith unionRelFeatureExpr lRelMap rRelMap
--- mergeRelMapFeatureExpr lRelMap rRelMap = M.unionWith unionWithRelHelper lRelMap rRelMap
 
 -- | Union FeatureExpr 
 unionRelFeatureExpr :: (FeatureExpr, RowType) -> (FeatureExpr, RowType) -> (FeatureExpr, RowType)
 unionRelFeatureExpr (lf,l)         (rf,r)   = (shrinkFeatureExpr (lf `Or` rf), unionRowType l r )
--- unionRelFeatureExpr (Lit True, l)  (_, r)   = (Lit True  , unionRowType l r )
 
 
 -- | union Rowtype 
@@ -90,7 +88,6 @@ unionRowType l r = let l' = M.fromList (map swap l)
 -- | Helper function for unionRowtype 
 unionRowtypeHelper :: FeatureExpr -> FeatureExpr ->   FeatureExpr
 unionRowtypeHelper lf         rf  = shrinkFeatureExpr (lf `Or` rf)
--- unionRowtypeHelper (Lit True)  _  = Lit True
 
 
 --
@@ -106,32 +103,32 @@ unionRowtypeHelper lf         rf  = shrinkFeatureExpr (lf `Or` rf)
 
 
 -- | simple test case for variationize 
-testS1 :: Schema 
-testS1 = ( v1, s1RelMap)
+-- testS1 :: Schema 
+-- testS1 = ( v1, s1RelMap)
 
-s1RelMap :: Map Relation (Opt RowType)
-s1RelMap = M.fromList [ (Relation "T1", (Lit True,  [ (Lit True, (Attribute "A1", TInt))
-                                                    , (Lit True, (Attribute "A2", TString))]))]
+-- s1RelMap :: Map Relation (Opt RowType)
+-- s1RelMap = M.fromList [ (Relation "T1", (Lit True,  [ (Lit True, (Attribute "A1", TInt))
+--                                                     , (Lit True, (Attribute "A2", TString))]))]
 
-testS2 :: Schema 
-testS2 = ( v2, s2RelMap)
-
-
-s2RelMap :: Map Relation (Opt RowType)
-s2RelMap = M.fromList [ (Relation "T1", (Lit True,  [ (Lit True, (Attribute "A1", TInt))
-                                                    , (Lit True, (Attribute "A3", TString))]))
-                      , (Relation "T2", (Lit True,  [ (Lit True, (Attribute "A4", TInt))]))
-                      ]
-
-testS3 :: Schema
-testS3 = (v3, s3RelMap)
-
-s3RelMap :: Map Relation (Opt RowType)
-s3RelMap = M.fromList [ (Relation "T3", (Lit True,  [ (Lit True, (Attribute "A5", TInt))]))
-                      ]
+-- testS2 :: Schema 
+-- testS2 = ( v2, s2RelMap)
 
 
-shrinkF  = shrinkFeatureExpr (Or (Lit False) (v2))
+-- s2RelMap :: Map Relation (Opt RowType)
+-- s2RelMap = M.fromList [ (Relation "T1", (Lit True,  [ (Lit True, (Attribute "A1", TInt))
+--                                                     , (Lit True, (Attribute "A3", TString))]))
+--                       , (Relation "T2", (Lit True,  [ (Lit True, (Attribute "A4", TInt))]))
+--                       ]
+
+-- testS3 :: Schema
+-- testS3 = (v3, s3RelMap)
+
+-- s3RelMap :: Map Relation (Opt RowType)
+-- s3RelMap = M.fromList [ (Relation "T3", (Lit True,  [ (Lit True, (Attribute "A5", TInt))]))
+--                       ]
+
+
+-- shrinkF  = shrinkFeatureExpr (Or (Lit False) (v2))
 
 -- | my union for union rowtypes 
 -- unionRowType :: [Opt (Attribute, Type)] -> [Opt (Attribute, Type)] -> [Opt (Attribute, Type)] 
