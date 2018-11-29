@@ -3,7 +3,7 @@ module TestTranslater_Phase1 where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import VDB.VSqlToAlgebra
+import VDB.Translations.VSqlToAlgebra
 import VDB.SQL
 import VDB.Algebra
 import VDB.Name 

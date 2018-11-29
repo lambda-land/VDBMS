@@ -14,7 +14,7 @@ import qualified VDB.Condition as C
 import qualified VDB.Target as T
 import VDB.Variational
 import VDB.Value  
-import VDB.AlgebraToSql
+import VDB.Translations.AlgebraToSql
 
 
 import Data.Map(Map)
