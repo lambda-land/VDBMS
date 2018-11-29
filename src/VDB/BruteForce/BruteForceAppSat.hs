@@ -55,7 +55,12 @@ flip4 :: (a -> b -> c -> d) -> b -> c -> a -> d
 flip4 f b c a = f a b c
 
 -- | takes a vtable (i.d. opt table) and checks for satisfiability of 
---   its pres cond with the vctxt, where again is coming from the vquery,
+--   its pres cond with the vctxt, which is coming from the type system
+
+-- ###############################################################
+-- ####################HAVE TO CORRECT THIS!!#####################
+-- ###############################################################
+
 --   and returns maybe vtable, which is nothing if the satisfiability fails
 --   so that we don't check satisfiability with tuples
 --   MAY BE ABLE TO OPTIMIZE IT MORE!!!!!

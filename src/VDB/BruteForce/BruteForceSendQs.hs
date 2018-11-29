@@ -47,7 +47,7 @@ mkStatement  = flip prepare . T.unpack
 
 -- fetchAllRows :: Statement -> IO [[SqlValue]]
 -- | gets a query with its assigned fexp and returns the result
---  with the table pres cond attached to it
+--  with the query fexp attached to it as vtable's pres cond
 runBruteQ :: IConnection conn => Vquery -> conn -> IO Vtable
 runBruteQ (o,t) conn = do 
   q <- mkStatement t conn
