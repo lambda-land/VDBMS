@@ -46,16 +46,16 @@ import Database.HDBC
 
 brute :: IConnection conn => Algebra -> Schema -> conn -> Vresult
 brute vq s c = undefined
-  -- where 
-  	-- initialVarCtxt :: Schema -> VariationalContext
-  	-- initialVarCtxt (f,_) = f
-   --  vctxt = initialVarCtxt s 
-   --  qs = bruteTrans vq vctxt 
-   --  do vts <- runBruteQsClm qs c 
-   --  return vts 
-    -- checkSatAllVtables :: [(ClmNameIncludedVtable, Vctxt)] -> PresCondAttName -> [ClmNameIncludedVtable]
-    -- checkSatAllVtables 
-
+{-  where 
+  	initialVarCtxt :: Schema -> VariationalContext
+  	initialVarCtxt (f,_) = f
+    vctxt = initialVarCtxt s 
+    qs = bruteTrans vq vctxt 
+    do vts <- runBruteQsClm qs c 
+    return vts 
+    checkSatAllVtables :: [(ClmNameIncludedVtable, Vctxt)] -> PresCondAttName -> [ClmNameIncludedVtable]
+    checkSatAllVtables 
+-}
 
 
 

@@ -32,6 +32,18 @@ configureOptList :: Config Bool -> [Opt a] -> [a]
 configureOptList c os = catMaybes (map (configureOpt c) os)
 
 
+-- | Apply a configuration to an optional value
+--   and return an optional value with fexp being True.
+configureOptRetOpt :: Config Bool -> Opt a -> Maybe (Opt a)
+configureOptRetOpt c (e,a)
+  | evalFeatureExpr c e = Just (Lit True, a)
+  | otherwise           = Nothing
+
+-- | Configure a list of optional values and return 
+--   a list of optional values with fexp being True.
+configureOptListRetOpt :: Config Bool -> [Opt a] -> [Opt a]
+configureOptListRetOpt c os = catMaybes (map (configureOptRetOpt c) os)
+
 --
 -- * Variational type class
 --
