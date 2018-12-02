@@ -15,7 +15,8 @@ import VDB.Value
 import VDB.Config  
 
 import Data.Text as T (Text, pack, append, concat)
-
+import Data.List (intercalate)
+import Data.Maybe (catMaybes)
 
 type Query = T.Text
 
@@ -27,10 +28,17 @@ bruteAlg2Sql = undefined
 -- | takes a vq and returns a "just text" if vq is a pure
 --   relational query and returns "nothing" otherwise.
 relTrans :: Algebra -> Maybe Query
-relTrans (SetOp s l r) = undefined
-relTrans (Proj as q)   = undefined
---	case relTrans q of 
---  Just r -> Just (T.concat ["select ", ])
+relTrans (SetOp s l r) = case (relTrans l, relTrans r) of 
+  (Just ql, Just qr) -> case s of 
+    Prod -> Just (T.concat ["select * from ( ", ql, " ) join ( ", qr, " )"])
+    o    -> Just (T.concat ["( ", ql, " ) ", T.pack (show o), " ( ", qr, " )"])
+  _                  -> Nothing
+relTrans (Proj as q)   = case relPrj as of 
+  Nothing -> Nothing
+  Just [] -> Just "select null"
+  Just ns -> case relTrans q of 
+          Just r -> Just (T.concat ["select ", T.pack ns, " from ", r])
+          _      -> Nothing
 relTrans (Sel c q)     = case relTrans q of 
   Just r -> Just (T.concat ["select * from ( ", r, " ) where ", 
                             T.pack (show c)])
@@ -40,8 +48,20 @@ relTrans (TRef r)      = Just (T.append "select * from " (T.pack (relationName r
 relTrans Empty         = Just "select null"
 
 -- | helper function for projecting pure relational attributes.
-relPrj :: [Opt Attribute] -> Maybe T.Text
-relPrj = undefined
+relPrj :: [Opt Attribute] -> Maybe String
+relPrj [] = Just []
+relPrj as
+  | Nothing `elem` (attListName as) = Nothing
+  | otherwise                       = Just (intercalate ", " (catMaybes (attListName as)))
+
+-- | helper function for relPrj.
+attName :: Opt Attribute -> Maybe String
+attName (F.Lit True, a) = Just (attributeName a)
+attName _             = Nothing
+
+-- | helper function for relPrj.
+attListName :: [Opt Attribute] -> [Maybe String]
+attListName = map attName 
 
 {-trans :: Algebra -> F.FeatureExpr -> [Opt Text]
 trans (SetOp s l r) ctxt = [setAux s lq rq | lq <- lres, rq <- rres]
