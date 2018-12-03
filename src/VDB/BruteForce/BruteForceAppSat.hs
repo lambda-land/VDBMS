@@ -17,7 +17,7 @@ import Data.Maybe (catMaybes)
 import Database.HDBC
 import Database.HDBC.SqlValue
 
-type Vctxt = F.FeatureExpr
+{-type Vctxt = F.FeatureExpr
 type PresCondAttName = String
 
 -- | updates the pres cond of a tuple based on the vctxt, if satisfiable 
@@ -107,4 +107,4 @@ checkSatAllVtables vs p = checkSatVtablesTuples filteredVtablePresConds p
 
 -- checkSatVtableMap :: ClmVtableMap -> ClmVtableMap
 -- checkSatVtableMap = undefined
-
+-}

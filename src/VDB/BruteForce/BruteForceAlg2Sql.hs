@@ -15,19 +15,20 @@ import VDB.Value
 import VDB.Config  
 import VDB.VqueryConfigSem
 
-import Data.Text as T (Text, pack, append, concat)
+-- import Data.Text as T (Text, pack, append, concat)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 
-type Query = T.Text
+type Query = String
+type VariantQuery = Variant Bool Query
 
 -- | takes a variational query and a list of configurations
 --   and returns a list of relational sql queries tagged with
 --   their configuration.
-bruteAlg2Sql :: Algebra -> [Config Bool] -> [Variant Bool Query]
+bruteAlg2Sql :: Algebra -> [Config Bool] -> [VariantQuery]
 bruteAlg2Sql q cs = map (bruteQ q) cs 
   where
-    bruteQ :: Algebra -> Config Bool -> Variant Bool Query
+    bruteQ :: Algebra -> Config Bool -> VariantQuery
     bruteQ configuredQ c = case relTrans configuredQ of 
       Just relQ -> (c, relQ)
       _ -> error "configuring vquery went wrong!!"
@@ -40,21 +41,21 @@ bruteAlg2Sql q cs = map (bruteQ q) cs
 relTrans :: Algebra -> Maybe Query
 relTrans (SetOp s l r) = case (relTrans l, relTrans r) of 
   (Just ql, Just qr) -> case s of 
-    Prod -> Just (T.concat ["select * from ( ", ql, " ) join ( ", qr, " )"])
-    o    -> Just (T.concat ["( ", ql, " ) ", T.pack (show o), " ( ", qr, " )"])
+    Prod -> Just (concat ["select * from ( ", ql, " ) join ( ", qr, " )"])
+    o    -> Just (concat ["( ", ql, " ) ", show o, " ( ", qr, " )"])
   _                  -> Nothing
 relTrans (Proj as q)   = case relPrj as of 
   Nothing -> Nothing
   Just [] -> Just "select null"
   Just ns -> case relTrans q of 
-          Just r -> Just (T.concat ["select ", T.pack ns, " from ", r])
+          Just r -> Just (concat ["select ", ns, " from ", r])
           _      -> Nothing
 relTrans (Sel c q)     = case relTrans q of 
-  Just r -> Just (T.concat ["select * from ( ", r, " ) where ", 
-                            T.pack (show c)])
+  Just r -> Just (concat ["select * from ( ", r, " ) where ", 
+                            show c])
   _ -> Nothing
 relTrans (AChc _ _ _)  = Nothing
-relTrans (TRef r)      = Just (T.append "select * from " (T.pack (relationName r)))
+relTrans (TRef r)      = Just (concat ["select * from ", (relationName r)])
 relTrans Empty         = Just "select null"
 
 -- | helper function for projecting pure relational attributes.

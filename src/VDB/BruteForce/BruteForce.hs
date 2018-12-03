@@ -44,8 +44,8 @@ import Database.HDBC
 -- initialVarCtxt (f,_) = f
 
 
-brute :: IConnection conn => Algebra -> Schema -> conn -> Vresult
-brute vq s c = undefined
+-- brute :: IConnection conn => Algebra -> Schema -> conn -> Vresult
+-- brute vq s c = undefined
 {-  where 
   	initialVarCtxt :: Schema -> VariationalContext
   	initialVarCtxt (f,_) = f
