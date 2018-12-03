@@ -10,7 +10,7 @@ import qualified VDB.Target as T
 import VDB.Variational
 import VDB.Value  
 import VDB.BruteForce.BruteForceAlg2Sql
-import VDB.BruteForce.BruteForceAppSat
+import VDB.BruteForce.BruteForceAppConfig
 import VDB.BruteForce.BruteForceSendQs
 import VDB.TypeSystem.Semantics
 import VDB.ShowVresult

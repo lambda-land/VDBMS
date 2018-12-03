@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 126f41ac62b1012c4b74d2fed4ffbb3aa0d2613938ef4747b7cbd7ce5285d8a0
+-- hash: bd7735096579de7ce682c33a20089e965e5a15d5c16b426246bbdf061e30cad0
 
 name:           vdbms
 version:        0.1.0.0
@@ -28,7 +28,7 @@ library
       VDB.Approach1.App1SendQs
       VDB.BruteForce.BruteForce
       VDB.BruteForce.BruteForceAlg2Sql
-      VDB.BruteForce.BruteForceAppSat
+      VDB.BruteForce.BruteForceAppConfig
       VDB.BruteForce.BruteForceAppSatPersist
       VDB.BruteForce.BruteForceSendQs
       VDB.BruteForce.BruteForceSendQsPersist
