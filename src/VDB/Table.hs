@@ -11,16 +11,19 @@ import VDB.Schema
 import VDB.Variational
 import VDB.Value
 
+import Database.HDBC (SqlValue)
 
 -- | A database is a mapping from relations to tables.
-type Database = Map Relation Table
+type Database = (Schema, Map Relation Table)
 
 -- | A table is a list of tuples.
-type Table = [Tuple]
+type Table = Opt [Tuple]
 
--- | A tuple is an optional list of values, where each value may be Nothing if
---   the corresponding attribute is not present in this configuration.
-type Tuple = Opt [Maybe Value]
+-- | A tuple is an optional map between attributes 
+--   and their sqlvalues, where each value may be 
+--   Nothing if the corresponding attribute is not 
+--   present in a configuration.
+type Tuple = Opt (Map Attribute (Maybe SqlValue))
 
 
 -- | Check a value against the attribute-type pair in a row type.

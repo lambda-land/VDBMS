@@ -14,18 +14,8 @@ import VDB.Value
 
 
 -- | Type of a relation in the database.
-type RowType = [Opt (Attribute, Type)]
--- type RowType = Map Attribute (Opt Type)
-
-
--- | Attributes must be unique in a table. The pair (Int, Attribute)
---   is for keeping the order of attributes in a relation.
--- type UniqeAttribute = (Int, Attribute)
-
-
--- | Type of a relation in the database. 
---type RelationSchema = Map UniqeAttribute (Opt Type)
-
+-- type RowType = [Opt (Attribute, Type)]
+type RowType = Map Attribute (Opt Type)
 
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to

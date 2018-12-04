@@ -11,10 +11,6 @@ import VDB.Name
 --   parameterized to admit alternative logics or symbolic values.
 type Config b = Feature -> b
 
--- | A variant of a variational thing tagged by its configuration.
-type Variant a b = (Config a, b)
-
-
 -- | A configuration that enables all features.
 enableAll :: Boolean b => Config b
 enableAll _ = true
