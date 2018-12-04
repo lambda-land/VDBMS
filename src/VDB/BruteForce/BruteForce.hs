@@ -22,6 +22,12 @@ import Database.HDBC
 
 
 -- steps of brute force approach:
+-- 1. get a list of configuration, apply them to a vq
+
+
+-- | 
+runBrute :: IConnection conn => Algebra -> [Config Bool] -> conn -> PresCondAttName -> [ClmVariantTableMap]
+
 -- 1. initialize vctxt to the pres cond of vsch
 -- 2. translate the vq to sql qs *bruteTrans*
 -- 3. get conn to db and run *runBruteQsClm* to run sql qs from trans 

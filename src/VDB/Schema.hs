@@ -20,7 +20,7 @@ type RowType = [Opt (Attribute, Type)]
 
 -- | Attributes must be unique in a table. The pair (Int, Attribute)
 --   is for keeping the order of attributes in a relation.
-type UniqeAttribute = (Int, Attribute)
+-- type UniqeAttribute = (Int, Attribute)
 
 
 -- | Type of a relation in the database. 
