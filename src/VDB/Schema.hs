@@ -14,9 +14,8 @@ import VDB.Value
 
 
 -- | Type of a relation in the database.
-<<<<<<< HEAD
 -- type RowType = [Opt (Attribute, Type)]
-type RowType = Map Atribute (Opt Type)
+type RowType = Map Attribute (Opt Type)
 
 
 -- | Attributes must be unique in a table. The pair (Int, Attribute)
@@ -69,10 +68,17 @@ lookupAttribute a r s = case lookupRowType r s of
                           Just (_,rt) -> retrieve rt a
                           _ -> Nothing
 
--- | helper func for lookupAttInRel
-retrieve :: Eq b => [(a,(b,c))] -> b -> Maybe (a,c)
-retrieve [] _ = Nothing
-retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
+-- | helper func for lookupAttInRel -- apply new rowtypes
+retrieve ::  Map Attribute (Opt Type) -> Attribute -> Maybe (FeatureExpr,Type)
+retrieve m a = case M.toList m of 
+                [] -> Nothing
+                ((x,(y,z)):xs) -> if a == x then (Just (y,z)) else retrieve (M.fromList xs) a
+
+
+-- | helper func for lookupAttInRel -- old
+-- retrieve :: Eq b => [(a,(b,c))] -> b -> Maybe (a,c)
+-- retrieve [] _ = Nothing
+-- retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
 
 -- | Get the type of an attribute in a database.
 lookupAttType :: Attribute -> Relation -> Schema -> Maybe Type
