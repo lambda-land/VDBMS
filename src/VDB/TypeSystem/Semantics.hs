@@ -66,15 +66,6 @@ typeOfVcond (C.CChc d l r) f t = typeOfVcond l (F.And f d) t
   && typeOfVcond r (F.And f (F.Not d)) t
 
 
-
-
--- | set the variational context at the beginning
---   to the presence condition of the v-schema
---
-initialVarCtxt :: Schema -> VariationalContext
-initialVarCtxt (f,_) = f
-
-
 --
 -- * static semantics of variational queires
 --   based on inference rules in the PVLDB paper

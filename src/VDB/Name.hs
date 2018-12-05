@@ -16,3 +16,7 @@ newtype Attribute = Attribute { attributeName :: String }
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }
   deriving (Data,Eq,IsString,Ord,Show,Typeable)
+
+-- test
+-- testf:: Feature
+-- testf = "A"

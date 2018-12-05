@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c9fefc70db28a4ffb76b08f7b53bd8a2fb237451f9ca875f8aa807713bd6216a
+-- hash: bd7735096579de7ce682c33a20089e965e5a15d5c16b426246bbdf061e30cad0
 
 name:           vdbms
 version:        0.1.0.0
@@ -22,27 +22,32 @@ extra-source-files:
 library
   exposed-modules:
       VDB.Algebra
+      VDB.Approach1.App1Alg2Sql
+      VDB.Approach1.App1AppSat
+      VDB.Approach1.App1Run
+      VDB.Approach1.App1SendQs
       VDB.BruteForce.BruteForce
       VDB.BruteForce.BruteForceAlg2Sql
-      VDB.BruteForce.BruteForceAppSat
+      VDB.BruteForce.BruteForceAppConfig
       VDB.BruteForce.BruteForceAppSatPersist
       VDB.BruteForce.BruteForceSendQs
       VDB.BruteForce.BruteForceSendQsPersist
-      VDB.BuildVres
       VDB.Condition
       VDB.Config
       VDB.DBsetup.EnronEmailDB
       VDB.DBsetup.EnronEmailDBPersist
+      VDB.Example.EmployeeUseCase.EmployeeSchema
+      VDB.Example.EmployeeUseCase.EmployeeVSchema
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
-      VDB.Example.EmployeeUseCase.EmployeeSchema
-      VDB.Example.EmployeeUseCase.EmployeeVSchema
       VDB.FeatureExpr
+      VDB.FeatureExprParser
       VDB.Name
       VDB.ParsingSQL
       VDB.SAT
       VDB.Schema
+      VDB.ShowVresult
       VDB.SQL
       VDB.Table
       VDB.Target
@@ -51,6 +56,7 @@ library
       VDB.TypeSystem.Semantics
       VDB.Value
       VDB.Variational
+      VDB.VqueryConfigSem
   other-modules:
       Paths_vdbms
   hs-source-dirs:
@@ -137,6 +143,4 @@ test-suite vsat-test
     , text
     , time
     , vdbms
-    , tasty
-    , tasty-hunit
   default-language: Haskell2010
