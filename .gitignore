@@ -7,3 +7,5 @@ dist
 .pgsql
 .sql
 .csv
+.DS_Store
+
