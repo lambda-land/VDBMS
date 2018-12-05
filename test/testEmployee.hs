@@ -31,11 +31,8 @@ import qualified Data.Map as M
 -- v5 = Ref (Feature "v5")
 
 
--- | test the schema output from different configuration of A and B. 
---   Where A and B is the feature expression, 
---   and the underlying schema is the one from the Example.TwoOption
-testEmployee  :: TestTree
-testEmployee  = testGroup "Test fold a list of Schema to V-Schema"
+testEmployeeSchema  :: TestTree
+testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
   [ testGroup "1) test simple schemas to V-Schema  "
     [ testCase "fold a empty list" $
       do output    <- return $ variationizeSchema [ ]
@@ -159,7 +156,7 @@ testEmployee  = testGroup "Test fold a list of Schema to V-Schema"
                                                 -- , (v1 `Or` v2, (Attribute "salary", TInt)) -- the element order matters in test 
                                                 ]))
                                              ,(Relation "empacct",(v2 `Or` v3 `Or` v4 `Or` v5,
-                                                [ (v2,                 (Attribute "deptname", TString))
+                                                [ (v2,                         (Attribute "deptname", TString))
                                                 , (v3 `Or` v4 `Or` v5,         (Attribute "deptno", TInt))
                                                 , (v2 `Or` v3 `Or` v4 `Or` v5, (Attribute "empno", TInt))
                                                 , (v2 `Or` v3 `Or` v4 `Or` v5, (Attribute "hiredate", TString))
@@ -185,4 +182,54 @@ testEmployee  = testGroup "Test fold a list of Schema to V-Schema"
 
     ]
   ]
+
+
+testEmployeeSelection  :: TestTree
+testEmployeeSelection  = testGroup "Test selection among v-schema"
+  [  
+    testGroup "1) Do selection from Employee v-schema"
+    [ testCase "select v1 from v1 version schema" $
+      do output   <- return $ configureOpt (enable (Feature "v1") disableAll) $ variationizeSchema [empSchema1]
+         expectVal <- return $  Just (M.fromList [(Relation "engineerpersonnel",(v1,
+                                                    [ (v1,(Attribute "empno",TInt))
+                                                    , (v1,(Attribute "name",TString))
+                                                    , (v1,(Attribute "hiredate",TString))
+                                                    , (v1,(Attribute "title",TString))
+                                                    , (v1,(Attribute "deptname",TString))
+                                                    ]))
+                                                 ,(Relation "otherpersonnel",(v1,
+                                                    [ (v1, (Attribute "empno", TInt))
+                                                    , (v1, (Attribute "name", TString))
+                                                    , (v1, (Attribute "hiredate", TString))
+                                                    , (v1, (Attribute "title", TString))
+                                                    , (v1, (Attribute "deptname", TString))
+                                                    ]))
+                                                 ,(Relation "job",(v1,
+                                                    [  -- (v1, (Attribute "salary", TInt)) -- the element order matters in test 
+                                                       (v1, (Attribute "title", TString))
+                                                    ,  (v1 , (Attribute "salary", TInt)) 
+                                                    ]))                                                        
+                                                 ])
+         expectVal @=? output
+    -- wrong answer
+    -- , testCase "select v2 from v1 v2 version schema" $
+    --   do output   <- return $ configureOpt (enable (Feature "v2") disableAll) $ variationizeSchema [empSchema1, empSchema2]
+    --      expectVal <- return $  Just $ M.fromList [(Relation "job",(v2,
+    --                                                   [  (v2, (Attribute "salary", TInt))
+    --                                                   ,  (v2, (Attribute "title", TString))
+    --                                                   -- , (v1 `Or` v2, (Attribute "salary", TInt)) -- the element order matters in test 
+    --                                                   ]))
+    --                                               ,(Relation "empacct",(v2,
+    --                                                   [ (v2, (Attribute "empno", TInt))
+    --                                                   , (v2, (Attribute "name", TString))
+    --                                                   , (v2, (Attribute "hiredate", TString))
+    --                                                   , (v2, (Attribute "title", TString))
+    --                                                   , (v2, (Attribute "deptname", TString))
+    --                                                  ]))                                                         
+    --                                              ]
+    --      expectVal @=? output
+
+    ]
+   ]
+
   

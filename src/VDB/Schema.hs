@@ -15,6 +15,7 @@ import VDB.Value
 
 -- | Type of a relation in the database.
 type RowType = [Opt (Attribute, Type)]
+-- type RowType = Map Atribute (Opt Type)
 
 
 -- | Attributes must be unique in a table. The pair (Int, Attribute)
