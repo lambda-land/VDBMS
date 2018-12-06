@@ -17,6 +17,10 @@ newtype Attribute = Attribute { attributeName :: String }
 newtype Relation = Relation { relationName :: String }
   deriving (Data,Eq,IsString,Ord,Show,Typeable)
 
+-- | Name of presence condition attribute in db.
+newtype PresCondAtt = PresCondAtt { presCondAttName :: String }
+  deriving (Data,Eq,IsString,Ord,Show,Typeable)  
+
 -- test
 -- testf:: Feature
 -- testf = "A"

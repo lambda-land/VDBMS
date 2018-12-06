@@ -14,6 +14,7 @@ import VDB.Variational
 import VDB.Value
 import VDB.Config  
 import VDB.VqueryConfigSem
+import VDB.Variant
 
 -- import Data.Text as T (Text, pack, append, concat)
 import Data.List (intercalate)

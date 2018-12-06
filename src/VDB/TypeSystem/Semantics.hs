@@ -1,6 +1,6 @@
 module VDB.TypeSystem.Semantics where 
 
-import VDB.Algebra 
+{-import VDB.Algebra 
 import Prelude hiding (EQ,LT , GT)
 import VDB.Name
 import qualified VDB.FeatureExpr as F
@@ -226,3 +226,4 @@ shrinkTypeUnion = nub
 
 
 
+-}

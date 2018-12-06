@@ -1,7 +1,7 @@
  -- | A example schema revolution in an employee data base
 module VDB.Example.EmployeeUseCase.EmployeeSchema where
 
-import VDB.Schema
+{-import VDB.Schema
 import VDB.FeatureExpr
 import VDB.Name
 import VDB.Value 
@@ -183,3 +183,4 @@ empbio_v5 = [ (Lit True, (Attribute "empno", TInt))
 
 
 
+-}

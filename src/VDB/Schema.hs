@@ -10,12 +10,12 @@ import Data.Function (on)
 import VDB.FeatureExpr
 import VDB.Name
 import VDB.Variational
-import VDB.Value
+import VDB.Type
 
 
 -- | Type of a relation in the database.
 -- type RowType = [Opt (Attribute, Type)]
-type RowType = Map Attribute (Opt Type)
+type RowType = Map Attribute (Opt SqlType)
 
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to
@@ -31,6 +31,10 @@ featureModel (f,_) = f
 --lookupRelationSchema :: Relation -> Schema -> Maybe (Opt RelationSchema)
 --lookupRelationSchema r (_,m) = M.lookup r m
 
+
+-- | get attributes of a rowtype.
+getRowTypeAtts :: RowType -> Set Attribute
+getRowTypeAtts = M.keysSet
 
 -- | Get the schema of a relation in the database, where 
 -- 	the relation schema is stored as a row type.
@@ -51,11 +55,10 @@ lookupRel r s = case lookupRowType r s of
                   Just (_,rel) -> Just rel
                   _ -> Nothing
 
-
 -- | Get the type and feature exp of an attribute in a database.
-lookupAttribute :: Attribute -> Relation -> Schema -> Maybe (Opt Type)
+lookupAttribute :: Attribute -> Relation -> Schema -> Maybe (Opt SqlType)
 lookupAttribute a r s = case lookupRowType r s of 
-                          Just (_,rt) -> retrieve rt a
+                          Just (_,rt) -> M.lookup a rt
                           _ -> Nothing
 
 -- | helper func for lookupAttInRel
@@ -64,7 +67,7 @@ retrieve [] _ = Nothing
 retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
 
 -- | Get the type of an attribute in a database.
-lookupAttType :: Attribute -> Relation -> Schema -> Maybe Type
+lookupAttType :: Attribute -> Relation -> Schema -> Maybe SqlType
 lookupAttType a r s = case lookupAttribute a r s of 
                         Just (_,t) -> Just t
                         _ -> Nothing

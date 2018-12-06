@@ -10,7 +10,7 @@ import qualified Data.Map as Map
 
 
 -- | A table with 2 feature expresion a and b invovled
-tableWithTwoOption :: RowType 
+{-tableWithTwoOption :: RowType 
 tableWithTwoOption = [ ( Lit False,                          (Attribute "a1", TInt))
                      , ( And a b,                            (Attribute "a2", TInt))
                      , ( And a (Not b),                      (Attribute "a3", TInt))
@@ -38,7 +38,7 @@ a = Ref (Feature "A")
 b :: FeatureExpr
 b = Ref (Feature "B")
 
-
+-}
 
 
 

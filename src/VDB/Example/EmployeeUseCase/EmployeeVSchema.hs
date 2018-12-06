@@ -1,6 +1,6 @@
 module VDB.Example.EmployeeUseCase.EmployeeVSchema where
 
-import VDB.Schema
+{-import VDB.Schema
 import VDB.FeatureExpr
 import VDB.Name
 import VDB.Value
@@ -164,3 +164,4 @@ unionRowtypeHelper lf         rf  = shrinkFeatureExpr (lf `Or` rf)
 -- | Union RowTypes 
 -- unionByRowTypesHelper :: Opt (Attribute, Type)-> Opt (Attribute, Type) -> Bool
 -- unionByRowTypesHelper = undefined 
+-}

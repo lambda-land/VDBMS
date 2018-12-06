@@ -7,7 +7,7 @@ import Data.SBV (Boolean(..))
 
 import VDB.FeatureExpr (FeatureExpr)
 import VDB.Name
-import VDB.Value
+import VDB.Type
 import VDB.Variational
 
 -- | Atoms are the leaves of a condition.
