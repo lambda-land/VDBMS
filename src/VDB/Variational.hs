@@ -17,6 +17,7 @@ import VDB.Name
 type Opt a = (FeatureExpr, a)
 
 
+
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a
 selectOpt f b (e,a) = (selectFeatureExpr f b e, a)
@@ -32,6 +33,7 @@ configureOptList :: Config Bool -> [Opt a] -> [a]
 configureOptList c os = catMaybes (map (configureOpt c) os)
 
 
+
 -- | Apply a configuration to an optional value
 --   and return an optional value with fexp being True.
 configureOptRetOpt :: Config Bool -> Opt a -> Maybe (Opt a)
@@ -44,9 +46,7 @@ configureOptRetOpt c (e,a)
 configureOptListRetOpt :: Config Bool -> [Opt a] -> [Opt a]
 configureOptListRetOpt c os = catMaybes (map (configureOptRetOpt c) os)
 
---
--- * Variational type class
---
+
 
 
 -- | A type class for variational things.

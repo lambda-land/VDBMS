@@ -17,6 +17,16 @@ import VDB.Type
 -- type RowType = [Opt (Attribute, Type)]
 type RowType = Map Attribute (Opt SqlType)
 
+
+-- | Attributes must be unique in a table. The pair (Int, Attribute)
+--   is for keeping the order of attributes in a relation.
+type UniqeAttribute = (Int, Attribute)
+
+
+-- | Type of a relation in the database. 
+--type RelationSchema = Map UniqeAttribute (Opt Type)
+
+
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to
 --   the feature model, which defines the set of valid configurations.
@@ -61,10 +71,17 @@ lookupAttribute a r s = case lookupRowType r s of
                           Just (_,rt) -> M.lookup a rt
                           _ -> Nothing
 
--- | helper func for lookupAttInRel
-retrieve :: Eq b => [(a,(b,c))] -> b -> Maybe (a,c)
-retrieve [] _ = Nothing
-retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
+-- | helper func for lookupAttInRel -- apply new rowtypes
+retrieve ::  Map Attribute (Opt Type) -> Attribute -> Maybe (FeatureExpr,Type)
+retrieve m a = case M.toList m of 
+                [] -> Nothing
+                ((x,(y,z)):xs) -> if a == x then (Just (y,z)) else retrieve (M.fromList xs) a
+
+
+-- | helper func for lookupAttInRel -- old
+-- retrieve :: Eq b => [(a,(b,c))] -> b -> Maybe (a,c)
+-- retrieve [] _ = Nothing
+-- retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
 
 -- | Get the type of an attribute in a database.
 lookupAttType :: Attribute -> Relation -> Schema -> Maybe SqlType
