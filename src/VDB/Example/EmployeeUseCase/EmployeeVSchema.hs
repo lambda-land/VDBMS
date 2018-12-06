@@ -171,3 +171,4 @@ s2RelMap = M.fromList [ (Relation "T1", (Lit True,  M.fromList[ (Attribute "A1",
 -- | Union RowTypes 
 -- unionByRowTypesHelper :: Opt (Attribute, Type)-> Opt (Attribute, Type) -> Bool
 -- unionByRowTypesHelper = undefined 
+-}
