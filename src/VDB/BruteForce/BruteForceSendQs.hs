@@ -8,9 +8,9 @@ import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C
 import qualified VDB.Target as T
 import VDB.Variational
-import VDB.Value  
+import VDB.Type  
 import VDB.BruteForce.BruteForceAlg2Sql (Query,VariantQuery)
-import VDB.Config (Variant)
+import VDB.Variant (Variant)
 
 import Control.Monad
 

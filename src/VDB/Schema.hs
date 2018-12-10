@@ -4,7 +4,7 @@ module VDB.Schema where
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
-import Data.Set 
+import Data.Set as S
 import Data.Function (on)
 
 import VDB.FeatureExpr
@@ -15,7 +15,7 @@ import VDB.Type
 
 -- | Type of a relation in the database.
 -- type RowType = [Opt (Attribute, Type)]
-type RowType = Map Attribute (Opt SqlType)
+type RowType = Map Attribute (Opt Type)
 
 
 -- | Attributes must be unique in a table. The pair (Int, Attribute)
@@ -41,10 +41,27 @@ featureModel (f,_) = f
 --lookupRelationSchema :: Relation -> Schema -> Maybe (Opt RelationSchema)
 --lookupRelationSchema r (_,m) = M.lookup r m
 
-
 -- | get attributes of a rowtype.
 getRowTypeAtts :: RowType -> Set Attribute
 getRowTypeAtts = M.keysSet
+
+-- | get the attribute fexp from a rowtype
+lookupAttFexpInRowType :: Attribute -> RowType -> Maybe FeatureExpr
+lookupAttFexpInRowType a r = case M.lookup a r of 
+                               Just (f,_) -> Just f
+                               _ -> Nothing
+
+-- | Get the fexp and type of an attribute in a rowtype
+lookupAttFexpTypeInRowType :: Attribute -> RowType -> Maybe (Opt Type)
+lookupAttFexpTypeInRowType = M.lookup
+
+-- | Get attribute type pairs in a rowtype
+getAttTypeFromRowType :: RowType -> Set (Attribute, Type)
+getAttTypeFromRowType r = dropFexp rowSet
+  where
+    rowSet = S.fromList $ M.assocs r
+    dropFexp :: (Ord a, Ord t) => Set (a,(o,t)) -> Set (a,t)
+    dropFexp = S.map (\(a,(_,t)) -> (a,t)) 
 
 -- | Get the schema of a relation in the database, where 
 -- 	the relation schema is stored as a row type.
@@ -66,9 +83,9 @@ lookupRel r s = case lookupRowType r s of
                   _ -> Nothing
 
 -- | Get the type and feature exp of an attribute in a database.
-lookupAttribute :: Attribute -> Relation -> Schema -> Maybe (Opt SqlType)
+lookupAttribute :: Attribute -> Relation -> Schema -> Maybe (Opt Type)
 lookupAttribute a r s = case lookupRowType r s of 
-                          Just (_,rt) -> M.lookup a rt
+                          Just (_,rt) -> lookupAttFexpTypeInRowType a rt
                           _ -> Nothing
 
 -- | helper func for lookupAttInRel -- apply new rowtypes
@@ -84,7 +101,7 @@ retrieve m a = case M.toList m of
 -- retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
 
 -- | Get the type of an attribute in a database.
-lookupAttType :: Attribute -> Relation -> Schema -> Maybe SqlType
+lookupAttType :: Attribute -> Relation -> Schema -> Maybe Type
 lookupAttType a r s = case lookupAttribute a r s of 
                         Just (_,t) -> Just t
                         _ -> Nothing

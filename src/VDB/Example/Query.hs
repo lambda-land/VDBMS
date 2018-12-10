@@ -7,7 +7,7 @@ import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C
 import qualified VDB.Target as T
 import VDB.Variational
-import qualified VDB.Value as V
+import qualified VDB.Type as V
 
 import VDB.Translations.VSqlToAlgebra 
 

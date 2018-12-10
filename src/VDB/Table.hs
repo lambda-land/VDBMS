@@ -13,7 +13,7 @@ import VDB.Schema
 import VDB.Variational
 import VDB.Type
 
-import Database.HDBC (SqlValue)
+-- import Database.HDBC (SqlValue)
 
 -- | A database is a mapping from relations to tables.
 type Database = (Schema, Map Relation Table)
@@ -30,7 +30,7 @@ type VTable = Opt Table
 --   and their sqlvalues, where each value may be 
 --   Nothing if the corresponding attribute is not 
 --   present in a configuration.
-type Tuple = Opt (Map Attribute (Maybe SqlValue))
+type Tuple = Opt (Map Attribute (Maybe Value))
 
 
 -- | gets the tuple presence condition.
@@ -67,10 +67,11 @@ getVTableFexp = fst
 
 
 -- | Check a value against the attribute-type pair in a row type.
-checkValue :: FeatureExpr -> Attribute -> Opt SqlType -> Maybe SqlValue -> Bool
+checkValue :: FeatureExpr -> Attribute -> Opt Type -> Maybe Value -> Bool
 checkValue ctx a (p,t) Nothing  = unsatisfiable (And ctx p)
-checkValue ctx a (p,t) (Just v) = satisfiable (And ctx p) && 
-  (t == typeOf v || typeOf v == TNull)
+checkValue ctx a (p,t) (Just v) = satisfiable (And ctx p) 
+  -- && (t == typeOf v || typeOf v == TNull) -- need to be added
+  -- for sqltype and sqlvalue
 
 -- | Check a tuple against a row type. Ensures that the list of 
 --   attributes in rowtype and tuples are the same. checks sat

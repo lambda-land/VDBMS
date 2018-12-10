@@ -4,7 +4,7 @@ module VDB.Example.TwoOption where
 import VDB.Schema
 import VDB.FeatureExpr
 import VDB.Name
-import VDB.Value 
+import VDB.Type 
 
 import qualified Data.Map as Map 
 

@@ -16,7 +16,7 @@ import VDB.Condition
 -- import VDB.FeatureExpr 
 import VDB.Name
 import VDB.Variational 
-import VDB.Value
+import VDB.Type
 
 
 -- import qualified Text.ParserCombinators.Parsec.Combinator as C

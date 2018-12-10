@@ -10,6 +10,8 @@ import VDB.Name
 import VDB.Type
 import VDB.Variational
 
+-- import Database.HDBC
+
 -- | Atoms are the leaves of a condition.
 data Atom
    = Val  Value

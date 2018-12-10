@@ -8,13 +8,14 @@ import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C
 import qualified VDB.Target as T
 import VDB.Variational
-import VDB.Value  
+import VDB.Type  
 import VDB.BruteForce.BruteForceAlg2Sql
 import VDB.BruteForce.BruteForceAppConfig
 import VDB.BruteForce.BruteForceSendQs
 import VDB.TypeSystem.Semantics
 import VDB.ShowVresult
 import VDB.Schema
+import VDB.Config
 
 import Data.Map
 
@@ -27,7 +28,7 @@ import Database.HDBC
 
 -- | 
 runBrute :: IConnection conn => Algebra -> [Config Bool] -> conn -> PresCondAttName -> [ClmVariantTableMap]
-
+runBrute = undefined
 -- 1. initialize vctxt to the pres cond of vsch
 -- 2. translate the vq to sql qs *bruteTrans*
 -- 3. get conn to db and run *runBruteQsClm* to run sql qs from trans 

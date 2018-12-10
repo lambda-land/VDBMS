@@ -5,7 +5,7 @@ import Data.Data (Data,Typeable)
 import VDB.Condition (Atom(..))
 import VDB.FeatureExpr (FeatureExpr)
 import VDB.Name
-import VDB.Value
+import VDB.Type
 
 
 
