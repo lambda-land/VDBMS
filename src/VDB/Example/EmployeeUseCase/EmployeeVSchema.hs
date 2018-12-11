@@ -1,9 +1,9 @@
 module VDB.Example.EmployeeUseCase.EmployeeVSchema where
 
-{-import VDB.Schema
+import VDB.Schema
 import VDB.FeatureExpr
 import VDB.Name
-import VDB.Value
+import VDB.Type
 import VDB.Variational 
 
 import Data.Map.Strict (Map)
@@ -171,4 +171,3 @@ s2RelMap = M.fromList [ (Relation "T1", (Lit True,  M.fromList[ (Attribute "A1",
 -- | Union RowTypes 
 -- unionByRowTypesHelper :: Opt (Attribute, Type)-> Opt (Attribute, Type) -> Bool
 -- unionByRowTypesHelper = undefined 
--}

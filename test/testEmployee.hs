@@ -10,11 +10,12 @@ import VDB.Name
 import VDB.FeatureExpr 
 -- import VDB.Condition 
 import VDB.Variational
-import qualified VDB.Value as V
+-- import qualified VDB.Value as V
 import VDB.Variational
 import VDB.Schema
 import VDB.Config
-import VDB.Value 
+import VDB.Type
+
 
 import VDB.Example.EmployeeUseCase.EmployeeSchema
 import VDB.Example.EmployeeUseCase.EmployeeVSchema

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fc3fba01b0f0229067ac86a33152acf4fa57a6ee7fffd380b401c942d1652019
+-- hash: 4e054cc854ca176db789f403f1dbf61eb78d21a34c8dcb413414e4f6840b7574
 
 name:           vdbms
 version:        0.1.0.0
@@ -22,10 +22,6 @@ extra-source-files:
 library
   exposed-modules:
       VDB.Algebra
-      VDB.Approach1.App1Alg2Sql
-      VDB.Approach1.App1AppSat
-      VDB.Approach1.App1Run
-      VDB.Approach1.App1SendQs
       VDB.BruteForce.BruteForce
       VDB.BruteForce.BruteForceAlg2Sql
       VDB.BruteForce.BruteForceAppConfig
@@ -42,7 +38,6 @@ library
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
       VDB.FeatureExpr
-      VDB.FeatureExprParser
       VDB.Name
       VDB.ParsingSQL
       VDB.SAT
@@ -144,4 +139,6 @@ test-suite vsat-test
     , text
     , time
     , vdbms
+    , tasty
+    , tasty-hunit
   default-language: Haskell2010
