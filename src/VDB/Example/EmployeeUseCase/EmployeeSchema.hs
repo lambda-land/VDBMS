@@ -1,10 +1,11 @@
  -- | A example schema revolution in an employee data base
 module VDB.Example.EmployeeUseCase.EmployeeSchema where
 
-{-import VDB.Schema
+import VDB.Schema
 import VDB.FeatureExpr
 import VDB.Name
-import VDB.Value 
+import VDB.Type
+-- import VDB.Value 
 
 import qualified Data.Map as M 
 
@@ -183,5 +184,3 @@ empbio_v5 = M.fromList[ (Attribute "empno",     (Lit True, TInt))
 
 
 
-
--}

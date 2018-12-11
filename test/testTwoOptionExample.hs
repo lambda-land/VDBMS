@@ -10,11 +10,13 @@ import VDB.Name
 import qualified VDB.FeatureExpr as F
 import VDB.Condition 
 import VDB.Variational
-import qualified VDB.Value as V
+-- import qualified VDB.Value as V
 import VDB.Variational
 import VDB.Schema
 import VDB.Config
-import VDB.Value 
+-- import VDB.Value 
+import VDB.Type
+
 
 
 import VDB.Example.TwoOption
