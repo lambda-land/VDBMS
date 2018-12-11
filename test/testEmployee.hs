@@ -22,6 +22,7 @@ import VDB.Example.EmployeeUseCase.EmployeeVSchema
 
 import VDB.TypeSystem.Semantics
 import qualified Data.Map as M 
+import Data.SBV
 
 -- featureExpr rom VDB.Example.EmployeeUseCase.EmployeeVSchema
 -- v1,v2,v3,v4,v5 :: FeatureExpr
@@ -30,7 +31,6 @@ import qualified Data.Map as M
 -- v3 = Ref (Feature "v3")
 -- v4 = Ref (Feature "v4")
 -- v5 = Ref (Feature "v5")
-
 
 testEmployeeSchema  :: TestTree
 testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
@@ -58,7 +58,7 @@ testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
                                                                   M.fromList[ (Attribute "A3", (Lit True, TInt32))
                                                                             , (Attribute "A4", (Lit True, TString))]))])
                                             ]
-         expectVal <- return $ (v1 `Or` v2, M.fromList [(Relation "T1",(v1 `Or` v2,
+         expectVal <- return $ (v1 <+> v2, M.fromList [(Relation "T1",(v1 `Or` v2,
                                                           M.fromList[(Attribute "A1",(v1,TInt32))
                                                                     ,(Attribute "A2",(v1,TString))
                                                                     ,(Attribute "A3",(v2,TInt32))
@@ -74,7 +74,7 @@ testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
                                                                   M.fromList [ (Attribute "A1", (Lit True, TInt32))
                                                                              , (Attribute "A3", (Lit True, TString))]))])
                                             ]
-         expectVal <- return $ (v1 `Or` v2, M.fromList [(Relation "T1",(v1 `Or` v2,
+         expectVal <- return $ (v1 <+> v2, M.fromList [(Relation "T1",(v1 `Or` v2,
                                                           M.fromList  [(Attribute "A1", (v1 `Or` v2,TInt32))
                                                                       ,(Attribute "A2", (v1,TString))
                                                                       ,(Attribute "A3", (v2,TString))
@@ -89,7 +89,7 @@ testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
                                                                   M.fromList [  (Attribute "A1", (Lit True, TInt32))
                                                                               , (Attribute "A3", (Lit True, TString))]))])
                                                ]
-         expectVal <- return $ (v1 `Or` v2, M.fromList [(Relation "T1",(v1,
+         expectVal <- return $ (v1 <+> v2, M.fromList [(Relation "T1",(v1,
                                                           M.fromList [(Attribute "A1",(v1,TInt32))
                                                                       ,(Attribute "A2",(v1,TString))
                                                                       ]))
@@ -105,7 +105,7 @@ testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
     testGroup "2) test in employee schema"
     [ testCase "test emp schema 1 and 2" $
         do output    <- return $ variationizeSchema [empSchema1, empSchema2]
-           expectVal <- return $ (v1 `Or` v2, M.fromList [(Relation "engineerpersonnel",(v1,
+           expectVal <- return $ (v1 <+> v2, M.fromList [(Relation "engineerpersonnel",(v1,
                                                             M.fromList[ (Attribute "empno",(v1,TInt32))
                                                                       , (Attribute "name",(v1,TString))
                                                                       , (Attribute "hiredate",(v1,TString))
@@ -135,7 +135,7 @@ testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
 
     , testCase "test entire (5) emp schemas" $
        do output   <- return $ variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
-          expectVal <- return $ (v1 `Or` v2 `Or` v3 `Or` v4 `Or` v5, 
+          expectVal <- return $ (v1 <+> v2 <+> v3 <+> v4 <+> v5, 
                                   M.fromList [(Relation "engineerpersonnel",(v1,
                                                  M.fromList [ (Attribute "empno",   (v1,TInt32))
                                                             , (Attribute "name",    (v1,TString))

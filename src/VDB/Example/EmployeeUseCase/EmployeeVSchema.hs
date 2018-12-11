@@ -14,6 +14,7 @@ import Data.List(unionBy,nubBy)
 import Data.Tuple(swap)
 
 import Database.HDBC (SqlValue)
+import Data.SBV
 
 -- | FeatureExpr for 5 schema version
 v1,v2,v3,v4,v5 :: FeatureExpr
@@ -40,6 +41,7 @@ employeeFeatureModel =  (v1 `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` (
 
 
 
+
 -- | fold a list of schema into one variational schema 
 variationizeSchema :: [Schema] -> Schema
 variationizeSchema = foldl variationize' emptySchema 
@@ -50,7 +52,7 @@ emptySchema = (Lit False, M.empty)
 
 -- | Merge a new schema to existing V-schema 
 variationize' :: Schema -> Schema -> Schema 
-variationize' s1@(lf,lm) s2@(rf,rm)  = let newf = shrinkFeatureExpr (lf `Or` rf) 
+variationize' s1@(lf,lm) s2@(rf,rm)  = let newf = shrinkFeatureExpr (lf <+> rf) 
                                            newRelMap = variationizeHelper s1 s2    
                         
                                        in (newf, newRelMap)
