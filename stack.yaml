@@ -11,5 +11,5 @@ allow-newer: true
 packages: 
 - .
 flags: {}
-extra-deps: [HDBC-sqlite3-2.3.3.1]
+extra-deps: [HDBC-sqlite3-2.3.3.1, time-1.9.2]
    

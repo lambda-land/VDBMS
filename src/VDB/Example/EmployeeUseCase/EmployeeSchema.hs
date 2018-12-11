@@ -5,7 +5,6 @@ import VDB.Schema
 import VDB.FeatureExpr
 import VDB.Name
 import VDB.Type
--- import VDB.Value 
 
 import qualified Data.Map as M 
 
@@ -22,7 +21,7 @@ empSchema1 = ( Ref (Feature "v1"), M.fromList [ (Relation "engineerpersonnel", (
 
 -- |  engineerpersonnel(empno, name, hiredate, title, deptname) 
 engineerpersonnel_v1 :: RowType
-engineerpersonnel_v1 = M.fromList [ (Attribute "empno",    (Lit True, TInt))
+engineerpersonnel_v1 = M.fromList [ (Attribute "empno",    (Lit True, TInt32))
                                   , (Attribute "name",     (Lit True, TString))
                                   , (Attribute "hiredate", (Lit True, TString))
                                   , (Attribute "title",    (Lit True, TString))
@@ -31,7 +30,7 @@ engineerpersonnel_v1 = M.fromList [ (Attribute "empno",    (Lit True, TInt))
 
 -- | otherpersonnel(empno, name, hiredate, title, deptname) 
 otherpersonnel_v1 :: RowType
-otherpersonnel_v1 = M.fromList[ (Attribute "empno", (Lit True, TInt))
+otherpersonnel_v1 = M.fromList[ (Attribute "empno", (Lit True, TInt32))
                               , (Attribute "name", (Lit True, TString))
                               , (Attribute "hiredate", (Lit True, TString))
                               , (Attribute "title", (Lit True, TString))
@@ -41,7 +40,7 @@ otherpersonnel_v1 = M.fromList[ (Attribute "empno", (Lit True, TInt))
 -- | job(title, salary)
 job_v1 :: RowType
 job_v1 = M.fromList [ (Attribute "title",(Lit True, TString))
-                    , (Attribute "salary", (Lit True, TInt)) 
+                    , (Attribute "salary", (Lit True, TInt32)) 
                     ]
 
 
@@ -58,7 +57,7 @@ empSchema2 = (Ref (Feature "v2"), M.fromList [ (Relation "empacct", (Lit True, e
 
 -- |  empacct (empno, name, hiredate, title, deptname) 
 empacct_v2 :: RowType
-empacct_v2 = M.fromList  [ (Attribute "empno",    (Lit True, TInt))
+empacct_v2 = M.fromList  [ (Attribute "empno",    (Lit True, TInt32))
                          , (Attribute "name",     (Lit True, TString))
                          , (Attribute "hiredate", (Lit True, TString))
                          , (Attribute "title",    (Lit True, TString))
@@ -68,7 +67,7 @@ empacct_v2 = M.fromList  [ (Attribute "empno",    (Lit True, TInt))
 -- | job (title, salary)
 job_v2 :: RowType
 job_v2 = M.fromList[ (Attribute "title", (Lit True, TString))
-                   , (Attribute "salary", (Lit True, TInt)) 
+                   , (Attribute "salary", (Lit True, TInt32)) 
                     ]
 
 
@@ -85,24 +84,24 @@ empSchema3 = (Ref (Feature "v3"), M.fromList [ (Relation "empacct", (Lit True, e
 
 -- | empacct (empno, name, hiredate, title, deptno) 
 empacct_v3 :: RowType
-empacct_v3 = M.fromList [ (Attribute "empno",    (Lit True, TInt))
+empacct_v3 = M.fromList [ (Attribute "empno",    (Lit True, TInt32))
                         , (Attribute "name",     (Lit True, TString))
                         , (Attribute "hiredate", (Lit True, TString))
                         , (Attribute "title",    (Lit True, TString))
-                        , (Attribute "deptno",   (Lit True, TInt))
+                        , (Attribute "deptno",   (Lit True, TInt32))
                         ]
 
 -- | job (title, salary)
 job_v3 :: RowType
 job_v3 =  M.fromList[ (Attribute "title",  (Lit True, TString))
-                    , (Attribute "salary", (Lit True, TInt)) 
+                    , (Attribute "salary", (Lit True, TInt32)) 
                     ]
 
 -- | dept (deptname, deptno, managerno)
 dept_v3 :: RowType
 dept_v3 = M.fromList[ (Attribute "deptname",  (Lit True, TString))
-                    , (Attribute "deptno",    (Lit True, TInt))
-                    , (Attribute "managerno", (Lit True, TInt))
+                    , (Attribute "deptno",    (Lit True, TInt32))
+                    , (Attribute "managerno", (Lit True, TInt32))
                     ]
 
 -- 
@@ -119,28 +118,28 @@ empSchema4 = (Ref (Feature "v4"), M.fromList [ (Relation "empacct", (Lit True, e
 
 -- | empacct (empno, hiredate, title, deptno) 
 empacct_v4 :: RowType
-empacct_v4 =  M.fromList [ (Attribute "empno",    (Lit True, TInt))
+empacct_v4 =  M.fromList [ (Attribute "empno",    (Lit True, TInt32))
                          , (Attribute "hiredate", (Lit True, TString))
                          , (Attribute "title",    (Lit True, TString))
-                         , (Attribute "deptno",   (Lit True, TInt))
+                         , (Attribute "deptno",   (Lit True, TInt32))
                          ]
 
 -- | job (title, salary)
 job_v4 :: RowType
 job_v4 = M.fromList [ (Attribute "title",  (Lit True, TString))
-                    , (Attribute "salary", (Lit True, TInt)) 
+                    , (Attribute "salary", (Lit True, TInt32)) 
                     ]
 
 -- | dept (deptname, deptno, managerno) 
 dept_v4 :: RowType
 dept_v4 = M.fromList  [ (Attribute "deptname", (Lit True, TString))
-                      , (Attribute "deptno", (Lit True, TInt))
-                      , (Attribute "managerno", (Lit True, TInt))
+                      , (Attribute "deptno", (Lit True, TInt32))
+                      , (Attribute "managerno", (Lit True, TInt32))
                       ]
 
 -- | empbio (empno, sex, birthdate, name)
 empbio_v4 :: RowType
-empbio_v4 = M.fromList [ (Attribute "empno", (Lit True, TInt))
+empbio_v4 = M.fromList [ (Attribute "empno", (Lit True, TInt32))
                        , (Attribute "sex", (Lit True, TString))
                        , (Attribute "birthdate", (Lit True, TString))
                        , (Attribute "name", (Lit True, TString))
@@ -159,22 +158,22 @@ empSchema5 = (Ref (Feature "v5"), M.fromList [ (Relation "empacct", (Lit True, e
 
 -- | empacct (empno, hiredate, title, deptno, salary) 
 empacct_v5 :: RowType
-empacct_v5 = M.fromList[ (Attribute "empno",    (Lit True, TInt))
+empacct_v5 = M.fromList[ (Attribute "empno",    (Lit True, TInt32))
                        , (Attribute "hiredate", (Lit True, TString))
                        , (Attribute "title",    (Lit True, TString))
-                       , (Attribute "deptno",   (Lit True, TInt))
-                       , (Attribute "salary",   (Lit True, TInt))
+                       , (Attribute "deptno",   (Lit True, TInt32))
+                       , (Attribute "salary",   (Lit True, TInt32))
                        ]
 -- | dept (deptname, deptno, managerno)
 dept_v5 :: RowType
 dept_v5 = M.fromList[ (Attribute "deptname", (Lit True, TString))
-                    , (Attribute "deptno", (Lit True, TInt))
-                    , (Attribute "managerno", (Lit True, TInt))
+                    , (Attribute "deptno", (Lit True, TInt32))
+                    , (Attribute "managerno", (Lit True, TInt32))
                     ]
 
 -- | empbio (empno, sex, birthdate, firstname, lastname)
 empbio_v5 :: RowType
-empbio_v5 = M.fromList[ (Attribute "empno",     (Lit True, TInt))
+empbio_v5 = M.fromList[ (Attribute "empno",     (Lit True, TInt32))
                       , (Attribute "sex" ,      (Lit True, TString))
                       , (Attribute "birthdate", (Lit True, TString))
                       , (Attribute "firstname", (Lit True, TString))

@@ -5,6 +5,7 @@ import VDB.FeatureExpr
 import VDB.Name
 import VDB.Type
 import VDB.Variational 
+import VDB.Example.EmployeeUseCase.EmployeeSchema
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -12,7 +13,7 @@ import qualified Data.Map.Strict as M
 import Data.List(unionBy,nubBy)
 import Data.Tuple(swap)
 
-import VDB.Example.EmployeeUseCase.EmployeeSchema
+import Database.HDBC (SqlValue)
 
 -- | FeatureExpr for 5 schema version
 v1,v2,v3,v4,v5 :: FeatureExpr
@@ -90,7 +91,7 @@ unionRowType = M.unionWith unionRowtypeHelper
 
 -- | Helper function for unionRowtype  
 --   
-unionRowtypeHelper :: Opt Type  -> Opt Type ->   Opt Type
+unionRowtypeHelper :: Opt SqlType -> Opt SqlType -> Opt SqlType
 unionRowtypeHelper (lf,l)         (rf,r) = (shrinkFeatureExpr (lf `Or` rf), l)
 
 
@@ -114,7 +115,7 @@ testS1 :: Schema
 testS1 = ( v1, s1RelMap)
 
 s1RelMap :: Map Relation (Opt RowType)
-s1RelMap = M.fromList [ (Relation "T1", (Lit True,   M.fromList[ (Attribute "A1", (Lit True, TInt))
+s1RelMap = M.fromList [ (Relation "T1", (Lit True,   M.fromList[ (Attribute "A1", (Lit True, TInt32))
                                                                , (Attribute "A2", (Lit True, TString))]))]
 -- s2^v2 = {T1(A1,A3,A4), T2(A4)}
 testS2 :: Schema 
@@ -122,16 +123,16 @@ testS2 = ( v2, s2RelMap)
 
 
 s2RelMap :: Map Relation (Opt RowType)
-s2RelMap = M.fromList [ (Relation "T1", (Lit True,  M.fromList[ (Attribute "A1", (Lit True, TInt))
+s2RelMap = M.fromList [ (Relation "T1", (Lit True,  M.fromList[ (Attribute "A1", (Lit True, TInt32))
                                                               , (Attribute "A3", (Lit True, TString))]))
-                      , (Relation "T2", (Lit True,  M.fromList  [ (Attribute "A4", (Lit True, TInt))]))
+                      , (Relation "T2", (Lit True,  M.fromList  [ (Attribute "A4", (Lit True, TInt32))]))
                       ]
 
 -- testS3 :: Schema
 -- testS3 = (v3, s3RelMap)
 
 -- s3RelMap :: Map Relation (Opt RowType)
--- s3RelMap = M.fromList [ (Relation "T3", (Lit True,  [ (Lit True, (Attribute "A5", TInt))]))
+-- s3RelMap = M.fromList [ (Relation "T3", (Lit True,  [ (Lit True, (Attribute "A5", TInt32))]))
 --                       ]
 
 
@@ -145,14 +146,14 @@ s2RelMap = M.fromList [ (Relation "T1", (Lit True,  M.fromList[ (Attribute "A1",
 
 
 -- rowtypes1 :: RowType
--- rowtypes1 =   [ (Lit True, (Attribute "A1", TInt)), (v1, (Attribute "A2", TString)), (v2, (Attribute "A3", TString))]
+-- rowtypes1 =   [ (Lit True, (Attribute "A1", TInt32)), (v1, (Attribute "A2", TString)), (v2, (Attribute "A3", TString))]
 
 -- rowtypes2 :: RowType
--- rowtypes2 = [ (v3, (Attribute "A1", TInt)), (v3, (Attribute "A3", TString))]
+-- rowtypes2 = [ (v3, (Attribute "A1", TInt32)), (v3, (Attribute "A3", TString))]
  
 -- -- instance Eq (Opt a) where
 
--- testRowtypes = [ (Lit True, (Attribute "A1", TInt)), (Lit True, (Attribute "A2", TString))]
+-- testRowtypes = [ (Lit True, (Attribute "A1", TInt32)), (Lit True, (Attribute "A2", TString))]
 
 -- l' = M.fromList (map swap rowtypes1)
 -- r' = M.fromList (map swap rowtypes2)

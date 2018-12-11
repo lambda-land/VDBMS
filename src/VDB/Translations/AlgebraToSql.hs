@@ -229,10 +229,10 @@ prettyAtom (C.Val  v  ) = prettyValue v
 prettyAtom (C.Attr attr ) = attributeName attr
 
 -- | pretty print the value in Condition
-prettyValue :: Value -> QueryClause
-prettyValue (I i) = show i
-prettyValue (B b) = show b 
-prettyValue (S s) = s
+prettyValue :: SqlValue -> QueryClause
+prettyValue = show
+-- prettyValue (B b) = show b 
+-- prettyValue (S s) = s
 
 
 -- 
@@ -244,12 +244,12 @@ a1 = Attribute "course"
 a2 = Attribute "professor"
 f0 = (Feature "US")
 f1 = (Feature "C")
-cond1 = (C.Comp GT (C.Attr a1) (C.Val (I 5)))
+cond1 = (C.Comp GT (C.Attr a1) (C.Val (SqlInt32 5)))
 
 q1 = Select [a1,a2] $ From t0 
 q2 = Select [a1,a2] $ QueryOp Prod (From t0 ) (From t1)
 
-q3 = Select [a1,a2] $ Where (Just (T.Comp GT (C.Attr a1) (C.Val (I 5))) ) $ From t0 
+q3 = Select [a1,a2] $ Where (Just (T.Comp GT (C.Attr a1) (C.Val (SqlInt32 5))) ) $ From t0 
 e_4 = Proj [(F.Ref (Feature {featureName = "A"}),a1)] $ Sel cond1 $ (TRef t0)
 q4 = Select [a1,a2] $ Where (Just (T.SAT (F.Ref f0 ))) $ From t0 
 
@@ -298,7 +298,7 @@ achc =            (AChc (F.Ref (Feature " FB"))
 
 e4 = Proj [((F.Lit True),a1)] (Sel cond2 (TRef t0))
 
-cond2 = C.CChc (F.Ref f1) (C.Comp GT (C.Attr a1) (C.Val (I 5))) (C.Comp LT (C.Attr a1) (C.Val (I 5)))
+cond2 = C.CChc (F.Ref f1) (C.Comp GT (C.Attr a1) (C.Val (SqlInt32 5))) (C.Comp LT (C.Attr a1) (C.Val (SqlInt32 5)))
 
 test1 =  Proj [(F.Lit True, 
                    Attribute "a1")
@@ -310,13 +310,13 @@ test1 =  Proj [(F.Lit True,
 test2 = Proj [(F.Lit True, Attribute "a1")] $ 
             Sel (C.Comp GT 
                   (C.Attr (Attribute "a1")) 
-                  (C.Val (I 5))) $ 
+                  (C.Val (SqlInt32 5))) $ 
             (TRef (Relation "Table2"))
 
 test3 = Proj [(F.Lit True, Attribute "a1")] $ 
             Sel (C.CChc (F.Ref (Feature "F"))
-                       (C.Comp GT (C.Attr a1) (C.Val (I 5))) 
-                       (C.Comp LT (C.Attr a1) (C.Val (I 5)))) $ 
+                       (C.Comp GT (C.Attr a1) (C.Val (SqlInt32 5))) 
+                       (C.Comp LT (C.Attr a1) (C.Val (SqlInt32 5)))) $ 
             (TRef (Relation "Table2"))
 
 test3_sub = (AChc (F.Ref (Feature " FB")) 

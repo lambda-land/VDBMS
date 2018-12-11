@@ -4,7 +4,9 @@ module VDB.Type where
 import Prelude hiding (Ordering(..))
 
 import Data.Data (Data,Typeable)
-{-
+-- import Data.Time (ZonedTime)
+import Data.Time.LocalTime (ZonedTime,zonedTimeToUTC)
+
 import Database.HDBC
 
 -- ***************NOTE********************
@@ -36,8 +38,18 @@ data SqlType = TString
              | TTimeDiff
              | TNull
   deriving (Data,Eq,Show,Typeable,Ord)
--}
 
+deriving instance Data SqlValue
+
+instance Eq ZonedTime where
+  a == b = (zonedTimeToUTC a) == (zonedTimeToUTC b)
+
+instance Ord ZonedTime where 
+  compare a b = compare (zonedTimeToUTC a) (zonedTimeToUTC b)
+
+deriving instance Ord SqlValue
+
+{-
 -- | Primitive types.
 data Type = TInt | TBool | TString
   deriving (Data,Eq,Show,Typeable,Ord)
@@ -48,18 +60,20 @@ data Value
    | B Bool
    | S String
   deriving (Data,Eq,Show,Typeable,Ord)
+-}
 
 -- | Comparison operations.
 data CompOp = EQ | NEQ | LT | LTE | GTE | GT
   deriving (Data,Eq,Show,Typeable,Ord)
 
+{-
 -- | Get the type of a value.
 typeOf :: Value -> Type
 typeOf (I _) = TInt
 typeOf (B _) = TBool
 typeOf (S _) = TString
+-}
 
-{-
 -- | Get the type of a value.
 typeOf :: SqlValue -> SqlType
 typeOf (SqlString _)                = TString
@@ -84,7 +98,7 @@ typeof (SqlPOSIXTime _)             = TPOSIXTime
 typeof (SqlEpochTime _)             = TEpochTime
 typeof (SqlTimeDiff _)              = TTimeDiff
 typeof SqlNull                      = TNull
--}
+
 
 -- | Semantics of a comparison operation.
 compOp :: Ord a => CompOp -> a -> a -> Bool
@@ -95,6 +109,7 @@ compOp LTE = (<=)
 compOp GTE = (>=)
 compOp GT  = (>)
 
+{-
 -- | Apply a comparison operation to two values. Returns 'Nothing' if the
 --   values are not of the same type.
 evalCompOp :: CompOp -> Value -> Value -> Maybe Bool
@@ -102,9 +117,12 @@ evalCompOp o (I l) (I r) = Just (compOp o l r)
 evalCompOp o (B l) (B r) = Just (compOp o l r)
 evalCompOp o (S l) (S r) = Just (compOp o l r)
 evalCompOp _ _ _ = Nothing
+-}
 
-{-evalCompOp :: CompOp -> SqlValue -> SqlValue -> Maybe Bool
-evalCompOp o (SqlString l) (SqlString r) = Just (compOp o l r)
+-- | Apply a comparison operation to two values. Returns 'Nothing' if the
+--   values are not of the same type.
+evalCompOp :: CompOp -> SqlValue -> SqlValue -> Maybe Bool
+evalCompOp o (SqlString l)                (SqlString r)                = Just (compOp o l r)
 evalCompOp o (SqlByteString l)            (SqlByteString r)            = Just (compOp o l r)
 evalCompOp o (SqlWord32 l)                (SqlWord32 r)                = Just (compOp o l r)
 evalCompOp o (SqlWord64 l)                (SqlWord64 r)                = Just (compOp o l r)
@@ -119,12 +137,16 @@ evalCompOp o (SqlLocalDate l)             (SqlLocalDate r)             = Just (c
 evalCompOp o (SqlLocalTimeOfDay l)        (SqlLocalTimeOfDay r)        = Just (compOp o l r)
 evalCompOp o (SqlZonedLocalTimeOfDay l x) (SqlZonedLocalTimeOfDay r y) = Just (compOp o l r && compOp o x y)
 evalCompOp o (SqlLocalTime l)             (SqlLocalTime r)             = Just (compOp o l r)
--- evalCompOp o (SqlZonedTime l)             (SqlZonedTime r)             = Just (compOp o l r)
+evalCompOp o (SqlZonedTime l)             (SqlZonedTime r)             
+  | o == EQ = Just (SqlZonedTime l == SqlZonedTime r)
+  | otherwise = Just False
 evalCompOp o (SqlUTCTime l)               (SqlUTCTime r)               = Just (compOp o l r)
 evalCompOp o (SqlDiffTime l)              (SqlDiffTime r)              = Just (compOp o l r)
 evalCompOp o (SqlPOSIXTime l)             (SqlPOSIXTime r)             = Just (compOp o l r)
 evalCompOp o (SqlEpochTime l)             (SqlEpochTime r)             = Just (compOp o l r)
 evalCompOp o (SqlTimeDiff l)              (SqlTimeDiff r)              = Just (compOp o l r)
--- evalCompOp o SqlNull                      SqlNull                      = Just (compOp o SqlNull SqlNull)
+evalCompOp o SqlNull                      SqlNull                      
+  | o == EQ   = Just True
+  | otherwise = Just False
 evalCompOp _ _ _ = Nothing
--}
+

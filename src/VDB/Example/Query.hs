@@ -8,8 +8,9 @@ import qualified VDB.Condition as C
 import qualified VDB.Target as T
 import VDB.Variational
 import qualified VDB.Type as V
-
 import VDB.Translations.VSqlToAlgebra 
+
+import Database.HDBC (SqlValue(..))
 
 -- | Basic compolent for Queryies 
 fA :: F.FeatureExpr 
@@ -49,7 +50,7 @@ vq3 = VSelect [(fA, attr1), (fB, attr2)]
 vq4 :: VQuery
 vq4 = VSelect [(fA, attr1), (fB, attr2)] 
               [(fA, rel1)] 
-              (Just (C.Comp V.GT (C.Attr attr1) (C.Val (V.I 5))) )
+              (Just (C.Comp V.GT (C.Attr attr1) (C.Val (SqlInt32 5))) )
 
 -- VQuury with featureExpr and condition included
 vq5 :: VQuery

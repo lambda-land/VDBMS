@@ -15,7 +15,7 @@ import VDB.Type
 
 -- | Type of a relation in the database.
 -- type RowType = [Opt (Attribute, Type)]
-type RowType = Map Attribute (Opt Type)
+type RowType = Map Attribute (Opt SqlType)
 
 
 -- | Attributes must be unique in a table. The pair (Int, Attribute)
@@ -52,11 +52,11 @@ lookupAttFexpInRowType a r = case M.lookup a r of
                                _ -> Nothing
 
 -- | Get the fexp and type of an attribute in a rowtype
-lookupAttFexpTypeInRowType :: Attribute -> RowType -> Maybe (Opt Type)
+lookupAttFexpTypeInRowType :: Attribute -> RowType -> Maybe (Opt SqlType)
 lookupAttFexpTypeInRowType = M.lookup
 
 -- | Get attribute type pairs in a rowtype
-getAttTypeFromRowType :: RowType -> Set (Attribute, Type)
+getAttTypeFromRowType :: RowType -> Set (Attribute, SqlType)
 getAttTypeFromRowType r = dropFexp rowSet
   where
     rowSet = S.fromList $ M.assocs r
@@ -83,13 +83,13 @@ lookupRel r s = case lookupRowType r s of
                   _ -> Nothing
 
 -- | Get the type and feature exp of an attribute in a database.
-lookupAttribute :: Attribute -> Relation -> Schema -> Maybe (Opt Type)
+lookupAttribute :: Attribute -> Relation -> Schema -> Maybe (Opt SqlType)
 lookupAttribute a r s = case lookupRowType r s of 
                           Just (_,rt) -> lookupAttFexpTypeInRowType a rt
                           _ -> Nothing
 
 -- | helper func for lookupAttInRel -- apply new rowtypes
-retrieve ::  Map Attribute (Opt Type) -> Attribute -> Maybe (FeatureExpr,Type)
+retrieve ::  Map Attribute (Opt SqlType) -> Attribute -> Maybe (FeatureExpr, SqlType)
 retrieve m a = case M.toList m of 
                 [] -> Nothing
                 ((x,(y,z)):xs) -> if a == x then (Just (y,z)) else retrieve (M.fromList xs) a
@@ -101,7 +101,7 @@ retrieve m a = case M.toList m of
 -- retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
 
 -- | Get the type of an attribute in a database.
-lookupAttType :: Attribute -> Relation -> Schema -> Maybe Type
+lookupAttType :: Attribute -> Relation -> Schema -> Maybe SqlType
 lookupAttType a r s = case lookupAttribute a r s of 
                         Just (_,t) -> Just t
                         _ -> Nothing

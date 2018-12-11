@@ -10,11 +10,11 @@ import VDB.Name
 import VDB.Type
 import VDB.Variational
 
--- import Database.HDBC
+import Database.HDBC (SqlValue)
 
 -- | Atoms are the leaves of a condition.
 data Atom
-   = Val  Value
+   = Val  SqlValue
    | Attr Attribute
   deriving (Data,Eq,Show,Typeable,Ord)
 
