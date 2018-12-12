@@ -1,8 +1,8 @@
--- Sends queries from the brute force translation to the db 
+-- Sends queries from the relational translation to the db 
 -- and gets the plain relational result
-module VDB.BruteForce.BruteForceSendQs where 
+module VDB.BruteForceApproach.BFSendQs where 
 
-import VDB.BruteForce.BruteForceAlg2Sql (Query,VariantQuery)
+import VDB.Translations.RelAlg2Sql (Query,VariantQuery)
 import VDB.Variant (Variant)
 import VDB.SqlTable
 
@@ -22,14 +22,14 @@ mkStatement  = flip prepare
 -- fetchAllRowsMap :: Statement -> IO [Map String SqlValue]
 -- | gets a VariantQuery and returns the result
 --  with the configuration attached to it.
-runBruteQ :: IConnection conn => VariantQuery -> conn -> IO ClmVariantTableMap
-runBruteQ (v,e) conn = do 
+runBFQ :: IConnection conn => VariantQuery -> conn -> IO ClmVariantTableMap
+runBFQ (v,e) conn = do 
   q <- mkStatement e conn
   r <- fetchAllRowsMap q 
   return (v,r)
 
 -- | gets a list of VariantQueries
 --  and returns their results with theri config attached.
-runBruteQs :: IConnection conn => [VariantQuery] -> conn -> IO [ClmVariantTableMap]
-runBruteQs qs conn = mapM ((flip runBruteQ) conn) qs
+runBFQs :: IConnection conn => [VariantQuery] -> conn -> IO [ClmVariantTableMap]
+runBFQs qs conn = mapM ((flip runBFQ) conn) qs
 

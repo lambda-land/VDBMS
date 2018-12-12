@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 81cc6e13451cf8da54c5d1d3ff71a849af74b1b6d36d965c179426439b3bc49e
+-- hash: 8066b84cec4c2abd3c4bb79b1d819ca665f655149e24357fb5404c6756db364a
 
 name:           vdbms
 version:        0.1.0.0
@@ -26,12 +26,11 @@ library
       VDB.Approach1.App1AppSat
       VDB.Approach1.App1Run
       VDB.Approach1.App1SendQs
-      VDB.BruteForce.BruteForce
-      VDB.BruteForce.BruteForceAlg2Sql
-      VDB.BruteForce.BruteForceAppConfig
-      VDB.BruteForce.BruteForceAppSatPersist
-      VDB.BruteForce.BruteForceSendQs
-      VDB.BruteForce.BruteForceSendQsPersist
+      VDB.BruteForceApproach.BFAppConfig
+      VDB.BruteForceApproach.BFAppSatPersist
+      VDB.BruteForceApproach.BFSendQs
+      VDB.BruteForceApproach.BFSendQsPersist
+      VDB.BruteForceApproach.BruteForce
       VDB.Condition
       VDB.Config
       VDB.DBsetup.EnronEmailDB
@@ -43,6 +42,9 @@ library
       VDB.Example.TwoPathTest
       VDB.FeatureExpr
       VDB.FeatureExprParser
+      VDB.NaiveApproach.Naive
+      VDB.NaiveApproach.NaiveAppConfig
+      VDB.NaiveApproach.NaiveSendQs
       VDB.Name
       VDB.ParsingSQL
       VDB.SAT
@@ -52,6 +54,7 @@ library
       VDB.Table
       VDB.Target
       VDB.Translations.AlgebraToSql
+      VDB.Translations.RelAlg2Sql
       VDB.Translations.VSqlToAlgebra
       VDB.Type
       VDB.TypeSystem.Semantics

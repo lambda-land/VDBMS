@@ -1,6 +1,6 @@
 -- Sends queries from the brute force translation to the db 
 -- and gets the plain relational result
-module VDB.BruteForce.BruteForceSendQsPersist where 
+module VDB.BruteForceApproach.BFSendQsPersist where 
 
 --import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 

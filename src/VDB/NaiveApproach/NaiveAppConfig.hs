@@ -1,10 +1,10 @@
 -- Applies the configuration to the result of queries sent to the db
 -- in the brute force approach. **It's not filtering out tuples with
 -- FALSE pres cond! at least not for now!!
-module VDB.BruteForce.BruteForceAppConfig where 
+module VDB.NaiveApproach.NaiveAppConfig where 
 
 import qualified VDB.FeatureExpr as F
-import VDB.BruteForce.BruteForceSendQs
+import VDB.NaiveApproach.NaiveSendQs
 import VDB.Config
 import VDB.Name (PresCondAtt(..))
 import VDB.SqlTable

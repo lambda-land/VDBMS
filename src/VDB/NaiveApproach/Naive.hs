@@ -1,6 +1,6 @@
 -- Sends queries from the brute force translation to the db 
 -- and gets the plain relational result
-module VDB.BruteForce.BruteForce where 
+module VDB.NaiveApproach.Naive where 
 
 import VDB.Algebra
 -- import VDB.Name
@@ -10,9 +10,9 @@ import VDB.Algebra
 -- import VDB.Variational
 -- import VDB.Type  
 -- import VDB.BruteForce.BruteForceAlg2Sql
-import VDB.BruteForce.BruteForceAppConfig (applyConfigVariantTables)
-import VDB.BruteForce.BruteForceSendQs (runBruteQs)
-import VDB.BruteForce.BruteForceAlg2Sql (bruteAlg2Sql)
+import VDB.NaiveApproach.NaiveAppConfig (applyConfigVariantTables)
+import VDB.NaiveApproach.NaiveSendQs (runNaiveQs)
+import VDB.Translations.RelAlg2Sql (alg2Sql)
 import VDB.Vresult
 import VDB.SqlTable (ClmVariantTableMap)
 -- import VDB.Schema
@@ -27,9 +27,9 @@ import Database.HDBC
 --   TODO: write prettyVres
 --   TODO: write packVres
 --   TODO: adjust types in brute force code
-runBrute :: IConnection conn => Algebra -> [Config Bool] -> conn 
+runNaive :: IConnection conn => Algebra -> [Config Bool] -> conn 
   -> PresCondAtt -> PrettyVResult
-runBrute vq cs conn pres = undefined
+runNaive vq cs conn pres = undefined
 {-prettyVres res
   where 
     qs = bruteAlg2Sql vq cs 
