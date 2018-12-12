@@ -1,6 +1,6 @@
 -- Brute force translation of Variational relational algebra to SQL
 module VDB.DBsetup.EnronEmailDBPersist where 
-
+{-
 --import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 
 import VDB.Algebra
@@ -109,3 +109,4 @@ buildDb = do
 
 dumpTable = rawQuery "select * from pres_cond" [] $$ CL.mapM_ (liftIO . print)
 
+-}

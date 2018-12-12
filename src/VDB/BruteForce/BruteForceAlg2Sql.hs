@@ -8,10 +8,7 @@ module VDB.BruteForce.BruteForceAlg2Sql where
 import VDB.Algebra
 import VDB.Name
 import qualified VDB.FeatureExpr as F
-import qualified VDB.Condition as C
-import qualified VDB.Target as T
 import VDB.Variational
-import VDB.Type
 import VDB.Config  
 import VDB.VqueryConfigSem
 import VDB.Variant
@@ -30,10 +27,10 @@ bruteAlg2Sql :: Algebra -> [Config Bool] -> [VariantQuery]
 bruteAlg2Sql q cs = map (bruteQ q) cs 
   where
     bruteQ :: Algebra -> Config Bool -> VariantQuery
-    bruteQ configuredQ c = case relTrans configuredQ of 
+    bruteQ cQ c = case relTrans configuredQ of 
       Just relQ -> (c, relQ)
       _ -> error "configuring vquery went wrong!!"
-      where configuredQ = configureVquery q c
+      where configuredQ = configureVquery cQ c
 
 
 

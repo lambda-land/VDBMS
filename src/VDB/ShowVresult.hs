@@ -4,19 +4,19 @@ module VDB.ShowVresult where
 
 --import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 
-import VDB.Algebra
-import VDB.Name
-import qualified VDB.FeatureExpr as F
-import qualified VDB.Condition as C
-import qualified VDB.Target as T
-import VDB.Variational
-import VDB.Type  
-import VDB.Schema
-import VDB.BruteForce.BruteForceSendQs
+-- import VDB.Algebra
+-- import VDB.Name
+-- import qualified VDB.FeatureExpr as F
+-- import qualified VDB.Condition as C
+-- import qualified VDB.Target as T
+-- import VDB.Variational
+-- import VDB.Type  
+-- import VDB.Schema
+-- import VDB.BruteForce.BruteForceSendQs
 
-import Data.Map
+-- import Data.Map
 
-import Database.HDBC
+-- import Database.HDBC
 
 -- type ClmNameIncludedRow = [(String, SqlValue)]
 -- type ClmNameIncludedTable = [ClmNameIncludedRow]

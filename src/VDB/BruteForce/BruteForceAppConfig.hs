@@ -3,11 +3,9 @@
 module VDB.BruteForce.BruteForceAppConfig where 
 
 import qualified VDB.FeatureExpr as F
-import VDB.Type  
 import VDB.BruteForce.BruteForceSendQs
 import VDB.Config
 
-import Data.Maybe (catMaybes)
 import Data.Map.Strict (adjust)
 
 

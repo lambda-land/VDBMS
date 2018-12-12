@@ -3,21 +3,21 @@
 module VDB.BruteForce.BruteForce where 
 
 import VDB.Algebra
-import VDB.Name
-import qualified VDB.FeatureExpr as F
-import qualified VDB.Condition as C
-import qualified VDB.Target as T
-import VDB.Variational
-import VDB.Type  
-import VDB.BruteForce.BruteForceAlg2Sql
+-- import VDB.Name
+-- import qualified VDB.FeatureExpr as F
+-- import qualified VDB.Condition as C
+-- import qualified VDB.Target as T
+-- import VDB.Variational
+-- import VDB.Type  
+-- import VDB.BruteForce.BruteForceAlg2Sql
 import VDB.BruteForce.BruteForceAppConfig
 import VDB.BruteForce.BruteForceSendQs
-import VDB.TypeSystem.Semantics
-import VDB.ShowVresult
-import VDB.Schema
+-- import VDB.TypeSystem.Semantics
+-- import VDB.ShowVresult
+-- import VDB.Schema
 import VDB.Config
 
-import Data.Map
+-- import Data.Map
 
 import Database.HDBC
 

@@ -2,17 +2,8 @@
 -- and gets the plain relational result
 module VDB.BruteForce.BruteForceSendQs where 
 
-import VDB.Algebra
-import VDB.Name
-import qualified VDB.FeatureExpr as F
-import qualified VDB.Condition as C
-import qualified VDB.Target as T
-import VDB.Variational
-import VDB.Type  
 import VDB.BruteForce.BruteForceAlg2Sql (Query,VariantQuery)
 import VDB.Variant (Variant)
-
-import Control.Monad
 
 -- import Data.Text as T (Text, pack, append, concat, unpack)
 import Data.Map
