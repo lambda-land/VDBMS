@@ -1,6 +1,6 @@
 -- Sends queries from the brute force translation to the db 
 -- and gets the plain relational result
-module VDB.ShowVresult where 
+module VDB.Vresult where 
 
 --import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 
@@ -13,15 +13,20 @@ module VDB.ShowVresult where
 -- import VDB.Type  
 -- import VDB.Schema
 -- import VDB.BruteForce.BruteForceSendQs
+import VDB.SqlTable (ClmVariantTableMap)
 
 -- import Data.Map
 
 -- import Database.HDBC
 
--- type ClmNameIncludedRow = [(String, SqlValue)]
--- type ClmNameIncludedTable = [ClmNameIncludedRow]
--- type RowType = [Opt (Attribute, Type)]
--- type Vresult = (RowType, ClmNameIncludedTable)
+-- | final result that is being showed to the user
+type PrettyVResult = String
 
--- showVres :: Vresult -> IO Vresult
--- showVres = undefined
+-- | the one variational table that is the result of user's query.
+type VResult = String
+
+prettyVres :: VResult -> PrettyVResult
+prettyVres = undefined
+
+packVres :: [ClmVariantTableMap] -> VResult 
+packVres = undefined

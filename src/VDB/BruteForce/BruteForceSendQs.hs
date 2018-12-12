@@ -4,26 +4,12 @@ module VDB.BruteForce.BruteForceSendQs where
 
 import VDB.BruteForce.BruteForceAlg2Sql (Query,VariantQuery)
 import VDB.Variant (Variant)
+import VDB.SqlTable
 
 -- import Data.Text as T (Text, pack, append, concat, unpack)
 import Data.Map
 
 import Database.HDBC
-
--- type Row = [SqlValue]
--- type Table = [Row]
--- type Vtable = Opt Table
-
--- type ClmNameIncludedRow = [(String, SqlValue)]
--- type ClmNameIncludedTable = [ClmNameIncludedRow]
--- type ClmNameIncludedVariantTable = Variant Bool ClmNameIncludedTable
--- type ClmNameIncludedVtable = Opt ClmNameIncludedTable
-
-type ClmRowMap = Map String SqlValue
-type ClmTableMap = [ClmRowMap]
-type ClmVariantTableMap = Variant Bool ClmTableMap
--- type ClmVtableMap = Opt ClmTableMap
-
 
 --prepare :: conn -> String -> IO Statement
 -- | constructs a statement (i.e. the datatype for query acceptable by

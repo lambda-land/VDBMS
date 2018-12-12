@@ -10,46 +10,37 @@ import VDB.Algebra
 -- import VDB.Variational
 -- import VDB.Type  
 -- import VDB.BruteForce.BruteForceAlg2Sql
-import VDB.BruteForce.BruteForceAppConfig
-import VDB.BruteForce.BruteForceSendQs
--- import VDB.TypeSystem.Semantics
--- import VDB.ShowVresult
+import VDB.BruteForce.BruteForceAppConfig (applyConfigVariantTables)
+import VDB.BruteForce.BruteForceSendQs (runBruteQs)
+import VDB.BruteForce.BruteForceAlg2Sql (bruteAlg2Sql)
+import VDB.Vresult
+import VDB.SqlTable (ClmVariantTableMap)
 -- import VDB.Schema
 import VDB.Config
-
--- import Data.Map
+import VDB.Name
 
 import Database.HDBC
 
-
--- steps of brute force approach:
--- 1. get a list of configuration, apply them to a vq
-
-
--- | 
-runBrute :: IConnection conn => Algebra -> [Config Bool] -> conn -> PresCondAttName -> [ClmVariantTableMap]
-runBrute = undefined
--- 1. initialize vctxt to the pres cond of vsch
--- 2. translate the vq to sql qs *bruteTrans*
--- 3. get conn to db and run *runBruteQsClm* to run sql qs from trans 
--- 4. apply sat solver to vtables *checkSatAllVtables*
--- 5. show results as one vtable
-
-
--- type ClmNameIncludedRow = [(String, SqlValue)]
--- type ClmNameIncludedTable = [ClmNameIncludedRow]
--- type RowType = [Opt (Attribute, Type)]
--- type Vresult = (RowType, ClmNameIncludedTable)
-
-
--- step1:
-
--- | set the variational context at the beginning
---   to the presence condition of the v-schema
---
+-- | Gets a vq written in algebra with a list of configurations
+--   and a variational database and returns variational results.
+--   TODO: don't pass cs, instead extract it from pres cond of schema!
+--   TODO: write prettyVres
+--   TODO: write packVres
+--   TODO: adjust types in brute force code
+runBrute :: IConnection conn => Algebra -> [Config Bool] -> conn 
+  -> PresCondAtt -> PrettyVResult
+runBrute vq cs conn pres = undefined
+{-prettyVres res
+  where 
+    qs = bruteAlg2Sql vq cs 
+    do 
+       ts <- runBruteQs qs conn 
+       let tsConfiged = applyConfigVariantTables pres ts 
+           res = packVres tsConfiged
+       return res
+-}
 -- initialVarCtxt :: Schema -> VariationalContext
 -- initialVarCtxt (f,_) = f
-
 
 -- brute :: IConnection conn => Algebra -> Schema -> conn -> Vresult
 -- brute vq s c = undefined

@@ -4,7 +4,7 @@ module VDB.Variant where
 import VDB.Schema
 import VDB.Table
 import VDB.Config
-import VDB.Name
+-- import VDB.Name
 
 
 -- | A variant of a variational thing tagged by its configuration.
