@@ -1,5 +1,6 @@
 -- Applies the configuration to the result of queries sent to the db
--- in the brute force approach.
+-- in the brute force approach. **It's not filtering out tuples with
+-- FALSE pres cond! at least not for now!!
 module VDB.BruteForce.BruteForceAppConfig where 
 
 import qualified VDB.FeatureExpr as F
@@ -18,7 +19,7 @@ applyConfigRow r p c =
   adjust 
     (\pres -> F.fexp2sqlval 
              (F.Lit $ F.evalFeatureExpr c (F.sqlval2fexp pres))) 
-    (presCondAttName p) r 
+    (presCondAttName p) r  
 
 -- | applies a config to a table.
 applyConfigTable :: ClmTableMap -> PresCondAtt -> Config Bool -> ClmTableMap
@@ -36,3 +37,11 @@ applyConfigVariantTable (c,t) p = (c, applyConfigTable t p c)
 applyConfigVariantTables :: PresCondAtt -> [ClmVariantTableMap] -> [ClmVariantTableMap]
 applyConfigVariantTables p = map ((flip applyConfigVariantTable) p)
 
+-- update :: Ord k => (a -> Maybe a) -> k -> Map k a -> Map k a
+-- | aaplies a config to a row and filters it out if its prescond = false
+-- TODO: complete this and adjust the rest accordingly. keep in mind 
+-- that this could also be done when packing the result and pretty print it!
+-- if you do it in the 
+applyConfigFilterRow :: ClmRowMap -> PresCondAtt -> Config Bool -> Maybe ClmRowMap
+applyConfigFilterRow r p c = undefined
+-- update updatePres (presCondAttName p) r
