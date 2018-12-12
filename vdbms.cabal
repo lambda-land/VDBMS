@@ -34,6 +34,7 @@ library
       VDB.DBsetup.EnronEmailDBPersist
       VDB.Example.EmployeeUseCase.EmployeeSchema
       VDB.Example.EmployeeUseCase.EmployeeVSchema
+      VDB.Example.EmployeeUseCase.EmployeeQuery
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
