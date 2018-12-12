@@ -4,22 +4,23 @@ module VDB.SqlTable where
 
 import Data.Map
 import VDB.Variant 
+import VDB.Variational (Opt)
 
 import Database.HDBC 
 
--- type Row = [SqlValue]
--- type Table = [Row]
--- type Vtable = Opt Table
+type Row = [SqlValue]
+type Table = [Row]
+type Vtable = Opt Table
 
--- type ClmNameIncludedRow = [(String, SqlValue)]
--- type ClmNameIncludedTable = [ClmNameIncludedRow]
--- type ClmNameIncludedVariantTable = Variant Bool ClmNameIncludedTable
--- type ClmNameIncludedVtable = Opt ClmNameIncludedTable
+type ClmNameIncludedRow = [(String, SqlValue)]
+type ClmNameIncludedTable = [ClmNameIncludedRow]
+type ClmNameIncludedVariantTable = Variant Bool ClmNameIncludedTable
+type ClmNameIncludedVtable = Opt ClmNameIncludedTable
 
 type ClmRowMap = Map String SqlValue
 type ClmTableMap = [ClmRowMap]
 type ClmVariantTableMap = Variant Bool ClmTableMap
--- type ClmVtableMap = Opt ClmTableMap
+type ClmVtableMap = Opt ClmTableMap
 
 {-
 -- | A database is a mapping from relations to tables.
