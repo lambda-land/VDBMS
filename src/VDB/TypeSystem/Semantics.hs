@@ -6,15 +6,13 @@ import VDB.Name
 import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C
 import VDB.Variational
-import VDB.Type  
 import VDB.Schema
-import VDB.Config 
---import VDB.AlgebraToSql
 import VDB.SAT
+import VDB.Type
 
-import Data.Map(Map)
+-- import Data.Map(Map)
 import qualified Data.Map as M 
-import qualified Data.Map.Internal as IM
+-- import qualified Data.Map.Internal as IM
 -- import qualified Data.Map.Lazy as LM
 import qualified Data.Map.Strict as SM
 import qualified Data.Map.Merge.Strict as StrictM
@@ -22,13 +20,13 @@ import qualified Data.Map.Merge.Strict as StrictM
 
 --import Data.Traversable
 
-import Control.Monad.State
-import Control.Monad (liftM2)
+-- import Control.Monad.State
+-- import Control.Monad (liftM2)
 
-import Data.Set(Set) 
+-- import Data.Set(Set) 
 import qualified Data.Set as Set 
 
-import Data.List((\\),nub)
+-- import Data.List((\\),nub)
 
 -- import Data.Maybe(catMaybes)
 
@@ -47,13 +45,15 @@ typeOfVcond :: C.Condition -> VariationalContext -> TypeEnv -> Bool
 typeOfVcond (C.Lit True)     _ _ = True
 typeOfVcond (C.Lit False)    _ _ = True
 typeOfVcond (C.Comp _ l r)   f t = case (l, r) of 
-  (C.Attr a, C.Val v)  -> case lookupAttFexpInRowType a t of 
-                            Just f' -> tautology (F.imply f f')
+  (C.Attr a, C.Val v)  -> case lookupAttFexpTypeInRowType a t of 
+                            Just (f',t') -> tautology (F.imply f f') &&
+                              typeOf v == t'
                             _ -> False
   (C.Attr a, C.Attr a') -> case (lookupAttFexpTypeInRowType a t, lookupAttFexpTypeInRowType a' t) of 
                             (Just (f',t'), Just (f'',t'')) | t' == t'' -> tautology (F.imply f f') 
                                                                         && tautology (F.imply f f'')
                             _ -> False
+  _ -> False
 typeOfVcond (C.Not c)      f t = typeOfVcond c f t
 typeOfVcond (C.Or l r)     f t = typeOfVcond l f t && typeOfVcond r f t
 typeOfVcond (C.And l r)    f t = typeOfVcond l f t && typeOfVcond r f t
@@ -136,20 +136,21 @@ addPrefix s r = M.fromList $ map updateAttName l
 -- | type enviornment join, when we have the same attribute
 --   in both type env we combine their feature expr.
 --   add it when you add natural join to your operands!
-typeJoin :: TypeEnv -> TypeEnv -> TypeEnv
-typeJoin r r' = undefined
+{-typeJoin :: TypeEnv -> TypeEnv -> TypeEnv
+typeJoin r r' = undefined-}
   -- SM.unionWith 
   -- (\(o,t) (o',t') -> if t==t' then ((F.And o o'),t) else) r r'
 
 -- | Projects a list of optional attributes from a type env
 typeProj :: [Opt Attribute] -> TypeEnv -> Maybe TypeEnv
-typeProj atts@((p,a):pas) r 
-  | let as = getRowTypeAtts r in 
-      elem a as = case lookupAttFexpTypeInRowType a r of 
+typeProj ((p,a):pas) r 
+  | elem a as = case lookupAttFexpTypeInRowType a r of 
                     Just (f,at) -> case typeProj pas r of 
                                      Just t -> Just $ M.union (M.singleton a (F.And p f,at)) t
                     _ -> Nothing
   | otherwise = Nothing
+    where as = getRowTypeAtts r 
+typeProj [] r = Just M.empty
 
 -- | projecting a type env onto another type env,
 --   i.e. getting the attributes that exists in the first one from the 
