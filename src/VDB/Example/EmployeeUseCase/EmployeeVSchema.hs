@@ -24,17 +24,6 @@ v3 = Ref (Feature "v3")
 v4 = Ref (Feature "v4")
 v5 = Ref (Feature "v5")
 
--- | Feature Model of Employee Schema 
-employeeFeatureModel :: FeatureExpr
-employeeFeatureModel =  (v1 `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` (Not v5)) `Or` 
-                        ((Not v1) `And` v2 `And` (Not v3) `And` (Not v4) `And` (Not v5)) `Or` 
-                        ((Not v1) `And` (Not v2) `And` v3`And` (Not v4) `And` (Not v5)) `Or` 
-                        ((Not v1) `And` (Not v2) `And` (Not v3) `And` v4 `And` (Not v5)) `Or` 
-                        ((Not v1) `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` v5)  
-
-
-
-
 
 -- | fold a list of schema into one variational schema 
 variationizeSchema :: [Schema] -> Schema
