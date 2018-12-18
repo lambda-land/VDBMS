@@ -37,10 +37,9 @@ emptySchema = (Lit False, M.empty)
 variationize' :: Schema -> Schema -> Schema 
 variationize' s1@(lf,lm) s2@(rf,rm)  = let newf = shrinkFeatureExpr (lf <+> rf) 
                                            newRelMap = variationizeHelper s1 s2    
-                        
                                        in (newf, newRelMap)
 
--- | hselper function to get the Map of relation to optional attribute list 
+-- | helper function to get the Map of relation to optional attribute list 
 variationizeHelper :: Schema -> Schema ->  Map Relation (Opt RowType)
 variationizeHelper s1@(lf,lm) s2@(rf,rm) = case M.toList lm of 
                                             []     -> (pushFeatureToRelMap rf rm) 
