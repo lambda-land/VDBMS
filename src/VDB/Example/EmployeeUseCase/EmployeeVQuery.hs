@@ -41,29 +41,27 @@ mergeAlgebraFeature (Proj  alist1 a1)     (Proj  alist2 a2) = let alist' = merge
 mergeAlgebraFeature (Sel   cond1  a1)     (Sel   cond2  a2) = let cond' = mergeCond cond1 cond2 
                                                               in  Sel cond' (mergeAlgebraFeature a1 a2)
 mergeAlgebraFeature a1@(Sel cond rel)     a2@(AChc v l r)   = Sel cond (mergeAlgebraFeature rel a2) 
-mergeAlgebraFeature a1@(AChc v l r)       a2@(Sel cond rel) = Sel cond (mergeAlgebraFeature a1 rel)                                       
-mergeAlgebraFeature a1@(AChc  v1  l1  r1) a2@(AChc  v2  l2  r2) =  AChc v2 l2 a1
+mergeAlgebraFeature a1@(AChc f l r)       a2@(Sel cond rel) = Sel cond (mergeAlgebraFeature a1 rel)                                       
+mergeAlgebraFeature a1@(AChc f1  l1  r1) a2@(AChc  f2  l2  r2) = if l1 == l2  -- apply choice-join rules
+                                                                  then AChc (f1 `F.Or` f2) l1 r1
+                                                                  else AChc f2 l2 a1
 mergeAlgebraFeature _                     Empty             = Empty
 mergeAlgebraFeature Empty                 a                 = a 
 
 -- | merge two opt attribute list into one 
 mergeAttrList :: [Opt Attribute] -> [Opt Attribute] -> [Opt Attribute]
-mergeAttrList l r = let l' = M.fromList (map swap l)
-                        r' = M.fromList (map swap r)
+mergeAttrList l r = let l' = swapAndMakeMap l
+                        r' = swapAndMakeMap r
                     in  map swap $ M.toList  $ M.unionWith unionAttrListHelper l' r'
     where unionAttrListHelper  f1    f2 =  F.shrinkFeatureExpr (f1 `F.Or` f2)
+          swapAndMakeMap = M.fromList . (map swap) 
 
 -- | merge two v-cond into one
 --   snd condition (c2) will always have pattern: v2 <l2, Lit True>
 mergeCond :: C.Condition -> C.Condition -> C.Condition
-mergeCond c1 c2@(C.CChc    v2  l2  r2) = C.CChc v2 l2 c1 
-
-
--- | chocie Join optimization 
-choiceJoin :: Algebra -> Algebra
-choiceJoin = undefined  
-
-
+mergeCond c1@(C.CChc f1  l1  r1) c2@(C.CChc    f2  l2  r2) = if l1 == l2
+                                                            then C.CChc (f1 `F.Or` f2) l1 r1
+                                                            else C.CChc f2 l2 c1 
 
 
 --
@@ -79,4 +77,5 @@ testq2 = pushFeatureToAlgebra v2 $ Proj [plainAttr "A2"] $ Sel cond $ TRef (Rela
 -- SELECT 
 testq3 = pushFeatureToAlgebra v3 $ Proj [plainAttr "A3" ] $ TRef (Relation "T3")
 
-
+-- cond1 = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
+-- cond2 = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
