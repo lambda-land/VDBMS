@@ -1,4 +1,4 @@
-module TestEmployee where 
+module TestEmployeeSchema where 
 
 import Test.Tasty
 import Test.Tasty.HUnit
