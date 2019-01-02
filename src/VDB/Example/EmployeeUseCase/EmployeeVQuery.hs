@@ -67,7 +67,10 @@ mergeAlgebraFeature :: Algebra -> Algebra -> Algebra
 mergeAlgebraFeature a                     (SetOp op l r)    = let left = mergeAlgebraFeature a l
                                                                   right = mergeAlgebraFeature a r
                                                               in SetOp op left right 
-mergeAlgebraFeature (SetOp op l r)         a                = error "shouldn't have algebra with SetOp in left alternative of merge procsess"
+mergeAlgebraFeature left@(SetOp op l r)         a           = let left = mergeAlgebraFeature l a 
+                                                                  right = mergeAlgebraFeature r a 
+                                                              in SetOp op left right 
+  -- error $ "shouldn't have algebra with SetOp in left alternative of merge procsess" ++"   "++ "left:" ++ show left ++ "a:" ++ show a
 mergeAlgebraFeature (Proj  alist1 a1)     (Proj  alist2 a2) = let alist' = mergeAttrList alist1 alist2 
                                                               in  Proj alist' (mergeAlgebraFeature a1 a2)
 mergeAlgebraFeature (Sel   cond1  a1)     (Sel   cond2  a2) = let cond' = mergeCond cond1 cond2 
@@ -77,7 +80,6 @@ mergeAlgebraFeature a1@(AChc f l r)       a2@(Sel cond rel) = Sel cond (mergeAlg
 mergeAlgebraFeature a1@(AChc f1  l1  r1) a2@(AChc  f2  l2  r2) = if l1 == l2  -- apply choice-join rules
                                                                   then AChc (f1 `F.Or` f2) l1 r1
                                                                   else AChc f2 l2 a1
--- mergeAlgebraFeature _                     Empty             = Empty
 mergeAlgebraFeature a                 Empty                 = a 
 mergeAlgebraFeature Empty                 a                 = a -- To be verified 
 
@@ -101,25 +103,37 @@ mergeCond c1@(C.CChc f1  l1  r1) (C.CChc    f2  l2  _) = if l1 == l2
 --
 -- ** small test suite
 --
--- testq1,testq2, testq3, testq4, testq5 :: Algebra
--- -- SELECT A1 FROM T1
--- testq1 = Proj [plainAttr "A1" ] $ TRef (Relation "T1")
--- -- SELECT A2 FROM T2 Where A2 > 5
--- testq2 =  Proj [plainAttr "A2"] $ Sel cond $ TRef (Relation "T2")
---          where cond = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
--- -- SELECT A1, A2 FROM T2 Where A2 > 5
--- testq2' = Proj [plainAttr "A1",plainAttr "A2" ] $ Sel cond $ TRef (Relation "T2")
---          where cond = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
+
+testq1,testq2, testq3, testq4, testq5 :: Algebra
+
+-- SELECT A1 FROM T1
+testq1 = Proj [plainAttr "A1" ] $ TRef (Relation "T1")
+
+-- SELECT A2 FROM T2 Where A2 > 5
+testq2 =  Proj [plainAttr "A2"] $ Sel cond $ TRef (Relation "T2")
+         where cond = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
+
+-- SELECT A1, A2 FROM T2 Where A2 > 5
+testq2' = Proj [plainAttr "A1",plainAttr "A2" ] $ Sel cond $ TRef (Relation "T2")
+         where cond = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
+
+-- SELECT A3 FROM T3
+testq3 = Proj [plainAttr "A3" ] $ TRef (Relation "T3")
+
+-- (SELECT A1 FROM T2) Union (SELECT A1 FROM T3)
+testq4 = SetOp Prod l r 
+        where l = Proj [plainAttr "A1" ] $ TRef (Relation "T2")
+              r = Proj [plainAttr "A1" ] $ TRef (Relation "T3")
+
+-- SELECT * FROM D,E
+testq5 = SetOp Prod (TRef (Relation "D")) (TRef (Relation "E"))
+
+testq6 = SetOp Prod testq2 testq2
 
 
--- -- SELECT 
--- testq3 = Proj [plainAttr "A3" ] $ TRef (Relation "T3")
+-- (SetOp Prod (SetOp Prod 
+--               (AChc v1 OR v2 (TRef (Relation {relationName = "empacct"})) Empty) 
+--               (AChc v2 (TRef (Relation {relationName = "empacct"})) (AChc v1 (TRef (Relation {relationName = "empbio"})) Empty))) 
+--             (SetOp Prod (AChc v2 (TRef (Relation {relationName = "empbio"})) (AChc v1 (TRef (Relation {relationName = "empacct"})) Empty)) 
+--                         (AChc v1 OR v2 (TRef (Relation {relationName = "empbio"})) Empty))))
 
-
--- testq4 = SetOp Prod l r 
---         where l = Proj [plainAttr "A1" ] $ TRef (Relation "T2")
---               r = Proj [plainAttr "A1" ] $ TRef (Relation "T3")
--- -- SELECT * FROM D,E
--- testq5 = SetOp Prod (TRef (Relation "D")) (TRef (Relation "E"))
--- -- cond1 = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
--- -- cond2 = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
