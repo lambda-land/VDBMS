@@ -111,11 +111,11 @@ testq1 = Proj [plainAttr "A1" ] $ TRef (Relation "T1")
 
 -- SELECT A2 FROM T2 Where A2 > 5
 testq2 =  Proj [plainAttr "A2"] $ Sel cond $ TRef (Relation "T2")
-         where cond = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
+         where cond = C.Comp GT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 5))
 
 -- SELECT A1, A2 FROM T2 Where A2 > 5
 testq2' = Proj [plainAttr "A1",plainAttr "A2" ] $ Sel cond $ TRef (Relation "T2")
-         where cond = C.Comp GT (C.Attr (Attribute "A2")) (C.Val (SqlInt32 5))
+         where cond = C.Comp GT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 5))
 
 -- SELECT A3 FROM T3
 testq3 = Proj [plainAttr "A3" ] $ TRef (Relation "T3")

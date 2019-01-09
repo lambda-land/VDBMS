@@ -10,8 +10,13 @@ newtype Feature = Feature { featureName :: String }
   deriving (Data,Eq,IsString,Ord,Show,Typeable)
 
 -- | An attribute (i.e. column) name.
-newtype Attribute = Attribute { attributeName :: String }
-  deriving (Data,Eq,IsString,Ord,Show,Typeable)
+-- newtype Attribute = Attribute { attributeName :: String }
+--   deriving (Data,Eq,IsString,Ord,Show,Typeable)
+
+data Attribute = Attribute {tableName :: Maybe String, attributeName :: String} 
+  deriving (Data,Eq,Ord,Show,Typeable)
+
+-- Attribute n  = Attribute Nothing n 
 
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }
