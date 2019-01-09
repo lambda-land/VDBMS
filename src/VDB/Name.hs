@@ -13,11 +13,10 @@ newtype Feature = Feature { featureName :: String }
 -- newtype Attribute = Attribute { attributeName :: String }
 --   deriving (Data,Eq,IsString,Ord,Show,Typeable)
 
-
 data Attribute = Attribute {tableName :: Maybe String, attributeName :: String} 
   deriving (Data,Eq,Ord,Show,Typeable)
 
-type Attribute n  = Attribute Nothing n 
+-- Attribute n  = Attribute Nothing n 
 
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }

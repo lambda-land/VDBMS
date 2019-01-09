@@ -15,7 +15,7 @@ import qualified Data.Map as M
 
 -- | contruct rowType based on a list of [(Attribute Name, SqlType)]
 constructRowType :: [(String,SqlType)] -> RowType
-constructRowType attrTypeList = M.fromList  $ map (\(attrName, t) -> ( Attribute attrName, (Lit True, t))) attrTypeList
+constructRowType attrTypeList = M.fromList  $ map (\(attrName, t) -> ( Attribute Nothing attrName, (Lit True, t))) attrTypeList
 
 -- | contruct plain Schema without tag assigned based on a list of [(Relatin Name, Rowtype)] 
 constructRelMap :: [(String, RowType)] -> M.Map Relation (Opt RowType) 

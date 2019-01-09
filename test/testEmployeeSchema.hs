@@ -42,60 +42,60 @@ testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
     ,
       testCase "fold a single schema" $
       do output    <- return $ variationizeSchema [ ( v1,  M.fromList[ (Relation "T1", (Lit True,  
-                                                                  M.fromList[ (Attribute "A1", (Lit True, TInt32))
-                                                                            , (Attribute "A2", (Lit True, TString))]))])]
+                                                                  M.fromList[ (Attribute Nothing "A1", (Lit True, TInt32))
+                                                                            , (Attribute Nothing "A2", (Lit True, TString))]))])]
          expectVal <- return $ (v1, M.fromList [(Relation "T1",(v1,
-                                                 M.fromList [(Attribute "A1", (v1,TInt32)),
-                                                            (Attribute "A2", (v1,TString))]))])
+                                                 M.fromList [(Attribute Nothing "A1", (v1,TInt32)),
+                                                            (Attribute Nothing "A2", (v1,TString))]))])
 
          expectVal @=? output
     ,
       testCase "fold two schema with same table and totally different attributes" $
       do output    <- return $ variationizeSchema [ ( v1, M.fromList [ (Relation "T1", (Lit True,  
-                                                                  M.fromList[ (Attribute "A1", (Lit True, TInt32))
-                                                                            , (Attribute "A2", (Lit True, TString))]))])
+                                                                  M.fromList[ (Attribute Nothing "A1", (Lit True, TInt32))
+                                                                            , (Attribute Nothing "A2", (Lit True, TString))]))])
                                             , ( v2, M.fromList [ (Relation "T1", (Lit True,  
-                                                                  M.fromList[ (Attribute "A3", (Lit True, TInt32))
-                                                                            , (Attribute "A4", (Lit True, TString))]))])
+                                                                  M.fromList[ (Attribute Nothing "A3", (Lit True, TInt32))
+                                                                            , (Attribute Nothing "A4", (Lit True, TString))]))])
                                             ]
          expectVal <- return $ (v1 <+> v2, M.fromList [(Relation "T1",(v1 `Or` v2,
-                                                          M.fromList[(Attribute "A1",(v1,TInt32))
-                                                                    ,(Attribute "A2",(v1,TString))
-                                                                    ,(Attribute "A3",(v2,TInt32))
-                                                                    ,(Attribute "A4",(v2,TString))
+                                                          M.fromList[(Attribute Nothing "A1",(v1,TInt32))
+                                                                    ,(Attribute Nothing "A2",(v1,TString))
+                                                                    ,(Attribute Nothing "A3",(v2,TInt32))
+                                                                    ,(Attribute Nothing "A4",(v2,TString))
                                                                     ]))])
          expectVal @=? output
     ,
       testCase "fold two schema with same table and some common attributes" $
       do output    <- return $ variationizeSchema [ ( v1, M.fromList [ (Relation "T1", (Lit True,  
-                                                                  M.fromList [ (Attribute "A1", (Lit True, TInt32))
-                                                                             , (Attribute "A2", (Lit True, TString))]))])
+                                                                  M.fromList [ (Attribute Nothing "A1", (Lit True, TInt32))
+                                                                             , (Attribute Nothing "A2", (Lit True, TString))]))])
                                             , ( v2, M.fromList [ (Relation "T1", (Lit True,  
-                                                                  M.fromList [ (Attribute "A1", (Lit True, TInt32))
-                                                                             , (Attribute "A3", (Lit True, TString))]))])
+                                                                  M.fromList [ (Attribute Nothing "A1", (Lit True, TInt32))
+                                                                             , (Attribute Nothing "A3", (Lit True, TString))]))])
                                             ]
          expectVal <- return $ (v1 <+> v2, M.fromList [(Relation "T1",(v1 `Or` v2,
-                                                          M.fromList  [(Attribute "A1", (v1 `Or` v2,TInt32))
-                                                                      ,(Attribute "A2", (v1,TString))
-                                                                      ,(Attribute "A3", (v2,TString))
+                                                          M.fromList  [(Attribute Nothing "A1", (v1 `Or` v2,TInt32))
+                                                                      ,(Attribute Nothing "A2", (v1,TString))
+                                                                      ,(Attribute Nothing "A3", (v2,TString))
                                                                       ]))])
          expectVal @=? output
     ,
       testCase "fold two schema with different table with some common attributes" $
       do output    <- return $ variationizeSchema [ ( v1, M.fromList [ (Relation "T1", (Lit True,  
-                                                                  M.fromList [ (Attribute "A1", (Lit True, TInt32))
-                                                                             , (Attribute "A2", (Lit True, TString))]))])
+                                                                  M.fromList [ (Attribute Nothing "A1", (Lit True, TInt32))
+                                                                             , (Attribute Nothing "A2", (Lit True, TString))]))])
                                                    , ( v2, M.fromList [ (Relation "T2", (Lit True,  
-                                                                  M.fromList [  (Attribute "A1", (Lit True, TInt32))
-                                                                              , (Attribute "A3", (Lit True, TString))]))])
+                                                                  M.fromList [  (Attribute Nothing "A1", (Lit True, TInt32))
+                                                                              , (Attribute Nothing "A3", (Lit True, TString))]))])
                                                ]
          expectVal <- return $ (v1 <+> v2, M.fromList [(Relation "T1",(v1,
-                                                          M.fromList [(Attribute "A1",(v1,TInt32))
-                                                                      ,(Attribute "A2",(v1,TString))
+                                                          M.fromList [(Attribute Nothing "A1",(v1,TInt32))
+                                                                      ,(Attribute Nothing "A2",(v1,TString))
                                                                       ]))
                                                        ,(Relation "T2",(v2,
-                                                          M.fromList [(Attribute "A1",(v2,TInt32))
-                                                                      ,(Attribute "A3",(v2,TString))
+                                                          M.fromList [(Attribute Nothing "A1",(v2,TInt32))
+                                                                      ,(Attribute Nothing "A3",(v2,TString))
                                                                       ]))
                                                        ])
          expectVal @=? output 
@@ -106,29 +106,29 @@ testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
     [ testCase "test emp schema 1 and 2" $
         do output    <- return $ variationizeSchema [empSchema1, empSchema2]
            expectVal <- return $ (v1 <+> v2, M.fromList [(Relation "engineerpersonnel",(v1,
-                                                            M.fromList[ (Attribute "empno",(v1,TInt32))
-                                                                      , (Attribute "name",(v1,TString))
-                                                                      , (Attribute "hiredate",(v1,TString))
-                                                                      , (Attribute "title",(v1,TString))
-                                                                      , (Attribute "deptname",(v1,TString))
+                                                            M.fromList[ (Attribute Nothing "empno",(v1,TInt32))
+                                                                      , (Attribute Nothing "name",(v1,TString))
+                                                                      , (Attribute Nothing "hiredate",(v1,TString))
+                                                                      , (Attribute Nothing "title",(v1,TString))
+                                                                      , (Attribute Nothing "deptname",(v1,TString))
                                                                       ]))
                                                          ,(Relation "otherpersonnel",(v1,
-                                                            M.fromList[ (Attribute "empno", (v1, TInt32))
-                                                            , (Attribute "name",            (v1, TString))
-                                                            , (Attribute "hiredate",        (v1, TString))
-                                                            , (Attribute "title",           (v1, TString))
-                                                            , (Attribute "deptname",        (v1, TString))
+                                                            M.fromList[ (Attribute Nothing "empno", (v1, TInt32))
+                                                            , (Attribute Nothing "name",            (v1, TString))
+                                                            , (Attribute Nothing "hiredate",        (v1, TString))
+                                                            , (Attribute Nothing "title",           (v1, TString))
+                                                            , (Attribute Nothing "deptname",        (v1, TString))
                                                             ]))
                                                          ,(Relation "job",(v1 `Or` v2,
-                                                            M.fromList[  (Attribute "salary", (v1 `Or` v2, TInt32))
-                                                                      ,  (Attribute "title", (v1 `Or` v2, TString))
+                                                            M.fromList[  (Attribute Nothing "salary", (v1 `Or` v2, TInt32))
+                                                                      ,  (Attribute Nothing "title", (v1 `Or` v2, TString))
                                                                       ]))
                                                          ,(Relation "empacct",(v2,
-                                                            M.fromList[ (Attribute "empno",   (v2, TInt32))
-                                                                      , (Attribute "name",    (v2, TString))
-                                                                      , (Attribute "hiredate",(v2, TString))
-                                                                      , (Attribute "title",   (v2, TString))
-                                                                      , (Attribute "deptname",(v2, TString))
+                                                            M.fromList[ (Attribute Nothing "empno",   (v2, TInt32))
+                                                                      , (Attribute Nothing "name",    (v2, TString))
+                                                                      , (Attribute Nothing "hiredate",(v2, TString))
+                                                                      , (Attribute Nothing "title",   (v2, TString))
+                                                                      , (Attribute Nothing "deptname",(v2, TString))
                                                                      ]))                                                         
                                                        ])
            expectVal @=? output 
@@ -137,44 +137,44 @@ testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"
        do output   <- return $ variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
           expectVal <- return $ (v1 <+> v2 <+> v3 <+> v4 <+> v5, 
                                   M.fromList [(Relation "engineerpersonnel",(v1,
-                                                 M.fromList [ (Attribute "empno",   (v1,TInt32))
-                                                            , (Attribute "name",    (v1,TString))
-                                                            , (Attribute "hiredate",(v1,TString))
-                                                            , (Attribute "title",   (v1,TString))
-                                                            , (Attribute "deptname",(v1,TString))
+                                                 M.fromList [ (Attribute Nothing "empno",   (v1,TInt32))
+                                                            , (Attribute Nothing "name",    (v1,TString))
+                                                            , (Attribute Nothing "hiredate",(v1,TString))
+                                                            , (Attribute Nothing "title",   (v1,TString))
+                                                            , (Attribute Nothing "deptname",(v1,TString))
                                                             ]))
                                              ,(Relation "otherpersonnel",(v1,
-                                                  M.fromList[ (Attribute "empno",   (v1, TInt32))
-                                                            , (Attribute "name",    (v1, TString))
-                                                            , (Attribute "hiredate",(v1, TString))
-                                                            , (Attribute "title",   (v1, TString))
-                                                            , (Attribute "deptname",(v1, TString))
+                                                  M.fromList[ (Attribute Nothing "empno",   (v1, TInt32))
+                                                            , (Attribute Nothing "name",    (v1, TString))
+                                                            , (Attribute Nothing "hiredate",(v1, TString))
+                                                            , (Attribute Nothing "title",   (v1, TString))
+                                                            , (Attribute Nothing "deptname",(v1, TString))
                                                             ]))
                                              ,(Relation "job",(v1 `Or` v2 `Or` v3 `Or` v4,
-                                                M.fromList [   (Attribute "salary", (v1 `Or` v2 `Or` v3 `Or` v4, TInt32))
-                                                            ,  (Attribute "title",  (v1 `Or` v2 `Or` v3 `Or` v4, TString))
+                                                M.fromList [   (Attribute Nothing "salary", (v1 `Or` v2 `Or` v3 `Or` v4, TInt32))
+                                                            ,  (Attribute Nothing "title",  (v1 `Or` v2 `Or` v3 `Or` v4, TString))
                                                             ]))
                                              ,(Relation "empacct",(v2 `Or` v3 `Or` v4 `Or` v5,
-                                                M.fromList[ (Attribute "deptname",  (v2, TString))
-                                                          , (Attribute "deptno",    (v3 `Or` v4 `Or` v5, TInt32))
-                                                          , (Attribute "empno",     (v2 `Or` v3 `Or` v4 `Or` v5, TInt32))
-                                                          , (Attribute "hiredate",  (v2 `Or` v3 `Or` v4 `Or` v5, TString))
-                                                          , (Attribute "name",      (v2 `Or` v3 , TString)) 
-                                                          , (Attribute "salary",    (v5, TInt32)) 
-                                                          , (Attribute "title",     (v2 `Or` v3 `Or` v4`Or` v5, TString))
+                                                M.fromList[ (Attribute Nothing "deptname",  (v2, TString))
+                                                          , (Attribute Nothing "deptno",    (v3 `Or` v4 `Or` v5, TInt32))
+                                                          , (Attribute Nothing "empno",     (v2 `Or` v3 `Or` v4 `Or` v5, TInt32))
+                                                          , (Attribute Nothing "hiredate",  (v2 `Or` v3 `Or` v4 `Or` v5, TString))
+                                                          , (Attribute Nothing "name",      (v2 `Or` v3 , TString)) 
+                                                          , (Attribute Nothing "salary",    (v5, TInt32)) 
+                                                          , (Attribute Nothing "title",     (v2 `Or` v3 `Or` v4`Or` v5, TString))
                                                          ]))    
                                              ,(Relation "dept",(v3 `Or` v4 `Or` v5,
-                                                M.fromList  [ (Attribute "deptname", (v3 `Or` v4 `Or` v5, TString))
-                                                            , (Attribute "deptno", (v3 `Or` v4 `Or` v5, TInt32))
-                                                            , (Attribute "managerno", (v3 `Or` v4 `Or` v5, TInt32))
+                                                M.fromList  [ (Attribute Nothing "deptname", (v3 `Or` v4 `Or` v5, TString))
+                                                            , (Attribute Nothing "deptno", (v3 `Or` v4 `Or` v5, TInt32))
+                                                            , (Attribute Nothing "managerno", (v3 `Or` v4 `Or` v5, TInt32))
                                                             ]))   
                                              ,(Relation "empbio",        (v4 `Or` v5,
-                                                M.fromList [ (Attribute "birthdate", (v4 `Or` v5, TString))
-                                                           , (Attribute "empno",     (v4 `Or` v5, TInt32))
-                                                           , (Attribute "firstname" ,(v5, TString))
-                                                           , (Attribute "lastname" , (v5, TString))
-                                                           , (Attribute "name" ,     (v4, TString))
-                                                           , (Attribute "sex",       (v4 `Or` v5, TString))
+                                                M.fromList [ (Attribute Nothing "birthdate", (v4 `Or` v5, TString))
+                                                           , (Attribute Nothing "empno",     (v4 `Or` v5, TInt32))
+                                                           , (Attribute Nothing "firstname" ,(v5, TString))
+                                                           , (Attribute Nothing "lastname" , (v5, TString))
+                                                           , (Attribute Nothing "name" ,     (v4, TString))
+                                                           , (Attribute Nothing "sex",       (v4 `Or` v5, TString))
                                                            ]))   
                                            ])
           expectVal @=? output
@@ -190,23 +190,23 @@ testEmployeeSelection  = testGroup "Test selection among v-schema"
     [ testCase "select v1 from v1 version schema" $
       do output   <- return $ configureOpt (enable (Feature "v1") disableAll) $ variationizeSchema [empSchema1]
          expectVal <- return $  Just (M.fromList [(Relation "engineerpersonnel",(v1,
-                                                    M.fromList[ (Attribute "empno",   (v1,TInt32))
-                                                              , (Attribute "name",    (v1,TString))
-                                                              , (Attribute "hiredate",(v1,TString))
-                                                              , (Attribute "title",   (v1,TString))
-                                                              , (Attribute "deptname",(v1,TString))
+                                                    M.fromList[ (Attribute Nothing "empno",   (v1,TInt32))
+                                                              , (Attribute Nothing "name",    (v1,TString))
+                                                              , (Attribute Nothing "hiredate",(v1,TString))
+                                                              , (Attribute Nothing "title",   (v1,TString))
+                                                              , (Attribute Nothing "deptname",(v1,TString))
                                                               ]))
                                                  ,(Relation "otherpersonnel",(v1,
-                                                    M.fromList[ (Attribute "empno", (v1, TInt32))
-                                                              , (Attribute "name", (v1, TString))
-                                                              , (Attribute "hiredate", (v1, TString))
-                                                              , (Attribute "title", (v1, TString))
-                                                              , (Attribute "deptname", (v1, TString))
+                                                    M.fromList[ (Attribute Nothing "empno", (v1, TInt32))
+                                                              , (Attribute Nothing "name", (v1, TString))
+                                                              , (Attribute Nothing "hiredate", (v1, TString))
+                                                              , (Attribute Nothing "title", (v1, TString))
+                                                              , (Attribute Nothing "deptname", (v1, TString))
                                                               ]))
                                                  ,(Relation "job",(v1,
-                                                    M.fromList[  -- (v1, (Attribute "salary", TInt32)) -- the element order matters in test 
-                                                                 (Attribute "title",   (v1, TString))
-                                                              ,  (Attribute "salary" , (v1, TInt32)) 
+                                                    M.fromList[  -- (v1, (Attribute Nothing "salary", TInt32)) -- the element order matters in test 
+                                                                 (Attribute Nothing "title",   (v1, TString))
+                                                              ,  (Attribute Nothing "salary" , (v1, TInt32)) 
                                                               ]))                                                        
                                                  ])
          expectVal @=? output
@@ -214,16 +214,16 @@ testEmployeeSelection  = testGroup "Test selection among v-schema"
     -- , testCase "select v2 from v1 v2 version schema" $
     --   do output   <- return $ configureOpt (enable (Feature "v2") disableAll) $ variationizeSchema [empSchema1, empSchema2]
     --      expectVal <- return $  Just $ M.fromList [(Relation "job",(v2,
-    --                                                   [  (v2, (Attribute "salary", TInt32))
-    --                                                   ,  (v2, (Attribute "title", TString))
-    --                                                   -- , (v1 `Or` v2, (Attribute "salary", TInt32)) -- the element order matters in test 
+    --                                                   [  (v2, (Attribute Nothing "salary", TInt32))
+    --                                                   ,  (v2, (Attribute Nothing "title", TString))
+    --                                                   -- , (v1 `Or` v2, (Attribute Nothing "salary", TInt32)) -- the element order matters in test 
     --                                                   ]))
     --                                               ,(Relation "empacct",(v2,
-    --                                                   [ (v2, (Attribute "empno", TInt32))
-    --                                                   , (v2, (Attribute "name", TString))
-    --                                                   , (v2, (Attribute "hiredate", TString))
-    --                                                   , (v2, (Attribute "title", TString))
-    --                                                   , (v2, (Attribute "deptname", TString))
+    --                                                   [ (v2, (Attribute Nothing "empno", TInt32))
+    --                                                   , (v2, (Attribute Nothing "name", TString))
+    --                                                   , (v2, (Attribute Nothing "hiredate", TString))
+    --                                                   , (v2, (Attribute Nothing "title", TString))
+    --                                                   , (v2, (Attribute Nothing "deptname", TString))
     --                                                  ]))                                                         
     --                                              ]
     --      expectVal @=? output

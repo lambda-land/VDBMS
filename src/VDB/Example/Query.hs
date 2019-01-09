@@ -12,6 +12,8 @@ import qualified VDB.Type as V
 
 import Database.HDBC (SqlValue(..))
 
+{-
+
 -- | Basic compolent for Queryies 
 fA :: F.FeatureExpr 
 fA = F.Ref (Feature "A")
@@ -63,6 +65,7 @@ vq5 = VSelect [(fA, attr1), (fB, attr2)]
               [(fA, rel1),(fB, rel2)] 
               Nothing
 
+-}
 
 
 
