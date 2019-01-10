@@ -37,7 +37,7 @@ empSchema1 = ( Ref (Feature "v1"), constructRelMap [ ( "engineerpersonnel",  eng
 engineerpersonnel_v1 :: RowType
 engineerpersonnel_v1 = constructRowType [ ("empno", TInt32)
                                         , ("name",  TString)
-                                        , ("hiredate", TString)
+                                        , ("hiredate", TUTCTime)
                                         , ("title",  TString)
                                         , ("deptname", TString)
                                         ]
@@ -47,7 +47,7 @@ engineerpersonnel_v1 = constructRowType [ ("empno", TInt32)
 otherpersonnel_v1 :: RowType
 otherpersonnel_v1 = constructRowType [ ("empno",TInt32)
                                      , ("name", TString)
-                                     , ("hiredate", TString)
+                                     , ("hiredate", TUTCTime)
                                      , ("title", TString)
                                      , ("deptname", TString)
                                      ]
@@ -74,7 +74,7 @@ empSchema2 = (Ref (Feature "v2"), constructRelMap [ ( "empacct", empacct_v2)
 empacct_v2 :: RowType
 empacct_v2 = constructRowType [ ( "empno",    TInt32)
                               , ( "name",     TString)
-                              , ( "hiredate", TString)
+                              , ( "hiredate", TUTCTime)
                               , ( "title",    TString)
                               , ( "deptname", TString)
                               ]
@@ -101,7 +101,7 @@ empSchema3 = (Ref (Feature "v3"), constructRelMap  [ ("empacct",  empacct_v3)
 empacct_v3 :: RowType
 empacct_v3 =constructRowType  [ ( "empno",   TInt32)
                               , ( "name",    TString)
-                              , ( "hiredate",TString)
+                              , ( "hiredate",TUTCTime)
                               , ( "title",   TString)
                               , ( "deptno",  TInt32)
                               ]
@@ -134,7 +134,7 @@ empSchema4 = (Ref (Feature "v4"), constructRelMap  [ ( "empacct", empacct_v4)
 -- | empacct (empno, hiredate, title, deptno) 
 empacct_v4 :: RowType
 empacct_v4 =  constructRowType [ ( "empno",    TInt32)
-                               , ( "hiredate", TString)
+                               , ( "hiredate", TUTCTime)
                                , ( "title",    TString)
                                , ( "deptno",   TInt32)
                                ]
@@ -156,7 +156,7 @@ dept_v4 = constructRowType  [ ( "deptname",  TString)
 empbio_v4 :: RowType
 empbio_v4 =constructRowType  [ ( "empno",    TInt32)
                              , ( "sex",      TString)
-                             , ( "birthdate",TString)
+                             , ( "birthdate",TUTCTime)
                              , ( "name",     TString)
                              ]
 
@@ -174,7 +174,7 @@ empSchema5 = ( Ref (Feature "v5"), constructRelMap [ ( "empacct",  empacct_v5)
 -- | empacct (empno, hiredate, title, deptno, salary) 
 empacct_v5 :: RowType
 empacct_v5 = constructRowType  [ ( "empno",     TInt32)
-                               , ( "hiredate",  TString)
+                               , ( "hiredate",  TUTCTime)
                                , ( "title",     TString)
                                , ( "deptno",    TInt32)
                                , ( "salary",    TInt32)
@@ -190,7 +190,7 @@ dept_v5 = constructRowType [ ( "deptname",  TString)
 empbio_v5 :: RowType
 empbio_v5 = constructRowType [ ( "empno",     TInt32)
                              , ( "sex" ,      TString)
-                             , ( "birthdate", TString)
+                             , ( "birthdate", TUTCTime)
                              , ( "firstname", TString)
                              , ( "lastname",  TString)
                              ]
