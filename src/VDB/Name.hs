@@ -11,9 +11,9 @@ newtype Feature = Feature { featureName :: String }
 
 -- | An attribute (i.e. column) name.
 -- newtype Attribute = Attribute { attributeName :: String }
---   deriving (Data,Eq,IsString,Ord,Show,Typeable)
+  -- deriving (Data,Eq,IsString,Ord,Show,Typeable)
 
-data Attribute = Attribute {tableName :: Maybe String, attributeName :: String} 
+data Attribute = Attribute { attributeQualifier :: Maybe Relation, attributeName :: String} 
   deriving (Data,Eq,Ord,Show,Typeable)
 
 -- Attribute n  = Attribute Nothing n 

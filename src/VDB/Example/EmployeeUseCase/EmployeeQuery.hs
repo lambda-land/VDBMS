@@ -72,7 +72,7 @@ empQ1_v3 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ Sel cond $ TRef (R
 --   FROM   empacct, empbio
 --   WHERE empacct.empno = empbio.empno AND hiredate < ('2000-1-1') 
 empQ1_v4 :: Algebra
-empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute (Just "empacct") "empno")) (C.Attr (Attribute (Just "empbio") "empno"))
+empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "empacct")) "empno")) (C.Attr (Attribute (Just (Relation "empbio")) "empno"))
                cond2 = C.Comp LT (C.Attr (Attribute Nothing "hiredate")) (C.Val date2000)
            in Proj (plainAttrs [ "empno", "name", "hiredate"]) $ Sel (C.And cond1 cond2) $ SetOp Prod (TRef (Relation "empacct")) (TRef (Relation "empbio"))
 
@@ -88,7 +88,7 @@ empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute (Just "empacct") "empno")) (
 empQ1_v5 :: Algebra 
 empQ1_v5 = Proj (plainAttrs [ "empno", "firstname","lastname", "hiredate"]) $ Sel cond $ SetOp Prod (TRef (Relation "empacct")) (TRef (Relation "empbio"))
          where cond = C.And cond1 cond2
-               cond1 = C.Comp EQ (C.Attr (Attribute (Just "empacct")  "empno")) (C.Attr (Attribute (Just "empbio") "empno"))
+               cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "empacct"))  "empno")) (C.Attr (Attribute (Just "empbio") "empno"))
                cond2 = C.Comp LT (C.Attr (Attribute Nothing "hiredate")) (C.Val date2000)
 
 empQ2_v5:: Algebra 
