@@ -13,14 +13,13 @@ import qualified Data.Map as M
 -- smart contructor for building schema 
 --
 
+-- | contruct plain Schema without tag assigned based on a list of [(Relatin Name, [Attribute name, Sqltype])] 
+constructRelMap :: [(String, [(String, SqlType)])] -> M.Map Relation (Opt RowType) 
+constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( Relation relName, (Lit True, constructRowType relName rt))) nrlist
+
 -- | contruct rowType based on a list of [(Attribute Name, SqlType)]
-constructRowType :: [(String,SqlType)] -> RowType
-constructRowType attrTypeList = M.fromList  $ map (\(attrName, t) -> ( Attribute Nothing attrName, (Lit True, t))) attrTypeList
-
--- | contruct plain Schema without tag assigned based on a list of [(Relatin Name, Rowtype)] 
-constructRelMap :: [(String, RowType)] -> M.Map Relation (Opt RowType) 
-constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( Relation relName, (Lit True, rt))) nrlist
-
+constructRowType ::  String -> [(String,SqlType)]  -> RowType
+constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> ( Attribute (Just (Relation relName)) attrName, (Lit True, t))) attrTypeList
 
 --  
 --  ** schema verison 1 
@@ -34,31 +33,31 @@ empSchema1 = ( Ref (Feature "v1"), constructRelMap [ ( "engineerpersonnel",  eng
              )
 
 -- |  engineerpersonnel(empno, name, hiredate, title, deptname) 
-engineerpersonnel_v1 :: RowType
-engineerpersonnel_v1 = constructRowType [ ("empno", TInt32)
-                                        , ("name",  TString)
-                                        , ("hiredate", TUTCTime)
-                                        , ("title",  TString)
-                                        , ("deptname", TString)
-                                        ]
+engineerpersonnel_v1 :: [(String,SqlType)]
+engineerpersonnel_v1 = [ ("empno", TInt32), 
+                         ("name",  TString)
+                       , ("hiredate", TUTCTime)
+                       , ("title",  TString)
+                       , ("deptname", TString)
+                       ]
 
 
 -- | otherpersonnel(empno, name, hiredate, title, deptname) 
-otherpersonnel_v1 :: RowType
-otherpersonnel_v1 = constructRowType [ ("empno",TInt32)
-                                     , ("name", TString)
-                                     , ("hiredate", TUTCTime)
-                                     , ("title", TString)
-                                     , ("deptname", TString)
-                                     ]
+otherpersonnel_v1 :: [(String,SqlType)]
+otherpersonnel_v1 =  [ ("empno",TInt32)
+                     , ("name", TString)
+                     , ("hiredate", TUTCTime)
+                     , ("title", TString)
+                     , ("deptname", TString)
+                     ]
 
 -- | job(title, salary)
-job_v1 :: RowType
-job_v1 = constructRowType [ ( "title", TString)
-                          , ("salary",  TInt32)
-                          ]
+job_v1 ::[(String,SqlType)]
+job_v1 =  [ ( "title", TString)
+          , ("salary",  TInt32)
+          ]
 
-
+{-
 -- 
 -- ** schema version 2 
 -- 
@@ -196,5 +195,5 @@ empbio_v5 = constructRowType [ ( "empno",     TInt32)
                              ]
 
 
-
+-}
 

@@ -99,15 +99,15 @@ testS1 :: Schema
 testS1 = ( v1, s1RelMap)
 
 s1RelMap :: Map Relation (Opt RowType)
-s1RelMap = constructRelMap [ ("T1",  constructRowType [ ("A1",  TInt32), ("A2", TString)])]
+s1RelMap = constructRelMap [ ("T1",  [ ("A1",  TInt32), ("A2", TString)])]
 -- s2^v2 = {T1(A1,A3,A4), T2(A4)}
 testS2 :: Schema 
 testS2 = ( v2, s2RelMap)
 
 
 s2RelMap :: Map Relation (Opt RowType)
-s2RelMap = constructRelMap [ ("T1", constructRowType [ ("A1",  TInt32), ( "A3",  TString)])
-                           , ( "T2",constructRowType [ ("A4", TInt32)])
+s2RelMap = constructRelMap [ ("T1",  [ ("A1",  TInt32), ( "A3",  TString)])
+                           , ( "T2", [ ("A4", TInt32)])
                            ]
 
 -- testS3 :: Schema
