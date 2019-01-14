@@ -10,6 +10,7 @@ import VDB.Example.EmployeeUseCase.EmployeeVSchema
 
 import qualified VDB.FeatureExpr as F
 import VDB.Name
+import VDB.Schema
 import VDB.Type
 import VDB.Variational
 import qualified Data.Map.Strict as M
@@ -18,6 +19,31 @@ import Database.HDBC
 import Prelude hiding (EQ, NEQ, LT ,LTE ,GTE,GT)
 import Data.Tuple(swap)
 
+--
+-- ** Qualify query
+--
+qualifyQuery :: Schema -> Algebra -> Algebra
+qualifyQuery  = undefined 
+
+-- | make a Attribute Relation Map based on gaven schema 
+--   ** Noted that can only works good with unique attritbue and relation in schema. 
+--      If the shcema contains more than one relation for the same attribute, the last attribtue for the key is retained  
+makeAttrRelMap :: Schema -> M.Map Attribute Relation 
+makeAttrRelMap (sf, relAttrMap) = let relAttrsList' = (M.toList relAttrMap)
+                                      relAttrsList  = map (\(rel, (af, attrTypeMap)) ->(rel, (M.keys attrTypeMap))) relAttrsList'
+                                  in  M.fromList $ helper relAttrsList 
+                          where helper :: [(Relation, [Attribute])] -> [(Attribute,Relation)]
+                                helper []                 = []
+                                helper ((rel, attrlist):xs) = (createRelAttrList rel attrlist)  ++ helper xs 
+                                createRelAttrList :: Relation -> [Attribute] -> [(Attribute,Relation)]
+                                createRelAttrList rel []     = []
+                                createRelAttrList rel (x:xs) =  (x, rel) : createRelAttrList rel xs
+
+
+
+--
+--  ** Variationize Query
+-- 
 
 -- | fold a list of plain query into one v-query 
 variationizeQuery :: [Algebra] -> Algebra
@@ -81,7 +107,7 @@ mergeAlgebraFeature a1@(AChc f1  l1  r1) a2@(AChc  f2  l2  r2) = if l1 == l2  --
                                                                   then AChc (f1 `F.Or` f2) l1 r1
                                                                   else AChc f2 l2 a1
 mergeAlgebraFeature a                 Empty                 = a 
-mergeAlgebraFeature Empty                 a                 = a -- To be verified 
+mergeAlgebraFeature Empty                 a                 = a  -- To be verified 
 
 -- | merge two opt attribute list into one 
 mergeAttrList :: [Opt Attribute] -> [Opt Attribute] -> [Opt Attribute]
