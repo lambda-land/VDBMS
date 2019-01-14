@@ -14,7 +14,7 @@ import VDB.NaiveApproach.NaiveAppConfig (applyConfigVariantTables)
 import VDB.NaiveApproach.NaiveSendQs (runNaiveQs)
 import VDB.Translations.RelAlg2Sql (alg2Sql)
 import VDB.Vresult
-import VDB.SqlTable (ClmVariantTableMap)
+import VDB.SqlTable (SqlVariantTable)
 -- import VDB.Schema
 import VDB.Config
 import VDB.Name

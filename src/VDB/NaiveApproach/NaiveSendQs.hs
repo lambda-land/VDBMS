@@ -7,7 +7,7 @@ import VDB.Variant (Variant)
 import VDB.SqlTable
 
 -- import Data.Text as T (Text, pack, append, concat, unpack)
-import Data.Map
+-- import Data.Map
 
 import Database.HDBC
 
@@ -22,14 +22,14 @@ mkStatement  = flip prepare
 -- fetchAllRowsMap :: Statement -> IO [Map String SqlValue]
 -- | gets a VariantQuery and returns the result
 --  with the configuration attached to it.
-runNaiveQ :: IConnection conn => VariantQuery -> conn -> IO ClmVariantTableMap
-runNaiveQ (v,e) conn = do 
+runNaiveQ :: IConnection conn => VariantQuery -> conn -> IO SqlVariantTable
+runNaiveQ (e,v) conn = do 
   q <- mkStatement e conn
   r <- fetchAllRowsMap q 
-  return (v,r)
+  return (r,v)
 
 -- | gets a list of VariantQueries
 --  and returns their results with theri config attached.
-runNaiveQs :: IConnection conn => [VariantQuery] -> conn -> IO [ClmVariantTableMap]
+runNaiveQs :: IConnection conn => [VariantQuery] -> conn -> IO [SqlVariantTable]
 runNaiveQs qs conn = mapM ((flip runNaiveQ) conn) qs
 

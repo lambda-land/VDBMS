@@ -10,11 +10,11 @@ import VDB.Algebra
 -- import VDB.Variational
 -- import VDB.Type  
 -- import VDB.BruteForce.BruteForceAlg2Sql
-import VDB.BruteForceApproach.BFAppConfig (applyConfigVariantTables)
+import VDB.BruteForceApproach.BFConfigDB -- (applyConfigVariantTables)
 import VDB.BruteForceApproach.BFSendQs (runBFQs)
 import VDB.Translations.RelAlg2Sql (alg2Sql)
 import VDB.Vresult
-import VDB.SqlTable (ClmVariantTableMap)
+import VDB.SqlTable (SqlVariantTable)
 -- import VDB.Schema
 import VDB.Config
 import VDB.Name
@@ -27,9 +27,9 @@ import Database.HDBC
 --   TODO: write prettyVres
 --   TODO: write packVres
 --   TODO: adjust types in brute force code
-runBrute :: IConnection conn => Algebra -> [Config Bool] -> conn 
-  -> PresCondAtt -> PrettyVResult
-runBrute vq cs conn pres = undefined
+-- runBrute :: IConnection conn => Algebra -> [Config Bool] -> conn 
+--   -> PresCondAtt -> PrettyVResult
+-- runBrute vq cs conn pres = undefined
 {-prettyVres res
   where 
     qs = bruteAlg2Sql vq cs 

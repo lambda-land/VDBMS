@@ -4,14 +4,17 @@ module VDB.Schema where
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
-import Data.Set as S
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Function (on)
+import Data.SBV (Boolean(..))
+import Control.Arrow (first, second)
 
 import VDB.FeatureExpr
 import VDB.Name
 import VDB.Variational
 import VDB.Type
-
+import VDB.Config (Config)
 
 -- | Type of a relation in the database.
 -- type RowType = [Opt (Attribute, Type)]
@@ -20,7 +23,7 @@ type RowType = Map Attribute (Opt SqlType)
 
 -- | Attributes must be unique in a table. The pair (Int, Attribute)
 --   is for keeping the order of attributes in a relation.
-type UniqeAttribute = (Int, Attribute)
+-- type UniqeAttribute = (Int, Attribute)
 
 
 -- | Type of a relation in the database. 
@@ -34,12 +37,23 @@ type Schema = Opt (Map Relation (Opt RowType))
 
 -- | The feature model associated with a schema.
 featureModel :: Schema -> FeatureExpr
-featureModel (f,_) = f
+featureModel = getFexp
 
+-- | Gets the structure of schema.
+schemaStrct :: Schema -> Map Relation (Opt RowType)
+schemaStrct = getObj 
 
 -- | Get the schema of a relation in the database.
 --lookupRelationSchema :: Relation -> Schema -> Maybe (Opt RelationSchema)
 --lookupRelationSchema r (_,m) = M.lookup r m
+
+-- | returns a relation arity.
+relArity :: Relation -> Schema -> Int 
+relArity r s = case rt of 
+                 Just rowType -> M.size rowType
+                 _ -> 0
+  where 
+    rt = lookupRel r s
 
 -- | get attributes of a rowtype.
 getRowTypeAtts :: RowType -> Set Attribute
@@ -59,14 +73,26 @@ lookupAttFexpTypeInRowType = M.lookup
 getAttTypeFromRowType :: RowType -> Set (Attribute, SqlType)
 getAttTypeFromRowType r = dropFexp rowSet
   where
-    rowSet = S.fromList $ M.assocs r
+    rowSet = Set.fromList $ M.assocs r
     dropFexp :: (Ord a, Ord t) => Set (a,(o,t)) -> Set (a,t)
-    dropFexp = S.map (\(a,(_,t)) -> (a,t)) 
+    dropFexp = Set.map (\(a,(_,t)) -> (a,t)) 
 
 -- | Get the schema of a relation in the database, where 
 -- 	the relation schema is stored as a row type.
 lookupRowType :: Relation -> Schema -> Maybe (Opt RowType)
 lookupRowType r (_,m) = M.lookup r m
+
+-- | gets valid relations of a schema. i.e. relations that
+--   their fexp isn't false.
+getRels :: Schema -> Set Relation
+getRels s = Set.filter (flip validRel $ s) rels
+  where 
+    rels = M.keysSet $ schemaStrct s
+    validRel :: Relation -> Schema -> Bool
+    validRel r s 
+      | lookupRelationFexp r s == Just (Lit False) = False
+      | lookupRelationFexp r s == Nothing = False
+      | otherwise = True
 
 
 -- | Get the feature expression of a relation in a database.
@@ -111,6 +137,44 @@ lookupAttFexp :: Attribute -> Relation -> Schema -> Maybe FeatureExpr
 lookupAttFexp a r s = case lookupAttribute a r s of 
                         Just (f,_) -> Just f
                         _ -> Nothing
+
+-- | apply config to fexp of schema.
+appConfSchemaFexp :: Config Bool -> Schema -> Bool
+-- appConfSchemaFexp c s = evalFeatureExpr c (featureModel s)
+-- appConfSchemaFexp c s = evalFeatureExpr c $ featureModel s
+appConfSchemaFexp c = evalFeatureExpr c . featureModel
+
+-- | applies a config to a schema. Note that it keeps the 
+--   attributes and relations that aren't valid in a variant
+--   associated to the config.
+appConfSchema :: Config Bool -> Schema -> Schema
+appConfSchema c s 
+  | schemaPres = (Lit (schemaPres), 
+  M.map (appConfRowType c) (schemaStrct s))
+  | otherwise = error "the schema doesn't exist for the given config!"
+  where 
+    schemaPres = appConfSchemaFexp c s
+
+-- | applies a config to a schema. Note that it filters out 
+--   invalid objects. 
+appConfSchema' :: Config Bool -> Schema -> Schema
+appConfSchema' c s = mkOpt (featureModel s) 
+  (M.filter (\optRow -> getFexp optRow == Lit True) $ schemaStrct s)
+
+-- | apply config to a rowtype. it doesn't filter out invalid attributes.
+appConfRowType :: Config Bool -> Opt RowType -> Opt RowType
+appConfRowType c (f,r) = (Lit (evalFeatureExpr c f),
+  M.map (first $ Lit . evalFeatureExpr c) r)
+--  M.map (\(f,t) -> (Lit (evalFeatureExpr c f),t)) r 
+
+-- | apply config to a rowtype. it filters out invalid attributes.
+appConfRowType' :: Config Bool -> Opt RowType -> Opt RowType
+appConfRowType' c r = mkOpt (getFexp r) (M.filter 
+  (\optType -> getFexp optType == Lit True) $ getObj r)
+  -- (Lit (evalFeatureExpr c f),
+  -- M.map (first $ Lit . evalFeatureExpr c) r)
+--  M.map (\(f,t) -> (Lit (evalFeatureExpr c f),t)) r 
+
 
 
 -- | Get all info of an attribute from a rowtype

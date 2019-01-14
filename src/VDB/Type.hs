@@ -8,12 +8,8 @@ import Data.Data (Data,Typeable)
 import Data.Time.LocalTime (ZonedTime,zonedTimeToUTC)
 
 import Database.HDBC
+-- import Database.HDBC.ColTypes
 
--- ***************NOTE********************
--- problem with sqltype and sqlvalue is that
--- sqlvalue isn't instantiated for Data and Ord
--- for two of its cases, Tlocaltimeofday and tnull
--- fix after everything else is fixed!!!!!!!!!!!
 -- | Primitive types.
 data SqlType = TString
              | TByteString 
@@ -149,4 +145,42 @@ evalCompOp o SqlNull                      SqlNull
   | o == EQ   = Just True
   | otherwise = Just False
 evalCompOp _ _ _ = Nothing
+
+hdbcType2SqlType :: SqlTypeId -> String
+hdbcType2SqlType SqlIntegerT     = "integer"
+hdbcType2SqlType SqlBigIntT      = "bigint"
+hdbcType2SqlType SqlDateT        = "date"
+hdbcType2SqlType SqlVarCharT     = "text"
+hdbcType2SqlType (SqlUnknownT s) = s
+
+
+{-
+[
+("id",SqlColDesc {colType = SqlIntegerT, colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing}),
+("name",SqlColDesc {colType = SqlVarCharT, colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing}),
+("presCond",SqlColDesc {colType = SqlVarCharT, colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing})
+]
+-}
+
+{-
+create table test4 (eid integer primary key asc autoincrement);
+create table test1 (name varchar(50) default '');
+create table test1 (name varchar(50) not null default '');
+create table test2 (name varchar(50) default null);
+create table test3 (id bigint primary key default 0, date date, test text);
+
+
+-->describeTable conn "test1"
+[("name",SqlColDesc {colType = SqlUnknownT "varchar(50)", colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing})]
+-->describeTable conn "test2"
+[("name",SqlColDesc {colType = SqlUnknownT "varchar(50)", colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing})]
+-->describeTable conn "test3"
+[("id",SqlColDesc {colType = SqlUnknownT "bigint", colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing}),
+("date",SqlColDesc {colType = SqlUnknownT "date", colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing}),
+("test",SqlColDesc {colType = SqlVarCharT, colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing})]
+-->describeTable conn "test4"
+[("eid",SqlColDesc {colType = SqlIntegerT, colSize = Nothing, colOctetLength = Nothing, colDecDigits = Nothing, colNullable = Nothing})]
+-->
+-}
+
 

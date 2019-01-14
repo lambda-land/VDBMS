@@ -22,14 +22,14 @@ mkStatement  = flip prepare
 -- fetchAllRowsMap :: Statement -> IO [Map String SqlValue]
 -- | gets a VariantQuery and returns the result
 --  with the configuration attached to it.
-runBFQ :: IConnection conn => VariantQuery -> conn -> IO ClmVariantTableMap
-runBFQ (v,e) conn = do 
+runBFQ :: IConnection conn => VariantQuery -> conn -> IO SqlVariantTable
+runBFQ (e,v) conn = do 
   q <- mkStatement e conn
   r <- fetchAllRowsMap q 
-  return (v,r)
+  return (r,v)
 
 -- | gets a list of VariantQueries
 --  and returns their results with theri config attached.
-runBFQs :: IConnection conn => [VariantQuery] -> conn -> IO [ClmVariantTableMap]
+runBFQs :: IConnection conn => [VariantQuery] -> conn -> IO [SqlVariantTable]
 runBFQs qs conn = mapM ((flip runBFQ) conn) qs
 

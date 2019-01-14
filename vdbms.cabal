@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8066b84cec4c2abd3c4bb79b1d819ca665f655149e24357fb5404c6756db364a
+-- hash: 460a7f3ff3ab9ae862490a5d09777bc1184f7b83e5ae847ec8515dfb31484903
 
 name:           vdbms
 version:        0.1.0.0
@@ -26,13 +26,14 @@ library
       VDB.Approach1.App1AppSat
       VDB.Approach1.App1Run
       VDB.Approach1.App1SendQs
-      VDB.BruteForceApproach.BFAppConfig
       VDB.BruteForceApproach.BFAppSatPersist
+      VDB.BruteForceApproach.BFConfigDB
       VDB.BruteForceApproach.BFSendQs
       VDB.BruteForceApproach.BFSendQsPersist
       VDB.BruteForceApproach.BruteForce
       VDB.Condition
       VDB.Config
+      VDB.Database
       VDB.DBsetup.EnronEmailDB
       VDB.DBsetup.EnronEmailDBPersist
       VDB.Example.EmployeeUseCase.EmployeeSchema
@@ -66,7 +67,7 @@ library
       Paths_vdbms
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
   build-depends:
       HDBC
     , HDBC-sqlite3 >=2.3.3.1
@@ -94,7 +95,7 @@ executable vdbms
       Paths_vdbms
   hs-source-dirs:
       app
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       HDBC
@@ -126,7 +127,7 @@ test-suite vsat-test
       Paths_vdbms
   hs-source-dirs:
       test
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HDBC

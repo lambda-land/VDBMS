@@ -1,4 +1,4 @@
--- | Representation of tuples and tables for interpreting variational queries.
+-- | Representation of vtuples and tables for interpreting variational queries.
 module VDB.Table where
 
 import Data.Map.Strict (Map)
@@ -18,36 +18,36 @@ import Database.HDBC (SqlValue)
 -- | A database is a mapping from relations to tables.
 type Database = (Schema, Map Relation Table)
 
--- | A table is a list of tuples.
-type Table = [Tuple]
+-- | A table is a list of vtuples.
+type Table = [VTuple]
 
 -- | A table with an assigned feature exp for when 
 --   you're returning a table without an assigned name
 --   (relation) to it. 
 type VTable = Opt Table
 
--- | A tuple is an optional map between attributes 
+-- | A vtuple is an optional map between attributes 
 --   and their sqlvalues, where each value may be 
 --   Nothing if the corresponding attribute is not 
 --   present in a configuration.
-type Tuple = Opt (Map Attribute (Maybe SqlValue))
+type VTuple = Opt (Map Attribute (Maybe SqlValue))
 
 
 -- | gets the tuple presence condition.
-getTupleFexp :: Tuple -> FeatureExpr
-getTupleFexp (o,_) = o
+getVTupleFexp :: VTuple -> FeatureExpr
+getVTupleFexp (o,_) = o
 
--- | gets the name of attributes of a tuple except 
+-- | gets the name of attributes of a vtuple except 
 --   the presence condition attribute name.
-getTupleAtts :: Tuple -> PresCondAtt -> Set Attribute
-getTupleAtts (_,as) p = Set.filter 
+getVTupleAtts :: VTuple -> PresCondAtt -> Set Attribute
+getVTupleAtts (_,as) p = Set.filter 
                          (\a -> attributeName a == presCondAttName p) 
                          (M.keysSet as)
 
--- | gets the type of the attributes of a tuple
+-- | gets the type of the attributes of a vtuple
 --   except for the presence condition attribute.
--- getTupleAttTypes :: Tuple -> PresCondAtt -> Set (Attribute, Type)
--- getTupleAttTypes (_,as) p = filter (\a -> fst a == p)
+-- getVTupleAttTypes :: VTuple -> PresCondAtt -> Set (Attribute, Type)
+-- getVTupleAttTypes (_,as) p = filter (\a -> fst a == p)
 
 -- | gets the schema of VDB.
 getSchema :: Database -> Schema
@@ -73,22 +73,22 @@ checkValue ctx a (p,t) (Just v) = satisfiable (And ctx p)
   -- && (t == typeOf v || typeOf v == TNull) -- need to be added
   -- for sqltype and sqlvalue
 
--- | Check a tuple against a row type. Ensures that the list of 
---   attributes in rowtype and tuples are the same. checks sat
---   of attPrescond and tuplePresCond
-checkTuple :: FeatureExpr -> PresCondAtt -> RowType -> Tuple -> Bool
-checkTuple ctx p row t = getTupleAtts t p == getRowTypeAtts row
+-- | Check a vtuple against a row type. Ensures that the list of 
+--   attributes in rowtype and vtuples are the same. checks sat
+--   of attPrescond and vtuplePresCond
+checkVTuple :: FeatureExpr -> PresCondAtt -> RowType -> VTuple -> Bool
+checkVTuple ctx p row t = getVTupleAtts t p == getRowTypeAtts row
   && and (M.elems checkValues) 
   where 
     checkValues :: Map Attribute Bool
-    checkValues = M.intersectionWithKey (checkValue attPresCondAndTuplePresCond) 
+    checkValues = M.intersectionWithKey (checkValue attPresCondAndVTuplePresCond) 
                                       row (snd t)
-    attPresCondAndTuplePresCond = And ctx (fst t)
+    attPresCondAndVTuplePresCond = And ctx (fst t)
 
 -- | Validate a table against its row type. When checking
 --   the initialized VDB ctx will be the rowtype fexp.
 checkTable :: FeatureExpr -> PresCondAtt -> RowType -> Table -> Bool
-checkTable ctx p row ts = all (checkTuple ctx p row) ts
+checkTable ctx p row ts = all (checkVTuple ctx p row) ts
 
 -- | Validate a database against its schema. Have to check
 --   the VDB after instantiate it.

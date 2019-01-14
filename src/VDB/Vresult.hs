@@ -13,7 +13,7 @@ module VDB.Vresult where
 -- import VDB.Type  
 -- import VDB.Schema
 -- import VDB.BruteForce.BruteForceSendQs
-import VDB.SqlTable (ClmVariantTableMap)
+import VDB.SqlTable (SqlVariantTable)
 
 -- import Data.Map
 
@@ -28,5 +28,5 @@ type VResult = String
 prettyVres :: VResult -> PrettyVResult
 prettyVres = undefined
 
-packVres :: [ClmVariantTableMap] -> VResult 
+packVres :: [SqlVariantTable] -> VResult 
 packVres = undefined

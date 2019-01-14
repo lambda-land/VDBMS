@@ -1,122 +1,73 @@
 -- | Tables returned by HDBC.
---   TODO: do I need to check or extract anything here?
+--   TODO: do I need to check sth or add functions?
+--         look into table.hs to ensure (for adding funcs)!
 module VDB.SqlTable where
 
-import Data.Map
+-- import Data.Map
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
+import Data.Set (Set)
+import qualified Data.Set as S
+
 import VDB.Variant 
 import VDB.Variational (Opt)
+import VDB.Name
+import VDB.Config
+import VDB.FeatureExpr 
 
 import Database.HDBC 
 
-type Row = [SqlValue]
-type Table = [Row]
-type Vtable = Opt Table
+-- type Row = [SqlValue]
+-- type Table = [Row]
+-- type Vtable = Opt Table
 
-type ClmNameIncludedRow = [(String, SqlValue)]
-type ClmNameIncludedTable = [ClmNameIncludedRow]
-type ClmNameIncludedVariantTable = Variant Bool ClmNameIncludedTable
-type ClmNameIncludedVtable = Opt ClmNameIncludedTable
+-- type ClmNameIncludedRow = [(String, SqlValue)]
+-- type ClmNameIncludedTable = [ClmNameIncludedRow]
+-- type ClmNameIncludedVariantTable = Variant ClmNameIncludedTable Bool
+-- type ClmNameIncludedVtable = Opt ClmNameIncludedTable
 
-type ClmRowMap = Map String SqlValue
-type ClmTableMap = [ClmRowMap]
-type ClmVariantTableMap = Variant Bool ClmTableMap
-type ClmVtableMap = Opt ClmTableMap
+-- type ClmRowMap = Map String SqlValue
+-- type ClmTableMap = [ClmRowMap]
+-- type ClmVariantTableMap = Variant ClmTableMap Bool
+-- type ClmVtableMap = Opt ClmTableMap
 
-{-
--- | A database is a mapping from relations to tables.
-type Database = (Schema, Map Relation Table)
+type SqlRow = Map String SqlValue
+type SqlTable = [SqlRow]
+type SqlVariantTable = Variant SqlTable Bool
+type SqlVtable = Opt SqlTable
 
--- | A table is a list of tuples.
-type Table = [Tuple]
+-- | returns a set of attributes from a tuple.
+rowAttSet :: SqlRow -> Set Attribute
+rowAttSet = S.map Attribute . M.keysSet 
 
--- | A table with an assigned feature exp for when 
---   you're returning a table without an assigned name
---   (relation) to it. 
-type VTable = Opt Table
+-- | returns a set of attributes from a table.
+tableAttSet :: SqlTable -> Set Attribute
+tableAttSet [] = error "an empty table doesn't have any attributes"
+tableAttSet t  = rowAttSet (head t)
 
--- | A tuple is an optional map between attributes 
---   and their sqlvalues, where each value may be 
---   Nothing if the corresponding attribute is not 
---   present in a configuration.
-type Tuple = Opt (Map Attribute (Maybe SqlValue))
-
-
--- | gets the tuple presence condition.
-getTupleFexp :: Tuple -> FeatureExpr
-getTupleFexp (o,_) = o
-
--- | gets the name of attributes of a tuple except 
---   the presence condition attribute name.
-getTupleAtts :: Tuple -> PresCondAtt -> Set Attribute
-getTupleAtts (_,as) p = Set.filter 
-                         (\a -> attributeName a == presCondAttName p) 
-                         (M.keysSet as)
-
--- | gets the type of the attributes of a tuple
---   except for the presence condition attribute.
--- getTupleAttTypes :: Tuple -> PresCondAtt -> Set (Attribute, Type)
--- getTupleAttTypes (_,as) p = filter (\a -> fst a == p)
-
--- | gets the schema of VDB.
-getSchema :: Database -> Schema
-getSchema = fst
-
--- | gets data of VDB.
-getData :: Database -> Map Relation Table
-getData = snd
-
--- | gets table assigned to a relation in a VDB.
-getTable :: Database -> Relation -> Maybe Table
-getTable db r = M.lookup r (getData db)
-
--- | gets table fexp.
-getVTableFexp :: VTable -> FeatureExpr
-getVTableFexp = fst
-
-
--- | Check a value against the attribute-type pair in a row type.
-checkValue :: FeatureExpr -> Attribute -> Opt SqlType -> Maybe SqlValue -> Bool
-checkValue ctx a (p,t) Nothing  = unsatisfiable (And ctx p)
-checkValue ctx a (p,t) (Just v) = satisfiable (And ctx p) 
-  -- && (t == typeOf v || typeOf v == TNull) -- need to be added
-  -- for sqltype and sqlvalue
-
--- | Check a tuple against a row type. Ensures that the list of 
---   attributes in rowtype and tuples are the same. checks sat
---   of attPrescond and tuplePresCond
-checkTuple :: FeatureExpr -> PresCondAtt -> RowType -> Tuple -> Bool
-checkTuple ctx p row t = getTupleAtts t p == getRowTypeAtts row
-  && and (M.elems checkValues) 
+-- | applies a config to a row.
+applyConfRow :: Config Bool -> PresCondAtt -> SqlRow -> SqlRow 
+applyConfRow c p r = M.adjust updatePres (presCondAttName p) r 
   where 
-    checkValues :: Map Attribute Bool
-    checkValues = M.intersectionWithKey (checkValue attPresCondAndTuplePresCond) 
-                                      row (snd t)
-    attPresCondAndTuplePresCond = And ctx (fst t)
+    -- pres = M.lookup p r 
+    updatePres :: SqlValue -> SqlValue
+    updatePres v = fexp2sqlval $ Lit $ evalFeatureExpr c (sqlval2fexp v)
+    -- pres' = evalFeatureExpr c (sqlToFexp pres)
 
--- | Validate a table against its row type. When checking
---   the initialized VDB ctx will be the rowtype fexp.
-checkTable :: FeatureExpr -> PresCondAtt -> RowType -> Table -> Bool
-checkTable ctx p row ts = all (checkTuple ctx p row) ts
+-- | applies a config to a table.
+applyConfTable :: Config Bool -> PresCondAtt -> SqlTable -> SqlTable
+applyConfTable c p = map $ applyConfRow c p
 
--- | Validate a database against its schema. Have to check
---   the VDB after instantiate it.
-checkDatabase :: Database -> PresCondAtt -> Bool
-checkDatabase db p = and (M.mapWithKey checkRelation dbData)
-  where 
-    schema = getSchema db 
-    dbData = getData db
-    checkRelation relation table
-      | Just row <- lookupRel relation (schema)
-        = case lookupRelationFexp relation schema of
-            Just fexp -> checkTable (And (featureModel schema) fexp) p row table
-            _ -> False
-      | otherwise = False
+-- | applies a config to tables.
+applyConfTables :: Config Bool -> PresCondAtt -> [SqlTable] -> [SqlTable]
+applyConfTables c p = map $ applyConfTable c p
 
--- checkDatabase (fm,rows) db = M.size rows == M.size db
---     && and (M.mapWithKey checkRelation rows)
---   where
---     checkRelation name (p,row)
---       | Just table <- M.lookup name db = checkTable (And fm p) row table
---       | otherwise = False
- 
--}
+-- | applies the variant config to the variant table.
+applyConfVariantTable :: PresCondAtt -> SqlVariantTable -> SqlVariantTable
+applyConfVariantTable p t = mkVariant (applyConfTable c p $ getVariant t) c
+  where c = getConfig t
+
+-- | applies the variant config to variant tables.
+applyConfVariantTables :: PresCondAtt -> [SqlVariantTable] -> [SqlVariantTable]
+applyConfVariantTables p = map $ applyConfVariantTable p
+

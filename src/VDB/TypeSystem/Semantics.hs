@@ -104,9 +104,6 @@ typeEq r r' = getRowTypeAtts r == getRowTypeAtts r' &&
   -- attTypeEq as as' && equivAttFexp as as' -- OLD
 
 
--- ******************************************************************
--- ******************************************************************
--- DISCUSS WITH ERIC IN MEETING!!
 -- | Type enviornment cross product. does this cause any problem?!?!?
 --   specifically adding prefix to attributes!!!
 --   any other ideas for updating the keys?!?!?
@@ -123,8 +120,6 @@ typeProduct e e' = M.union unionWithoutIntersection
     t' = M.difference e' unionWithoutIntersection
     updatedT  = addPrefix "1." t
     updatedT' = addPrefix "2." t'
--- ******************************************************************
--- ******************************************************************
 
 -- | aux for type product. adds prefix to attributes of a typeEnv
 addPrefix :: String -> TypeEnv -> TypeEnv

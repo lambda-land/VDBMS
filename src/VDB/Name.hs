@@ -21,6 +21,10 @@ newtype Relation = Relation { relationName :: String }
 newtype PresCondAtt = PresCondAtt { presCondAttName :: String }
   deriving (Data,Eq,IsString,Ord,Show,Typeable)  
 
+-- | A feasible type to use while creating sql tables.
+-- newtype CreateSqlTableType = CreateSqlTableType { typeName :: String}
+--   deriving (Data,Eq,IsString,Ord,Show,Typeable)  
+  
 -- test
 -- testf:: Feature
 -- testf = "A"
