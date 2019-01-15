@@ -17,12 +17,12 @@ import Database.HDBC (SqlValue)
 import Data.SBV
 
 -- | FeatureExpr for 5 schema version
-v1,v2,v3,v4,v5 :: FeatureExpr
-v1 = Ref (Feature "v1")
-v2 = Ref (Feature "v2")
-v3 = Ref (Feature "v3")
-v4 = Ref (Feature "v4")
-v5 = Ref (Feature "v5")
+-- v1,v2,v3,v4,v5 :: FeatureExpr
+-- v1 = Ref (Feature "v1")
+-- v2 = Ref (Feature "v2")
+-- v3 = Ref (Feature "v3")
+-- v4 = Ref (Feature "v4")
+-- v5 = Ref (Feature "v5")
 
 
 -- | fold a list of schema into one variational schema 
@@ -95,20 +95,20 @@ unionRowtypeHelper (lf,l)         (rf,r) = (shrinkFeatureExpr (lf `Or` rf), l)
 
 -- | simple test case for variationize 
  -- s1^v1 = {T1(A1,A2)}
-testS1 :: Schema 
-testS1 = ( v1, s1RelMap)
+-- testS1 :: Schema 
+-- testS1 = ( v1, s1RelMap)
 
-s1RelMap :: Map Relation (Opt RowType)
-s1RelMap = constructRelMap [ ("T1",  [ ("A1",  TInt32), ("A2", TString)])]
--- s2^v2 = {T1(A1,A3,A4), T2(A4)}
-testS2 :: Schema 
-testS2 = ( v2, s2RelMap)
+-- s1RelMap :: Map Relation (Opt RowType)
+-- s1RelMap = constructRelMap [ ("T1",  [ ("A1",  TInt32), ("A2", TString)])]
+-- -- s2^v2 = {T1(A1,A3,A4), T2(A4)}
+-- testS2 :: Schema 
+-- testS2 = ( v2, s2RelMap)
 
 
-s2RelMap :: Map Relation (Opt RowType)
-s2RelMap = constructRelMap [ ("T1",  [ ("A1",  TInt32), ( "A3",  TString)])
-                           , ( "T2", [ ("A4", TInt32)])
-                           ]
+-- s2RelMap :: Map Relation (Opt RowType)
+-- s2RelMap = constructRelMap [ ("T1",  [ ("A1",  TInt32), ( "A3",  TString)])
+--                            , ( "T2", [ ("A4", TInt32)])
+--                            ]
 
 -- testS3 :: Schema
 -- testS3 = (v3, s3RelMap)

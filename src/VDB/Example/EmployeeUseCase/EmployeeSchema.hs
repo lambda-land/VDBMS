@@ -57,7 +57,7 @@ job_v1 =  [ ( "title", TString)
           , ("salary",  TInt32)
           ]
 
-{-
+
 -- 
 -- ** schema version 2 
 -- 
@@ -70,53 +70,53 @@ empSchema2 = (Ref (Feature "v2"), constructRelMap [ ( "empacct", empacct_v2)
 
 
 -- |  empacct (empno, name, hiredate, title, deptname) 
-empacct_v2 :: RowType
-empacct_v2 = constructRowType [ ( "empno",    TInt32)
-                              , ( "name",     TString)
-                              , ( "hiredate", TUTCTime)
-                              , ( "title",    TString)
-                              , ( "deptname", TString)
-                              ]
+empacct_v2 :: [(String,SqlType)]
+empacct_v2 =  [ ( "empno",    TInt32)
+              , ( "name",     TString)
+              , ( "hiredate", TUTCTime)
+              , ( "title",    TString)
+              , ( "deptname", TString)
+              ]
 
 -- | job (title, salary)
-job_v2 :: RowType
-job_v2 = constructRowType[ ( "title", TString)
-                         , ( "salary",TInt32) 
-                         ]
+job_v2 :: [(String,SqlType)]
+job_v2 = [ ( "title", TString)
+         , ( "salary",TInt32) 
+         ]
 
 
 --
 --  ** schema version 3 
 -- 
 
-empSchema3 :: Schema 
-empSchema3 = (Ref (Feature "v3"), constructRelMap  [ ("empacct",  empacct_v3)
-                                                   , ( "job",  job_v3)
-                                                   , ( "dept",  dept_v3)
-                                                   ]
+empSchema3 :: Schema
+empSchema3 = (Ref (Feature "v3"),  constructRelMap   [ ("empacct",  empacct_v3)
+                                                     , ( "job",  job_v3)
+                                                     , ( "dept",  dept_v3)
+                                                     ]
               )
 
 -- | empacct (empno, name, hiredate, title, deptno) 
-empacct_v3 :: RowType
-empacct_v3 =constructRowType  [ ( "empno",   TInt32)
-                              , ( "name",    TString)
-                              , ( "hiredate",TUTCTime)
-                              , ( "title",   TString)
-                              , ( "deptno",  TInt32)
-                              ]
+empacct_v3 :: [(String,SqlType)]
+empacct_v3 =  [ ( "empno",   TInt32)
+              , ( "name",    TString)
+              , ( "hiredate",TUTCTime)
+              , ( "tit、le",   TString)
+              , ( "deptno",  TInt32)
+              ]
 
 -- | job (title, salary)
-job_v3 :: RowType
-job_v3 =  constructRowType  [ ( "title",  TString)
-                            , ( "salary",  TInt32) 
-                            ]
+job_v3 :: [(String,SqlType)]
+job_v3 =    [ ( "title",  TString)
+            , ( "salary",  TInt32) 
+            ]
 
 -- | dept (deptname, deptno, managerno)
-dept_v3 :: RowType
-dept_v3 = constructRowType  [ ( "deptname", TString)
-                            , ( "deptno",   TInt32)
-                            , ( "managerno",TInt32)
-                            ]
+dept_v3 :: [(String,SqlType)]
+dept_v3 =   [ ( "deptname", TString)
+            , ( "deptno",   TInt32)
+            , ( "managerno",TInt32)
+            ]
 
 -- 
 -- ** schema version 4 
@@ -131,33 +131,33 @@ empSchema4 = (Ref (Feature "v4"), constructRelMap  [ ( "empacct", empacct_v4)
                     )
 
 -- | empacct (empno, hiredate, title, deptno) 
-empacct_v4 :: RowType
-empacct_v4 =  constructRowType [ ( "empno",    TInt32)
-                               , ( "hiredate", TUTCTime)
-                               , ( "title",    TString)
-                               , ( "deptno",   TInt32)
-                               ]
+empacct_v4 :: [(String,SqlType)]
+empacct_v4 =   [ ( "empno",    TInt32)
+               , ( "hiredate", TUTCTime)
+               , ( "title",    TString)
+               , ( "deptno",   TInt32)
+               ]
 
 -- | job (title, salary)
-job_v4 :: RowType
-job_v4 = constructRowType [ ( "title",   TString)
-                          , ( "salary",  TInt32)
+job_v4 :: [(String,SqlType)]
+job_v4 =  [ ( "title",   TString)
+          , ( "salary",  TInt32)
                           ]
 
 -- | dept (deptname, deptno, managerno) 
-dept_v4 :: RowType
-dept_v4 = constructRowType  [ ( "deptname",  TString)
-                            , ( "deptno",    TInt32)
-                            , ( "managerno", TInt32)
-                            ]
+dept_v4 :: [(String,SqlType)]
+dept_v4 =   [ ( "deptname",  TString)
+            , ( "deptno",    TInt32)
+            , ( "managerno", TInt32)
+            ]
 
 -- | empbio (empno, sex, birthdate, name)
-empbio_v4 :: RowType
-empbio_v4 =constructRowType  [ ( "empno",    TInt32)
-                             , ( "sex",      TString)
-                             , ( "birthdate",TUTCTime)
-                             , ( "name",     TString)
-                             ]
+empbio_v4 :: [(String,SqlType)]
+empbio_v4 =  [ ( "empno",    TInt32)
+             , ( "sex",      TString)
+             , ( "birthdate",TUTCTime)
+             , ( "name",     TString)
+             ]
 
 -- 
 -- ** schema version 5
@@ -171,29 +171,28 @@ empSchema5 = ( Ref (Feature "v5"), constructRelMap [ ( "empacct",  empacct_v5)
              )
 
 -- | empacct (empno, hiredate, title, deptno, salary) 
-empacct_v5 :: RowType
-empacct_v5 = constructRowType  [ ( "empno",     TInt32)
-                               , ( "hiredate",  TUTCTime)
-                               , ( "title",     TString)
-                               , ( "deptno",    TInt32)
-                               , ( "salary",    TInt32)
-                               ]
+empacct_v5 :: [(String,SqlType)]
+empacct_v5 =   [ ( "empno",     TInt32)
+               , ( "hiredate",  TUTCTime)
+               , ( "title",     TString)
+               , ( "deptno",    TInt32)
+               , ( "salary",    TInt32)
+               ]
 -- | dept (deptname, deptno, managerno)
-dept_v5 :: RowType
-dept_v5 = constructRowType [ ( "deptname",  TString)
-                           , ( "deptno",    TInt32)
-                           , ( "managerno", TInt32)
-                           ]
+dept_v5 :: [(String,SqlType)]
+dept_v5 =  [ ( "deptname",  TString)
+           , ( "deptno",    TInt32)
+           , ( "managerno", TInt32)
+           ]
 
 -- | empbio (empno, sex, birthdate, firstname, lastname)
-empbio_v5 :: RowType
-empbio_v5 = constructRowType [ ( "empno",     TInt32)
-                             , ( "sex" ,      TString)
-                             , ( "birthdate", TUTCTime)
-                             , ( "firstname", TString)
-                             , ( "lastname",  TString)
-                             ]
+empbio_v5 :: [(String,SqlType)]
+empbio_v5 =  [ ( "empno",     TInt32)
+             , ( "sex" ,      TString)
+             , ( "birthdate", TUTCTime)
+             , ( "firstname", TString)
+             , ( "lastname",  TString)
+             ]
 
 
--}
 

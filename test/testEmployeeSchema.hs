@@ -19,18 +19,15 @@ import VDB.Type
 
 import VDB.Example.EmployeeUseCase.EmployeeSchema
 import VDB.Example.EmployeeUseCase.EmployeeVSchema
+import VDB.Example.EmployeeUseCase.SmallSampleForTest
+
 
 import VDB.TypeSystem.Semantics
 import qualified Data.Map as M 
 import Data.SBV
 
--- featureExpr rom VDB.Example.EmployeeUseCase.EmployeeVSchema
--- v1,v2,v3,v4,v5 :: FeatureExpr
--- v1 = Ref (Feature "v1")
--- v2 = Ref (Feature "v2")
--- v3 = Ref (Feature "v3")
--- v4 = Ref (Feature "v4")
--- v5 = Ref (Feature "v5")
+
+
 
 testEmployeeSchema  :: TestTree
 testEmployeeSchema  = testGroup "Test fold a list of Schema to V-Schema"

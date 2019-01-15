@@ -22,23 +22,45 @@ import Data.Tuple(swap)
 --
 -- ** Qualify query
 --
+
+-- | qualify the unqualified attribute into qualified attribute assiciated with their relation 
 qualifyQuery :: Schema -> Algebra -> Algebra
-qualifyQuery  = undefined 
+qualifyQuery s (Proj optAttrList a) = let attrRelMap = makeAttrRelMap s
+                                          optAttrList' = map (qualifyOptAttr attrRelMap) optAttrList 
+                                      in Proj optAttrList' (qualifyQuery s a) 
+qualifyQuery s (SetOp op a1 a2)     =  let a1' = qualifyQuery s a1        
+                                           a2' = qualifyQuery s a2 
+                                        in SetOp op a1' a2'
+qualifyQuery s (Sel cond a)         = let a' = qualifyQuery s a
+                                      in Sel cond a'     
+qualifyQuery s (AChc  f a1 a2)      = let a1' = qualifyQuery s a1        
+                                          a2' = qualifyQuery s a2 
+                                      in AChc  f a1' a2'
+qualifyQuery s other                = other 
+                                                                        
+
+
+
+qualifyOptAttr :: M.Map String Relation  -> Opt Attribute -> Opt Attribute 
+qualifyOptAttr m optattr@(f, Attribute rel attrName) = case rel of 
+                                                        Nothing -> case M.lookup attrName m of 
+                                                                      Nothing  -> error $ "the attribute" ++ attrName ++ "is not in the schema"
+                                                                      relation -> (f, Attribute relation attrName)
+                                                        _       -> optattr
 
 -- | make a Attribute Relation Map based on gaven schema 
 --   ** Noted that can only works good with unique attritbue and relation in schema. 
 --      If the shcema contains more than one relation for the same attribute, the last attribtue for the key is retained  
-makeAttrRelMap :: Schema -> M.Map Attribute Relation 
+makeAttrRelMap :: Schema -> M.Map String Relation 
 makeAttrRelMap (sf, relAttrMap) = let relAttrsList' = (M.toList relAttrMap)
                                       relAttrsList  = map (\(rel, (af, attrTypeMap)) ->(rel, (M.keys attrTypeMap))) relAttrsList'
                                   in  M.fromList $ helper relAttrsList 
-                          where helper :: [(Relation, [Attribute])] -> [(Attribute,Relation)]
+                          where helper :: [(Relation, [Attribute])] -> [(String,Relation)]
                                 helper []                 = []
                                 helper ((rel, attrlist):xs) = (createRelAttrList rel attrlist)  ++ helper xs 
-                                createRelAttrList :: Relation -> [Attribute] -> [(Attribute,Relation)]
+                                createRelAttrList :: Relation -> [Attribute] -> [(String,Relation)]
                                 createRelAttrList rel []     = []
-                                createRelAttrList rel (x:xs) =  (x, rel) : createRelAttrList rel xs
-
+                                createRelAttrList rel ((Attribute _ attrName) :xs) =  (attrName, rel) : createRelAttrList rel xs
 
 
 --
@@ -130,31 +152,31 @@ mergeCond c1@(C.CChc f1  l1  r1) (C.CChc    f2  l2  _) = if l1 == l2
 -- ** small test suite
 --
 
-testq1,testq2, testq3, testq4, testq5 :: Algebra
+-- testq1,testq2, testq3, testq4, testq5 :: Algebra
 
--- SELECT A1 FROM T1
-testq1 = Proj [plainAttr "A1" ] $ TRef (Relation "T1")
+-- -- SELECT A1 FROM T1
+-- testq1 = Proj [plainAttr "A1" ] $ TRef (Relation "T1")
 
--- SELECT A2 FROM T2 Where A2 > 5
-testq2 =  Proj [plainAttr "A2"] $ Sel cond $ TRef (Relation "T2")
-         where cond = C.Comp GT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 5))
+-- -- SELECT A2 FROM T2 Where A2 > 5
+-- testq2 =  Proj [plainAttr "A2"] $ Sel cond $ TRef (Relation "T2")
+--          where cond = C.Comp GT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 5))
 
--- SELECT A1, A2 FROM T2 Where A2 > 5
-testq2' = Proj [plainAttr "A1",plainAttr "A2" ] $ Sel cond $ TRef (Relation "T2")
-         where cond = C.Comp GT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 5))
+-- -- SELECT A1, A2 FROM T2 Where A2 > 5
+-- testq2' = Proj [plainAttr "A1",plainAttr "A2" ] $ Sel cond $ TRef (Relation "T2")
+--          where cond = C.Comp GT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 5))
 
--- SELECT A3 FROM T3
-testq3 = Proj [plainAttr "A3" ] $ TRef (Relation "T3")
+-- -- SELECT A3 FROM T3
+-- testq3 = Proj [plainAttr "A3" ] $ TRef (Relation "T3")
 
--- (SELECT A1 FROM T2) Union (SELECT A1 FROM T3)
-testq4 = SetOp Prod l r 
-        where l = Proj [plainAttr "A1" ] $ TRef (Relation "T2")
-              r = Proj [plainAttr "A1" ] $ TRef (Relation "T3")
+-- -- (SELECT A1 FROM T2) Union (SELECT A1 FROM T3)
+-- testq4 = SetOp Prod l r 
+--         where l = Proj [plainAttr "A1" ] $ TRef (Relation "T2")
+--               r = Proj [plainAttr "A1" ] $ TRef (Relation "T3")
 
--- SELECT * FROM D,E
-testq5 = SetOp Prod (TRef (Relation "D")) (TRef (Relation "E"))
+-- -- SELECT * FROM D,E
+-- testq5 = SetOp Prod (TRef (Relation "D")) (TRef (Relation "E"))
 
-testq6 = SetOp Prod testq2 testq2
+-- testq6 = SetOp Prod testq2 testq2
 
 
 -- (SetOp Prod (SetOp Prod 

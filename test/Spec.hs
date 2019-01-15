@@ -12,7 +12,8 @@ main = defaultMain $ testGroup ""
         [ -- testTwoOptionExample
         -- , testTransAlgebraToQuery
         -- , testTranslater -- after editing syntax, all test case broken
-         testEmployeeSchema
+         testQualifyQuery
+        ,testEmployeeSchema
         ,testEmployeeSelection
         ,testEmployeeQuery
         ]

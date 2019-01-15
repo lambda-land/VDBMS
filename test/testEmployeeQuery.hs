@@ -24,6 +24,9 @@ import VDB.Type
 -- import VDB.Example.EmployeeUseCase.EmployeeVSchema
 import VDB.Example.EmployeeUseCase.EmployeeQuery
 import VDB.Example.EmployeeUseCase.EmployeeVQuery
+import VDB.Example.EmployeeUseCase.EmployeeVSchema
+import VDB.Example.EmployeeUseCase.EmployeeSchema
+import VDB.Example.EmployeeUseCase.SmallSampleForTest
 
 import VDB.TypeSystem.Semantics
 import qualified Data.Map as M 
@@ -32,12 +35,12 @@ import Data.SBV
 import Prelude hiding (Ordering(..))
 
 -- featureExpr rom VDB.Example.EmployeeUseCase.EmployeeVSchema
-v1,v2,v3,v4,v5 :: FeatureExpr
-v1 = Ref (Feature "v1")
-v2 = Ref (Feature "v2")
-v3 = Ref (Feature "v3")
-v4 = Ref (Feature "v4")
-v5 = Ref (Feature "v5")
+-- v1,v2,v3,v4,v5 :: FeatureExpr
+-- v1 = Ref (Feature "v1")
+-- v2 = Ref (Feature "v2")
+-- v3 = Ref (Feature "v3")
+-- v4 = Ref (Feature "v4")
+-- v5 = Ref (Feature "v5")
 
 -- date2000 = SqlUTCTime $ UTCTime (fromGregorian 2000 1 1) 0
 
@@ -68,7 +71,34 @@ testq4 = SetOp Prod l r
 
 -- SELECT * FROM D,E
 testq5 = SetOp Prod (TRef (Relation "D")) (TRef (Relation "E"))
+
+testq6 = SetOp Prod testq2 testq2
 -}
+
+
+                          
+qualifedOptAttribute :: FeatureExpr -> String -> String -> Opt Attribute
+qualifedOptAttribute f relName attrName = (f, Attribute (Just (Relation relName)) attrName)
+
+qualifedAttribute :: String -> String -> Attribute
+qualifedAttribute relName attrName = Attribute (Just (Relation relName)) attrName
+
+testQualifyQuery :: TestTree
+testQualifyQuery  = testGroup "Test Qualify Query based on the schema"
+  [ testGroup "1) test qualify simple query with simple schema"
+    [ testCase "Qualify an empty query" $
+      do output    <- return $ qualifyQuery tests1 Empty
+         expectVal <- return $ Empty
+         expectVal @=? output
+    ,
+      testCase "Qualify query (SELECT A1 FROM T1) with schema [ T1:(A1,A2)] " $
+      do output    <- return $ qualifyQuery tests1 testq1
+         expectVal <- return $ Proj [qualifedOptAttribute (Lit True )"T1" "A1"] 
+                              (TRef (Relation "T1"))
+         expectVal @=? output
+    ]
+  ]
+
 
 testEmployeeQuery  :: TestTree
 testEmployeeQuery  = testGroup "Test fold a list of query to V-query"
@@ -118,9 +148,9 @@ testEmployeeQuery  = testGroup "Test fold a list of query to V-query"
   ,  
     testGroup "2) test Queries in employee schema"
     [ testCase "test emp query 1 and 2" $
-        do output    <- return $ variationizeQuery [empQ1_v1, empQ1_v2]
-           expectVal <- return $ Proj [(v1 `Or` v2, Attribute Nothing "empno"),(v1 `Or` v2,Attribute Nothing "hiredate"),(v1 `Or` v2,Attribute Nothing "name")] 
-                                  (Sel (C.CChc (v1 `Or` v2) (C.Comp LT (C.Attr (Attribute Nothing "hiredate")) (C.Val date2000)) (C.Lit True)) 
+        do output    <- return $ variationizeQuery [qualifyQuery empSchema1 empQ1_v1, qualifyQuery empSchema2 empQ1_v2]
+           expectVal <- return $ Proj [qualifedOptAttribute (v1 `Or` v2) "engineerpersonnel" "empno", qualifedOptAttribute (v1 `Or` v2) "otherpersonnel" "hiredate",qualifedOptAttribute (v1 `Or` v2)  "otherpersonnel" "name"] 
+                                  (Sel (C.CChc (v1 `Or` v2) (C.Comp LT (C.Attr (qualifedAttribute "otherpersonnel" "hiredate")) (C.Val date2000)) (C.Lit True)) 
                                     (AChc v2 (TRef (Relation "empacct")) (AChc v1 (TRef (Relation  "otherpersonnel")) Empty)))
            expectVal @=? output 
     -- , testCase "test emp query 1 and 2" $ 
