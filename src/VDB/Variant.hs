@@ -21,6 +21,14 @@ getConfig = snd
 mkVariant :: a -> Config b -> Variant a b
 mkVariant = (,)
 
+-- | update variant. keeps the config the same.
+updateVariant :: a -> Variant a b -> Variant a b
+updateVariant v (_,c) = (v,c)
+
+-- | update config. keeps the variant the same.
+updateConfig :: Config b -> Variant a b -> Variant a b
+updateConfig c (v,_) = (v,c)
+
 -- | A variant table. All fexp must be true or false!
 --   TODO: write func to check this!!
 type VariantTable = Variant Table Bool

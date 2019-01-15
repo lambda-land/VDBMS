@@ -156,10 +156,12 @@ appConfSchema c s
     schemaPres = appConfSchemaFexp c s
 
 -- | applies a config to a schema. Note that it filters out 
---   invalid objects. 
+--   invalid objects. Note that the schema doesn't have pres cond
+--   as one of the attributes of relations.
 appConfSchema' :: Config Bool -> Schema -> Schema
-appConfSchema' c s = mkOpt (featureModel s) 
+appConfSchema' c s = mkOpt (Lit $ appConfSchemaFexp c s) 
   (M.filter (\optRow -> getFexp optRow == Lit True) $ schemaStrct s)
+
 
 -- | apply config to a rowtype. it doesn't filter out invalid attributes.
 appConfRowType :: Config Bool -> Opt RowType -> Opt RowType
