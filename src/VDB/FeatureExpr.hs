@@ -48,6 +48,13 @@ features (Not e)   = features e
 features (And l r) = features l `Set.union` features r
 features (Or  l r) = features l `Set.union` features r
 
+-- | initializes the features of a feature expr to false in a map.
+--   used to initialize all features of a database, i.e. initializing
+--   features of the fexp of vschema.
+--   NOTE: HAVEN'T USED IT YET!!!!
+initFeatureMap :: Boolean b => FeatureExpr -> Map.Map Feature b
+initFeatureMap e = Map.fromSet (\_ -> false) (features e)
+
 -- | Syntactic sugar: implication
 imply :: FeatureExpr -> FeatureExpr -> FeatureExpr
 imply f f' = Or (Not f) f'

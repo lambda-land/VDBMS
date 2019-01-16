@@ -21,6 +21,7 @@ import VDB.VTable
 import VDB.Database
 
 import Database.HDBC
+import Database.HDBC.Sqlite3
 
 -- | runs a variational query for a specific list of configurations 
 --   over a variational database. it returns a variational table. 
@@ -29,6 +30,7 @@ import Database.HDBC
 --   the list of config
 --   TODO: remove the list of config and extract that from the 
 --         vschema's fexp.
+--   TODO: add type constraint: IConnection conn =>
 --   steps:
 --   1) translate vq to a list of q for each config (rel2Sql)
 --      alg2Sql :: Algebra -> [Config Bool] -> [VariantQuery]
@@ -37,14 +39,14 @@ import Database.HDBC
 --   2) configure the vdb for the list of configs ()
 --   3) run each q over its correspondent db ()
 --   4) aggregate the result from 3 into a vtable
-runBrute :: IConnection conn => Algebra -> [Config Bool] -> PresCondAtt 
-            -> DBFilePath -> SqlDatabase conn -> IO (VTable)
+runBrute :: Algebra -> [Config Bool] -> PresCondAtt 
+            -> DBFilePath -> SqlDatabase Connection -> IO (VTable)
 runBrute vq cs p f vdb = undefined
 -- do 
 --   let qs = alg2Sql vq cs -- [VariantQuery]
---   dbs <- configDBall p cs f vdb -- [SqlDatabase conn]
+--   dbs <- configDBall f p vdb cs -- [SqlDatabase conn]
+  -- variant_result <- runSqlQsOnCorrespDBs qs dbs 
   -- TODO: COMPLETE THE FOLLOWING TWO FUNCS:
-  -- variant_result <- run qs dbs 
   -- return $ aggregate variant_result
 
 -- initialVarCtxt :: Schema -> VariationalContext

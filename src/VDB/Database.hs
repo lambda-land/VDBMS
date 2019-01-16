@@ -9,7 +9,11 @@ import Data.SBV (Boolean)
 import Data.List (intercalate)
 import Data.Bitraversable
 import Data.Bifunctor
+import Data.Maybe
 
+import Control.Monad (zipWithM)
+
+import VDB.Translations.RelAlg2Sql (VariantQuery)
 import VDB.FeatureExpr
 import VDB.Name
 import VDB.SAT
@@ -23,7 +27,7 @@ import VDB.Config
 
 import Database.HDBC 
 import Database.HDBC.Sqlite3 
-import Database.HDBC.Types
+-- import Database.HDBC.Types
 
 -- | sqldatabase. either a variational database or a variant of a VDB.
 --   note that the relations, attributes, and tuples have been filtered
@@ -103,6 +107,24 @@ runSqlQ c t db = do
 -- | runs a list of queries related only to a variant on a variational db.
 runSqlQs :: IConnection conn => Config Bool -> [QueryText] -> SqlDatabase conn -> IO [SqlVariantTable]
 runSqlQs c ts db = mapM ((flip $ runSqlQ c) db) ts
+
+-- | runs a variant query on a variant db if their config are equal over the schema fexp.
+runVariantSqlOnVariantDB :: VariantQuery -> SqlDatabase Connection -> IO (Maybe SqlVariantTable)
+runVariantSqlOnVariantDB q db = do 
+  let qConf = getConfig q 
+      dbConf = getSqlConfig db
+      qText = getVariant q
+      b = equivConfigOnSchema (getSqlDBschema db) qConf dbConf
+  res <- runSqlQ dbConf qText db
+  return $ if b then Just res else Nothing
+
+-- | runs a list of variant queries on a list of variant sqldbs. i.e. it runs a query
+--   on its correspondent db.
+runSqlQsOnCorrespDBs :: [VariantQuery] -> [SqlDatabase Connection] -> IO [SqlVariantTable]
+runSqlQsOnCorrespDBs qs dbs = do 
+  res <- zipWithM runVariantSqlOnVariantDB qs dbs
+  return $ catMaybes res
+  
 
 {- -- MAY COME HANDY. DON'T DELETE!!
 -- | describes a relation from a vdb for a specific variant. i.e.

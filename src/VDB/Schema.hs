@@ -14,7 +14,7 @@ import VDB.FeatureExpr
 import VDB.Name
 import VDB.Variational
 import VDB.Type
-import VDB.Config (Config)
+import VDB.Config (Config, equivConfig)
 
 -- | Type of a relation in the database.
 -- type RowType = [Opt (Attribute, Type)]
@@ -177,6 +177,11 @@ appConfRowType' c r = mkOpt (getFexp r) (M.filter
   -- M.map (first $ Lit . evalFeatureExpr c) r)
 --  M.map (\(f,t) -> (Lit (evalFeatureExpr c f),t)) r 
 
+-- | checks the equiv of two configs over a vschema.
+--   TODO: need to add type constraint Boolean b!!
+equivConfigOnSchema :: Schema -> Config Bool -> Config Bool -> Bool
+equivConfigOnSchema s c c' = equivConfig fs c c'
+  where fs = features $ featureModel s
 
 
 -- | Get all info of an attribute from a rowtype
