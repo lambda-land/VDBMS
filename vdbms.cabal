@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 460a7f3ff3ab9ae862490a5d09777bc1184f7b83e5ae847ec8515dfb31484903
+-- hash: a50108baca893ad42016ae888efa299f8e06f9880953102ebd9d727f5f40c9f5
 
 name:           vdbms
 version:        0.1.0.0
@@ -27,7 +27,6 @@ library
       VDB.Approach1.App1Run
       VDB.Approach1.App1SendQs
       VDB.BruteForceApproach.BFAppSatPersist
-      VDB.BruteForceApproach.BFConfigDB
       VDB.BruteForceApproach.BFSendQs
       VDB.BruteForceApproach.BFSendQsPersist
       VDB.BruteForceApproach.BruteForce
@@ -62,7 +61,7 @@ library
       VDB.Variant
       VDB.Variational
       VDB.VqueryConfigSem
-      VDB.Vresult
+      VDB.VTable
   other-modules:
       Paths_vdbms
   hs-source-dirs:

@@ -13,7 +13,7 @@ import VDB.Algebra
 import VDB.NaiveApproach.NaiveAppConfig (applyConfigVariantTables)
 import VDB.NaiveApproach.NaiveSendQs (runNaiveQs)
 import VDB.Translations.RelAlg2Sql (alg2Sql)
-import VDB.Vresult
+-- import VDB.Vresult
 import VDB.SqlTable (SqlVariantTable)
 -- import VDB.Schema
 import VDB.Config
@@ -27,9 +27,9 @@ import Database.HDBC
 --   TODO: write prettyVres
 --   TODO: write packVres
 --   TODO: adjust types in brute force code
-runNaive :: IConnection conn => Algebra -> [Config Bool] -> conn 
-  -> PresCondAtt -> PrettyVResult
-runNaive vq cs conn pres = undefined
+-- runNaive :: IConnection conn => Algebra -> [Config Bool] -> conn 
+--   -> PresCondAtt -> PrettyVResult
+-- runNaive vq cs conn pres = undefined
 {-prettyVres res
   where 
     qs = bruteAlg2Sql vq cs 

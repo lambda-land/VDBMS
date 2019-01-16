@@ -22,7 +22,8 @@ import VDB.Variant
 import VDB.Config
 
 import Database.HDBC 
--- import Database.HDBC.Sqlite3 (Connection)
+import Database.HDBC.Sqlite3 
+import Database.HDBC.Types
 
 -- | sqldatabase. either a variational database or a variant of a VDB.
 --   note that the relations, attributes, and tuples have been filtered
@@ -32,25 +33,38 @@ data SqlDatabase conn where
   VariantDB :: IConnection conn => Schema -> Variant conn Bool -> SqlDatabase conn 
   VDB       :: IConnection conn => Schema -> conn -> SqlDatabase conn 
 
-getSqlDBschema :: SqlDatabase conn -> Schema
+getSqlDBschema :: IConnection conn => SqlDatabase conn -> Schema
 getSqlDBschema (VariantDB s _) = s 
 getSqlDBschema (VDB s _)       = s
 
-getSqlData :: SqlDatabase conn -> conn
+getSqlData :: IConnection conn => SqlDatabase conn -> conn
 getSqlData (VariantDB _ v) = getVariant v
 getSqlData (VDB _ c)       = c
 
 -- | gets a configuration of a variant from a sqldatbase.
 --   note: the db isn't variational
-getSqlConfig :: SqlDatabase conn -> Config Bool
+getSqlConfig :: IConnection conn => SqlDatabase conn -> Config Bool
 getSqlConfig (VariantDB _ v) = getConfig v 
 getSqlConfig _               = error "cannot get config of a variational db!"
 
 -- TODO: you can later on return all the config 
 --       that vdb is valid for in the second case
-getAllConfig :: SqlDatabase conn -> [Config Bool]
+getAllConfig :: IConnection conn => SqlDatabase conn -> [Config Bool]
 getAllConfig (VDB s _ ) = undefined
 getAllConfig _          = error "cannot get all variant configurations from a db!"
+
+type DBFilePath = String
+
+-- ****************DON'T ERASE***********************************************
+-- | gets the physical path where the db is stored.
+--   TODO: write this function!!
+-- getSqlDBpath :: IConnection conn => SqlDatabase conn -> FilePath
+-- getSqlDBpath (VariantDB _ v ) = case conn of 
+--                                        co
+-- getSqlDBpath (VDB _ c) 
+--   where 
+--     conn = getVariant v 
+
 
 type QueryText = String 
 
@@ -216,13 +230,30 @@ runInsertQs p c vdb conn =  do
   mapM_ (\(iq,t) -> executeMany iq t) res
 
 -- | creates a variant db from the provided config and vdb.
-configVDB :: IConnection conn => PresCondAtt -> Config Bool -> conn -> SqlDatabase conn -> IO (SqlDatabase conn)
-configVDB p c conn vdb = do
+--   TODO: it doesn't work with the type constraint: IConnection conn =>
+--         figure out the problem!!!
+configVDB ::  DBFilePath -> PresCondAtt -> SqlDatabase Connection -> Config Bool -> Int -> IO (SqlDatabase Connection)
+configVDB f p vdb c i = do
   let vdb_schema = getSqlDBschema vdb
       db_schema = appConfSchema' c vdb_schema
+  conn <- connectSqlite3 $ f ++ show i
   runCreateQs p c vdb conn 
   runInsertQs p c vdb conn
   return $ VariantDB db_schema $ mkVariant conn c 
+
+
+-- | creates a list of variant dbs from a list of configs for a vdb.
+--   Note that this should be done for all configs that satisfy the
+--   fexp of vschema. however we're providing the list of configs 
+--   manuall for now. 
+--   TODO: get the list of valid configs from the vschema fexp instead
+--         of passing the list of config to this func.
+--   TODO: type constraint problem!!!! kmn IConnection conn =>
+configVDBall ::  DBFilePath -> PresCondAtt -> SqlDatabase Connection -> [Config Bool] -> IO [SqlDatabase Connection]
+configVDBall f p vdb cs = do
+  -- let nums = [1..length cs]
+  sequence $ zipWith (configVDB f p vdb) cs [1..]
+
 
 
 
