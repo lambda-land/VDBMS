@@ -155,13 +155,14 @@ testEmployeeQuery  = testGroup "Test fold a list of query to V-query"
                                       , (v1 `Or` (v2 `Or` (v3 `Or` (v4 `Or` v5))),unQualifedAttribute "hiredate")
                                       , (v5,unQualifedAttribute "lastname")
                                       , (v1 `Or` (v2 `Or` (v3 `Or` v4)), unQualifedAttribute "name")] 
-                                  (Sel (C.CChc (v4 `Or`v5) 
-
-                                                (C.And (C.Comp EQ (C.Attr (qualifedAttribute "empacct" "empno")) (C.Attr (qualifedAttribute "empbio" "empno"))) 
-                                                     (C.Comp LT (C.Attr (unQualifedAttribute "hiredate")) (C.Val date2000))) 
-
-                                                (C.CChc v1 (C.Comp LT (C.Attr (unQualifedAttribute "hiredate")) (C.Val date2000)) (C.Lit True)) ) 
-                                    (SetOp Prod 
+                                   (Sel (C.CChc (v1 `Or` (v2 `Or` v3)) 
+                                          (C.Comp LT (C.Attr (unQualifedAttribute "hiredate")) (C.Val date2000)) 
+                                          (C.CChc (v4 `Or`v5)  
+                                            (C.And 
+                                              (C.Comp EQ (C.Attr (qualifedAttribute "empacct" "empno")) (C.Attr (qualifedAttribute "empbio" "empno"))) 
+                                              (C.Comp LT (C.Attr (unQualifedAttribute "hiredate")) (C.Val date2000))) 
+                                            (C.Lit True)))                                    
+                                   (SetOp Prod 
                                       (SetOp Prod (AChc (v2 `Or` (v3 `Or` (v4 `Or` v5))) (TRef (Relation "empacct")) (AChc v1 (TRef (Relation "otherpersonnel")) Empty)) 
                                                   (AChc (v2 `Or` (v3 `Or` v5)) (TRef (Relation "empacct")) (AChc v1 (TRef (Relation "otherpersonnel")) Empty))) 
                                       (SetOp Prod (AChc v5 (TRef (Relation "empbio")) (AChc v1 (TRef (Relation "otherpersonnel")) Empty)) 
@@ -171,6 +172,7 @@ testEmployeeQuery  = testGroup "Test fold a list of query to V-query"
  
            expectVal @=? output                                                              
     ]
+
 
   
   ]

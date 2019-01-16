@@ -7,7 +7,6 @@ import VDB.Example.EmployeeUseCase.EmployeeQuery
 import VDB.Example.EmployeeUseCase.EmployeeSchema
 import VDB.Example.EmployeeUseCase.EmployeeVSchema
 
-
 import qualified VDB.FeatureExpr as F
 import VDB.Name
 import VDB.Schema
@@ -86,6 +85,7 @@ foldQuery (x:xs) c = case x of
                                                 in F.Ref $ Feature v
 
 -- | push the F into l r in term of F<l,r> or F<l,r> 'SetOp' F'<l',r'>
+--   Push down and merge from right to left 
 pushChoiceDownToSubExpr :: Algebra -> Algebra
 pushChoiceDownToSubExpr Empty           = Empty
 pushChoiceDownToSubExpr (SetOp op l r)  = let left = (pushChoiceDownToSubExpr l)
@@ -96,7 +96,7 @@ pushChoiceDownToSubExpr (AChc  v  l  r) = let x = pushFeatureToAlgebra v l
                                            in mergeAlgebraFeature x xs 
 
 
--- | push down the feature down to smallest parts
+-- | push down the feature  to smallest parts
 pushFeatureToAlgebra :: F.FeatureExpr -> Algebra -> Algebra
 pushFeatureToAlgebra f (SetOp op l r)  = SetOp op (pushFeatureToAlgebra f l) (pushFeatureToAlgebra f r)
 pushFeatureToAlgebra f (Proj  alist a) = let alist' = map (\(_, attr) -> (f, attr)) alist 
@@ -115,7 +115,7 @@ mergeAlgebraFeature :: Algebra -> Algebra -> Algebra
 mergeAlgebraFeature a                     (SetOp op l r)    = let left = mergeAlgebraFeature a l
                                                                   right = mergeAlgebraFeature a r
                                                               in SetOp op left right 
-mergeAlgebraFeature left@(SetOp op l r)         a           = let left = mergeAlgebraFeature l a 
+mergeAlgebraFeature (SetOp op l r)         a                = let left = mergeAlgebraFeature l a 
                                                                   right = mergeAlgebraFeature r a 
                                                               in SetOp op left right 
   -- error $ "shouldn't have algebra with SetOp in left alternative of merge procsess" ++"   "++ "left:" ++ show left ++ "a:" ++ show a
@@ -140,12 +140,12 @@ mergeAttrList l r = let l' = swapAndMakeMap l
           swapAndMakeMap = M.fromList . (map swap) 
 
 -- | merge two v-cond into one
---   snd condition (c2) will always have pattern: v2 <l2, Lit True>
+--   Merge from right to left 
+--   so, first condition (c1) will always have pattern: v1 <l1, Lit True>
 mergeCond :: C.Condition -> C.Condition -> C.Condition
-mergeCond c1@(C.CChc f1  l1  r1) (C.CChc    f2  l2  _) = if l1 == l2
-                                                            then C.CChc (f1 `F.Or` f2) l1 r1
-                                                            else C.CChc f2 l2 c1 
-
+mergeCond (C.CChc f1  l1  _) c2@(C.CChc    f2  l2  r2) = if l1 == l2
+                                                            then C.CChc (f1 `F.Or` f2) l1 r2
+                                                            else C.CChc f1 l1 c2
 
 
 --
@@ -185,3 +185,12 @@ mergeCond c1@(C.CChc f1  l1  r1) (C.CChc    f2  l2  _) = if l1 == l2
 --             (SetOp Prod (AChc v2 (TRef (Relation {relationName = "empbio"})) (AChc v1 (TRef (Relation {relationName = "empacct"})) Empty)) 
 --                         (AChc v1 OR v2 (TRef (Relation {relationName = "empbio"})) Empty))))
 
+-- testOneCond = C.Comp GT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 5))
+-- testTwoCond' = C.And cond1 cond2
+--          where cond1 = C.Comp GT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 5))
+--                cond2 = C.Comp LT (C.Attr (Attribute Nothing "A2")) (C.Val (SqlInt32 100))
+
+-- orrr =  (F.Ref (Feature "v1")) `F.Or` (F.Ref(Feature "v2")) `F.Or` (F.Ref(Feature "v3"))
+-- c0 = (C.CChc orrr testOneCond (C.Lit True))
+-- c1 = (C.CChc (F.Ref(Feature "v1")) testOneCond (C.Lit True))
+-- c2 = (C.CChc (F.Ref(Feature "v4")) testTwoCond' (C.Lit True))
