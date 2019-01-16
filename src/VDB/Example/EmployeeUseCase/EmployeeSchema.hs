@@ -101,7 +101,7 @@ empacct_v3 :: [(String,SqlType)]
 empacct_v3 =  [ ( "empno",   TInt32)
               , ( "name",    TString)
               , ( "hiredate",TUTCTime)
-              , ( "tit、le",   TString)
+              , ( "title",   TString)
               , ( "deptno",  TInt32)
               ]
 
