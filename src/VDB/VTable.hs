@@ -23,6 +23,21 @@ import VDB.SqlTable
 --   variational table data type.
 data VTable = VTable TableSchema SqlTable
 
+
+------------------- construct vtable for approach1 -------------------
+
+-- | constructs a vtable from a sqlvtable. 
+--   it generates the table schema and attaches it to the
+--   sqltable of sqlvtable.
+sqlVtable2VTable :: SqlVtable -> VTable
+sqlVtable2VTable t = undefined
+
+-- | constructs a vtable from a list sqlvtables.
+-- 
+sqlVtables2VTable :: [SqlVtable] -> VTable
+sqlVtables2VTable ts = undefined
+
+------------------- construct vtable for brute force -------------------
 -- | takes a list of sqlvarianttables and constructs a vtable
 --   from them to output to the user. 
 --   steps:

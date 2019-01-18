@@ -10,6 +10,7 @@ import Data.List (intercalate)
 import Data.Bitraversable
 import Data.Bifunctor
 import Data.Maybe
+import Data.Text as T
 
 import Control.Monad (zipWithM)
 
@@ -68,6 +69,7 @@ type DBFilePath = String
 --   where 
 --     conn = getVariant v 
 
+-------------------------- running/constructing queries on sqldatabase---------------
 
 type QueryText = String 
 
@@ -107,6 +109,23 @@ runSqlQ c t db = do
 runSqlQs :: IConnection conn => Config Bool -> [QueryText] -> SqlDatabase conn -> IO [SqlVariantTable]
 runSqlQs c ts db = mapM ((flip $ runSqlQ c) db) ts
 
+-------------------- run variational queries for approach1 -------------------------------
+type Query = T.Text
+
+type TranslatedVquery = Opt Query
+
+-- | runs a translated query from vquery on the vdb.
+--   Note that a vq translates to a list of opt query.
+runTransQ :: IConnection conn => TranslatedVquery -> SqlDatabase conn -> IO SqlVTable 
+runTransQ q db = undefined
+
+-- | runs the translated list of queries of a vquery on the vdb.
+runVq :: IConnection conn => [TranslatedVquery] -> SqlDatabase conn -> IO [SqlVTable]
+runVq qs db = undefined
+
+
+-------------------- run variant queries for brute force -------------------------------
+
 -- | runs a variant query on a variant db if their config are equal over the schema fexp.
 runVariantSqlOnVariantDB :: VariantQuery -> SqlDatabase Connection -> IO (Maybe SqlVariantTable)
 runVariantSqlOnVariantDB q db = do 
@@ -124,7 +143,7 @@ runSqlQsOnCorrespDBs qs dbs = do
   res <- zipWithM runVariantSqlOnVariantDB qs dbs
   return $ catMaybes res
   
-
+-------------------- configre a variational db (for brute force) --------------------
 {- -- MAY COME HANDY. DON'T DELETE!!
 -- | describes a relation from a vdb for a specific variant. i.e.
 --   it returns a list of attribute that are present in the schema

@@ -48,6 +48,29 @@ tableAttSet :: SqlTable -> Set Attribute
 tableAttSet [] = error "an empty table doesn't have any attributes"
 tableAttSet t  = rowAttSet (head t)
 
+-- | construct the rowtype from a sqltable.
+constRowTypeOfSqlTable :: SqlTable -> RowType
+constRowTypeOfSqlTable t = undefined
+
+
+-- | inserts an attribute value pair to a sqlrow.
+insertAttValToSqlRow :: Attribute -> SqlValue -> SqlRow -> SqlRow
+insertAttValToSqlRow = M.insert . attributeName
+
+-- | inserts an attribute value pair into all rows of a sqltable.
+insertAttValToSqlTable :: Attribute -> SqlValue -> SqlTable -> SqlTable
+insertAttValToSqlTable a v = map $ insertAttValToSqlRow a v 
+
+-- | forces a sqlrow to conform to a rowtype
+conformSqlRowToRowType :: SqlRow -> RowType -> SqlRow
+conformSqlRowToRowType r t = M.union r r'
+  where
+    rowTypeAtts = S.map attributeName $ getRowTypeAtts t 
+    attDif = rowTypeAtts S.\\ M.keysSet r 
+    r' = M.fromSet (\_ -> SqlNull) attDif
+
+------------------- apply config to sqlvarianttable ----------------------
+
 -- | applies a config to a row.
 applyConfRow :: Config Bool -> PresCondAtt -> SqlRow -> SqlRow 
 applyConfRow c p r = M.adjust updatePres (presCondAttName p) r 
@@ -138,14 +161,6 @@ conformSqlVariantTableToSchema t r = updateVariant
   (map (flip conformSqlRowToRowType r) $ getVariant t) t
  --  where 
     
--- | forces a sqlrow to conform to a rowtype
-conformSqlRowToRowType :: SqlRow -> RowType -> SqlRow
-conformSqlRowToRowType r t = M.union r r'
-  where
-    rowTypeAtts = S.map attributeName $ getRowTypeAtts t 
-    attDif = rowTypeAtts S.\\ M.keysSet r 
-    r' = M.fromSet (\_ -> SqlNull) attDif
-
 -- | adds presence condition key and its value to each row
 --   of the sqlvarianttable and turns it into a vtable.
 --   NOTE: sqlvarianttable shouldn't have pres cond in its
@@ -156,14 +171,22 @@ addTuplePresCond p vt = insertAttValToSqlTable (Attribute $ presCondAttName p) f
     fexp = fexp2sqlval $ conf2fexp $ getConfig vt
     t = getVariant vt
 
+---------------------- applies the feature exp of vsqltable to it----------
 
--- | inserts an attribute value pair to a sqlrow.
-insertAttValToSqlRow :: Attribute -> SqlValue -> SqlRow -> SqlRow
-insertAttValToSqlRow = M.insert . attributeName
-
--- | inserts an attribute value pair into all rows of a sqltable.
-insertAttValToSqlTable :: Attribute -> SqlValue -> SqlTable -> SqlTable
-insertAttValToSqlTable a v = map $ insertAttValToSqlRow a v 
-
+-- | runs the sat solver on tuples to filter out tuples
+--   that are unsatisfiable in the context of the vtabel
+--   i.e. the feature expr assigned to it.
+appFexpVtable :: SqlVtable -> SqlVtable
+appFexpVtable t = undefined
 
 
+-- appFexpVtables :: [SqlVtable] -> [SqlVtable]
+-- appFexpVtables ts = undefined
+
+-- | constructs the table schema from the sqlvtable.
+constSchemaFromSqlVtable :: SqlVtable -> TableSchema
+constSchemaFromSqlVtable t = undefined 
+
+-- | forces a sqlvtable to conform to a rowtype
+conformSqlVtableToSchema :: SqlVtable -> RowType -> SqlVtable
+conformSqlVtableToSchema t r = undefined

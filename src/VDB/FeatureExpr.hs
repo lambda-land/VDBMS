@@ -318,7 +318,10 @@ confs2fexp cs = undefined
 
 -- | extracts the valid configurations of a feature expr.
 validConfsOfFexp :: FeatureExpr -> [Config Bool]
-validConfsOfFexp = undefined
+validConfsOfFexp f = undefined
+  where
+    fs = features f 
+    
 
 
 
