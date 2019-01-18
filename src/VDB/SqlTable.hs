@@ -15,6 +15,8 @@ import VDB.Variational (Opt)
 import VDB.Name
 import VDB.Config
 import VDB.FeatureExpr 
+import VDB.Schema
+import VDB.Type
 
 import Database.HDBC 
 
@@ -109,3 +111,59 @@ dropRowsInVariantTables p = fmap $ dropRowsInVariantTable p
 -- | drops the pres key value of all rows in a variant table.
 dropPresInVariantTable :: PresCondAtt -> SqlVariantTable -> SqlVariantTable
 dropPresInVariantTable p t = updateVariant (dropPresInTable p (getVariant t)) t
+
+-- | generates the relation schema (rowtype) of a variant table.
+--   NOTE: it takes the first row of the table. so if that row
+--         has a null value it may not be able to get the type 
+--         correctly. for now make sure you never have a null
+--         value in the first tuple. but fix it later!!
+-- TODO: FIX THE ABOVE PROBLEM!!
+constructSchemaFromSqlVariantTable :: SqlVariantTable -> TableSchema
+constructSchemaFromSqlVariantTable t = (fexp, rowType)
+  where
+    fexp = conf2fexp $ getConfig t 
+    row = head $ getVariant t
+    row' = M.mapKeys (\s -> Attribute s) row 
+    row'' = M.map typeOf row'
+    rowType = M.map (\v -> (fexp,v)) row''
+
+-- | forces a sqlvarianttable to conform to a table schema. i.e. 
+--   it adds all attributes in the schema to the sqlvarianttable
+--   with sqlnull.
+--   TODO and DISCUSS WITH ERIC: maybe we should insert some specific
+--                               value (like nothing) to specify that
+--                               this value doesn't actually exist!
+conformSqlVariantTableToSchema :: SqlVariantTable -> RowType -> SqlVariantTable
+conformSqlVariantTableToSchema t r = updateVariant 
+  (map (flip conformSqlRowToRowType r) $ getVariant t) t
+ --  where 
+    
+-- | forces a sqlrow to conform to a rowtype
+conformSqlRowToRowType :: SqlRow -> RowType -> SqlRow
+conformSqlRowToRowType r t = M.union r r'
+  where
+    rowTypeAtts = S.map attributeName $ getRowTypeAtts t 
+    attDif = rowTypeAtts S.\\ M.keysSet r 
+    r' = M.fromSet (\_ -> SqlNull) attDif
+
+-- | adds presence condition key and its value to each row
+--   of the sqlvarianttable and turns it into a vtable.
+--   NOTE: sqlvarianttable shouldn't have pres cond in its
+--         attributes.
+addTuplePresCond :: PresCondAtt -> SqlVariantTable -> SqlTable
+addTuplePresCond p vt = insertAttValToSqlTable (Attribute $ presCondAttName p) fexp t
+  where 
+    fexp = fexp2sqlval $ conf2fexp $ getConfig vt
+    t = getVariant vt
+
+
+-- | inserts an attribute value pair to a sqlrow.
+insertAttValToSqlRow :: Attribute -> SqlValue -> SqlRow -> SqlRow
+insertAttValToSqlRow = M.insert . attributeName
+
+-- | inserts an attribute value pair into all rows of a sqltable.
+insertAttValToSqlTable :: Attribute -> SqlValue -> SqlTable -> SqlTable
+insertAttValToSqlTable a v = map $ insertAttValToSqlRow a v 
+
+
+

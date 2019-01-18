@@ -45,7 +45,7 @@ runBrute vq cs p f vdb = undefined
 -- do 
 --   let qs = alg2Sql vq cs -- [VariantQuery]
 --   dbs <- configDBall f p vdb cs -- [SqlDatabase conn]
-  -- variant_result <- runSqlQsOnCorrespDBs qs dbs 
+  -- variant_result <- runSqlQsOnCorrespDBs qs dbs -- [SqlVariantTable]
   -- TODO: COMPLETE THE FOLLOWING TWO FUNCS:
   -- return $ aggregate variant_result
 

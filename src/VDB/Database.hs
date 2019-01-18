@@ -51,10 +51,9 @@ getSqlConfig :: IConnection conn => SqlDatabase conn -> Config Bool
 getSqlConfig (VariantDB _ v) = getConfig v 
 getSqlConfig _               = error "cannot get config of a variational db!"
 
--- TODO: you can later on return all the config 
---       that vdb is valid for in the second case
+-- | generates the valid configurations of a variational database.
 getAllConfig :: IConnection conn => SqlDatabase conn -> [Config Bool]
-getAllConfig (VDB s _ ) = undefined
+getAllConfig (VDB s _ ) = validConfsOfFexp $ featureModel s
 getAllConfig _          = error "cannot get all variant configurations from a db!"
 
 type DBFilePath = String

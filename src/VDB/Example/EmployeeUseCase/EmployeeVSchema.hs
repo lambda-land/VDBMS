@@ -29,6 +29,8 @@ v5 = Ref (Feature "v5")
 -- buildFeatureModel []     = Lit False 
 -- buildFeatureModel (x:xs) = 
 
+-- NOTE: ADDED THESE TO SCHEMA.HS!!!
+{-
 -- | Feature Model of Employee Schema 
 employeeFeatureModel :: FeatureExpr
 employeeFeatureModel =  (v1 `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` (Not v5)) `Or` 
@@ -94,7 +96,7 @@ unionRowType = M.unionWith unionRowtypeHelper
 unionRowtypeHelper :: Opt SqlType -> Opt SqlType -> Opt SqlType
 unionRowtypeHelper (lf,l)         (rf,r) = (shrinkFeatureExpr (lf `Or` rf), l)
 
-
+-}
 
 
 --

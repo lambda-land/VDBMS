@@ -173,14 +173,15 @@ typeSubsume t t'
                               
 -- | union two type. doesn't evaluate the feature expressions.
 typeUnion :: TypeEnv -> TypeEnv -> TypeEnv
-typeUnion e e' = StrictM.merge 
-                   StrictM.preserveMissing 
-                   StrictM.preserveMissing 
-                   matched e e'
-  where 
-    matched = StrictM.zipWithMaybeMatched (\_ (o,t) (o',t') -> 
-      case t==t' of
-        True -> Just ((F.Or o o'),t)
-        _    -> Nothing)
+typeUnion = rowTypeUnion
+-- e e' = StrictM.merge 
+--                    StrictM.preserveMissing 
+--                    StrictM.preserveMissing 
+--                    matched e e'
+--   where 
+--     matched = StrictM.zipWithMaybeMatched (\_ (o,t) (o',t') -> 
+--       case t==t' of
+--         True -> Just ((F.Or o o'),t)
+--         _    -> Nothing)
 
 

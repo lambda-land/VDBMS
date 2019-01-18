@@ -6,12 +6,14 @@ import Data.Data (Data,Typeable)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Map (Map)
 import qualified Data.Map.Strict as Map
 import Data.ByteString.Char8 as BC (pack, unpack)
 import qualified Data.ByteString as B 
 import Data.Convertible.Base
 import Data.SBV
 import Data.Void
+import Data.List
 
 import Database.HDBC
 
@@ -52,8 +54,12 @@ features (Or  l r) = features l `Set.union` features r
 --   used to initialize all features of a database, i.e. initializing
 --   features of the fexp of vschema.
 --   NOTE: HAVEN'T USED IT YET!!!!
-initFeatureMap :: Boolean b => FeatureExpr -> Map.Map Feature b
-initFeatureMap e = Map.fromSet (\_ -> false) (features e)
+-- initFeatureMap :: Boolean b => FeatureExpr -> Map Feature b
+-- initFeatureMap e = Map.fromSet (\_ -> false) (features e)
+
+-- | disjuncts a list of fexps. Note: it doesn't shrink it!!
+disjFexp :: [FeatureExpr] -> FeatureExpr
+disjFexp fs = foldl' Or (Lit False) fs
 
 -- | Syntactic sugar: implication
 imply :: FeatureExpr -> FeatureExpr -> FeatureExpr
@@ -294,4 +300,27 @@ sqlval2fexp = fromSql
 
 fexp2sqlval :: FeatureExpr -> SqlValue
 fexp2sqlval = toSql
+
+
+------------------------ CONFIG 2 FEXP AND REVERSE ------------
+
+-- | generates a feature expression for the given configuration.
+conf2fexp :: Config Bool -> FeatureExpr
+-- Feature -> Bool -> FeatureExpr
+conf2fexp c = undefined
+  -- where 
+  --   v = (Ref f <=> Lit b)
+
+-- | generates a feature expr for the given list of configs.
+confs2fexp :: [Config Bool] -> FeatureExpr
+confs2fexp cs = undefined
+-- foldl' Or (Lit False) $ conf2fexp cs
+
+-- | extracts the valid configurations of a feature expr.
+validConfsOfFexp :: FeatureExpr -> [Config Bool]
+validConfsOfFexp = undefined
+
+
+
+
 
