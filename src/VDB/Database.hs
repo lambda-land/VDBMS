@@ -10,7 +10,7 @@ import Data.List (intercalate)
 import Data.Bitraversable
 import Data.Bifunctor
 import Data.Maybe
-import Data.Text as T
+import Data.Text as T (Text, unpack)
 
 import Control.Monad (zipWithM)
 
@@ -71,12 +71,12 @@ type DBFilePath = String
 
 -------------------------- running/constructing queries on sqldatabase---------------
 
-type QueryText = String 
+type QueryString = String 
 
 type Query = IO Statement
 
 -- | constructs a query from text.
-mkStatement :: IConnection conn => SqlDatabase conn -> QueryText -> Query
+mkStatement :: IConnection conn => SqlDatabase conn -> QueryString -> Query
 mkStatement db q = prepare (getSqlData db) q
 
 -- | helper func for configVDB. returns a list of valid tables in a variant.
@@ -98,33 +98,38 @@ validAtts c r s = case rowType of
 validAttsWithoutPres :: PresCondAtt -> Config Bool -> Relation -> Schema -> Set Attribute 
 validAttsWithoutPres p c r s = Set.delete (Attribute $ presCondAttName p) $ validAtts c r s
 
+-------------------- run variational queries for approach1 -------------------------------
+type QueryText = T.Text
+
+type TranslatedVquery = Opt QueryText
+
+-- | runs a translated query from vquery on the vdb.
+--   Note that a vq translates to a list of opt query.
+runTransQ :: IConnection conn => TranslatedVquery -> SqlDatabase conn -> IO SqlVtable 
+runTransQ q db = do
+  stmt <- mkStatement db $ T.unpack $ getObj q
+  r <- fetchAllRowsMap' stmt 
+  return $ mkOpt (getFexp q) r
+
+
+-- | runs the translated list of queries of a vquery on the vdb.
+runVq :: IConnection conn => [TranslatedVquery] -> SqlDatabase conn -> IO [SqlVtable]
+runVq qs db = mapM (flip runTransQ db) qs
+  
+
+
+-------------------- run variant queries for brute force -------------------------------
+
 -- | runs a query related only to one variant on a variational db.
-runSqlQ :: IConnection conn => Config Bool -> QueryText -> SqlDatabase conn -> IO SqlVariantTable
+runSqlQ :: IConnection conn => Config Bool -> QueryString -> SqlDatabase conn -> IO SqlVariantTable
 runSqlQ c t db = do 
   q <- mkStatement db t 
   r <- fetchAllRowsMap' q
   return $ mkVariant r c
 
 -- | runs a list of queries related only to a variant on a variational db.
-runSqlQs :: IConnection conn => Config Bool -> [QueryText] -> SqlDatabase conn -> IO [SqlVariantTable]
+runSqlQs :: IConnection conn => Config Bool -> [QueryString] -> SqlDatabase conn -> IO [SqlVariantTable]
 runSqlQs c ts db = mapM ((flip $ runSqlQ c) db) ts
-
--------------------- run variational queries for approach1 -------------------------------
-type Query = T.Text
-
-type TranslatedVquery = Opt Query
-
--- | runs a translated query from vquery on the vdb.
---   Note that a vq translates to a list of opt query.
-runTransQ :: IConnection conn => TranslatedVquery -> SqlDatabase conn -> IO SqlVTable 
-runTransQ q db = undefined
-
--- | runs the translated list of queries of a vquery on the vdb.
-runVq :: IConnection conn => [TranslatedVquery] -> SqlDatabase conn -> IO [SqlVTable]
-runVq qs db = undefined
-
-
--------------------- run variant queries for brute force -------------------------------
 
 -- | runs a variant query on a variant db if their config are equal over the schema fexp.
 runVariantSqlOnVariantDB :: VariantQuery -> SqlDatabase Connection -> IO (Maybe SqlVariantTable)
@@ -174,7 +179,7 @@ describeRelWithoutPres p c vdb r = do
 -- | generates create queries.
 --   concat all queries and send them once using the "runRaw" func.
 -- the sqldb is variational
-genCreateQs :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> IO QueryText
+genCreateQs :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> IO QueryString
 genCreateQs p c vdb = do 
   let validSchema    = appConfSchema' c (getSqlDBschema vdb)
       validRelations = validRels c (validSchema)
@@ -204,7 +209,7 @@ attList c vdb r = intercalate ", " validAtt
     validAtt    = Set.toList $ Set.map attributeName $ validAtts c r validSchema
 
 -- | generates a select query for a relation to copy it for a specific config of vdb.
-genSelectQ ::  IConnection conn => Config Bool -> SqlDatabase conn -> Relation -> QueryText
+genSelectQ ::  IConnection conn => Config Bool -> SqlDatabase conn -> Relation -> QueryString
 genSelectQ c vdb r = select ++ atts ++ from ++ relationName r
   where 
     select = "select " 
@@ -213,7 +218,7 @@ genSelectQ c vdb r = select ++ atts ++ from ++ relationName r
 
 -- | helper func for configVDB. generates queries to get all
 --   data from a vdb w.r.t. a config.
-genSelectQs :: IConnection conn => Config Bool -> SqlDatabase conn -> [(Relation,QueryText)]
+genSelectQs :: IConnection conn => Config Bool -> SqlDatabase conn -> [(Relation,QueryString)]
 genSelectQs c vdb = zip rels $ map (++ ";") $ map (genSelectQ c vdb) rels
   where
     rels = validRels c (getSqlDBschema vdb)
@@ -222,7 +227,7 @@ genSelectQs c vdb = zip rels $ map (++ ";") $ map (genSelectQ c vdb) rels
 --   you need to filter tuples s.t. the ones with false pres cond are omitted.
 --   dropRows does this. from there you need to drop the pres conds. 
 --   dropPres does this.
-runSelectQ :: IConnection conn => SqlDatabase conn -> (Relation,QueryText) -> IO (Relation,SqlTable)
+runSelectQ :: IConnection conn => SqlDatabase conn -> (Relation,QueryString) -> IO (Relation,SqlTable)
 runSelectQ vdb (r,q) = do 
   stmt <- mkStatement vdb q
   table <- fetchAllRowsMap' stmt
@@ -242,7 +247,7 @@ insertionVals p c vdb = do
   return $ fmap (prepForInsertQ p) initialVals
 
 -- | helper func for configVDB. generates insert queries for a specific config.
-genInsertQ :: IConnection conn => Config Bool -> SqlDatabase conn -> Relation -> QueryText
+genInsertQ :: IConnection conn => Config Bool -> SqlDatabase conn -> Relation -> QueryString
 genInsertQ c vdb r = "insert into " ++ rName ++ " ( " ++ qMarks ++ " )"
   where 
     rName  = relationName r
@@ -251,7 +256,7 @@ genInsertQ c vdb r = "insert into " ++ rName ++ " ( " ++ qMarks ++ " )"
     n      = relArity r validSchema
 
 -- | generates insertion queries and pairs them up with their values.
-genInsertQs :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> IO [(QueryText,[[SqlValue]])]
+genInsertQs :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> IO [(QueryString,[[SqlValue]])]
 genInsertQs p c vdb = do
   tables <- insertionVals p c vdb
   return $ fmap (bimap (genInsertQ c vdb) genSqlVals) tables

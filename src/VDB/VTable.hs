@@ -24,18 +24,24 @@ import VDB.SqlTable
 data VTable = VTable TableSchema SqlTable
 
 
+-- TODO: filter duplicate and disjoint their pres cond!
+
 ------------------- construct vtable for approach1 -------------------
 
--- | constructs a vtable from a sqlvtable. 
---   it generates the table schema and attaches it to the
---   sqltable of sqlvtable.
-sqlVtable2VTable :: SqlVtable -> VTable
-sqlVtable2VTable t = undefined
-
 -- | constructs a vtable from a list sqlvtables.
--- 
+--   it generates the table schema and attaches it to the
+--   sqltables of sqlvtables.
+--   NOTE: we have duplicate tuples for fexps, i.e. if I have
+--	       tuple a, Or A B and I run two diff q for A and B then I'll have
+--         a, A
+--         a, B
 sqlVtables2VTable :: [SqlVtable] -> VTable
-sqlVtables2VTable ts = undefined
+sqlVtables2VTable ts = VTable tabelSchema table 
+  where
+    tss = map constSchemaFromSqlVtable ts -- [TableSchema]
+    tabelSchema = combineTableSchema tss -- TableSchema
+    ts' = map (flip conformSqlVtableToSchema $ getObj tabelSchema) ts -- [SqlVtable]
+    table = concat $ map getObj ts'
 
 ------------------- construct vtable for brute force -------------------
 -- | takes a list of sqlvarianttables and constructs a vtable
@@ -47,15 +53,16 @@ sqlVtables2VTable ts = undefined
 --     2) conform sqlvariant tables to the schema generated
 --     3) add tuple pres cond to sqlvarianttables from 2
 --     4) union all res of 3
---   NOTES:
+--   NOTES: DOESN'T WORK RN DUE TO CONF2FEXP AND FEXP2CONF! 
+--          TODO: FIX AFTER SIGMOD SUBMISSION!!!!
 sqlVariantTables2VTable :: PresCondAtt -> [SqlVariantTable] -> VTable
 sqlVariantTables2VTable p ts = VTable tabelSchema table 
   where
-    tss = map constructSchemaFromSqlVariantTable ts -- [TableSchema]
+    tss         = map constructSchemaFromSqlVariantTable ts -- [TableSchema]
     tabelSchema = combineTableSchema tss -- TableSchema
-    ts' = map (flip conformSqlVariantTableToSchema $ getObj tabelSchema) ts -- [SqlVariantTable]
-    ts'' = map (addTuplePresCond p) ts' -- [SqlTable]
-    table = concat ts''
+    ts'         = map (flip conformSqlVariantTableToSchema $ getObj tabelSchema) ts -- [SqlVariantTable]
+    ts''        = map (addTuplePresCond p) ts' -- [SqlTable]
+    table       = concat ts''
 
 
 

@@ -11,12 +11,13 @@ import qualified Data.Set as S
 import Data.List (deleteBy)
 
 import VDB.Variant 
-import VDB.Variational (Opt)
+import VDB.Variational 
 import VDB.Name
 import VDB.Config
 import VDB.FeatureExpr 
 import VDB.Schema
 import VDB.Type
+-- import VDB.SAT 
 
 import Database.HDBC 
 
@@ -49,9 +50,17 @@ tableAttSet [] = error "an empty table doesn't have any attributes"
 tableAttSet t  = rowAttSet (head t)
 
 -- | construct the rowtype from a sqltable.
-constRowTypeOfSqlTable :: SqlTable -> RowType
-constRowTypeOfSqlTable t = undefined
-
+--   NOTE: it takes the first row of the table. so if that row
+--         has a null value it may not be able to get the type 
+--         correctly. for now make sure you never have a null
+--         value in the first tuple. but fix it later!!
+-- TODO: FIX THE ABOVE PROBLEM!!
+constRowTypeOfSqlTable :: FeatureExpr -> SqlTable -> RowType
+constRowTypeOfSqlTable f t = M.map (\v -> (f,v)) row''
+  where 
+    row   = head t 
+    row'  = M.mapKeys (\s -> Attribute s) row 
+    row'' = M.map typeOf row'
 
 -- | inserts an attribute value pair to a sqlrow.
 insertAttValToSqlRow :: Attribute -> SqlValue -> SqlRow -> SqlRow
@@ -66,10 +75,10 @@ conformSqlRowToRowType :: SqlRow -> RowType -> SqlRow
 conformSqlRowToRowType r t = M.union r r'
   where
     rowTypeAtts = S.map attributeName $ getRowTypeAtts t 
-    attDif = rowTypeAtts S.\\ M.keysSet r 
-    r' = M.fromSet (\_ -> SqlNull) attDif
+    attDif      = rowTypeAtts S.\\ M.keysSet r 
+    r'          = M.fromSet (\_ -> SqlNull) attDif
 
-------------------- apply config to sqlvarianttable ----------------------
+------------------- apply config ----------------------
 
 -- | applies a config to a row.
 applyConfRow :: Config Bool -> PresCondAtt -> SqlRow -> SqlRow 
@@ -88,7 +97,7 @@ applyConfTable c p = fmap $ applyConfRow c p
 dropRow :: PresCondAtt -> SqlRow -> SqlRow
 dropRow p r 
   | M.lookup (presCondAttName p) r == Just (toSql ("Lit False" :: String))
-     = M.empty
+              = M.empty
   | otherwise = r
 
 -- | drops rows that their pres cond is false.
@@ -136,19 +145,20 @@ dropPresInVariantTable :: PresCondAtt -> SqlVariantTable -> SqlVariantTable
 dropPresInVariantTable p t = updateVariant (dropPresInTable p (getVariant t)) t
 
 -- | generates the relation schema (rowtype) of a variant table.
---   NOTE: it takes the first row of the table. so if that row
---         has a null value it may not be able to get the type 
---         correctly. for now make sure you never have a null
---         value in the first tuple. but fix it later!!
--- TODO: FIX THE ABOVE PROBLEM!!
 constructSchemaFromSqlVariantTable :: SqlVariantTable -> TableSchema
 constructSchemaFromSqlVariantTable t = (fexp, rowType)
   where
-    fexp = conf2fexp $ getConfig t 
-    row = head $ getVariant t
-    row' = M.mapKeys (\s -> Attribute s) row 
-    row'' = M.map typeOf row'
-    rowType = M.map (\v -> (fexp,v)) row''
+    fexp    = conf2fexp $ getConfig t 
+    table   = getVariant t
+    rowType = constRowTypeOfSqlTable fexp table
+-- constructSchemaFromSqlVariantTable :: SqlVariantTable -> TableSchema
+-- constructSchemaFromSqlVariantTable t = (fexp, rowType)
+--   where
+--     fexp = conf2fexp $ getConfig t 
+--     row = head $ getVariant t
+--     row' = M.mapKeys (\s -> Attribute s) row 
+--     row'' = M.map typeOf row'
+--     rowType = M.map (\v -> (fexp,v)) row''
 
 -- | forces a sqlvarianttable to conform to a table schema. i.e. 
 --   it adds all attributes in the schema to the sqlvarianttable
@@ -169,24 +179,44 @@ addTuplePresCond :: PresCondAtt -> SqlVariantTable -> SqlTable
 addTuplePresCond p vt = insertAttValToSqlTable (Attribute $ presCondAttName p) fexp t
   where 
     fexp = fexp2sqlval $ conf2fexp $ getConfig vt
-    t = getVariant vt
+    t    = getVariant vt
 
 ---------------------- applies the feature exp of vsqltable to it----------
 
 -- | runs the sat solver on tuples to filter out tuples
 --   that are unsatisfiable in the context of the vtabel
 --   i.e. the feature expr assigned to it.
-appFexpVtable :: SqlVtable -> SqlVtable
-appFexpVtable t = undefined
+satFexpVtable :: PresCondAtt -> SqlVtable -> SqlVtable
+satFexpVtable p t = updateOptObj table t 
+  where
+    f     = getFexp t 
+    table = dropRows p $ map (satFexpRow f p) $ getObj t 
 
+-- | checks the satisfiability of a row with a fexp.
+satFexpRow :: FeatureExpr -> PresCondAtt -> SqlRow -> SqlRow
+satFexpRow f p r 
+  | check     = M.insert (presCondAttName p) (fexp2sqlval $ And f fp) r 
+  | otherwise = M.empty
+  where 
+    fp    = case M.lookup (presCondAttName p) r of 
+              Just fexp -> sqlval2fexp fexp 
+              _         -> Lit False
+    check = filterFexps f fp
 
--- appFexpVtables :: [SqlVtable] -> [SqlVtable]
--- appFexpVtables ts = undefined
+-- | filters out unsat tuples for a list of sqlvtables.
+satFexpVtables :: PresCondAtt -> [SqlVtable] -> [SqlVtable]
+satFexpVtables p = map $ satFexpVtable p 
 
 -- | constructs the table schema from the sqlvtable.
 constSchemaFromSqlVtable :: SqlVtable -> TableSchema
-constSchemaFromSqlVtable t = undefined 
+constSchemaFromSqlVtable t = mkOpt f $ constRowTypeOfSqlTable f table
+  where 
+    f     = getFexp t 
+    table = getObj t 
 
 -- | forces a sqlvtable to conform to a rowtype
 conformSqlVtableToSchema :: SqlVtable -> RowType -> SqlVtable
-conformSqlVtableToSchema t r = undefined
+conformSqlVtableToSchema t r = updateOptObj 
+  (map (flip conformSqlRowToRowType r) $ getObj t) t 
+
+

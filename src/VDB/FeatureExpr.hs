@@ -65,6 +65,10 @@ disjFexp fs = foldl' Or (Lit False) fs
 imply :: FeatureExpr -> FeatureExpr -> FeatureExpr
 imply f f' = Or (Not f) f'
 
+-- | determines if f is more general than f'.
+filterFexps :: FeatureExpr -> FeatureExpr -> Bool
+filterFexps f f' = tautology $ imply f f' 
+
 -- | Evaluate a feature expression against a configuration.
 evalFeatureExpr :: Boolean b => Config b -> FeatureExpr -> b
 evalFeatureExpr _ (Lit b)   = if b then true else false
@@ -303,6 +307,7 @@ fexp2sqlval = toSql
 
 
 ------------------------ CONFIG 2 FEXP AND REVERSE ------------
+------------------------ TODO: FILL OUT AFTER SIGMOD DEADLINE!!!
 
 -- | generates a feature expression for the given configuration.
 conf2fexp :: Config Bool -> FeatureExpr
@@ -321,7 +326,7 @@ validConfsOfFexp :: FeatureExpr -> [Config Bool]
 validConfsOfFexp f = undefined
   where
     fs = features f 
-    
+
 
 
 

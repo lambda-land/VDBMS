@@ -11,6 +11,7 @@ import Data.Map
 
 import Database.HDBC
 
+{-
 --prepare :: conn -> String -> IO Statement
 -- | constructs a statement (i.e. the datatype for query acceptable by
 --   HDBC) from a query
@@ -33,3 +34,4 @@ runBFQ (e,v) conn = do
 runBFQs :: IConnection conn => [VariantQuery] -> conn -> IO [SqlVariantTable]
 runBFQs qs conn = mapM ((flip runBFQ) conn) qs
 
+-}

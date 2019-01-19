@@ -13,7 +13,7 @@ import VDB.Algebra
 -- import VDB.BruteForceApproach.BFConfigDB -- (applyConfigVariantTables)
 -- import VDB.BruteForceApproach.BFSendQs (runBFQs)
 import VDB.Translations.RelAlg2Sql (alg2Sql)
--- import VDB.SqlTable (SqlVariantTable)
+import VDB.SqlTable (SqlVariantTable)
 -- import VDB.Schema
 import VDB.Config
 import VDB.Name
@@ -28,6 +28,8 @@ import Database.HDBC.Sqlite3
 --   Note that a variational query should be run over all configs
 --   that satisfy the fexp of vschema. but for now we're providing 
 --   the list of config
+--   HIGH PRIORITY TODO: DON'T I NEED TO CLOSE THE CONNECTION OF
+--                       ALL THESE DATABASES SOMEWHERE?!?!?!?!?
 --   TODO: remove the list of config and extract that from the 
 --         vschema's fexp.
 --   TODO: add type constraint: IConnection conn =>
@@ -49,28 +51,15 @@ runBrute vq cs p f vdb = undefined
   -- TODO: COMPLETE THE FOLLOWING TWO FUNCS:
   -- return $ aggregate variant_result
 
--- initialVarCtxt :: Schema -> VariationalContext
--- initialVarCtxt (f,_) = f
+-- | runs brute force but returns a 
+runBrute' :: Algebra -> [Config Bool] -> PresCondAtt 
+            -> DBFilePath -> SqlDatabase Connection -> IO [SqlVariantTable]
+runBrute' vq cs p f vdb = do
+  let qs = alg2Sql vq cs -- [VariantQuery]
+  dbs <- configVDBall f p vdb cs -- [SqlDatabase conn]
+  runSqlQsOnCorrespDBs qs dbs -- [SqlVariantTable]
 
--- brute :: IConnection conn => Algebra -> Schema -> conn -> Vresult
--- brute vq s c = undefined
-{-  where 
-  	initialVarCtxt :: Schema -> VariationalContext
-  	initialVarCtxt (f,_) = f
-    vctxt = initialVarCtxt s 
-    qs = bruteTrans vq vctxt 
-    do vts <- runBruteQsClm qs c 
-    return vts 
-    checkSatAllVtables :: [(ClmNameIncludedVtable, Vctxt)] -> PresCondAttName -> [ClmNameIncludedVtable]
-    checkSatAllVtables 
--}
-
-
-
-
-
-
-
+-- TODO: write checks!!!
 
 
 

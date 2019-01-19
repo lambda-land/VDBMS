@@ -27,6 +27,14 @@ getFexp = fst
 mkOpt :: FeatureExpr -> a -> Opt a
 mkOpt = (,)
 
+-- | updates obj.
+updateOptObj :: a -> Opt a -> Opt a 
+updateOptObj o (f,_) = mkOpt f o 
+
+-- | updates fexp.
+updateFexp :: FeatureExpr -> Opt a -> Opt a 
+updateFexp f (_,o) = mkOpt f o
+
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a
 selectOpt f b (e,a) = (selectFeatureExpr f b e, a)
