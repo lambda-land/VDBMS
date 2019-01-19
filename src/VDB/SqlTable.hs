@@ -78,6 +78,12 @@ conformSqlRowToRowType r t = M.union r r'
     attDif      = rowTypeAtts S.\\ M.keysSet r 
     r'          = M.fromSet (\_ -> SqlNull) attDif
 
+-- | removes tuples that have the same values except for pres
+--   cond, inserts only one such tuple and disjuncts all 
+--   their pres conds.
+removeDuplicate :: PresCondAtt -> SqlTable -> SqlTable
+removeDuplicate p t = undefined
+
 ------------------- apply config ----------------------
 
 -- | applies a config to a row.

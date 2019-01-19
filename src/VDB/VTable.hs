@@ -23,9 +23,6 @@ import VDB.SqlTable
 --   variational table data type.
 data VTable = VTable TableSchema SqlTable
 
-
--- TODO: filter duplicate and disjoint their pres cond!
-
 ------------------- construct vtable for approach1 -------------------
 
 -- | constructs a vtable from a list sqlvtables.
@@ -35,13 +32,13 @@ data VTable = VTable TableSchema SqlTable
 --	       tuple a, Or A B and I run two diff q for A and B then I'll have
 --         a, A
 --         a, B
-sqlVtables2VTable :: [SqlVtable] -> VTable
-sqlVtables2VTable ts = VTable tabelSchema table 
+sqlVtables2VTable :: PresCondAtt -> [SqlVtable] -> VTable
+sqlVtables2VTable p ts = VTable tabelSchema table 
   where
-    tss = map constSchemaFromSqlVtable ts -- [TableSchema]
+    tss         = map constSchemaFromSqlVtable ts -- [TableSchema]
     tabelSchema = combineTableSchema tss -- TableSchema
-    ts' = map (flip conformSqlVtableToSchema $ getObj tabelSchema) ts -- [SqlVtable]
-    table = concat $ map getObj ts'
+    ts'         = map (flip conformSqlVtableToSchema $ getObj tabelSchema) ts -- [SqlVtable]
+    table       = removeDuplicate p $ concat $ map getObj ts'
 
 ------------------- construct vtable for brute force -------------------
 -- | takes a list of sqlvarianttables and constructs a vtable
