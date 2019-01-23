@@ -32,13 +32,15 @@ data VTable = VTable TableSchema SqlTable
 --	       tuple a, Or A B and I run two diff q for A and B then I'll have
 --         a, A
 --         a, B
+--   ADD REMOVEDUPLICATE TO THE RESULT!
 sqlVtables2VTable :: PresCondAtt -> [SqlVtable] -> VTable
 sqlVtables2VTable p ts = VTable tabelSchema table 
   where
     tss         = map constSchemaFromSqlVtable ts -- [TableSchema]
     tabelSchema = combineTableSchema tss -- TableSchema
     ts'         = map (flip conformSqlVtableToSchema $ getObj tabelSchema) ts -- [SqlVtable]
-    table       = removeDuplicate p $ concat $ map getObj ts'
+    table       = concat $ map getObj ts' -- doesn't remove duplicates!!
+    -- table       = removeDuplicate p $ concat $ map getObj ts'
 
 ------------------- construct vtable for brute force -------------------
 -- | takes a list of sqlvarianttables and constructs a vtable

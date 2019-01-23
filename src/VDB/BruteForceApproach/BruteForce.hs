@@ -51,7 +51,9 @@ runBrute vq cs p f vdb = undefined
   -- TODO: COMPLETE THE FOLLOWING TWO FUNCS:
   -- return $ aggregate variant_result
 
--- | runs brute force but returns a 
+-- | runs brute force but returns a list of sql variant tables
+--   instead of a vtable! it's fine and we may be able to make
+--   a stronger argument for our system.
 runBrute' :: Algebra -> [Config Bool] -> PresCondAtt 
             -> DBFilePath -> SqlDatabase Connection -> IO [SqlVariantTable]
 runBrute' vq cs p f vdb = do

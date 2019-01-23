@@ -41,6 +41,7 @@ type SqlVariantTable = Variant SqlTable Bool
 type SqlVtable = Opt SqlTable
 
 type VTuple = Opt SqlRow
+type VTuples = [VTuple]
 
 -- | returns a set of attributes from a tuple.
 rowAttSet :: SqlRow -> Set Attribute
@@ -83,13 +84,24 @@ conformSqlRowToRowType r t = M.union r r'
 -- | removes tuples that have the same values except for pres
 --   cond, inserts only one such tuple and disjuncts all 
 --   their pres conds.
+-- NOTE: time this separately!!
 removeDuplicate :: PresCondAtt -> SqlTable -> SqlTable
 removeDuplicate p t = undefined
 
 -- | extract the pres cond out of sqlrow and attachs it
 --   as the presence condition to the tuple.
 constVTuple :: PresCondAtt -> SqlRow -> VTuple
-constVTuple p r = undefined
+constVTuple p r = mkOpt f t 
+  where 
+    pName = presCondAttName p
+    f = case M.lookup pName r of
+          Just v -> sqlval2fexp v
+          _      -> Lit False
+    t = M.delete pName r
+
+-- | constructs a table of vtuples.
+constVTuples :: PresCondAtt -> SqlTable -> VTuples
+constVTuples p t = map (constVTuple p) t
 
 ------------------- apply config ----------------------
 
