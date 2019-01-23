@@ -1,0 +1,63 @@
+cleaned up enron email database stat:
+
+employeelist(eid, firstname, lastname, email_id, email2, email3, email4, folder, status) -- size: 149 tuples --> unique employees only
+
+message(mid, sender, date, message_id, subject, body, folder) -- size: 252771 --> sender is email address, message_id is a string and not int
+
+recipientinfo(rid, mid, rtype, rvalue, dater) -- size: 2064442 --> rid and mid are int, rtype is enum(TO, CC, BCC), rvalue is email address
+
+referenceinfo(rfid, mid, reference) -- size: 54778 --> rfid and mid are int, reference is a string of crap
+
+enron_mail_20150507.tar.gz --> a folder based dataset of emails
+enron-mysqldump_v5.sql.gz --> mysql dump
+(http://www.ahschulz.de/enron-email-data/)
+
+The tables/dataframes contain the following coloumns:
+
+Employeelist
+
+eid: Employee-ID
+firstName: First name
+lastName: Last name
+Email_id: Email address (primary). This one can be found in the other tables/dataframes and is useful for matching.
+Email2: Additional email address that was replace by the primary one.
+Email3: See above
+Email4: See above
+folder: The user’s folder in the original data dump.
+status: Last position of the employee. “N/A” are unknown.
+Message
+
+mid: Message-ID. Refers to the rows in recipientinfo and referenceinfo.
+sender: Email address (updated)
+date: Date.
+message_id: Internal message-ID from the mailserver.
+subject: Email subject
+body: Email body. Can be truncated in the R-Version!
+folder: Exact folder of the e-mail inclusing subfolders.
+Recipientinfo
+(Note: If an email is sent to multiple recipients, there is a new row for every recipient!)
+
+rid: Reference-ID
+mid: Message-ID from the message-table/-dataframe
+rtype: Shows if the reciever got the email normally (“to”), as a carbon copy (“cc”) or a blind carbon copy (“bcc”).
+rvalue: The recipient’s email address.
+Referenceinfo
+
+rfid: referenceinfo-ID
+mid: Message-ID
+reference: Contains the whole email with shortend headers.
+
+****************************************************************************
+*********************the variational email database:************************
+****************************************************************************
+
+
+employeelist(eid, firstname, lastname, email_id, email2, email3, email4, folder, status, encrypt, sign)
+
+message(mid, sender_email, sender_nickname, date, message_id, subject, body, folder)
+
+recipientinfo(rid, mid, rtype, rvalue, dater)
+
+referenceinfo(rfid, mid, reference)
+
+alias(eid, email, nickname)
