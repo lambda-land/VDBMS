@@ -14,30 +14,30 @@ import Data.List(unionBy,nubBy)
 import Data.Tuple(swap)
 
 import Database.HDBC (SqlValue)
+import Data.SBV
 
 -- | FeatureExpr for 5 schema version
-v1,v2,v3,v4,v5 :: FeatureExpr
-v1 = Ref (Feature "v1")
-v2 = Ref (Feature "v2")
-v3 = Ref (Feature "v3")
-v4 = Ref (Feature "v4")
-v5 = Ref (Feature "v5")
 
+-- v1,v2,v3,v4,v5 :: FeatureExpr
+-- v1 = Ref (Feature "v1")
+-- v2 = Ref (Feature "v2")
+-- v3 = Ref (Feature "v3")
+-- v4 = Ref (Feature "v4")
+-- v5 = Ref (Feature "v5")
 
 -- | Gaven a list of feature Expr, fold it into a Feature Model (TO DO)
 -- buildFeatureModel :: [FeatureExpr] -> FeatureExpr
 -- buildFeatureModel []     = Lit False 
 -- buildFeatureModel (x:xs) = 
 
--- NOTE: ADDED THESE TO SCHEMA.HS!!!
-{-
 -- | Feature Model of Employee Schema 
-employeeFeatureModel :: FeatureExpr
-employeeFeatureModel =  (v1 `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` (Not v5)) `Or` 
-                        ((Not v1) `And` v2 `And` (Not v3) `And` (Not v4) `And` (Not v5)) `Or` 
-                        ((Not v1) `And` (Not v2) `And` v3`And` (Not v4) `And` (Not v5)) `Or` 
-                        ((Not v1) `And` (Not v2) `And` (Not v3) `And` v4 `And` (Not v5)) `Or` 
-                        ((Not v1) `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` v5)  
+-- employeeFeatureModel :: FeatureExpr
+-- employeeFeatureModel =  (v1 `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` (Not v5)) `Or` 
+--                         ((Not v1) `And` v2 `And` (Not v3) `And` (Not v4) `And` (Not v5)) `Or` 
+--                         ((Not v1) `And` (Not v2) `And` v3`And` (Not v4) `And` (Not v5)) `Or` 
+--                         ((Not v1) `And` (Not v2) `And` (Not v3) `And` v4 `And` (Not v5)) `Or` 
+--                         ((Not v1) `And` (Not v2) `And` (Not v3) `And` (Not v4) `And` v5)  
+
 
 
 
@@ -52,12 +52,11 @@ emptySchema = (Lit False, M.empty)
 
 -- | Merge a new schema to existing V-schema 
 variationize' :: Schema -> Schema -> Schema 
-variationize' s1@(lf,lm) s2@(rf,rm)  = let newf = shrinkFeatureExpr (lf `Or` rf) 
+variationize' s1@(lf,lm) s2@(rf,rm)  = let newf = shrinkFeatureExpr (lf <+> rf) 
                                            newRelMap = variationizeHelper s1 s2    
-                        
                                        in (newf, newRelMap)
 
--- | hselper function to get the Map of relation to optional attribute list 
+-- | helper function to get the Map of relation to optional attribute list 
 variationizeHelper :: Schema -> Schema ->  Map Relation (Opt RowType)
 variationizeHelper s1@(lf,lm) s2@(rf,rm) = case M.toList lm of 
                                             []     -> (pushFeatureToRelMap rf rm) 
@@ -96,7 +95,7 @@ unionRowType = M.unionWith unionRowtypeHelper
 unionRowtypeHelper :: Opt SqlType -> Opt SqlType -> Opt SqlType
 unionRowtypeHelper (lf,l)         (rf,r) = (shrinkFeatureExpr (lf `Or` rf), l)
 
--}
+
 
 
 --
@@ -113,22 +112,20 @@ unionRowtypeHelper (lf,l)         (rf,r) = (shrinkFeatureExpr (lf `Or` rf), l)
 
 -- | simple test case for variationize 
  -- s1^v1 = {T1(A1,A2)}
-testS1 :: Schema 
-testS1 = ( v1, s1RelMap)
+-- testS1 :: Schema 
+-- testS1 = ( v1, s1RelMap)
 
-s1RelMap :: Map Relation (Opt RowType)
-s1RelMap = M.fromList [ (Relation "T1", (Lit True,   M.fromList[ (Attribute "A1", (Lit True, TInt32))
-                                                               , (Attribute "A2", (Lit True, TString))]))]
--- s2^v2 = {T1(A1,A3,A4), T2(A4)}
-testS2 :: Schema 
-testS2 = ( v2, s2RelMap)
+-- s1RelMap :: Map Relation (Opt RowType)
+-- s1RelMap = constructRelMap [ ("T1",  [ ("A1",  TInt32), ("A2", TString)])]
+-- -- s2^v2 = {T1(A1,A3,A4), T2(A4)}
+-- testS2 :: Schema 
+-- testS2 = ( v2, s2RelMap)
 
 
-s2RelMap :: Map Relation (Opt RowType)
-s2RelMap = M.fromList [ (Relation "T1", (Lit True,  M.fromList[ (Attribute "A1", (Lit True, TInt32))
-                                                              , (Attribute "A3", (Lit True, TString))]))
-                      , (Relation "T2", (Lit True,  M.fromList  [ (Attribute "A4", (Lit True, TInt32))]))
-                      ]
+-- s2RelMap :: Map Relation (Opt RowType)
+-- s2RelMap = constructRelMap [ ("T1",  [ ("A1",  TInt32), ( "A3",  TString)])
+--                            , ( "T2", [ ("A4", TInt32)])
+--                            ]
 
 -- testS3 :: Schema
 -- testS3 = (v3, s3RelMap)

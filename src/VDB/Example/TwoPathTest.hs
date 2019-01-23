@@ -83,6 +83,7 @@ instance  Arbitrary Relation where
 --    | TRef  Relation
 --    | Empty 
 
+{-
 genSetOp :: Gen SetOp
 genSetOp = elements [Union, Diff, Prod]
 
@@ -101,6 +102,6 @@ genAlgebra n | n>0 = oneof [ liftM3 SetOp genSetOp l r]
     where l = genAlgebra (n `div` 2)
           r = genAlgebra (n `div` 2)
 
-
+-}
 
 

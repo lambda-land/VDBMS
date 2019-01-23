@@ -123,7 +123,12 @@ typeProduct e e' = M.union unionWithoutIntersection
 
 -- | aux for type product. adds prefix to attributes of a typeEnv
 addPrefix :: String -> TypeEnv -> TypeEnv
-addPrefix s = SM.mapKeys (\a -> Attribute(s ++ attributeName a))
+addPrefix s r = M.fromList $ map updateAttName l
+  where
+    updateAttName (a,(o,t)) = (Attribute Nothing (s ++ attributeName a), (o,t))
+    l = M.toList r
+
+-- addPrefix s = SM.mapKeys (\a -> Attribute(s ++ attributeName a))
   -- M.fromList $ map updateAttName l
   -- where
   --   updateAttName (a,(o,t)) = (Attribute(s ++ attributeName a), (o,t))

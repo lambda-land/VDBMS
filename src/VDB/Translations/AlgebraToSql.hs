@@ -238,6 +238,7 @@ prettyValue = show
 -- 
 --  Examples
 -- 
+{-
 t0 =  (Relation "taughtby")
 t1 = (Relation "courselevel")
 a1 = Attribute "course"
@@ -327,3 +328,5 @@ test4 = AChc (F.Ref (Feature  "F"))
              (Proj [(F.Lit True, Attribute "a1")] (TRef (Relation "Table2")))
 
 fexpr = Feature "F"
+
+-}
