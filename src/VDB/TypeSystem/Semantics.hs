@@ -104,9 +104,6 @@ typeEq r r' = getRowTypeAtts r == getRowTypeAtts r' &&
   -- attTypeEq as as' && equivAttFexp as as' -- OLD
 
 
--- ******************************************************************
--- ******************************************************************
--- DISCUSS WITH ERIC IN MEETING!!
 -- | Type enviornment cross product. does this cause any problem?!?!?
 --   specifically adding prefix to attributes!!!
 --   any other ideas for updating the keys?!?!?
@@ -123,8 +120,6 @@ typeProduct e e' = M.union unionWithoutIntersection
     t' = M.difference e' unionWithoutIntersection
     updatedT  = addPrefix "1." t
     updatedT' = addPrefix "2." t'
--- ******************************************************************
--- ******************************************************************
 
 -- | aux for type product. adds prefix to attributes of a typeEnv
 addPrefix :: String -> TypeEnv -> TypeEnv
@@ -132,6 +127,12 @@ addPrefix s r = M.fromList $ map updateAttName l
   where
     updateAttName (a,(o,t)) = (Attribute Nothing (s ++ attributeName a), (o,t))
     l = M.toList r
+
+-- addPrefix s = SM.mapKeys (\a -> Attribute(s ++ attributeName a))
+  -- M.fromList $ map updateAttName l
+  -- where
+  --   updateAttName (a,(o,t)) = (Attribute(s ++ attributeName a), (o,t))
+  --   l = M.toList r
 
 -- | type enviornment join, when we have the same attribute
 --   in both type env we combine their feature expr.
@@ -177,14 +178,15 @@ typeSubsume t t'
                               
 -- | union two type. doesn't evaluate the feature expressions.
 typeUnion :: TypeEnv -> TypeEnv -> TypeEnv
-typeUnion e e' = StrictM.merge 
-                   StrictM.preserveMissing 
-                   StrictM.preserveMissing 
-                   matched e e'
-  where 
-    matched = StrictM.zipWithMaybeMatched (\_ (o,t) (o',t') -> 
-      case t==t' of
-        True -> Just ((F.Or o o'),t)
-        _    -> Nothing)
+typeUnion = rowTypeUnion
+-- e e' = StrictM.merge 
+--                    StrictM.preserveMissing 
+--                    StrictM.preserveMissing 
+--                    matched e e'
+--   where 
+--     matched = StrictM.zipWithMaybeMatched (\_ (o,t) (o',t') -> 
+--       case t==t' of
+--         True -> Just ((F.Or o o'),t)
+--         _    -> Nothing)
 
 

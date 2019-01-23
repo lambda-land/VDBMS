@@ -57,6 +57,7 @@ default-extensions:
   - TemplateHaskell
   - EmptyDataDecls
   - StandaloneDeriving
+  - InstanceSigs
 
 
 executables:

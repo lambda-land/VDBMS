@@ -2,7 +2,6 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 58a18fadbfbcfa84494dd854aa3e6c2ab0e8ad51c4d56e8704fad515f3cfc4fa
 
 name:           vdbms
 version:        0.1.0.0
@@ -22,14 +21,10 @@ extra-source-files:
 library
   exposed-modules:
       VDB.Algebra
-      VDB.BruteForce.BruteForce
-      VDB.BruteForce.BruteForceAlg2Sql
-      VDB.BruteForce.BruteForceAppConfig
-      VDB.BruteForce.BruteForceAppSatPersist
-      VDB.BruteForce.BruteForceSendQs
-      VDB.BruteForce.BruteForceSendQsPersist
+
       VDB.Condition
       VDB.Config
+      VDB.Database
       VDB.DBsetup.EnronEmailDB
       VDB.DBsetup.EnronEmailDBPersist
       VDB.Example.EmployeeUseCase.EmployeeSchema
@@ -45,22 +40,24 @@ library
       VDB.ParsingSQL
       VDB.SAT
       VDB.Schema
-      VDB.ShowVresult
       VDB.SQL
+      VDB.SqlTable
       VDB.Table
       VDB.Target
       VDB.Translations.AlgebraToSql
+      VDB.Translations.RelAlg2Sql
       VDB.Translations.VSqlToAlgebra
       VDB.Type
       VDB.TypeSystem.Semantics
       VDB.Variant
       VDB.Variational
       VDB.VqueryConfigSem
+      VDB.VTable
   other-modules:
       Paths_vdbms
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
   build-depends:
       HDBC
     , HDBC-sqlite3 >=2.3.3.1
@@ -88,7 +85,7 @@ executable vdbms
       Paths_vdbms
   hs-source-dirs:
       app
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       HDBC
@@ -120,7 +117,7 @@ test-suite vsat-test
       Paths_vdbms
   hs-source-dirs:
       test
-  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HDBC

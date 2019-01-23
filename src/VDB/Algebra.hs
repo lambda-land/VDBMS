@@ -13,6 +13,10 @@ data SetOp = Union | Diff | Prod
   deriving (Data,Eq,Show,Typeable, Ord)
 
 -- | Variational relational algebra.
+--   Note that a query such as TRef R isn't acceptable
+--   because a query must use projection to project
+--   desirable attributes. This is important for the 
+--   App1 translation rules.
 data Algebra
    = SetOp SetOp Algebra Algebra
    | Proj  [Opt Attribute] Algebra

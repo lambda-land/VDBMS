@@ -11,3 +11,4 @@ enronEmail = connectSqlite3 "../../../databases/testDB/test1.db"
 -- | where you want to use it do:
 -- do conn <- enronEmail ....
 -- does this work?
+

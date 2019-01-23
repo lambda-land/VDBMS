@@ -7,7 +7,6 @@ import VDB.Config
 import VDB.FeatureExpr
 import VDB.Name
 
-
 --
 -- * Optional values
 --
@@ -16,7 +15,25 @@ import VDB.Name
 --   a presence condition.
 type Opt a = (FeatureExpr, a)
 
+-- | gets the object of Opt a.
+getObj :: Opt a -> a
+getObj = snd
 
+-- | gets the fexp assigned to object.
+getFexp :: Opt a -> FeatureExpr
+getFexp = fst
+
+-- | makes an obj optional.
+mkOpt :: FeatureExpr -> a -> Opt a
+mkOpt = (,)
+
+-- | updates obj.
+updateOptObj :: a -> Opt a -> Opt a 
+updateOptObj o (f,_) = mkOpt f o 
+
+-- | updates fexp.
+updateFexp :: FeatureExpr -> Opt a -> Opt a 
+updateFexp f (_,o) = mkOpt f o
 
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a
@@ -32,8 +49,6 @@ configureOpt c (e,a)
 configureOptList :: Config Bool -> [Opt a] -> [a]
 configureOptList c os = catMaybes (map (configureOpt c) os)
 
-
-
 -- | Apply a configuration to an optional value
 --   and return an optional value with fexp being True.
 configureOptRetOpt :: Config Bool -> Opt a -> Maybe (Opt a)
@@ -45,8 +60,6 @@ configureOptRetOpt c (e,a)
 --   a list of optional values with fexp being True.
 configureOptListRetOpt :: Config Bool -> [Opt a] -> [Opt a]
 configureOptListRetOpt c os = catMaybes (map (configureOptRetOpt c) os)
-
-
 
 
 -- | A type class for variational things.

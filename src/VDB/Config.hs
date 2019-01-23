@@ -2,6 +2,10 @@
 module VDB.Config where
 
 import Data.SBV (Boolean(..))
+import Data.Set (Set)
+import qualified Data.Set as S
+-- import Data.Map.Strict (Map)
+-- import qualified Data.Map.Strict as M
 
 import VDB.Name
 
@@ -43,3 +47,12 @@ disableMany :: Boolean b => [Feature] -> Config b -> Config b
 disableMany fs c f
     | elem f fs = false
     | otherwise = c f
+
+-- | checks the equivalency of two configs over a set of features.
+--   TODO: need to make it work with type constraint: Boolean b => 
+equivConfig :: Set Feature -> Config Bool -> Config Bool -> Bool 
+equivConfig fs c c' = S.filter c fs == S.filter c' fs
+
+-- equivConfig :: Boolean b => Map Feature b -> Config b -> Config b -> Bool
+-- equivConfig fs c c' = M.adjustWithKey (\k _ -> c k) fs == M.adjustWithKey (\k _ -> c' k) fs
+

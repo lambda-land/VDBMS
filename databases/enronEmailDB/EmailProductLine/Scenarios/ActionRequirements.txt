@@ -1,0 +1,21 @@
+Test_Actions.bobKeyAdd(); requiresFeature keys
+
+Test_Actions.rjhKeyAdd(); requiresFeature keys
+
+Test_Actions.chuckKeyAdd(); requiresFeature keys
+
+Test_Actions.chuckKeyAddRjh(); requiresFeature keys
+
+Test_Actions.rjhKeyChange(); requiresFeature keys
+
+Test_Actions.bobKeyChange(); requiresFeature keys
+
+Test_Actions.rjhDeletePrivateKey(); requiresFeature keys
+
+Test_Actions.bobToAlias(); requiresFeature addressbook
+
+Test_Actions.rjhEnableForwarding(); requiresFeature forward
+
+Test_Actions.rjhSetAutoRespond(); requiresFeature autoresponder
+
+Test_Actions.bobSetAddressBook(); requiresFeature addressbook

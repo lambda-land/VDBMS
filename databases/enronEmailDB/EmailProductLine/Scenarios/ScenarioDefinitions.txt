@@ -1,0 +1,77 @@
+/*"DecryptForward" 0 requiresFeature forward
+{
+        Test_Actions.setup();
+        Test_Actions.bobKeyAdd();
+        Test_Actions.rjhKeyChange();
+        Test_Actions.rjhEnableForwarding();
+        Test_Actions.bobToRjh();
+}*/
+"AddressBookEncrypt" 1 requiresFeature encrypt 
+{
+		Test_Actions.setup();
+        Test_Actions.bobKeyAdd();
+        Test_Actions.bobSetAddressBook();
+        //Test_Actions.bobToRjh();
+        Test_Actions.bobToAlias();
+}
+"SignVerify" 3 requiresFeature sign
+{
+        Test_Actions.setup();
+        Test_Actions.rjhKeyAdd();
+        Test_Actions.bobKeyChange();
+        Test_Actions.bobToRjh();
+}
+"SignForward" 4 requiresFeature sign
+{
+        Test_Actions.setup();
+        Test_Actions.rjhDeletePrivateKey();
+        Test_Actions.rjhKeyAdd();
+        Test_Actions.chuckKeyAdd();
+        Test_Actions.rjhEnableForwarding();
+        Test_Actions.bobToRjh();
+}
+"EncryptDecrypt" 6 requiresFeature encrypt
+{
+        Test_Actions.setup();
+        Test_Actions.bobKeyAdd();
+        Test_Actions.rjhKeyChange();
+        Test_Actions.bobToRjh();
+}
+"EncryptVerify" 7 requiresFeature verify
+{
+        Test_Actions.setup();
+        Test_Actions.bobKeyAdd();        
+        Test_Actions.rjhKeyAdd();
+        Test_Actions.rjhKeyChange();
+        Test_Actions.bobToRjh();
+}
+"EncryptAutoResponder" 8 requiresFeature encrypt
+{
+		Test_Actions.setup();
+		Test_Actions.bobKeyAdd();
+		Test_Actions.rjhSetAutoRespond();
+		Test_Actions.bobToRjh();
+}
+"EncryptForward" 9 requiresFeature encrypt
+{
+        Test_Actions.setup();
+        Test_Actions.bobKeyAdd();
+        Test_Actions.rjhEnableForwarding();
+        Test_Actions.bobToRjh();
+}
+"DecryptAutoResponder" 11 requiresFeature base
+{
+        Test_Actions.setup();
+        Test_Actions.bobKeyAdd();
+        Test_Actions.rjhKeyChange();
+        Test_Actions.rjhSetAutoRespond();
+        Test_Actions.bobToRjh();
+}
+
+"VerifyForward" 27 requiresFeature verify	
+{
+        Test_Actions.setup();
+        Test_Actions.rjhKeyAdd();
+        Test_Actions.rjhEnableForwarding();
+        Test_Actions.bobToRjh();
+}

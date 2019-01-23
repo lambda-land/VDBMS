@@ -1,5 +1,5 @@
 -- Applies the sat solver to the result of queries sent to the db
-module VDB.BruteForce.BruteForceAppSatPersist where 
+module VDB.BruteForceApproach.BFAppSatPersist where 
 
 --import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 
