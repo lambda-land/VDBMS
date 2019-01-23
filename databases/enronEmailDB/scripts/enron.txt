@@ -52,12 +52,155 @@ reference: Contains the whole email with shortend headers.
 ****************************************************************************
 
 
-employeelist(eid, firstname, lastname, email_id, email2, email3, email4, folder, status, encrypt, sign)
+features:
+- encrypt/decrypt
+- sign/verify
+- addressBook
 
-message(mid, sender_email, sender_nickname, date, message_id, subject, body, folder)
+variants:
+- encrypt AND (NOT sign) AND (NOT addressBook)
+- encrypt AND sign AND (NOT addressBook)
+- encrypt AND sign AND addressBook
+- (NOT encrypt) AND sign AND (NOT addressBook)
+- (NOT encrypt) AND sign AND addressBook
+- (NOT encrypt) AND (NOT sign) AND (NOT addressBook)
+- encrypt AND (NOT sign) AND addressBook
+- (NOT encrypt) AND (NOT sign) AND addressBook
 
-recipientinfo(rid, mid, rtype, rvalue, dater)
+------------------------------------------------------------------------
+sign = concat(firstname, lastname)
+encrypt = eid
 
-referenceinfo(rfid, mid, reference)
+------------------------------------------------------------------------
+employee(eid, firstname, lastname, email_id, email2, email3, email4, folder, status, encrypt, sign) --> pres cond: True
 
-alias(eid, email, nickname)
+create table employee_vdb (
+  eid int ,
+  firstName varchar(31) NOT NULL DEFAULT '',
+  lastName varchar(31) NOT NULL DEFAULT '',
+  email_id varchar(31) NOT NULL DEFAULT '',
+  email2 varchar(31) DEFAULT NULL,
+  email3 varchar(31) DEFAULT NULL,
+  email4 varchar(31) DEFAULT NULL,
+  folder varchar(31) NOT NULL DEFAULT '',
+  status varchar(50) DEFAULT NULL,
+  encrypt int DEFAULT NULL,
+  sign varchar(62) DEFAULT NULL,
+  presCond varchar(150) 
+);
+
+- encrypt AND (NOT sign) AND (NOT addressBook)
+- encrypt AND (NOT sign) AND addressBook
+
+insert into employee_vdb(eid, firstname, lastName, email_id, email2, email3, email4, folder, status, encrypt, presCond)
+select eid, firstname, lastName, email_id, email2, email3, email4, folder, status, eid,'encrypt AND (NOT sign)'
+from employeelist;
+
+
+- encrypt AND sign AND (NOT addressBook)
+- encrypt AND sign AND addressBook
+
+insert into employee_vdb(eid, firstname, lastName, email_id, email2, email3, email4, folder, status, encrypt, sign, presCond)
+select eid, firstname, lastName, email_id, email2, email3, email4, folder, status, eid, concat(firstname, lastname),'encrypt AND sign'
+from employeelist;
+
+
+- (NOT encrypt) AND sign AND (NOT addressBook)
+- (NOT encrypt) AND sign AND addressBook
+
+insert into employee_vdb(eid, firstname, lastName, email_id, email2, email3, email4, folder, status, sign, presCond)
+select eid, firstname, lastName, email_id, email2, email3, email4, folder, status, concat(firstname, lastname), '(NOT encrypt) AND sign'
+from employeelist;
+
+
+- (NOT encrypt) AND (NOT sign) AND (NOT addressBook)
+- (NOT encrypt) AND (NOT sign) AND addressBook
+
+insert into employee_vdb(eid, firstname, lastName, email_id, email2, email3, email4, folder, status, presCond)
+select eid, firstname, lastName, email_id, email2, email3, email4, folder, status, '(NOT encrypt) AND (NOT sign)'
+from employeelist;
+
+------------------------------------------------------------------------
+message(mid, sender_email, sender_nickname, date, message_id, subject, body, folder) --> pres cond: True
+
+CREATE TABLE message_vdb (
+  mid int,
+  sender_email varchar(127),
+  date date DEFAULT NULL,
+  message_id varchar(127) DEFAULT NULL,
+  subject text,
+  body text,
+  folder varchar(127) NOT NULL DEFAULT '',
+  presCond varchar(150)
+);
+
+insert into message_vdb(mid, sender_email, date, message_id, subject, body, folder, presCond)
+select * , 'True'
+from message;
+
+------------------------------------------------------------------------
+recipientinfo(rid, mid, rtype, rvalue, dater) --> pres cond: True
+
+CREATE TABLE recipientinfo_vdb (
+  rid int,
+  mid int,
+  rtype varchar(10),
+  recipient_email varchar(127) DEFAULT NULL,
+  recipient_nickname varchar(127) DEFAULT NULL,
+  dater date DEFAULT NULL,
+  presCond varchar(150)
+);
+
+- addressBook:
+insert into recipientinfo_vdb(rid, mid, rtype, recipient_nickname, dater, presCond)
+select rid, mid, rtype, substring(rvalue from '#"%#"@%' for '#'), dater, 'addressBook'
+from recipientinfo;
+
+delete from recipientinfo_vdb
+where recipient_nickname not in (select distinct nickname from alias_vdb);
+
+- NOT addressBook:
+insert into recipientinfo_vdb(rid, mid, rtype, recipient_email, dater, presCond)
+select rid, mid, rtype, rvalue, dater, 'NOT addressBook'
+from recipientinfo;
+
+
+------------------------------------------------------------------------
+referenceinfo(rfid, mid, reference) --> pres cond: True
+
+CREATE TABLE referenceinfo_vdb (
+  rfid int,
+  mid int,
+  reference text,
+  presCond varchar(150)
+);
+
+insert into referenceinfo_vdb(rfid, mid, reference, presCond)
+select *, 'True'
+from referenceinfo;
+
+------------------------------------------------------------------------
+alias(eid, email, nickname) --> pres cond: addressBook
+
+**NOTE: the table pres cond is "addressBook" so the prescond of all 
+        attributes is "True"!!
+
+create table alias_vdb (
+  eid int,
+  email varchar(127),
+  nickname varchar(127),
+  presCond varchar(150)
+);
+
+
+
+with alias_temp as (
+ select eid, rvalue
+ from recipientinfo inner join message on recipientinfo.mid = message.mid
+                    inner join employeelist on message.sender = email_id
+)
+insert into alias_vdb(eid, email, nickname, presCond)
+select eid, rvalue, substring(rvalue from '#"%#"@%' for '#'), 'True'
+from alias_temp;
+
+
