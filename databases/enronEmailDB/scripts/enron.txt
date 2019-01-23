@@ -48,7 +48,7 @@ mid: Message-ID
 reference: Contains the whole email with shortend headers.
 
 ****************************************************************************
-*********************the variational email database:************************
+****************   variational email database in postgres   ****************
 ****************************************************************************
 
 
@@ -204,3 +204,27 @@ select eid, rvalue, substring(rvalue from '#"%#"@%' for '#'), 'True'
 from alias_temp;
 
 
+------------------------------------------------------------------------
+CREATE DATABASE enronEmailVDB WITH TEMPLATE enronemail OWNER ataeip
+
+* drop tables without _vdb postfix
+* rename tables with the query:
+   alter table <oldname> rename to <newname>;    
+* current tables:
+           List of relations
+ Schema |   Name    | Type  |  Owner   
+--------+-----------+-------+----------
+ public | alias     | table | postgres
+ public | employee  | table | postgres
+ public | message   | table | postgres
+ public | recipient | table | postgres
+ public | reference | table | postgres
+(5 rows)
+
+****************************************************************************
+**********************    convert postgres to sqlite   *********************
+****************************************************************************
+
+pg_dump --data-only --inserts enronemailvdb > enronEmailVDBdump.sql
+
+/var/lib/pgsql/data/ataeip/

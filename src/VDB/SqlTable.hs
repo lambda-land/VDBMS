@@ -40,6 +40,8 @@ type SqlTable = [SqlRow]
 type SqlVariantTable = Variant SqlTable Bool
 type SqlVtable = Opt SqlTable
 
+type VTuple = Opt SqlRow
+
 -- | returns a set of attributes from a tuple.
 rowAttSet :: SqlRow -> Set Attribute
 rowAttSet = S.map Attribute . M.keysSet 
@@ -83,6 +85,11 @@ conformSqlRowToRowType r t = M.union r r'
 --   their pres conds.
 removeDuplicate :: PresCondAtt -> SqlTable -> SqlTable
 removeDuplicate p t = undefined
+
+-- | extract the pres cond out of sqlrow and attachs it
+--   as the presence condition to the tuple.
+constVTuple :: PresCondAtt -> SqlRow -> VTuple
+constVTuple p r = undefined
 
 ------------------- apply config ----------------------
 
