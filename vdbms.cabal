@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c603855f2bd2b067bcfc5163b81c1f479885a4087698ea86c0c04079d25cee5b
+-- hash: c7ce179a311fa69361b51cd1b0d12324276350f8236d4a487f772e862e7852e2
 
 name:           vdbms
 version:        0.1.0.0
@@ -56,7 +56,6 @@ library
       VDB.Table
       VDB.Target
       VDB.Translations.AlgebraToSql
-      VDB.Translations.RelAlg2Sql
       VDB.Translations.VSqlToAlgebra
       VDB.Type
       VDB.TypeSystem.Semantics
