@@ -18,9 +18,10 @@ import Database.HDBC.Sqlite3
 -- main :: IO [[SqlValue]]
 main = do 
   testdb <- connectSqlite3 "/databases/testDB/test1.db"
-  employeeDB <- connectSqlite3 "/Volumes/GoogleDrive/My\ Drive/OSU/Research/VDBMSgit/codes/VDBMS/databases/employeeDB/emp_vdb.db"
+  -- /Volumes/GoogleDrive/My Drive/OSU/Research/VDBMSgit/codes/VDBMS/databases/employeeDB/emp_vdb.db
+  employeeConn <- connectSqlite3 "databases/employeeDB/emp_vdb.db"
   let employeeVSchema = variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
-      employeeVDB = VDB employeeVSchema employeeDB
+      employeeVDB = VDB employeeVSchema employeeConn
       p = PresCondAtt "presCond"
       q = empQ2_v1
       -- qualifyQuery employeeVSchema $ variationizeQuery [empQ2_v1]
@@ -28,7 +29,7 @@ main = do
       -- qualifiedVq = qualifyQuery employeeVSchema vq
   -- runTransFilterUnion qualifiedVq p employeeVDB
   -- runTransFilterUnion q p employeeVDB
-  quickQuery' employeeDB "select * from v_job" []
+  quickQuery' employeeConn "select * from v_job" []
   -- run testdb "CREATE TABLE test (id INTEGER NOT NULL, desc VARCHAR(80))" []
 
 
