@@ -17,8 +17,8 @@ import Database.HDBC.Sqlite3
 -- main :: IO VTable
 -- main :: IO [[SqlValue]]
 main = do 
-  testdb <- connectSqlite3 "../databases/testDB/test1.db"
-  employeeDB <- connectSqlite3 "/../databases/employeeDB/emp_vdb.db"
+  testdb <- connectSqlite3 "/databases/testDB/test1.db"
+  employeeDB <- connectSqlite3 "/Volumes/GoogleDrive/My\ Drive/OSU/Research/VDBMSgit/codes/VDBMS/databases/employeeDB/emp_vdb.db"
   let employeeVSchema = variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
       employeeVDB = VDB employeeVSchema employeeDB
       p = PresCondAtt "presCond"
@@ -28,8 +28,8 @@ main = do
       -- qualifiedVq = qualifyQuery employeeVSchema vq
   -- runTransFilterUnion qualifiedVq p employeeVDB
   -- runTransFilterUnion q p employeeVDB
-  -- quickQuery' employeeDB "select * from v_job" []
-  run testdb "CREATE TABLE test (id INTEGER NOT NULL, desc VARCHAR(80))" []
+  quickQuery' employeeDB "select * from v_job" []
+  -- run testdb "CREATE TABLE test (id INTEGER NOT NULL, desc VARCHAR(80))" []
 
 
 -- runTransFilterUnion :: IConnection conn => Algebra -> PresCondAtt 
