@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 95344af57cc8941bcd7ee674d39c3cb19711066d1c1c8215776651e2bb379b31
+
 
 name:           vdbms
 version:        0.1.0.0
@@ -55,7 +55,6 @@ library
       VDB.Table
       VDB.Target
       VDB.Translations.AlgebraToSql
-      VDB.Translations.RelAlg2Sql
       VDB.Translations.VSqlToAlgebra
       VDB.Type
       VDB.TypeSystem.Semantics
