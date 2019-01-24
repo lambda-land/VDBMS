@@ -145,8 +145,7 @@ testEmployeeQuery  = testGroup "Test fold a list of query to V-query"
     [ testCase "test emp query 1 and 2" $
         do output    <- return $ variationizeQuery [empQ1_v1, empQ1_v2]
            expectVal <- return $ Proj [(v1 `Or` v2, Attribute Nothing "empno"),(v1 `Or` v2, Attribute Nothing "hiredate"),(v1 `Or` v2,Attribute Nothing "name")] 
-                                  (Sel (C.CChc (v1 `Or` v2) (C.Comp LT (C.Attr (Attribute Nothing "hiredate")) (C.Val date2000)) (C.Lit True)) 
-                                    (AChc v2 (TRef (Relation "empacct")) (AChc v1 (TRef (Relation  "otherpersonnel")) Empty)))
+                                    (AChc v2 (TRef (Relation "empacct")) (AChc v1 (TRef (Relation  "otherpersonnel")) Empty))
            expectVal @=? output 
     , testCase "test emp query 1 to 5" $ 
         do output    <- return $ variationizeQuery [empQ1_v1, empQ1_v2,empQ1_v3,empQ1_v4,empQ1_v5]
@@ -155,13 +154,9 @@ testEmployeeQuery  = testGroup "Test fold a list of query to V-query"
                                       , (v1 `Or` (v2 `Or` (v3 `Or` (v4 `Or` v5))),unQualifedAttribute "hiredate")
                                       , (v5,unQualifedAttribute "lastname")
                                       , (v1 `Or` (v2 `Or` (v3 `Or` v4)), unQualifedAttribute "name")] 
-                                   (Sel (C.CChc (v1 `Or` (v2 `Or` v3)) 
-                                          (C.Comp LT (C.Attr (unQualifedAttribute "hiredate")) (C.Val date2000)) 
-                                          (C.CChc (v4 `Or`v5)  
-                                            (C.And 
+                                   (Sel (C.CChc (v4 `Or`v5)  
                                               (C.Comp EQ (C.Attr (qualifedAttribute "empacct" "empno")) (C.Attr (qualifedAttribute "empbio" "empno"))) 
-                                              (C.Comp LT (C.Attr (unQualifedAttribute "hiredate")) (C.Val date2000))) 
-                                            (C.Lit True)))                                    
+                                            (C.Lit True))                                    
                                    (SetOp Prod 
                                       (SetOp Prod (AChc (v2 `Or` (v3 `Or` (v4 `Or` v5))) (TRef (Relation "empacct")) (AChc v1 (TRef (Relation "otherpersonnel")) Empty)) 
                                                   (AChc (v2 `Or` (v3 `Or` v5)) (TRef (Relation "empacct")) (AChc v1 (TRef (Relation "otherpersonnel")) Empty))) 
