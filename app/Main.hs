@@ -42,6 +42,7 @@ VTable (FAlSE OR ((((((((v1 AND NOT v2) OR (NOT v1 AND v2)) AND NOT v3) OR (NOT 
 -- runTransFilterUnion :: IConnection conn => Algebra -> PresCondAtt 
 --                        -> SqlDatabase conn -> IO (VTable)
 
+
 -- main :: IO Connection
 -- main = enronEmail
 --main = return ()
