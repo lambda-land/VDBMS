@@ -37,7 +37,7 @@ empQ1_v1 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ Sel cond $ TRef (R
 -- | a query to find the titles of all jobs
 --   * SELECT title FROM job;
 empQ2_v1 :: Algebra
-empQ2_v1 = Proj [ plainAttr "title" ] $ TRef (Relation "job")
+empQ2_v1 = Proj [ plainAttr "title" ] $ TRef (Relation "v_job")
 
 -- 
 -- ** Query in schema verison 2
