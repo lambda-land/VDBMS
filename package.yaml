@@ -39,6 +39,7 @@ dependencies:
 - HDBC-sqlite3 >= 2.3.3.1 
 - convertible
 - bytestring
+- directory
 
 library:
   source-dirs: src
