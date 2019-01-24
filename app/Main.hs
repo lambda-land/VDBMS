@@ -14,9 +14,12 @@ import VDB.Approach1.App1Run
 import Database.HDBC
 import Database.HDBC.Sqlite3
 
+import System.Directory
+
 -- main :: IO VTable
 -- main :: IO [[SqlValue]]
 main = do 
+  path <- getCurrentDirectory
   testdb <- connectSqlite3 "/databases/testDB/test1.db"
   -- /Volumes/GoogleDrive/My Drive/OSU/Research/VDBMSgit/codes/VDBMS/databases/employeeDB/emp_vdb.db
   employeeConn <- connectSqlite3 "databases/employeeDB/emp_vdb.db"

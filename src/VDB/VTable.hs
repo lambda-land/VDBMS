@@ -22,6 +22,7 @@ import VDB.SqlTable
 -- | the result of a vq is a variational table.
 --   variational table data type.
 data VTable = VTable TableSchema SqlTable
+  deriving (Eq, Show)
 
 ------------------- construct vtable for approach1 -------------------
 

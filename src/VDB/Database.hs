@@ -110,6 +110,7 @@ type TranslatedVquery = Opt QueryText
 runTransQ :: IConnection conn => TranslatedVquery -> SqlDatabase conn -> IO SqlVtable 
 runTransQ q db = do
   stmt <- mkStatement db $ T.unpack $ getObj q
+  _ <- execute stmt []
   r <- fetchAllRowsMap' stmt 
   return $ mkOpt (getFexp q) r
 
@@ -126,6 +127,7 @@ runVq qs db = mapM (flip runTransQ db) qs
 runSqlQ :: IConnection conn => Config Bool -> QueryString -> SqlDatabase conn -> IO SqlVariantTable
 runSqlQ c t db = do 
   q <- mkStatement db t 
+  _ <- execute q []
   r <- fetchAllRowsMap' q
   return $ mkVariant r c
 
@@ -232,6 +234,7 @@ genSelectQs c vdb = zip rels $ map (++ ";") $ map (genSelectQ c vdb) rels
 runSelectQ :: IConnection conn => SqlDatabase conn -> (Relation,QueryString) -> IO (Relation,SqlTable)
 runSelectQ vdb (r,q) = do 
   stmt <- mkStatement vdb q
+  _ <- execute stmt []
   table <- fetchAllRowsMap' stmt
   return $ (,) r table 
 

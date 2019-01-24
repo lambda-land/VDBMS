@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c603855f2bd2b067bcfc5163b81c1f479885a4087698ea86c0c04079d25cee5b
+-- hash: 7cbe2a6085de64063cfdce4170be070b5d879d321f1888dfb50997c6073ceed0
 
 name:           vdbms
 version:        0.1.0.0
@@ -79,6 +79,7 @@ library
     , containers >=0.5
     , convertible
     , direct-sqlite
+    , directory
     , megaparsec
     , mtl
     , parsec
@@ -108,6 +109,7 @@ executable vdbms
     , containers >=0.5
     , convertible
     , direct-sqlite
+    , directory
     , megaparsec
     , mtl
     , parsec
@@ -140,6 +142,7 @@ test-suite vsat-test
     , containers >=0.5
     , convertible
     , direct-sqlite
+    , directory
     , megaparsec
     , mtl
     , parsec
