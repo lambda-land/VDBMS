@@ -2,6 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
+-- hash: c603855f2bd2b067bcfc5163b81c1f479885a4087698ea86c0c04079d25cee5b
 
 name:           vdbms
 version:        0.1.0.0
@@ -21,21 +22,31 @@ extra-source-files:
 library
   exposed-modules:
       VDB.Algebra
-
+      VDB.Approach1.App1Alg2Sql
+      VDB.Approach1.App1AppSat
+      VDB.Approach1.App1Run
+      VDB.Approach1.App1SendQs
+      VDB.BruteForceApproach.BFAppSatPersist
+      VDB.BruteForceApproach.BFSendQs
+      VDB.BruteForceApproach.BFSendQsPersist
+      VDB.BruteForceApproach.BruteForce
       VDB.Condition
       VDB.Config
       VDB.Database
       VDB.DBsetup.EnronEmailDB
       VDB.DBsetup.EnronEmailDBPersist
-      VDB.Example.EmployeeUseCase.EmployeeSchema
-      VDB.Example.EmployeeUseCase.EmployeeVSchema
       VDB.Example.EmployeeUseCase.EmployeeQuery
+      VDB.Example.EmployeeUseCase.EmployeeSchema
       VDB.Example.EmployeeUseCase.EmployeeVQuery
-      VDB.Example.EmployeeUseCase.SmallSampleForTest
+      VDB.Example.EmployeeUseCase.EmployeeVSchema
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
       VDB.FeatureExpr
+      VDB.FeatureExprParser
+      VDB.NaiveApproach.Naive
+      VDB.NaiveApproach.NaiveAppConfig
+      VDB.NaiveApproach.NaiveSendQs
       VDB.Name
       VDB.ParsingSQL
       VDB.SAT
@@ -139,6 +150,4 @@ test-suite vsat-test
     , text
     , time
     , vdbms
-    , tasty
-    , tasty-hunit
   default-language: Haskell2010

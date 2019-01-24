@@ -211,7 +211,7 @@ rowTypeUnion e e' = StrictM.merge
 --  taken from:
 --  VDBMS/src/VDB/Example/EmployeeUseCase/EmployeeVSchema.hs.
 --  by Qiaoran
-
+{-
 -- | fold a list of schema into one variational schema 
 variationizeSchema :: [Schema] -> Schema
 variationizeSchema = foldl variationize' emptySchema 
@@ -264,7 +264,7 @@ unionRowType = M.unionWith unionRowtypeHelper
 --   
 unionRowtypeHelper :: Opt SqlType -> Opt SqlType -> Opt SqlType
 unionRowtypeHelper (lf,l)         (rf,r) = (shrinkFeatureExpr (lf `Or` rf), l)
-
+-}
 
 -- | Get all info of an attribute from a rowtype
 --lookupAttInRel :: Attribute -> Relation -> Schema -> Maybe (Opt (Attribute,Type))
