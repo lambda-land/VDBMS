@@ -8,4 +8,5 @@ dist
 .sql
 .csv
 .DS_Store
+.cabal
 
