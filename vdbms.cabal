@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c7ce179a311fa69361b51cd1b0d12324276350f8236d4a487f772e862e7852e2
+
 
 name:           vdbms
 version:        0.1.0.0
@@ -15,7 +17,6 @@ maintainer:     walkiner@oregonstate.edu
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
     README.md
 
@@ -23,9 +24,7 @@ library
   exposed-modules:
       VDB.Algebra
       VDB.Approach1.App1Alg2Sql
-      VDB.Approach1.App1AppSat
       VDB.Approach1.App1Run
-      VDB.Approach1.App1SendQs
       VDB.BruteForceApproach.BFAppSatPersist
       VDB.BruteForceApproach.BFSendQs
       VDB.BruteForceApproach.BFSendQsPersist
@@ -39,11 +38,11 @@ library
       VDB.Example.EmployeeUseCase.EmployeeSchema
       VDB.Example.EmployeeUseCase.EmployeeVQuery
       VDB.Example.EmployeeUseCase.EmployeeVSchema
+      VDB.Example.EmployeeUseCase.SmallSampleForTest
       VDB.Example.Query
       VDB.Example.TwoOption
       VDB.Example.TwoPathTest
       VDB.FeatureExpr
-      VDB.FeatureExprParser
       VDB.NaiveApproach.Naive
       VDB.NaiveApproach.NaiveAppConfig
       VDB.NaiveApproach.NaiveSendQs
@@ -149,4 +148,6 @@ test-suite vsat-test
     , text
     , time
     , vdbms
+    , tasty
+    , tasty-hunit
   default-language: Haskell2010
