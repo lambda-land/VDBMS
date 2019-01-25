@@ -57,6 +57,11 @@ main = do
                   empQ1_v4and5)
   -- runTransFilterUnion vqManualEmpQ1_V1 p employeeVDB -- WORKS!!! HAVE NO IDEA IF IT'S CORRECT THO!!
   runTransFilterUnion vqManual p employeeVDB --WORKS!! TIME IT FOR SUBMISSION!!!
+      vqManual = AChc (Ref $ Feature "v1") empQ1_v1 Empty
+
+  -- runTransFilterUnion vqManual p employeeVDB -- WORKS!!! HAVE NO IDEA IF IT'S CORRECT THO!!
+  -- runTransFilterUnion vq p employeeVDB
+
   -- Count time here ----------------------------
   -- putStrLn "Starting..."
   -- time $ runTransFilterUnion vqManual p employeeVDB  `seq` return ()
