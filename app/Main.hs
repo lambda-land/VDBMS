@@ -19,6 +19,22 @@ import Database.HDBC
 import Database.HDBC.Sqlite3
 
 import System.Directory
+import System.Clock
+import System.CPUTime
+import Text.Printf
+
+import VDB.Example.EmployeeUseCase.SmallSampleForTest
+
+
+time :: IO t -> IO t
+time a = do
+    start <- getCPUTime
+    v <- a
+    end   <- getCPUTime
+    let diff = (fromIntegral (end - start)) / (10^12)
+    printf "Computation time: %0.5f sec\n" (diff :: Double)
+    return v
+ 
 
 -- main :: IO VTable
 -- main :: IO [[SqlValue]]
@@ -41,6 +57,11 @@ main = do
                   empQ1_v4and5)
   -- runTransFilterUnion vqManualEmpQ1_V1 p employeeVDB -- WORKS!!! HAVE NO IDEA IF IT'S CORRECT THO!!
   runTransFilterUnion vqManual p employeeVDB --WORKS!! TIME IT FOR SUBMISSION!!!
+  -- Count time here ----------------------------
+  -- putStrLn "Starting..."
+  -- time $ runTransFilterUnion vqManual p employeeVDB  `seq` return ()
+  -- putStrLn "Done."
+  
       -- configs = [c1]
   -- runBrute q configs p "./databases/employeeDB/relDBs/" employeeVDB
   
