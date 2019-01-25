@@ -92,3 +92,14 @@ empQ1_v5 :: Algebra
 empQ1_v5 = Proj (plainAttrs [ "empno", "firstname","lastname", "hiredate"]) $ Sel cond1 $ SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
          where cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct"))  "empno")) (C.Attr (Attribute (Just "v_empbio") "empno"))
 
+
+empJoin :: Algebra
+empJoin = SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
+  -- where cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct")) "empno")) (C.Attr (Attribute (Just (Relation "v_empbio")) "empno"))
+
+empQ1_v4and5 :: Algebra
+empQ1_v4and5 = Proj [(F.Lit True, Attribute (Just $ Relation "v_empacct") "empno"),
+                     (F.And (F.Ref $ Feature "v4") (F.Not $ F.Ref $ Feature "v5"), Attribute (Just $ Relation "v_empbio") "name"),
+                     (F.And (F.Not $ F.Ref $ Feature "v4") (F.Ref $ Feature "v5"), Attribute Nothing "firstname"),
+                     (F.And (F.Not $ F.Ref $ Feature "v4") (F.Ref $ Feature "v5"), Attribute Nothing "lastname"),
+                     (F.Lit True, Attribute Nothing "hiredate")] empJoin

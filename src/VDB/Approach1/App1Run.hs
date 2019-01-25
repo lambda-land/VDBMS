@@ -25,7 +25,7 @@ import VDB.SqlTable
 import Database.HDBC
 
 
--- runs trans-filter-union.
+-- runs trans-union-filter.
 runTransFilterUnion :: IConnection conn => Algebra -> PresCondAtt 
                        -> SqlDatabase conn -> IO (VTable)
 runTransFilterUnion vq p vdb = do

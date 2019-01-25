@@ -34,6 +34,7 @@ alg2Sql q cs = map (variantQ q) cs
 
 -- | takes a vq and returns a "just text" if vq is a pure
 --   relational query and returns "nothing" otherwise.
+-- Note: it's used in brute force!! (I think!!)
 relTrans :: Algebra -> Maybe Query
 relTrans (SetOp s l r) = case (relTrans l, relTrans r) of 
   (Just ql, Just qr) -> case s of 
