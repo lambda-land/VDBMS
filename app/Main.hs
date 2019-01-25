@@ -18,6 +18,22 @@ import Database.HDBC
 import Database.HDBC.Sqlite3
 
 import System.Directory
+import System.Clock
+import System.CPUTime
+import Text.Printf
+
+import VDB.Example.EmployeeUseCase.SmallSampleForTest
+
+
+time :: IO t -> IO t
+time a = do
+    start <- getCPUTime
+    v <- a
+    end   <- getCPUTime
+    let diff = (fromIntegral (end - start)) / (10^12)
+    printf "Computation time: %0.5f sec\n" (diff :: Double)
+    return v
+ 
 
 -- main :: IO VTable
 -- main :: IO [[SqlValue]]
@@ -42,10 +58,17 @@ fromList [("title",SqlByteString "Technique Leader")]]
 -}      
       -- qualifyQuery employeeVSchema $ variationizeQuery [empQ2_v1]
       vq = variationizeQuery [empQ1_v1, empQ1_v2, empQ1_v3, empQ1_v4, empQ1_v5]
+ 
       qualifiedVq = qualifyQuery employeeVSchema vq
       vqManual = AChc (Ref $ Feature "v1") empQ1_v1 Empty
+
   -- runTransFilterUnion vqManual p employeeVDB -- WORKS!!! HAVE NO IDEA IF IT'S CORRECT THO!!
   runTransFilterUnion vq p employeeVDB
+  -- Count time here ----------------------------
+  -- putStrLn "Starting..."
+  -- time $ runTransFilterUnion vqManual p employeeVDB  `seq` return ()
+  -- putStrLn "Done."
+  
   -- runTransFilterUnion q p employeeVDB
   -- quickQuery' employeeConn "select * from v_job" []
   -- run testdb "CREATE TABLE test (id INTEGER NOT NULL, desc VARCHAR(80))" []
