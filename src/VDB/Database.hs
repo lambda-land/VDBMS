@@ -183,12 +183,12 @@ describeRelWithoutPres p c vdb r = do
 -- | generates create queries.
 --   concat all queries and send them once using the "runRaw" func.
 -- the sqldb is variational
-genCreateQs :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> IO QueryString
+genCreateQs :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> IO [QueryString]
 genCreateQs p c vdb = do 
   let validSchema    = appConfSchema' c (getSqlDBschema vdb)
       validRelations = validRels c (validSchema)
   qs <- mapM (flip (genTableDesc p c) vdb) validRelations 
-  return $ concat qs 
+  return qs
 
 -- | gets attributes of a table and their type to regenerate 
 --   create queries for a specific variant. helper for genCreateQs
@@ -201,8 +201,14 @@ genTableDesc p c r vdb = do
 
 -- | running create queries. Note the sqldatabase is a variant database and NOT 
 --   a variational table.
-runCreateQs :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> conn -> IO Integer
-runCreateQs p c vdb conn = genCreateQs p c vdb >>= \x -> run conn x []
+-- runCreateQs :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> conn -> IO Integer
+-- runCreateQs p c vdb conn = genCreateQs p c vdb >>= \x -> run conn x []
+
+runCreateQs' :: IConnection conn => [QueryString] -> conn -> IO ()
+runCreateQs' qs conn = do
+  -- genCreateQs p c vdb >>= 
+  mapM (flip (run conn) []) qs 
+  commit conn
 
 -- | returns a list of attributes to be projected for the genSelectQs.
 --   note: it INCLUDES pres cond attribute. 
@@ -253,7 +259,7 @@ insertionVals p c vdb = do
 
 -- | helper func for configVDB. generates insert queries for a specific config.
 genInsertQ :: IConnection conn => Config Bool -> SqlDatabase conn -> Relation -> QueryString
-genInsertQ c vdb r = "insert into " ++ rName ++ " ( " ++ qMarks ++ " )"
+genInsertQ c vdb r = "insert into " ++ rName ++ " (" ++ qMarks ++ ")"
   where 
     rName  = relationName r
     qMarks = intercalate "," $ replicate (n) "?"
@@ -279,6 +285,15 @@ runInsertQs p c vdb conn =  do
   res <- mapM (bitraverse stmt pure) qts
   mapM_ (\(iq,t) -> executeMany iq t) res
 
+runInsertQs' :: IConnection conn => [(QueryString,[[SqlValue]])] -> conn -> IO ()
+runInsertQs' qts conn =  do 
+  -- qts <- genInsertQs p c vdb
+  let stmt q = prepare conn q
+  res <- mapM (bitraverse stmt pure) qts
+  mapM_ (\(iq,t) -> executeMany iq t) res
+  commit conn
+
+
 -- | creates a variant db from the provided config and vdb.
 --   TODO: it doesn't work with the type constraint: IConnection conn =>
 --         figure out the problem!!!
@@ -286,9 +301,13 @@ configVDB ::  DBFilePath -> PresCondAtt -> SqlDatabase Connection -> Config Bool
 configVDB f p vdb c i = do
   let vdb_schema = getSqlDBschema vdb
       db_schema = appConfSchema' c vdb_schema
-  conn <- connectSqlite3 $ f ++ show i
-  runCreateQs p c vdb conn 
-  runInsertQs p c vdb conn
+  createQs <- genCreateQs p c vdb 
+  insertQs <- genInsertQs p c vdb
+  disconnect $ getSqlData vdb
+  conn <- connectSqlite3 $ f ++ show i ++ ".db"
+  runCreateQs' createQs conn 
+  runInsertQs' insertQs conn
+  disconnect conn
   return $ VariantDB db_schema $ mkVariant conn c 
 
 

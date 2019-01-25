@@ -99,7 +99,7 @@ prettyFeatureExpr = top
     top (Or  l r) = sub l ++ " OR " ++ sub r
     top e         = sub e
     -- sub (Lit b)   = if b then "#T" else "#F"
-    sub (Lit b)   = if b then "TRUE" else "FAlSE"
+    sub (Lit b)   = if b then "TRUE" else "FALSE"
 
     sub (Ref f)   = featureName f
     -- sub (Not e)   = "¬" ++ sub e

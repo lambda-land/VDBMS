@@ -43,7 +43,7 @@ featureModel :: Schema -> FeatureExpr
 featureModel = getFexp
 
 -- | Gets the structure of schema.
-schemaStrct :: Schema -> Map Relation (TableSchema)
+schemaStrct :: Schema -> Map Relation TableSchema
 schemaStrct = getObj 
 
 -- | Get the schema of a relation in the database.
@@ -163,7 +163,10 @@ appConfSchema c s
 --   as one of the attributes of relations.
 appConfSchema' :: Config Bool -> Schema -> Schema
 appConfSchema' c s = mkOpt (Lit $ appConfSchemaFexp c s) 
-  (M.filter (\optRow -> getFexp optRow == Lit True) $ schemaStrct s)
+  (M.filter (\optRow -> getFexp optRow == Lit True) $ schemaStrct $ appConfSchema c s)
+
+-- Relation {relationName = "v_job"},(TRUE,fromList [(Attribute {attributeQualifier = Just (Relation {relationName = "v_job"}), attributeName = "salary"},(TRUE,TInt32)),(Attribute {attributeQualifier = Just (Relation {relationName = "v_job"}), attributeName = "title"},(TRUE,TString))])),
+
 
 
 -- | apply config to a rowtype. it doesn't filter out invalid attributes.

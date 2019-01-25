@@ -91,6 +91,8 @@ conformSqlRowToRowType r t = M.union r r'
 -- NOTE: time this separately!!
 removeDuplicate :: PresCondAtt -> SqlTable -> SqlTable
 removeDuplicate p t = undefined
+  where
+    vtuples = constVTuples p t 
 
 -- | extract the pres cond out of sqlrow and attachs it
 --   as the presence condition to the tuple.

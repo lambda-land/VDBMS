@@ -10,6 +10,7 @@ import VDB.Database
 import VDB.VTable
 import VDB.Name
 import VDB.Approach1.App1Run
+import VDB.BruteForceApproach.BruteForce
 import VDB.Algebra
 import VDB.Name
 import VDB.FeatureExpr
@@ -23,7 +24,7 @@ import System.Clock
 import System.CPUTime
 import Text.Printf
 
-import VDB.Example.EmployeeUseCase.SmallSampleForTest
+-- import VDB.Example.EmployeeUseCase.SmallSampleForTest
 
 
 time :: IO t -> IO t
@@ -48,22 +49,21 @@ main = do
       p = PresCondAtt "presCond"
       q = empQ2_v1
       -- qualifyQuery employeeVSchema $ variationizeQuery [empQ2_v1]
-      vq = variationizeQuery [empQ1_v1]
+      -- vq = variationizeQuery [empQ1_v1]
       -- , empQ1_v2, empQ1_v3, empQ1_v4, empQ1_v5]
-      qualifiedVq = qualifyQuery employeeVSchema vq
+      -- qualifiedVq = qualifyQuery employeeVSchema vq
       vqManualEmpQ1_v1 = AChc (Ref $ Feature "v1") empQ1_v1 Empty
       vqManual = AChc (Ref $ Feature "v1") empQ1_v1 
                  (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
                   empQ1_v4and5)
   -- runTransFilterUnion vqManualEmpQ1_V1 p employeeVDB -- WORKS!!! HAVE NO IDEA IF IT'S CORRECT THO!!
-  runTransFilterUnion vqManual p employeeVDB --WORKS!! TIME IT FOR SUBMISSION!!!
+  -- runTransFilterUnion vqManual p employeeVDB --WORKS!! TIME IT FOR SUBMISSION!!!
   -- Count time here ----------------------------
   -- putStrLn "Starting..."
-  -- time $ runTransFilterUnion vqManual p employeeVDB  `seq` return ()
+  -- time $ runTransFilterUnion vqManual p employeeVDB -- 4.08534 sec
   -- putStrLn "Done."
-  
-      -- configs = [c1]
-  -- runBrute q configs p "./databases/employeeDB/relDBs/" employeeVDB
+      configs = [c1]
+  runBrute' q configs p "./databases/employeeDB/relDBs/emp_db" employeeVDB
   
 
 c1 :: Config Bool
