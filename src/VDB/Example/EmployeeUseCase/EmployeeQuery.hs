@@ -32,12 +32,14 @@ date2000 = SqlUTCTime $ UTCTime (fromGregorian 2000 1 1) 0
 --   FROM   otherpersonnel
 
 empQ1_v1 :: Algebra 
-empQ1_v1 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "otherpersonnel")
+empQ1_v1 = SetOp Union 
+  (Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_engineerpersonnel"))
+  (Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_otherpersonnel"))
 
 -- | a query to find the titles of all jobs
 --   * SELECT title FROM job;
 empQ2_v1 :: Algebra
-empQ2_v1 = Proj [ plainAttr "title" ] $ TRef (Relation "job")
+empQ2_v1 = Proj [ plainAttr "title" ] $ TRef (Relation "v_job")
 
 
 -- 
@@ -49,7 +51,7 @@ empQ2_v1 = Proj [ plainAttr "title" ] $ TRef (Relation "job")
 --   SELECT empno, name, hiredate
 --   FROM   empacct
 empQ1_v2 :: Algebra
-empQ1_v2 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "empacct")
+empQ1_v2 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_empacct")
 
 -- 
 -- ** Query in schema verison 3
@@ -61,7 +63,7 @@ empQ1_v2 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "em
 --   FROM   empacct
 
 empQ1_v3 :: Algebra
-empQ1_v3 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "empacct")
+empQ1_v3 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_empacct")
 
 -- 
 -- ** Query in schema verison 4
@@ -73,8 +75,8 @@ empQ1_v3 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "em
 --   FROM   empacct, empbio
 --   WHERE empacct.empno = empbio.empno  
 empQ1_v4 :: Algebra
-empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "empacct")) "empno")) (C.Attr (Attribute (Just (Relation "empbio")) "empno"))
-           in Proj (plainAttrs [ "empno", "name", "hiredate"]) $ Sel  cond1  $ SetOp Prod (TRef (Relation "empacct")) (TRef (Relation "empbio"))
+empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct")) "empno")) (C.Attr (Attribute (Just (Relation "v_empbio")) "empno"))
+           in Proj (plainAttrs [ "empno", "name", "hiredate"]) $ Sel  cond1  $ SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
 
                
 
@@ -87,6 +89,6 @@ empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "empacct")) 
   -- FROM   empacct, empbio
   -- WHERE empacct.empno = empbio.empno 
 empQ1_v5 :: Algebra 
-empQ1_v5 = Proj (plainAttrs [ "empno", "firstname","lastname", "hiredate"]) $ Sel cond1 $ SetOp Prod (TRef (Relation "empacct")) (TRef (Relation "empbio"))
-         where cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "empacct"))  "empno")) (C.Attr (Attribute (Just "empbio") "empno"))
+empQ1_v5 = Proj (plainAttrs [ "empno", "firstname","lastname", "hiredate"]) $ Sel cond1 $ SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
+         where cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct"))  "empno")) (C.Attr (Attribute (Just "v_empbio") "empno"))
 
