@@ -75,6 +75,34 @@ c1 (Feature "v4") = False
 c1 (Feature "v5") = False
 
 
+c2 :: Config Bool
+c2 (Feature "v1") = False 
+c2 (Feature "v2") = True
+c2 (Feature "v3") = False
+c2 (Feature "v4") = False
+c2 (Feature "v5") = False
+
+c3 :: Config Bool
+c3 (Feature "v1") = False 
+c3 (Feature "v2") = False
+c3 (Feature "v3") = True
+c3 (Feature "v4") = False
+c3 (Feature "v5") = False
+
+c4 :: Config Bool
+c4 (Feature "v1") = False 
+c4 (Feature "v2") = False
+c4 (Feature "v3") = False
+c4 (Feature "v4") = True
+c4 (Feature "v5") = False
+
+c5 :: Config Bool
+c5 (Feature "v1") = False 
+c5 (Feature "v2") = False
+c5 (Feature "v3") = False
+c5 (Feature "v4") = False
+c5 (Feature "v5") = True
+
 -- main :: IO Connection
 -- main = enronEmail
 --main = return ()
