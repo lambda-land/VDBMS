@@ -58,6 +58,7 @@ main = do
                   empQ1_v4and5)
   -- runTransFilterUnion vqManualEmpQ1_V1 p employeeVDB -- WORKS!!! HAVE NO IDEA IF IT'S CORRECT THO!!
   -- runTransFilterUnion vqManual p employeeVDB --WORKS!! TIME IT FOR SUBMISSION!!!
+  -- runTransFilterUnion vq p employeeVDB
   -- Count time here ----------------------------
   -- putStrLn "Starting..."
   -- time $ runTransFilterUnion vqManual p employeeVDB -- 4.08534 sec
