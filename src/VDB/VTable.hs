@@ -24,6 +24,18 @@ import VDB.SqlTable
 data VTable = VTable TableSchema SqlTable
   deriving (Eq, Show)
 
+-- | returns the schema of the vtable.
+getTableSchema :: VTable -> TableSchema
+getTableSchema (VTable s _) = s 
+
+-- | returns the table of the vtable.
+getSqlTable :: VTable -> SqlTable
+getSqlTable (VTable _ t) = t
+
+-- | updates the sqltable of a vtable given a function.
+updateSqlTable :: (SqlTable -> SqlTable) -> VTable -> VTable
+updateSqlTable f (VTable s t) = VTable s $ f t
+
 ------------------- construct vtable for approach1 -------------------
 
 -- | constructs a vtable from a list sqlvtables.

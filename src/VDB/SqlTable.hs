@@ -17,7 +17,7 @@ import VDB.Config
 import VDB.FeatureExpr 
 import VDB.Schema
 import VDB.Type
--- import VDB.SAT 
+import VDB.SAT 
 
 import Database.HDBC 
 
@@ -90,8 +90,10 @@ conformSqlRowToRowType r t = M.union r r'
 --   their pres conds.
 -- NOTE: time this separately!!
 disjoinDuplicate :: PresCondAtt -> SqlTable -> SqlTable
-disjoinDuplicate p t = destVTuples p resTs
--- map (updateFexp $ map (disjFexp . fst) groupedFexpTs) groupedFexpTs
+disjoinDuplicate p t = destVTuples p shrinkedFexpRes
+-- destVTuples p resTs -- just disjoins duplicate tuples
+-- destVTuples p dropFalseRowsRes -- also drops tuples with false fexp
+-- destVTuples p shrinkedFexpRes-- also shrinks fexp of tuples
   where
     vtuples :: VTuples
     vtuples = constVTuples p t 
@@ -101,6 +103,8 @@ disjoinDuplicate p t = destVTuples p resTs
     groupedFexpTs = map pushDownList groupedTs
     mapFst g (a,b) = (g a,b)
     resTs = map (mapFst disjFexp) groupedFexpTs
+    dropFalseRowsRes = filter (satisfiable . fst) resTs
+    shrinkedFexpRes = map (mapFst shrinkFeatureExpr) dropFalseRowsRes
 
 
 -- | constructs a list of fexp for the group of vtuples
