@@ -8,7 +8,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.List (deleteBy)
+import Data.List (deleteBy,groupBy)
 
 import VDB.Variant 
 import VDB.Variational 
@@ -89,10 +89,27 @@ conformSqlRowToRowType r t = M.union r r'
 --   cond, inserts only one such tuple and disjuncts all 
 --   their pres conds.
 -- NOTE: time this separately!!
-removeDuplicate :: PresCondAtt -> SqlTable -> SqlTable
-removeDuplicate p t = undefined
+disjoinDuplicate :: PresCondAtt -> SqlTable -> SqlTable
+disjoinDuplicate p t = destVTuples p resTs
+-- map (updateFexp $ map (disjFexp . fst) groupedFexpTs) groupedFexpTs
   where
+    vtuples :: VTuples
     vtuples = constVTuples p t 
+    groupedTs :: [VTuples]
+    groupedTs = groupBy (\x y -> snd x == snd y) vtuples
+    groupedFexpTs :: [([FeatureExpr],SqlRow)]
+    groupedFexpTs = map pushDownList groupedTs
+    mapFst g (a,b) = (g a,b)
+    resTs = map (mapFst disjFexp) groupedFexpTs
+
+
+-- | constructs a list of fexp for the group of vtuples
+--   that have the same tuple.
+--   NOTE: this is unsafe since you're not checking if 
+--         the first element of pairs are the same!
+pushDownList :: [(a,b)] -> ([a],b)
+pushDownList [(a,b)] = ([a],b)
+pushDownList ((a,b):l) = (a:fst (pushDownList l),b)
 
 -- | extract the pres cond out of sqlrow and attachs it
 --   as the presence condition to the tuple.
@@ -108,6 +125,14 @@ constVTuple p r = mkOpt f t
 -- | constructs a table of vtuples.
 constVTuples :: PresCondAtt -> SqlTable -> VTuples
 constVTuples p t = map (constVTuple p) t
+
+-- | destructs a vtuple into a sqlrow.
+destVTuple :: PresCondAtt -> VTuple -> SqlRow
+destVTuple p t = M.insert (presCondAttName p) (fexp2sqlval $ getFexp t) $ getObj t
+
+-- | destructs a vtuples into a sqltable.
+destVTuples :: PresCondAtt -> VTuples -> SqlTable
+destVTuples p ts = map (destVTuple p) ts 
 
 ------------------- apply config ----------------------
 

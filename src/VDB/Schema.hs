@@ -178,7 +178,7 @@ appConfRowType c (f,r) = (Lit (evalFeatureExpr c f),
 -- | apply config to a rowtype. it filters out invalid attributes.
 appConfRowType' :: Config Bool -> TableSchema -> TableSchema
 appConfRowType' c r = mkOpt (getFexp r) (M.filter 
-  (\optType -> getFexp optType == Lit True) $ getObj r)
+  (\optType -> getFexp optType == Lit True) $ getObj $ appConfRowType c r)
   -- (Lit (evalFeatureExpr c f),
   -- M.map (first $ Lit . evalFeatureExpr c) r)
 --  M.map (\(f,t) -> (Lit (evalFeatureExpr c f),t)) r 

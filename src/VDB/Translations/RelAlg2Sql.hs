@@ -38,21 +38,22 @@ alg2Sql q cs = map (variantQ q) cs
 relTrans :: Algebra -> Maybe Query
 relTrans (SetOp s l r) = case (relTrans l, relTrans r) of 
   (Just ql, Just qr) -> case s of 
-    Prod -> Just (concat ["select * from ( ", ql, " ) join ( ", qr, " )"])
-    o    -> Just (concat ["( ", ql, " ) ", show o, " ( ", qr, " )"])
+    Prod -> Just (concat ["select * from ( ", ql, " ) inner join ( ", qr, " )"])
+    o    -> Just (concat [" ", ql, " ", show o, " ", qr, " "])
+    -- o    -> Just (concat ["( ", ql, " )", show o, " ( ", qr, " )"])
   _                  -> Nothing
 relTrans (Proj as q)   = case relPrj as of 
   Nothing -> Nothing
   Just [] -> Just "select null"
   Just ns -> case relTrans q of 
-          Just r -> Just (concat ["select ", ns, " from ", r])
+          Just r -> Just (concat ["select ", ns, " from (", r, ")"])
           _      -> Nothing
 relTrans (Sel c q)     = case relTrans q of 
   Just r -> Just (concat ["select * from ( ", r, " ) where ", 
                             show c])
   _ -> Nothing
 relTrans (AChc _ _ _)  = Nothing
-relTrans (TRef r)      = Just (concat ["select * from ", (relationName r)])
+relTrans (TRef r)      = Just (concat ["(select * from ", (relationName r), ") "])
 relTrans Empty         = Just "select null"
 
 -- | helper function for projecting pure relational attributes.

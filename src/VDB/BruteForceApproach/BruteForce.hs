@@ -61,6 +61,14 @@ runBrute' vq cs p f vdb = do
   dbs <- configVDBall f p vdb cs -- [SqlDatabase conn]
   runSqlQsOnCorrespDBs qs dbs -- [SqlVariantTable]
 
+
+bruteForSigmod :: Algebra -> [Config Bool] 
+            -> [SqlDatabase Connection] -> IO [SqlVariantTable]
+bruteForSigmod vq cs dbs = do 
+  let qs = alg2Sql vq cs -- [VariantQuery]
+  runSqlQsOnCorrespDBs qs dbs 
+
+
 -- TODO: write checks!!!
 
 

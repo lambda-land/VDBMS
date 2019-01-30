@@ -59,7 +59,11 @@ features (Or  l r) = features l `Set.union` features r
 
 -- | disjuncts a list of fexps. Note: it doesn't shrink it!!
 disjFexp :: [FeatureExpr] -> FeatureExpr
-disjFexp fs = foldl' Or (Lit False) fs
+disjFexp = foldl' Or (Lit False)
+
+-- | conjuncts a list of fexps without shrinking!!
+conjFexp :: [FeatureExpr] -> FeatureExpr
+conjFexp = foldl' And (Lit True)
 
 -- | Syntactic sugar: implication
 imply :: FeatureExpr -> FeatureExpr -> FeatureExpr

@@ -143,6 +143,8 @@ runVariantSqlOnVariantDB q db = do
       qText = getVariant q
       b = equivConfigOnSchema (getSqlDBschema db) qConf dbConf
   res <- runSqlQ dbConf qText db
+  -- commit $ getSqlData db
+  disconnect $ getSqlData db
   return $ if b then Just res else Nothing
 
 -- | runs a list of variant queries on a list of variant sqldbs. i.e. it runs a query
