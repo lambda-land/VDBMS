@@ -38,9 +38,9 @@ time a = do
     printf "Computation time: %0.5f sec\n" (diff :: Double)
     return v
  
-vqManual = AChc (Ref $ Feature "v1") empQ1_v1 
-                 (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
-                  empQ1_v4and5)
+-- vqManual = AChc (Ref $ Feature "v1") empQ1_v1 
+--                  (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
+--                   empQ1_v4and5)
 
 -- main :: IO VTable
 -- main :: IO [[SqlValue]]
@@ -48,24 +48,25 @@ main = do
   -- path <- getCurrentDirectory
   -- testdb <- connectSqlite3 "/databases/testDB/test1.db"
   -- /Volumes/GoogleDrive/My Drive/OSU/Research/VDBMSgit/codes/VDBMS/databases/employeeDB/emp_vdb.db
-  employeeConn <- connectSqlite3 "./databases/employeeDB/emp_vdb.db"
-  let p = PresCondAtt "presCond"
-      employeeVSchema = variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
-      employeeVDB = VDB employeeVSchema employeeConn
-      q = empQ2_v1
+  -- employeeConn <- 
+  connectSqlite3 "./databases/employeeDB/emp_vdb.db"
+  -- let p = PresCondAtt "presCond"
+  --     employeeVSchema = variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
+  --     employeeVDB = VDB employeeVSchema employeeConn
+  --     q = empQ2_v1
       -- qualifyQuery employeeVSchema $ variationizeQuery [empQ2_v1]
       -- vq = variationizeQuery [empQ1_v1]
       -- , empQ1_v2, empQ1_v3, empQ1_v4, empQ1_v5]
       -- qualifiedVq = qualifyQuery employeeVSchema vq
-      vqManualEmpQ1_v1 = AChc (Ref $ Feature "v1") empQ1_v1 Empty
+      -- vqManualEmpQ1_v1 = AChc (Ref $ Feature "v1") empQ1_v1 Empty
       -- dbs = [db1,db2,db3,db4,db5]
   -- runTransFilterUnion vqManualEmpQ1_V1 p employeeVDB -- WORKS!!! HAVE NO IDEA IF IT'S CORRECT THO!!
   -- runTransFilterUnion vqManual p employeeVDB --WORKS!! TIME IT FOR SUBMISSION!!!
   -- runTransFilterUnion vq p employeeVDB
   -- Count time here ----------------------------
-  putStrLn "Starting..."
-  time $ runTransFilterUnion vqManual p employeeVDB -- 4.08534 sec, 4.25021 sec
-  putStrLn "Done."
+  -- putStrLn "Starting..."
+  -- time $ runTransFilterUnion vqManual p employeeVDB -- 4.08534 sec, 4.25021 sec
+  -- putStrLn "Done."
   --     configs = [c1,c2,c3,c4,c5]
   --     q1 = "select empno, name, hiredate from v_engineerpersonnel union select empno, name, hiredate from v_otherpersonnel;"
   --     q2 = "select empno, name, hiredate from v_empacct;"
@@ -122,6 +123,8 @@ main = do
 -- db1 = VariantDB empSchema1 (conn1,c1) 
 
 
+{-
+-- Commented code was HARD CODED FOR THE SIGMOD 19 DEMO SUBMISSION!!
 runq :: IConnection conn => Config Bool -> String -> SqlDatabase conn -> IO SqlVariantTable
 runq c t db = do 
   q <- mkStatement db t 
@@ -167,6 +170,7 @@ c5 (Feature "v3") = False
 c5 (Feature "v4") = False
 c5 (Feature "v5") = True
 
+-}
 -- main :: IO Connection
 -- main = enronEmail
 --main = return ()

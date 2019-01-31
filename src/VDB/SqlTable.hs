@@ -1,6 +1,4 @@
 -- | Tables returned by HDBC.
---   TODO: do I need to check sth or add functions?
---         look into table.hs to ensure (for adding funcs)!
 module VDB.SqlTable where
 
 -- import Data.Map
