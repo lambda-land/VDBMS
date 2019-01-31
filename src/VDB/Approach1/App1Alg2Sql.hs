@@ -14,6 +14,7 @@ import VDB.Type
 
 import Data.Convertible (safeConvert)
 import Data.Bifunctor (second)
+import Data.List (groupBy)
 import Data.Text as T (Text, pack, append, concat)
 
 type Vquery = Opt T.Text
@@ -55,11 +56,17 @@ setAux Prod  = \(lo, l) (ro, r) -> ((F.And lo ro), T.concat [ l, " inner join ",
 -- TODO: check!!!
 prjAux :: [Opt Attribute] -> [Vsubquery]
 prjAux oa = undefined
+  where 
+    groupedAtts = groupBy (\x y -> fst x == fst y) oa
+    groupedAtts' = map pushDownList' groupedAtts -- [(fexp,[attribute])]
 
--- prjAux [oa] = getAttName oa
--- prjAux [(_,Attribute (Just r) a)] = T.concat [T.pack $ relationName r, ".", T.pack a]
--- prjAux (oa:oas) = T.append (T.concat [getAttName oa, ", "]) (prjAux oas)
--- prjAux [] = " "
+-- | constructs a list of attributes that have the same fexp.
+--   NOTE: this is unsafe since you're not checking if 
+--         the second element of pairs are the same!
+pushDownList' :: [(a,b)] -> (a,[b])
+pushDownList' [(a,b)] = (a,[b])
+pushDownList' ((a,b):l) = (a,b:snd (pushDownList' l))
+
 
 -- | returns an attribute name with its qualified relation name if available.
 getAttName :: Attribute -> T.Text
