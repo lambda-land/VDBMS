@@ -11,27 +11,43 @@ import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C 
 import VDB.Variational
 import VDB.Type
+import VDB.SAT
 
 import Data.Convertible (safeConvert)
 import Data.Bifunctor (second)
 import Data.List (groupBy)
-import Data.Text as T (Text, pack, append, concat)
+import qualified Data.Text as T (Text, pack, append, concat)
+import Data.Maybe (catMaybes)
 
 type Vquery = Opt T.Text
 type Vsubquery = Opt T.Text
 
+transVerify :: Algebra -> F.FeatureExpr -> [Vquery]
+transVerify q ctxt = catMaybes $ map verifyVquery vqs
+  where 
+    vqs = trans q ctxt
 
--- TODO: refactor after SIGMOD demo submission
+-- | verifies a vquery to ensure that the fexp is satisfiable.
+--   and shrinks the presence condition assigned to the query.
+verifyVquery :: Vquery -> Maybe Vquery
+verifyVquery vq 
+  | satisfiable fexp = Just $ mkOpt (F.shrinkFeatureExpr fexp) (getObj vq)
+  | otherwise = Nothing
+  where
+    fexp = getFexp vq 
+
+
 -- TODO: add opt after trans where you send fexp to sat! to also drop the invalid qs
 trans :: Algebra -> F.FeatureExpr -> [Vquery]
--- trans (SetOp s l r) ctxt = [setAux s lq rq | lq <- lres, rq <- rres]
---   where 
---     lres = trans l ctxt
---     rres = trans r ctxt
--- trans (Proj oas q)  ctxt = map (\(f, q') -> (f, T.concat ["select ", as, " from (", q', ")"])) res
---   where 
---     res = trans q ctxt
---     as  = prjAux oas 
+trans (SetOp s l r) ctxt = [setAux s lq rq | lq <- lres, rq <- rres]
+  where 
+    lres = trans l ctxt
+    rres = trans r ctxt
+trans (Proj oas q)  ctxt = [mkOpt (F.And af qf) $ T.concat ["select ", at, qt]
+  | (af,at) <- ares, (qf,qt) <- qres]
+  where 
+    qres = trans q ctxt
+    ares  = prjAux oas 
 trans (Sel c q)     ctxt = [mkOpt (F.And cf qf) (T.concat [qt, " where ", ct])
   | (cf,ct) <- cres, (qf,qt) <- qres]
   where 
@@ -49,16 +65,16 @@ trans (Empty)       ctxt = [mkOpt ctxt  "select null"]
 setAux :: SetOp -> Vquery -> Vquery -> Vquery
 setAux Union = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat [l, " union ", r])
 setAux Diff  = \(lo, l) (ro, r) -> ((F.And lo (F.Not ro)), T.concat [l, " minus ", r])
-setAux Prod  = \(lo, l) (ro, r) -> ((F.And lo ro), T.concat [ l, " inner join ", r])
+setAux Prod  = \(lo, l) (ro, r) -> ((F.And lo ro), T.concat [ l, " join ", r])
 -- setAux Prod  = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat ["select * from (" , l, ") join (", r, ")"]) -- the OLD one!!
 
 -- | helper function for the projection query
--- TODO: check!!!
 prjAux :: [Opt Attribute] -> [Vsubquery]
-prjAux oa = undefined
+prjAux oa = map (second (T.concat . map getAttName)) groupedAtts'
   where 
     groupedAtts = groupBy (\x y -> fst x == fst y) oa
     groupedAtts' = map pushDownList' groupedAtts -- [(fexp,[attribute])]
+
 
 -- | constructs a list of attributes that have the same fexp.
 --   NOTE: this is unsafe since you're not checking if 
@@ -70,8 +86,8 @@ pushDownList' ((a,b):l) = (a,b:snd (pushDownList' l))
 
 -- | returns an attribute name with its qualified relation name if available.
 getAttName :: Attribute -> T.Text
-getAttName (Attribute Nothing a)   = T.pack a
-getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a]
+getAttName (Attribute Nothing a)   = T.append (T.pack a) " "
+getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a, " "]
 
 -- | helper function for selection.
 selAux :: C.Condition -> F.FeatureExpr -> [Vsubquery]
