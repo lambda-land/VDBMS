@@ -16,7 +16,7 @@ import VDB.SAT
 import Data.Convertible (safeConvert)
 import Data.Bifunctor (second)
 import Data.List (groupBy)
-import qualified Data.Text as T (Text, pack, append, concat)
+import qualified Data.Text as T (Text, pack, append, concat, intercalate)
 import Data.Maybe (catMaybes)
 
 type Vquery = Opt T.Text
@@ -37,18 +37,18 @@ verifyVquery vq
     fexp = getFexp vq 
 
 
--- TODO: add opt after trans where you send fexp to sat! to also drop the invalid qs
+-- | translates a vq to a list of vqs runnable in a relational db engine.
 trans :: Algebra -> F.FeatureExpr -> [Vquery]
 trans (SetOp s l r) ctxt = [setAux s lq rq | lq <- lres, rq <- rres]
   where 
     lres = trans l ctxt
     rres = trans r ctxt
-trans (Proj oas q)  ctxt = [mkOpt (F.And af qf) $ T.concat ["select ", at, qt]
+trans (Proj oas q)  ctxt = [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ( ", qt, " )"]
   | (af,at) <- ares, (qf,qt) <- qres]
   where 
     qres = trans q ctxt
     ares  = prjAux oas 
-trans (Sel c q)     ctxt = [mkOpt (F.And cf qf) (T.concat [qt, " where ", ct])
+trans (Sel c q)     ctxt = [mkOpt (F.And cf qf) (T.concat ["select * from ( ", qt, " ) where ", ct])
   | (cf,ct) <- cres, (qf,qt) <- qres]
   where 
     cres = selAux c ctxt
@@ -57,23 +57,25 @@ trans (AChc f l r)  ctxt = lres ++ rres
   where 
     lres = trans l (F.And f ctxt)
     rres = trans r (F.And (F.Not f) ctxt)
-trans (TRef r)      ctxt = [mkOpt ctxt $ T.pack (relationName r)]
+trans (TRef r)      ctxt = [mkOpt ctxt $ T.append "select * from " $ T.pack (relationName r)]
 trans (Empty)       ctxt = [mkOpt ctxt  "select null"]
 
 -- | helper function for Setop queries, i.e., union, diff, prod
 -- TODO: check!!!
 setAux :: SetOp -> Vquery -> Vquery -> Vquery
-setAux Union = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat [l, " union ", r])
-setAux Diff  = \(lo, l) (ro, r) -> ((F.And lo (F.Not ro)), T.concat [l, " minus ", r])
-setAux Prod  = \(lo, l) (ro, r) -> ((F.And lo ro), T.concat [ l, " join ", r])
+setAux Union = \(lo, l) (ro, r) -> mkOpt (F.Or lo ro) $ T.concat ["( ", l, " ) union ( ", r, " )"]
+setAux Diff  = \(lo, l) (ro, r) -> mkOpt (F.And lo (F.Not ro)) $ T.concat ["( ", l, " ) minus ( ", r, " )"]
+setAux Prod  = \(lo, l) (ro, r) -> mkOpt (F.And lo ro) $ T.concat ["( ", l, " ) join ( ", r, " )"]
 -- setAux Prod  = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat ["select * from (" , l, ") join (", r, ")"]) -- the OLD one!!
 
 -- | helper function for the projection query
 prjAux :: [Opt Attribute] -> [Vsubquery]
-prjAux oa = map (second (T.concat . map getAttName)) groupedAtts'
+prjAux oa = map (second (T.intercalate ", ")) groupedAttsText
+  -- map (second (T.concat . map getAttName)) groupedAtts'
   where 
-    groupedAtts = groupBy (\x y -> fst x == fst y) oa
-    groupedAtts' = map pushDownList' groupedAtts -- [(fexp,[attribute])]
+    groupedAtts     = groupBy (\x y -> fst x == fst y) oa
+    groupedAtts'    = map pushDownList' groupedAtts -- [(fexp,[attribute])]
+    groupedAttsText = map (second $ map getAttName) groupedAtts'
 
 
 -- | constructs a list of attributes that have the same fexp.
@@ -85,9 +87,11 @@ pushDownList' ((a,b):l) = (a,b:snd (pushDownList' l))
 
 
 -- | returns an attribute name with its qualified relation name if available.
+-- NOTE: it doesn't return qualified attributes!
 getAttName :: Attribute -> T.Text
-getAttName (Attribute Nothing a)   = T.append (T.pack a) " "
-getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a, " "]
+getAttName (Attribute _ a)   = T.append (T.pack a) " "
+-- getAttName (Attribute Nothing a)   = T.append (T.pack a) " "
+-- getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a, " "]
 
 -- | helper function for selection.
 selAux :: C.Condition -> F.FeatureExpr -> [Vsubquery]
@@ -131,6 +135,34 @@ showAtom (C.Attr a) = getAttName a
   -- Nothing -> T.pack $ attributeName a 
 
 -- | tests:
+v1, v2, v3, v4, v5 :: F.FeatureExpr
+v1 = F.Ref "v_1"
+v2 = F.Ref "v_2"
+v3 = F.Ref "v_3"
+v4 = F.Ref "v_4"
+v5 = F.Ref "v_5"
+
+fexp1, fexp2 :: F.FeatureExpr
+fexp1 = F.Lit True
+fexp2 = F.Or (F.Or v3 v4) v5
+
+q1, q2, q3, q4, q5, q6 :: Algebra 
+-- q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname")] $ TRef $ Relation "v_dept"
+-- select v_dept.deptname  from v_dept
+q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname"), 
+           (F.Lit True, Attribute (Just $ Relation "v_dept") "deptno")] $ TRef $ Relation "v_dept" 
+-- select v_dept.deptname , v_dept.deptno  from v_dept
+-- q2 = Sel (C.Lit True) $ TRef $ Relation "v_dept" 
+-- select * from v_dept where True
+q2 = Sel (C.Lit True) q1
+q3 = undefined
+q4 = undefined
+q5 = undefined
+q6 = undefined
+
+-- vqManual = AChc (Ref $ Feature "v1") empQ1_v1 
+--                  (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
+--                   empQ1_v4and5)
 
 
 

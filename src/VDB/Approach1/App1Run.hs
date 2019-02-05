@@ -30,7 +30,7 @@ runTransFilterUnion :: IConnection conn => Algebra -> PresCondAtt
                        -> SqlDatabase conn -> IO (VTable)
 runTransFilterUnion vq p vdb = do
   let initialVarCtxt = featureModel $ getSqlDBschema vdb 
-      transQs = trans vq initialVarCtxt
+      transQs = transVerify vq initialVarCtxt
   res <- runVq transQs vdb -- [SqlVtable]
   let vtable = sqlVtables2VTable p res
       vtable_disjoin = updateSqlTable (disjoinDuplicate p) vtable

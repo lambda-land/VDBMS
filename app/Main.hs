@@ -42,17 +42,37 @@ time a = do
 --                  (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
 --                   empQ1_v4and5)
 
+employeeConn = connectSqlite3 "./databases/employeeDB/emp_vdb.db"
+p = PresCondAtt "presCond"
+employeeVSchema = variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
+employeeVDB = do
+  conn <- employeeConn
+  return $ VDB employeeVSchema conn
+
+
 -- main :: IO VTable
 -- main :: IO [[SqlValue]]
 main = do 
   -- path <- getCurrentDirectory
   -- testdb <- connectSqlite3 "/databases/testDB/test1.db"
   -- /Volumes/GoogleDrive/My Drive/OSU/Research/VDBMSgit/codes/VDBMS/databases/employeeDB/emp_vdb.db
-  -- employeeConn <- 
-  connectSqlite3 "./databases/employeeDB/emp_vdb.db"
+  -- employeeConn <- connectSqlite3 "./databases/employeeDB/emp_vdb.db"
+  -- conn <- employeeConn
+  vdb <- employeeVDB
   -- let p = PresCondAtt "presCond"
   --     employeeVSchema = variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
   --     employeeVDB = VDB employeeVSchema employeeConn
+      -- vqManual = AChc (Ref $ Feature "v1") empQ1_v1 
+      --            (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
+      --             empQ1_v4and5)
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c1 1
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c2 2 -- EXCEPTION:
+--   *** Exception: couldn't comply the sqlrow to attribute list while gen vals for insertion!
+-- CallStack (from HasCallStack):
+--   error, called at /Volumes/GoogleDrive/My Drive/OSU/Research/VDBMSgit/codes/VDBMS/src/VDB/Database.hs:285:17 in main:VDB.Database
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c3 3
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c4 4
+  configVDB "./databases/employeeDB/confed/emp_confed" p vdb c5 5
   --     q = empQ2_v1
       -- qualifyQuery employeeVSchema $ variationizeQuery [empQ2_v1]
       -- vq = variationizeQuery [empQ1_v1]
@@ -123,14 +143,14 @@ main = do
 -- db1 = VariantDB empSchema1 (conn1,c1) 
 
 
-{-
+
 -- Commented code was HARD CODED FOR THE SIGMOD 19 DEMO SUBMISSION!!
-runq :: IConnection conn => Config Bool -> String -> SqlDatabase conn -> IO SqlVariantTable
-runq c t db = do 
-  q <- mkStatement db t 
-  _ <- execute q []
-  r <- fetchAllRowsMap' q
-  return $ mkVariant r c
+-- runq :: IConnection conn => Config Bool -> String -> SqlDatabase conn -> IO SqlVariantTable
+-- runq c t db = do 
+--   q <- mkStatement db t 
+--   _ <- execute q []
+--   r <- fetchAllRowsMap' q
+--   return $ mkVariant r c
 
 
 
@@ -170,7 +190,7 @@ c5 (Feature "v3") = False
 c5 (Feature "v4") = False
 c5 (Feature "v5") = True
 
--}
+
 -- main :: IO Connection
 -- main = enronEmail
 --main = return ()

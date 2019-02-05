@@ -153,7 +153,7 @@ appConfSchemaFexp c = evalFeatureExpr c . featureModel
 appConfSchema :: Config Bool -> Schema -> Schema
 appConfSchema c s 
   | schemaPres = (Lit (schemaPres), 
-  M.map (appConfRowType c) (schemaStrct s))
+  M.map (appConfRowType c) (appConfSchemaStrct c $ schemaStrct s))
   | otherwise = error "the schema doesn't exist for the given config!"
   where 
     schemaPres = appConfSchemaFexp c s
@@ -161,24 +161,30 @@ appConfSchema c s
 -- | applies a config to a schema. Note that it filters out 
 --   invalid objects. Note that the schema doesn't have pres cond
 --   as one of the attributes of relations.
+-- Note: the following must hold for all schemas:
+-- appConfSchema' c5 employeeVSchema == appConfSchema' c5 empSchema5
 appConfSchema' :: Config Bool -> Schema -> Schema
-appConfSchema' c s = mkOpt (Lit $ appConfSchemaFexp c s) 
+appConfSchema' c s = mkOpt (Lit $ appConfSchemaFexp c s) $
   (M.filter (\optRow -> getFexp optRow == Lit True) $ schemaStrct $ appConfSchema c s)
 
--- Relation {relationName = "v_job"},(TRUE,fromList [(Attribute {attributeQualifier = Just (Relation {relationName = "v_job"}), attributeName = "salary"},(TRUE,TInt32)),(Attribute {attributeQualifier = Just (Relation {relationName = "v_job"}), attributeName = "title"},(TRUE,TString))])),
-
+-- | applies a given config to the structure of the schema and 
+--   drops the tables that aren't valid.
+appConfSchemaStrct :: Config Bool -> Map Relation TableSchema -> Map Relation TableSchema
+appConfSchemaStrct c s = M.filter (\r -> if getFexp r == Lit True then True else False) s'
+  where s' = M.map (appConfRowType' c) s
 
 
 -- | apply config to a rowtype. it doesn't filter out invalid attributes.
 appConfRowType :: Config Bool -> TableSchema -> TableSchema
-appConfRowType c (f,r) = (Lit (evalFeatureExpr c f),
-  M.map (first $ Lit . evalFeatureExpr c) r)
+appConfRowType c (f,r) = mkOpt (Lit (evalFeatureExpr c f)) $
+  M.map (first $ Lit . evalFeatureExpr c) r
 --  M.map (\(f,t) -> (Lit (evalFeatureExpr c f),t)) r 
 
 -- | apply config to a rowtype. it filters out invalid attributes.
 appConfRowType' :: Config Bool -> TableSchema -> TableSchema
-appConfRowType' c r = mkOpt (getFexp r) (M.filter 
-  (\optType -> getFexp optType == Lit True) $ getObj $ appConfRowType c r)
+appConfRowType' c r = updateOptObj (M.filter 
+  (\optType -> getFexp optType == Lit True) $ getObj r') r'
+    where r' = appConfRowType c r
   -- (Lit (evalFeatureExpr c f),
   -- M.map (first $ Lit . evalFeatureExpr c) r)
 --  M.map (\(f,t) -> (Lit (evalFeatureExpr c f),t)) r 

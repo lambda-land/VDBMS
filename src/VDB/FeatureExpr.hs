@@ -117,16 +117,16 @@ prettyFeatureExpr' = top
   where
     -- top (And l r) = sub l ++ "∧" ++ sub r
     -- top (Or  l r) = sub l ++ "∨" ++ sub r
-    top (And l r) = "AND " ++ sub l ++ sub r
-    top (Or  l r) = "OR " ++ sub l ++ sub r
+    top (And l r) = " AND " ++ sub l ++ sub r
+    top (Or  l r) = " OR " ++ sub l ++ sub r
     top e         = sub e
     -- sub (Lit b)   = if b then "#T" else "#F"
-    sub (Lit b)   = if b then "TRUE" else "FAlSE"
+    sub (Lit b)   = if b then " TRUE " else " FAlSE "
 
     sub (Ref f)   = featureName f
     -- sub (Not e)   = "¬" ++ sub e
-    sub (Not e)   = "NOT " ++ sub e
-    sub e         = "(" ++ top e ++ ")"
+    sub (Not e)   = " NOT " ++ sub e
+    sub e         = " ( " ++ top e ++ " ) "
 
 
 -- | Generate a symbolic predicate for a feature expression.
@@ -171,7 +171,7 @@ feature2ByteString = BC.pack . featureName
 -- type ConvertResult a = Either ConvertError a
 
 sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
-sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr'
+sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
 -- sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
 -- sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
 -- sqlFeatureExp (Not f)   = case sqlFeatureExp f of

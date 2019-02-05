@@ -139,22 +139,24 @@ destVTuples p ts = map (destVTuple p) ts
 ------------------- apply config ----------------------
 
 -- | applies a config to a row.
-applyConfRow :: Config Bool -> PresCondAtt -> SqlRow -> SqlRow 
-applyConfRow c p r = M.adjust updatePres (presCondAttName p) r 
+applyConfRow :: Config Bool -> Set Attribute -> PresCondAtt -> SqlRow -> SqlRow 
+applyConfRow c as p r = M.adjust updatePres (presCondAttName p) r'
   where 
     -- pres = M.lookup p r 
     updatePres :: SqlValue -> SqlValue
     updatePres v = fexp2sqlval $ Lit $ evalFeatureExpr c (sqlval2fexp v)
+    r' = M.restrictKeys r $ S.map attributeName as
     -- pres' = evalFeatureExpr c (sqlToFexp pres)
 
 -- | applies a config to a table.
-applyConfTable :: Config Bool -> PresCondAtt -> SqlTable -> SqlTable
-applyConfTable c p = fmap $ applyConfRow c p
+applyConfTable :: Config Bool -> Set Attribute -> PresCondAtt -> SqlTable -> SqlTable
+applyConfTable c as p = fmap $ applyConfRow c as p
 
 -- | drops a row if it's pres cond is false.
 dropRow :: PresCondAtt -> SqlRow -> SqlRow
 dropRow p r 
-  | M.lookup (presCondAttName p) r == Just (toSql ("Lit False" :: String))
+  | M.lookup (presCondAttName p) r == Just (fexp2sqlval $ Lit False)
+  -- (toSql ("Lit False" :: String))
               = M.empty
   | otherwise = r
 
@@ -177,26 +179,26 @@ dropPresInTable :: PresCondAtt -> SqlTable -> SqlTable
 dropPresInTable p = fmap $ dropPres p
 
 -- | applies a config to tables.
-applyConfTables :: Config Bool -> PresCondAtt -> [SqlTable] -> [SqlTable]
-applyConfTables c p = fmap $ applyConfTable c p
+applyConfTables :: Config Bool -> Set Attribute -> PresCondAtt -> [SqlTable] -> [SqlTable]
+applyConfTables c as p = fmap $ applyConfTable c as p
 
 -- | applies the variant config to the variant table.
-applyConfVariantTable :: PresCondAtt -> SqlVariantTable -> SqlVariantTable
-applyConfVariantTable p t = updateVariant (applyConfTable c p $ getVariant t) t
+applyConfVariantTable :: PresCondAtt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
+applyConfVariantTable p as t = updateVariant (applyConfTable c as p $ getVariant t) t
   where c = getConfig t
 
 -- | drops rows with false pres cond in a variant table.
-dropRowsInVariantTable :: PresCondAtt -> SqlVariantTable -> SqlVariantTable
-dropRowsInVariantTable p t = updateVariant (dropRows p $ getVariant (applyConfVariantTable p t)) t
+dropRowsInVariantTable :: PresCondAtt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
+dropRowsInVariantTable p as t = updateVariant (dropRows p $ getVariant (applyConfVariantTable p as t)) t
   where c = getConfig t
 
 -- | applies the variant config to variant tables.
-applyConfVariantTables :: PresCondAtt -> [SqlVariantTable] -> [SqlVariantTable]
-applyConfVariantTables p = fmap $ applyConfVariantTable p
+applyConfVariantTables :: PresCondAtt -> Set Attribute -> [SqlVariantTable] -> [SqlVariantTable]
+applyConfVariantTables p as = fmap $ applyConfVariantTable p as
 
 -- | drops rows with false pres cond over a list of variant tables.
-dropRowsInVariantTables :: PresCondAtt -> [SqlVariantTable] -> [SqlVariantTable]
-dropRowsInVariantTables p = fmap $ dropRowsInVariantTable p 
+-- dropRowsInVariantTables :: PresCondAtt -> [SqlVariantTable] -> [SqlVariantTable]
+-- dropRowsInVariantTables p = fmap $ dropRowsInVariantTable p 
 
 -- | drops the pres key value of all rows in a variant table.
 dropPresInVariantTable :: PresCondAtt -> SqlVariantTable -> SqlVariantTable

@@ -153,6 +153,7 @@ hdbcType2SqlType SqlBigIntT      = "bigint"
 hdbcType2SqlType SqlDateT        = "date"
 hdbcType2SqlType SqlVarCharT     = "text"
 hdbcType2SqlType (SqlUnknownT s) = s
+hdbcType2SqlType _ = error "cannot convert hdbc type to sql type!!"
 
 
 {-
