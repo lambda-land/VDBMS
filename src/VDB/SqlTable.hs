@@ -162,7 +162,8 @@ dropRow p r
 
 -- | drops rows that their pres cond is false.
 dropRows :: PresCondAtt -> SqlTable -> SqlTable
-dropRows p t = deleteBy (==) M.empty $ fmap (dropRow p) t
+dropRows p t = filter (/= M.empty) $ fmap (dropRow p) t
+  -- deleteBy (/=) M.empty $ fmap (dropRow p) t
 -- dropRows c p = fmap $ M.filterWithKey filterRow
 --   where filterRow att val = att == presCondAttName p 
 --                             -- && val == SqlString "Lit False"

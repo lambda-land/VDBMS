@@ -66,10 +66,11 @@ main = do
       --            (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
       --             empQ1_v4and5)
   -- configVDB "./databases/employeeDB/confed/emp_confed" p vdb c1 1
-  configVDB "./databases/employeeDB/confed/emp_confed" p vdb c2 2 -- EXCEPTION:
-  -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c3 3
-  -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c4 4
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p vdb c2 2 
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p vdb c3 3
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p vdb c4 4
   -- configVDB "./databases/employeeDB/confed/emp_confed" p vdb c5 5
+  configVDBall "./databases/employeeDB/confed/emp_confed" p vdb [c1, c2, c3, c4, c5]
   --     q = empQ2_v1
       -- qualifyQuery employeeVSchema $ variationizeQuery [empQ2_v1]
       -- vq = variationizeQuery [empQ1_v1]
