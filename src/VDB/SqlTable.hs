@@ -145,7 +145,7 @@ applyConfRow c as p r = M.adjust updatePres (presCondAttName p) r'
     -- pres = M.lookup p r 
     updatePres :: SqlValue -> SqlValue
     updatePres v = fexp2sqlval $ Lit $ evalFeatureExpr c (sqlval2fexp v)
-    r' = M.restrictKeys r $ S.map attributeName as
+    r' = M.restrictKeys r $ S.insert (presCondAttName p) $ S.map attributeName as 
     -- pres' = evalFeatureExpr c (sqlToFexp pres)
 
 -- | applies a config to a table.

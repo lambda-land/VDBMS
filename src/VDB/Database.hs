@@ -225,17 +225,17 @@ attList c vdb r = intercalate ", " validAtt
     validAtt    = Set.toList $ Set.map attributeName $ validAtts c r $ getSqlDBschema vdb
 
 -- | generates a select query for a relation to copy it for a specific config of vdb.
-genSelectQ ::  IConnection conn => Config Bool -> SqlDatabase conn -> Relation -> QueryString
-genSelectQ c vdb r = select ++ atts ++ from ++ relationName r
+genSelectQ ::  IConnection conn => Config Bool -> PresCondAtt -> SqlDatabase conn -> Relation -> QueryString
+genSelectQ c p vdb r = select ++ atts ++ from ++ relationName r
   where 
     select = "select " 
     from   = " from "
-    atts   = attList c vdb r 
+    atts   = attList c vdb r ++ ", " ++ presCondAttName p 
 
 -- | helper func for configVDB. generates queries to get all
 --   data from a vdb w.r.t. a config.
-genSelectQs :: IConnection conn => Config Bool -> SqlDatabase conn -> [(Relation,QueryString)]
-genSelectQs c vdb = zip rels $ map (++ ";") $ map (genSelectQ c vdb) rels
+genSelectQs :: IConnection conn => Config Bool -> PresCondAtt -> SqlDatabase conn -> [(Relation,QueryString)]
+genSelectQs c p vdb = zip rels $ map (++ ";") $ map (genSelectQ c p vdb) rels
   where
     rels = validRels c (getSqlDBschema vdb)
 
@@ -254,6 +254,7 @@ runSelectQ vdb (r,q) = do
 --   applies a config, filters tuples with false pres cond and then drops pres conds completely.
 prepForInsertQ :: PresCondAtt -> Schema -> Config Bool -> (Relation,SqlTable) -> (Relation,SqlTable)
 prepForInsertQ p s c (r,t) = (r,dropPresInTable p $ dropRows p t')
+  -- (r,dropRows p t')
   where 
     as = validAtts c r s 
     t' = applyConfTable c as p t
@@ -261,7 +262,7 @@ prepForInsertQ p s c (r,t) = (r,dropPresInTable p $ dropRows p t')
 -- | returns the relations and their tuples to be inserted. 
 insertionVals :: IConnection conn => PresCondAtt -> Config Bool -> SqlDatabase conn -> IO [(Relation,SqlTable)]
 insertionVals p c vdb = do 
-  let rqs = genSelectQs c vdb
+  let rqs = genSelectQs c p vdb
   initialVals <- mapM (runSelectQ vdb) rqs -- [(r,t)]
   return $ fmap (prepForInsertQ p (getSqlDBschema vdb) c) initialVals
 

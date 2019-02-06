@@ -65,14 +65,11 @@ main = do
       -- vqManual = AChc (Ref $ Feature "v1") empQ1_v1 
       --            (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
       --             empQ1_v4and5)
-  -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c1 1
-  -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c2 2 -- EXCEPTION:
---   *** Exception: couldn't comply the sqlrow to attribute list while gen vals for insertion!
--- CallStack (from HasCallStack):
---   error, called at /Volumes/GoogleDrive/My Drive/OSU/Research/VDBMSgit/codes/VDBMS/src/VDB/Database.hs:285:17 in main:VDB.Database
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p vdb c1 1
+  configVDB "./databases/employeeDB/confed/emp_confed" p vdb c2 2 -- EXCEPTION:
   -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c3 3
   -- configVDB "./databases/employeeDB/confed/emp_confed" p employeeVDB c4 4
-  configVDB "./databases/employeeDB/confed/emp_confed" p vdb c5 5
+  -- configVDB "./databases/employeeDB/confed/emp_confed" p vdb c5 5
   --     q = empQ2_v1
       -- qualifyQuery employeeVSchema $ variationizeQuery [empQ2_v1]
       -- vq = variationizeQuery [empQ1_v1]
