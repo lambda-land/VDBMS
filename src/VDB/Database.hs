@@ -353,7 +353,7 @@ configVDB f p vdb c i = do
   createQs <- genCreateQs p c vdb 
   -- insertQs <- genInsertQs p c vdb
   insertQs <- genInsertQs' p c vdb 
-  disconnect $ getSqlData vdb
+  -- disconnect $ getSqlData vdb
   conn <- connectSqlite3 $ f ++ show i ++ ".db"
   runCreateQs' createQs conn 
   runInsertQs' insertQs conn
@@ -368,7 +368,8 @@ configVDB f p vdb c i = do
 --   TODO: get the list of valid configs from the vschema fexp instead
 --         of passing the list of config to this func.
 --   TODO: type constraint problem!!!! kmn IConnection conn =>
-configVDBall ::  DBFilePath -> PresCondAtt -> SqlDatabase Connection -> [Config Bool] -> IO [SqlDatabase Connection]
+configVDBall ::  DBFilePath -> PresCondAtt -> SqlDatabase Connection 
+                 -> [Config Bool] -> IO [SqlDatabase Connection]
 configVDBall f p vdb cs = do
   -- let nums = [1..length cs]
   sequence $ zipWith (configVDB f p vdb) cs [1..]
