@@ -1,0 +1,40 @@
+ -- | Example Queries upon an employee data base
+module VDB.Example.SmartConstructor where
+
+import qualified VDB.Condition as C
+import qualified VDB.FeatureExpr as F
+import Database.HDBC
+import Prelude hiding (Ordering(..))
+
+import VDB.Algebra
+import VDB.Schema
+import VDB.FeatureExpr
+import VDB.Name
+import VDB.Type
+import VDB.Variational
+
+import qualified Data.Map as M 
+
+
+--
+--  ** smart contructor for plain query
+--
+plainAttr :: String -> Opt Attribute 
+plainAttr attrName = (F.Lit True, Attribute Nothing attrName)
+
+plainAttrs :: [String] -> [Opt Attribute]
+plainAttrs []     = []
+plainAttrs (x:xs) = plainAttr x : plainAttrs xs 
+
+
+--
+-- smart contructor for building schema 
+--
+
+-- | contruct plain Schema without tag assigned based on a list of [(Relatin Name, [Attribute name, Sqltype])] 
+constructRelMap :: [(String, [(String, SqlType)])] -> M.Map Relation (Opt RowType) 
+constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( Relation relName, (Lit True, constructRowType relName rt))) nrlist
+
+-- | contruct rowType based on a list of [(Attribute Name, SqlType)]
+constructRowType ::  String -> [(String,SqlType)]  -> RowType
+constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> ( Attribute (Just (Relation relName)) attrName, (Lit True, t))) attrTypeList

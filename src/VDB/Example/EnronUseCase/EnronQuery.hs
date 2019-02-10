@@ -1,5 +1,5 @@
  -- | Example Queries upon Enron Email Database
-module VDB.Example.EmployeeUseCase.EnronQuery where
+module VDB.Example.EnronUseCase.EnronQuery where
 
 import VDB.Algebra
 import qualified VDB.Condition as C
@@ -10,6 +10,9 @@ import Database.HDBC
 import VDB.Type
 import Prelude hiding (Ordering(..))
 import Data.Time
+
+import VDB.Example.SmartConstructor
+
 
 
 
