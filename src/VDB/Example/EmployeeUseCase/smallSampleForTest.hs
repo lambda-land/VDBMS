@@ -23,6 +23,7 @@ import VDB.Example.EmployeeUseCase.EmployeeQuery
 import VDB.Example.EmployeeUseCase.EmployeeVQuery
 import VDB.Example.EmployeeUseCase.EmployeeVSchema
 import VDB.Example.EmployeeUseCase.EmployeeSchema
+import VDB.Example.QueryConstructor
 
 import VDB.TypeSystem.Semantics
 import qualified Data.Map as M 

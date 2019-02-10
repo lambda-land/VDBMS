@@ -10,16 +10,8 @@ import Database.HDBC
 import VDB.Type
 import Prelude hiding (Ordering(..))
 import Data.Time
+import VDB.Example.QueryConstructor
 
---
---  ** smart contructor for plain query
---
-plainAttr :: String -> Opt Attribute 
-plainAttr attrName = (F.Lit True, Attribute Nothing attrName)
-
-plainAttrs :: [String] -> [Opt Attribute]
-plainAttrs []     = []
-plainAttrs (x:xs) = plainAttr x : plainAttrs xs 
 
 date2000 = SqlUTCTime $ UTCTime (fromGregorian 2000 1 1) 0
 -- 
