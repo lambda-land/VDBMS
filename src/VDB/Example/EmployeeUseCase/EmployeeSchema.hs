@@ -8,18 +8,9 @@ import VDB.Type
 import VDB.Variational
 
 import qualified Data.Map as M 
+import VDB.Example.SmartConstructor(constructRelMap, constructRowType)
 
---
--- smart contructor for building schema 
---
 
--- | contruct plain Schema without tag assigned based on a list of [(Relatin Name, [Attribute name, Sqltype])] 
-constructRelMap :: [(String, [(String, SqlType)])] -> M.Map Relation (Opt RowType) 
-constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( Relation relName, (Lit True, constructRowType relName rt))) nrlist
-
--- | contruct rowType based on a list of [(Attribute Name, SqlType)]
-constructRowType ::  String -> [(String,SqlType)]  -> RowType
-constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> ( Attribute (Just (Relation relName)) attrName, (Lit True, t))) attrTypeList
 
 --  
 --  ** schema verison 1 
