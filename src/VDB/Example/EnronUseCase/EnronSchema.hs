@@ -61,6 +61,7 @@ v_filter_msg    = "v_filter_msg"
 v_mailhost      = "v_mailhost"
 v_alias         = "v_alias"
 
+
 -- 
 -- Attribute names
 -- 
@@ -190,15 +191,15 @@ alias_v1 = [ ("eid", TInt32)
 
 enronSchema2 :: Schema 
 enronSchema2 = ( sign_addr_filter `Or` encryption `Or` auto_forward_mhost, 
-								   constructRelMap [ ( "employeelist_v2",  employeelist_v2)
-                                                   , ( "message_v2",    message_v2)
-                                                   , ( "recipientInfo_v2",  recipientInfo_v2)
-                                                   , ( "referenceInfo_v2",  referenceInfo_v2)
-                                                   , ( "auto_msg_v2",  recipientInfo_v2)
-                                                   , ( "forward_msg_v2",  recipientInfo_v2)
-                                                   , ( "filter_msg_v2",  recipientInfo_v2)
-                                                   , ( "mailhost_v1",  mailhost_v1)
-                                                   , ( "alias_v2",  alias_v2)
+								   constructRelMap [ ( v_employeelist,  employeelist_v2)
+                                                   , ( v_message,    message_v2)
+                                                   , ( v_recipientInfo,  recipientInfo_v2)
+                                                   , ( v_referenceInfo,  referenceInfo_v2)
+                                                   , ( v_auto_msg,  recipientInfo_v2)
+                                                   , ( v_forward_msg,  recipientInfo_v2)
+                                                   , ( v_filter_msg,  recipientInfo_v2)
+                                                   , ( v_mailhost,  mailhost_v1)
+                                                   , ( v_alias,  alias_v2)
 
                                                    ]
                )
@@ -291,13 +292,13 @@ alias_v2 = [ ("eid", TInt32)
 
 enronSchema3 :: Schema 
 enronSchema3 = ( sign_addr_filter `Or` encryption `Or` remail, 
-								   constructRelMap [ ( "employeelist_v3",  employeelist_v3)
-                                                   , ( "message_v3",    message_v3)
-                                                   , ( "recipientInfo_v3",  recipientInfo_v3)
-                                                   , ( "referenceInfo_v3",  referenceInfo_v3)
-                                                   , ( "remail_msg_v3",  recipientInfo_v3)
-                                                   , ( "filter_msg_v3",  recipientInfo_v3)
-                                                   , ( "alias_v3",  alias_v3)
+								   constructRelMap [ ( v_employeelist,  employeelist_v3)
+                                                   , ( v_message,    message_v3)
+                                                   , ( v_recipientInfo,  recipientInfo_v3)
+                                                   , ( v_referenceInfo,  referenceInfo_v3)
+                                                   , ( v_remail_msg,  recipientInfo_v3)
+                                                   , ( v_filter_msg,  recipientInfo_v3)
+                                                   , ( v_alias,  alias_v3)
                                                    ]
                )
 
@@ -376,12 +377,12 @@ alias_v3 = [ ("eid", TInt32)
 
 enronSchema4 :: Schema 
 enronSchema4 = ( sign_addr_filter `Or` encryption, 
-								   constructRelMap [ ( "employeelist_v4",  employeelist_v4)
-                                                   , ( "message_v4",    message_v4)
-                                                   , ( "recipientInfo_v4",  recipientInfo_v4)
-                                                   , ( "referenceInfo_v4",  referenceInfo_v4)
-                                                   , ( "filter_msg_v4",  recipientInfo_v4)
-                                                   , ( "alias_v4",  alias_v4)
+								   constructRelMap [ ( v_employeelist,  employeelist_v4)
+                                                   , ( v_message,    message_v4)
+                                                   , ( v_recipientInfo,  recipientInfo_v4)
+                                                   , ( v_referenceInfo,  referenceInfo_v4)
+                                                   , ( v_filter_msg,  recipientInfo_v4)
+                                                   , ( v_alias,  alias_v4)
                                                    ]
                )
 
@@ -454,16 +455,16 @@ alias_v4 = [ ("eid", TInt32)
 
 enronSchema5 :: Schema 
 enronSchema5 = ( sign_addr_filter `Or` auto_forward_mhost `Or` remail, 
-	                               constructRelMap [ ( "employeelist_v5",  employeelist_v5)
-                                                   , ( "message_v5",    message_v5)
-                                                   , ( "recipientInfo_v5",  recipientInfo_v5)
-                                                   , ( "referenceInfo_v5",  referenceInfo_v5)
-                                                   , ( "auto_msg_v5",  recipientInfo_v5)
-                                                   , ( "forward_msg_v5",  recipientInfo_v5)
-                                                   , ( "remail_msg_v5",  recipientInfo_v5)
-                                                   , ( "filter_msg_v5",  recipientInfo_v5)
-                                                   , ( "mailhost_v5",  mailhost_v5)
-                                                   , ( "alias_v5",  alias_v5)
+	                               constructRelMap [ ( v_employeelist,  employeelist_v5)
+                                                   , ( v_message,    message_v5)
+                                                   , ( v_recipientInfo,  recipientInfo_v5)
+                                                   , ( v_referenceInfo,  referenceInfo_v5)
+                                                   , ( v_auto_msg,  recipientInfo_v5)
+                                                   , ( v_forward_msg,  recipientInfo_v5)
+                                                   , ( v_remail_msg,  recipientInfo_v5)
+                                                   , ( v_filter_msg,  recipientInfo_v5)
+                                                   , ( v_mailhost,  mailhost_v5)
+                                                   , ( v_alias,  alias_v5)
                                                    ]
                )
 
@@ -560,15 +561,15 @@ alias_v5 = [ ("eid", TInt32)
 
 enronSchema6 :: Schema 
 enronSchema6 = ( sign_addr_filter `Or` auto_forward_mhost, 
-								   constructRelMap [ ( "employeelist_v6",  employeelist_v6)
-                                                   , ( "message_v6",    message_v6)
-                                                   , ( "recipientInfo_v6",  recipientInfo_v6)
-                                                   , ( "referenceInfo_v6",  referenceInfo_v6)
-                                                   , ( "auto_msg_v6",  recipientInfo_v6)
-                                                   , ( "forward_msg_v6",  recipientInfo_v6)
-                                                   , ( "filter_msg_v6",  recipientInfo_v6)
-                                                   , ( "mailhost_v6",  mailhost_v6)
-                                                   , ( "alias_v6",  alias_v6)
+								   constructRelMap [ ( v_employeelist,  employeelist_v6)
+                                                   , ( v_message,    message_v6)
+                                                   , ( v_recipientInfo,  recipientInfo_v6)
+                                                   , ( v_referenceInfo,  referenceInfo_v6)
+                                                   , ( v_auto_msg,  recipientInfo_v6)
+                                                   , ( v_forward_msg,  recipientInfo_v6)
+                                                   , ( v_filter_msg,  recipientInfo_v6)
+                                                   , ( v_mailhost,  mailhost_v6)
+                                                   , ( v_alias,  alias_v6)
                                                    ]
                )
 
@@ -658,13 +659,13 @@ alias_v6 = [ ("eid", TInt32)
 
 enronSchema7 :: Schema 
 enronSchema7 = (sign_addr_filter `Or` remail, 
-	                               constructRelMap [ ( "employeelist_v7",  employeelist_v7)
-                                                   , ( "message_v7",    message_v7)
-                                                   , ( "recipientInfo_v7",  recipientInfo_v7)
-                                                   , ( "referenceInfo_v7",  referenceInfo_v7)
-                                                   , ( "remail_msg_v7",  recipientInfo_v7)
-                                                   , ( "filter_msg_v7",  recipientInfo_v7)
-                                                   , ( "alias_v7",  alias_v7)
+	                               constructRelMap [ ( v_employeelist,  employeelist_v7)
+                                                   , ( v_message,    message_v7)
+                                                   , ( v_recipientInfo,  recipientInfo_v7)
+                                                   , ( v_referenceInfo,  referenceInfo_v7)
+                                                   , ( v_remail_msg,  recipientInfo_v7)
+                                                   , ( v_filter_msg,  recipientInfo_v7)
+                                                   , ( v_alias,  alias_v7)
                                                    ]
                )
 
@@ -741,12 +742,12 @@ alias_v7 = [ ("eid", TInt32)
 
 
 enronSchema8 :: Schema 
-enronSchema8 = ( sign_addr_filter, constructRelMap [ ( "employeelist_v8",  employeelist_v8)
-                                                   , ( "message_v8",    message_v8)
-                                                   , ( "recipientInfo_v8",  recipientInfo_v8)
-                                                   , ( "referenceInfo_v8",  referenceInfo_v8)
-                                                   , ( "filter_msg_v8",  recipientInfo_v8)
-                                                   , ( "alias_v8",  alias_v8)
+enronSchema8 = ( sign_addr_filter, constructRelMap [ ( v_employeelist,  employeelist_v8)
+                                                   , ( v_message,    message_v8)
+                                                   , ( v_recipientInfo,  recipientInfo_v8)
+                                                   , ( v_referenceInfo,  referenceInfo_v8)
+                                                   , ( v_filter_msg,  recipientInfo_v8)
+                                                   , ( v_alias,  alias_v8)
                                                    ]
                )
 
