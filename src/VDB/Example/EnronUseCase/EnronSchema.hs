@@ -189,6 +189,13 @@ alias_v1 = [ ("eid", TInt32)
 --                     
 --    * disable feature: remailmsg
 
+-- | enron email 2nd configuration.
+enronConfig2 :: Config Bool
+enronConfig2 = enableMany 
+  [signature, addressbook, filtermsg, encrypt, autoresponder, forwardmsg, 
+   mailhost] enronConfigAllDisabled
+
+-- | enron email 2nd schema
 enronSchema2 :: Schema 
 enronSchema2 = ( sign_addr_filter `Or` encryption `Or` auto_forward_mhost, 
 								   constructRelMap [ ( v_employee,  employeelist_v2)
@@ -289,7 +296,15 @@ alias_v2 = [ ("eid", TInt32)
 --                     remailmsg
 --    * disable feature: (autoresponder, forwardmsg, mailhost)
 
+-- | enron email 3rd configuration.
+enronConfig3 :: Config Bool
+enronConfig3 = enableMany 
+  [signature, addressbook, filtermsg, encrypt,remailmsg] enronConfigAllDisabled
 
+
+
+
+-- | enron email 3rd schema 
 enronSchema3 :: Schema 
 enronSchema3 = ( sign_addr_filter `Or` encryption `Or` remail, 
 								   constructRelMap [ ( v_employee,  employeelist_v3)
@@ -374,7 +389,13 @@ alias_v3 = [ ("eid", TInt32)
 --    * disable feature: (autoresponder, forwardmsg, mailhost)
 --                       remailmsg
 
+-- | enron email 4th configuration.
+enronConfig4 :: Config Bool
+enronConfig4 = enableMany 
+  [signature, addressbook, filtermsg, encrypt] enronConfigAllDisabled
 
+
+-- | enron email 4th schema 
 enronSchema4 :: Schema 
 enronSchema4 = ( sign_addr_filter `Or` encryption, 
 								   constructRelMap [ ( v_employee,  employeelist_v4)
@@ -452,7 +473,13 @@ alias_v4 = [ ("eid", TInt32)
 --    * disable feature: encryption
 --                     
 
+-- | enron email 5th configuration.
+enronConfig5 :: Config Bool
+enronConfig5 = enableMany 
+  [signature, addressbook, filtermsg, autoresponder, forwardmsg, 
+   mailhost, remailmsg] enronConfigAllDisabled
 
+-- | enron email 5th schema
 enronSchema5 :: Schema 
 enronSchema5 = ( sign_addr_filter `Or` auto_forward_mhost `Or` remail, 
 	                               constructRelMap [ ( v_employee,  employeelist_v5)
@@ -558,7 +585,13 @@ alias_v5 = [ ("eid", TInt32)
 --                      ,remailmsg
 --                     
 
+-- | enron email 6th configuration.
+enronConfig6 :: Config Bool
+enronConfig6 = enableMany 
+  [signature, addressbook, filtermsg, autoresponder, forwardmsg, 
+   mailhost] enronConfigAllDisabled
 
+-- | enron email 6th schema
 enronSchema6 :: Schema 
 enronSchema6 = ( sign_addr_filter `Or` auto_forward_mhost, 
 								   constructRelMap [ ( v_employee,  employeelist_v6)
@@ -655,8 +688,12 @@ alias_v6 = [ ("eid", TInt32)
 --    * disable feature: encryption, 
 --                       (autoresponder, forwardmsg, mailhost),
 
+-- | enron email 7th configuration.
+enronConfig7 :: Config Bool
+enronConfig7 = enableMany 
+  [signature, addressbook, filtermsg,  remailmsg] enronConfigAllDisabled
 
-
+-- | enron email 7th schema 
 enronSchema7 :: Schema 
 enronSchema7 = (sign_addr_filter `Or` remail, 
 	                               constructRelMap [ ( v_employee,  employeelist_v7)
@@ -739,8 +776,13 @@ alias_v7 = [ ("eid", TInt32)
 --                       (autoresponder, forwardmsg, mailhost),
 --                       remailmsg
 
+-- | enron email 8th configuration.
+enronConfig8 :: Config Bool
+enronConfig8 = enableMany 
+  [signature, addressbook, filtermsg] enronConfigAllDisabled
 
 
+-- | enron email 8th schema 
 enronSchema8 :: Schema 
 enronSchema8 = ( sign_addr_filter, constructRelMap [ ( v_employee,  employeelist_v8)
                                                    , ( v_message,    message_v8)
