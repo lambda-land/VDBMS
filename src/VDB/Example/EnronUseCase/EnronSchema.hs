@@ -6,6 +6,7 @@ import VDB.FeatureExpr
 import VDB.Name
 import VDB.Type
 import VDB.Variational
+import VDB.Config
 
 import qualified Data.Map as M 
 import VDB.Example.SmartConstructor
@@ -15,21 +16,54 @@ import VDB.Example.SmartConstructor
 --  Features
 -- 
 
+signature,addressbook, filtermsg, encrypt, autoresponder, forwardmsg, mailhost, remailmsg :: Feature
+signature     = Feature "signature"
+addressbook   = Feature "addressbook"
+filtermsg     = Feature "filtermsg"
+encrypt       = Feature "encryption"
+autoresponder = Feature "autoresponder"
+forwardmsg    = Feature "forwardmsg"
+mailhost      = Feature "mailhost"
+remailmsg     = Feature "remailmsg"
+
+-- 
+-- Feature expressions
+-- 
+
 -- | FeatureExpr for  (signature, addressbook, filtermsg)
 sign_addr_filter :: FeatureExpr
-sign_addr_filter = (Ref (Feature "signature")) `And` (Ref (Feature "addressbook")) `And` (Ref (Feature "filtermsg"))
+sign_addr_filter = (Ref signature) `And` (Ref addressbook) `And` (Ref filtermsg)
 
 -- | FeatureExpr for encrption
 encryption :: FeatureExpr 
-encryption = Ref (Feature "encryption")
+encryption = Ref encrypt
 
 -- | FeatureExpr for (autoresponder, forwardmsg, mailhost)
 auto_forward_mhost :: FeatureExpr
-auto_forward_mhost = (Ref (Feature "autoresponder")) `And` (Ref (Feature "forwardmsg")) `And` (Ref (Feature "mailhost"))
+auto_forward_mhost = (Ref autoresponder) `And` (Ref forwardmsg) `And` (Ref mailhost)
 
 remail :: FeatureExpr
-remail = Ref (Feature "remailmsg")
+remail = Ref remailmsg
 
+-- 
+-- Relation names
+-- 
+v_employee, v_message, v_recipientInfo, v_referenceInfo, v_auto_msg, v_forward_msg,
+  v_remail_msg, v_filter_msg, v_mailhost, v_alias :: String
+v_employee      = "v_employee"
+v_message       = "v_message"
+v_recipientInfo = "v_recipientInfo"
+v_referenceInfo = "v_referenceInfo"
+v_auto_msg      = "v_auto_msg"
+v_forward_msg   = "v_forward_msg"
+v_remail_msg    = "v_remail_msg"
+v_filter_msg    = "v_filter_msg"
+v_mailhost      = "v_mailhost"
+v_alias         = "v_alias"
+
+-- 
+-- Attribute names
+-- 
 
 --
 -- ** schema 1
@@ -39,23 +73,31 @@ remail = Ref (Feature "remailmsg")
 --                     remailmsg
 --    * disable feature: None
 
+-- | A configuration of enron email that disables all features.
+enronConfigAllDisabled :: Config Bool
+enronConfigAllDisabled = disableAll
+
+-- | enron email first configuration.
+enronConfig1 :: Config Bool
+enronConfig1 = enableMany 
+  [signature, addressbook, filtermsg, encrypt, autoresponder, forwardmsg, 
+   mailhost, remailmsg] enronConfigAllDisabled
 
 enronSchema1 :: Schema 
-enronSchema1 = ( sign_addr_filter `Or` encryption `Or` auto_forward_mhost `Or` remail, 
-								   constructRelMap [ ( "employeelist_v1",  employeelist_v1)
-                                                   , ( "message_v1",    message_v1)
-                                                   , ( "recipientInfo_v1",  recipientInfo_v1)
-                                                   , ( "referenceInfo_v1",  referenceInfo_v1)
-                                                   , ( "auto_msg_v1",  recipientInfo_v1)
-                                                   , ( "forward_msg_v1",  recipientInfo_v1)
-                                                   , ( "remail_msg_v1",  recipientInfo_v1)
-                                                   , ( "filter_msg_v1",  recipientInfo_v1)
-                                                   , ( "mailhost_v1",  mailhost_v1)
-                                                   , ( "alias_v1",  alias_v1)
+enronSchema1 = ( sign_addr_filter `And` encryption `And` auto_forward_mhost `And` remail, 
+								   constructRelMap [ ( v_employee,  employeelist_v1)
+                                                   , ( v_message,    message_v1)
+                                                   , ( v_recipientInfo,  recipientInfo_v1)
+                                                   , ( v_referenceInfo,  referenceInfo_v1)
+                                                   , ( v_auto_msg,  recipientInfo_v1)
+                                                   , ( v_forward_msg,  recipientInfo_v1)
+                                                   , ( v_remail_msg,  recipientInfo_v1)
+                                                   , ( v_filter_msg,  recipientInfo_v1)
+                                                   , ( v_mailhost,  mailhost_v1)
+                                                   , ( v_alias,  alias_v1)
 
                                                    ]
                )
-
 
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key, did, presCond)
 employeelist_v1 :: [(String, SqlType)]
