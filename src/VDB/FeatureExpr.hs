@@ -57,6 +57,10 @@ features (Or  l r) = features l `Set.union` features r
 -- initFeatureMap :: Boolean b => FeatureExpr -> Map Feature b
 -- initFeatureMap e = Map.fromSet (\_ -> false) (features e)
 
+-- | xor.
+xor :: FeatureExpr -> FeatureExpr -> FeatureExpr
+xor l r = (l `And` Not r) `Or` (Not l `And` r)
+
 -- | disjuncts a list of fexps. Note: it doesn't shrink it!!
 disjFexp :: [FeatureExpr] -> FeatureExpr
 disjFexp = foldl' Or (Lit False)
