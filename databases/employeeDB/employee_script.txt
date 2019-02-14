@@ -453,76 +453,76 @@ where hiredate <= '2000-01-28';
 ###inserting values into the variational db:###
 ###############################################
 
-# pres cond = v3 or v4 or v5 and not (v1 or v2)
+# pres cond of table = v3 or v4 or v5 and not (v1 or v2)
 insert into v_dept
 (deptno, deptname, managerno, presCond)
-select deptno, deptname, managerno, 'v3 or v4 or v5 and not (v1 or v2)'
+select deptno, deptname, managerno, 'true'
 from all_dept;
 
 
-# pres cond = v1 or v2 or v3 or v4 and not v5
+# pres cond of table = v1 or v2 or v3 or v4 and not v5
 insert into v_job
 (title, salary, presCond)
-select title, salary, 'v1 or v2 or v3 or v4 and not v5'
+select title, salary, 'true'
 from all_job;
 
 
-# pres cond = v1 and not (v2 or v3 or v4 or v5)
+# pres cond of table= v1 and not (v2 or v3 or v4 or v5)
 insert into v_engineerpersonnel
 (empno, name, hiredate, title, deptname, presCond)
-select empno, name, hiredate, title, deptname, 'v1 and not (v2 or v3 or v4 or v5)'
+select empno, name, hiredate, title, deptname, 'true'
 from v1_engineerpersonnel;
 
 
-# pres cond = v1 and not (v2 or v3 or v4 or v5)
+# pres cond of table = v1 and not (v2 or v3 or v4 or v5)
 insert into v_otherpersonnel
 (empno, name, hiredate, title, deptname, presCond)
-select empno, name, hiredate, title, deptname, 'v1 and not (v2 or v3 or v4 or v5)'
+select empno, name, hiredate, title, deptname, 'true'
 from v1_otherpersonnel;
 
 
-# pres cond = v4 or v5 and not (v1 or v2 or v3)
+# pres cond of table = (v4 or v5) and not (v1 or v2 or v3)
 insert into v_empbio
 (empno, sex, birthdate, name, firstname, lastname, presCond)
-select empno, sex, birthdate, name, firstname, lastname, 'v4 or v5 and not (v1 or v2 or v3)'
-from all_employee2
+select empno, sex, birthdate, name, firstname, lastname, 'true'
+from all_employee
 where hiredate < '1997-01-01';
 
-# pres cond = v5 and not (v1 or v2 or v3 or v4)
+# pres cond of tuples = v5 and not (v1 or v2 or v3 or v4)
 insert into v_empbio
 (empno, sex, birthdate, firstname, lastname, presCond)
-select empno, sex, birthdate, firstname, lastname, 'v5 and not (v1 or v2 or v3 or v4)'
-from all_employee2
-where hiredate < '2000-01-28' and hiredate >= '1997-01-01';
+select empno, sex, birthdate, firstname, lastname, 'not v4'
+from all_employee
+where hiredate <= '2000-01-28' and hiredate >= '1997-01-01';
 
 
-# pres cond = v5 or v4 or v3 or v2 and not v1
+# pres cond of table = (v5 or v4 or v3 or v2) and not v1
 insert into v_empacct
 (empno, name, hiredate, title, deptname, deptno, salary, presCond)
-select empno, name, hiredate, title, deptname, deptno, salary, 'v5 or v4 or v3 or v2 and not v1'
-from all_employee2 
+select empno, name, hiredate, title, deptname, deptno, salary, 'true'
+from all_employee
 where hiredate < '1991-01-01';
 
-# pres cond = v5 or v4 or v3 and not (v1 or v2)
+# pres cond of tuples = (v5 or v4 or v3) and not (v1 or v2)
 insert into v_empacct
 (empno, name, hiredate, title, deptno, salary, presCond)
-select empno, name, hiredate, title, deptno, salary, 'v5 or v4 or v3 and not (v1 or v2)'
-from all_employee2
+select empno, name, hiredate, title, deptno, salary, 'not v2'
+from all_employee
 where hiredate < '1994-01-01' and hiredate >= '1991-01-01';
 
-# pres cond = v5 or v4 and not (v1 or v2 or v3)
+# pres cond of tuples = (v5 or v4) and not (v1 or v2 or v3)
 insert into v_empacct
 (empno, hiredate, title, deptno, salary, presCond)
-select empno, hiredate, title, deptno, salary, 'v5 or v4 and not (v1 or v2 or v3)'
-from all_employee2
+select empno, hiredate, title, deptno, salary, 'not (v2 or v3)'
+from all_employee
 where hiredate < '1997-01-01' and hiredate >= '1994-01-01';
 
-# pres cond = v5 and not (v1 or v2 or v3 or v4)
+# pres cond of tuples = v5 and not (v1 or v2 or v3 or v4)
 insert into v_empacct
 (empno, hiredate, title, deptno, salary, presCond)
-select empno, hiredate, title, deptno, salary, 'v5 and not (v1 or v2 or v3 or v4)'
-from all_employee2
-where hiredate < '2000-01-28' and hiredate >= '1997-01-01';
+select empno, hiredate, title, deptno, salary, 'not (v2 or v3 or v4)'
+from all_employee
+where hiredate <= '2000-01-28' and hiredate >= '1997-01-01';
 
 
 
