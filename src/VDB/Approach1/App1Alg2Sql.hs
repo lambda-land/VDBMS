@@ -59,19 +59,19 @@ trans :: Algebra -> F.FeatureExpr -> Schema -> [Vquery]
   -- case (l, r) of
   -- ()
 -- 
-trans (Proj oas q)  ctxt = case oas of 
+trans (Proj oas q)  ctxt s = case oas of 
   [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
   _  -> case q of 
     -- SetOp Prod -> 
-    SetOp _ -> error "syntactically incorrect vq! cannot wrap union/diff in a proj!!"
-    Proj -> -- qualified shit!!
+    SetOp _ _ _-> error "syntactically incorrect vq! cannot wrap union/diff in a proj!!"
+    -- Proj -> -- qualified shit!!
     -- Sel -> 
     -- AChc ->
     TRef r -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ", T.pack $ relationName r,
       " where true "] | (af,at) <- ares, (qf,qt) <- qres]
         where 
           qres = trans q ctxt s
-          ares  = prjAux oas s
+          ares  = prjAux oas 
     Empty -> error "syntactically incorrect vq! cannot project attributes from empty!"
     _ -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ( ", qt, " ) where true"]
       | (af,at) <- ares, (qf,qt) <- qres]
