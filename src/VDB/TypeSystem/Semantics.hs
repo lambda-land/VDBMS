@@ -34,6 +34,7 @@ import qualified Data.Set as Set
 type VariationalContext = F.FeatureExpr
 
 type TypeEnv = RowType
+type TypeEnv' = TableSchema
 -- type RowType = [Opt (Attribute, Type)]
 -- type RowType = Map Attribute (Opt Type)
 
@@ -60,6 +61,14 @@ typeOfVcond (C.And l r)    f t = typeOfVcond l f t && typeOfVcond r f t
 typeOfVcond (C.CChc d l r) f t = typeOfVcond l (F.And f d) t 
   && typeOfVcond r (F.And f (F.Not d)) t
 
+
+-- 
+-- static semantics that returns a table schema,
+-- i.e. it includes the fexp of the whole table!
+-- DISCUSS IN MEETING!!
+-- 
+typeOfVquery' :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv'
+typeOfVquery' = undefined
 
 --
 -- * static semantics of variational queires

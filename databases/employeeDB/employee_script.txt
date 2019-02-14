@@ -69,6 +69,35 @@ select emp_no, avg(salary)
 from salaries
 group by emp_no;
 
+
+CREATE TABLE `dept_emp2` (
+  `emp_no` integer NOT NULL
+,  `dept_no` char(4) NOT NULL
+,  PRIMARY KEY (`emp_no`)
+,  CONSTRAINT `dept_emp_ibfk_3` FOREIGN KEY (`emp_no`) REFERENCES `employees` (`emp_no`) ON DELETE CASCADE
+,  CONSTRAINT `dept_emp_ibfk_4` FOREIGN KEY (`dept_no`) REFERENCES `departments` (`dept_no`) ON DELETE CASCADE
+);
+
+insert into dept_emp2
+(emp_no, dept_no)
+select emp_no, min(dept_no)
+from dept_emp
+group by emp_no;
+
+
+CREATE TABLE `titles2` (
+  `emp_no` integer NOT NULL
+,  `title` varchar(50) NOT NULL
+,  PRIMARY KEY (`emp_no`)
+,  CONSTRAINT `titles_ibfk_2` FOREIGN KEY (`emp_no`) REFERENCES `employees` (`emp_no`) ON DELETE CASCADE
+);
+
+insert into titles2
+(emp_no, title)
+select emp_no, min(title)
+from titles
+group by emp_no;
+
 #########################################
 ###variants and variational db schema:###
 #########################################
@@ -241,9 +270,107 @@ insert into all_dept (deptno, deptname, managerno)
 select dept_name, departments.dept_no, dept_manager.emp_no
 from departments inner join dept_manager;
 
-insert into all_employee2 (empno, name, firstname, lastname, hiredate, title, deptname, deptno, salary, sex, birthdate)
-select employees.emp_no, concat(first_name, " ", last_name), first_name, last_name, hire_date, title, dept_name, departments.dept_no, salary, gender, birth_date
-from employees inner join titles inner join dept_emp inner join departments inner join salaries2;
+CREATE TABLE `all_employee1` (
+  `empno` integer NOT NULL
+,  `lastname` varchar(31) DEFAULT NULL
+,  `firstname` varchar(31) DEFAULT NULL
+,  `name` varchar(62) DEFAULT NULL
+,  `sex` text  NOT NULL
+,  `birthdate` date NOT NULL
+,  `hiredate` date NOT NULL
+,  `title` varchar(50) NOT NULL
+);
+
+CREATE TABLE `all_employee01` (
+  `empno` integer NOT NULL
+,  `lastname` varchar(31) DEFAULT NULL
+,  `firstname` varchar(31) DEFAULT NULL
+,  `name` varchar(62) DEFAULT NULL
+,  `sex` text  NOT NULL
+,  `birthdate` date NOT NULL
+,  `hiredate` date NOT NULL
+,  `title` varchar(50) NOT NULL
+,  PRIMARY KEY (`empno`)
+);
+
+CREATE TABLE `all_employee2` (
+  `empno` integer NOT NULL
+,  `lastname` varchar(31) DEFAULT NULL
+,  `firstname` varchar(31) DEFAULT NULL
+,  `name` varchar(62) DEFAULT NULL
+,  `sex` text  NOT NULL
+,  `birthdate` date NOT NULL
+,  `hiredate` date NOT NULL
+,  `title` varchar(50) NOT NULL
+,  `deptno` varchar(4) DEFAULT NULL
+,  PRIMARY KEY (`empno`)
+);
+
+CREATE TABLE `all_employee3` (
+  `empno` integer NOT NULL
+,  `lastname` varchar(31) DEFAULT NULL
+,  `firstname` varchar(31) DEFAULT NULL
+,  `name` varchar(62) DEFAULT NULL
+,  `sex` text  NOT NULL
+,  `birthdate` date NOT NULL
+,  `hiredate` date NOT NULL
+,  `title` varchar(50) NOT NULL
+,  `deptname` varchar(40) NOT NULL
+,  `deptno` varchar(4) DEFAULT NULL
+,  PRIMARY KEY (`empno`)
+);
+
+
+CREATE TABLE `all_employee` (
+  `empno` integer NOT NULL
+,  `lastname` varchar(31) DEFAULT NULL
+,  `firstname` varchar(31) DEFAULT NULL
+,  `name` varchar(62) DEFAULT NULL
+,  `sex` text  NOT NULL
+,  `birthdate` date NOT NULL
+,  `hiredate` date NOT NULL
+,  `title` varchar(50) NOT NULL
+,  `deptname` varchar(40) NOT NULL
+,  `deptno` varchar(4) DEFAULT NULL
+,  `salary` integer DEFAULT NULL
+,  PRIMARY KEY (`empno`)
+);
+
+CREATE TABLE `all_employee0` (
+  `empno` integer NOT NULL
+,  `lastname` varchar(31) DEFAULT NULL
+,  `firstname` varchar(31) DEFAULT NULL
+,  `name` varchar(62) DEFAULT NULL
+,  `sex` text  NOT NULL
+,  `birthdate` date NOT NULL
+,  `hiredate` date NOT NULL
+,  PRIMARY KEY (`empno`)
+);
+
+insert into all_employee0 (empno, name, firstname, lastname, hiredate, birthdate)
+select emp_no, concat(first_name, " ", last_name), first_name, last_name, hire_date, birth_date
+from employees;
+
+insert into all_employee01 (empno, name, firstname, lastname, hiredate, title, birthdate)
+select empno, name, firstname, lastname, hiredate, title, birthdate
+from all_employee0 join titles2 where empno = emp_no;
+
+
+insert into all_employee2 (empno, name, firstname, lastname, hiredate, title,  deptno, sex, birthdate)
+select empno, name, firstname, lastname, hiredate, title, dept_no, sex, birthdate
+from all_employee01 join dept_emp2 where empno = emp_no;
+
+
+
+insert into all_employee3 (empno, name, firstname, lastname, hiredate, title, deptname, deptno, sex, birthdate)
+select empno, name, firstname, lastname, hiredate, title, dept_name, deptno, sex, birthdate
+from all_employee2 join departments where deptno = dept_no;
+
+
+insert into all_employee (empno, name, firstname, lastname, hiredate, title, deptname, deptno, salary, sex, birthdate)
+select empno, name, firstname, lastname, hiredate, title, deptname, deptno, salary, sex, birthdate
+from all_employee3 join salaries2 where emp_no = empno;
+
 
 ###############
 ###analysis:###
@@ -260,8 +387,8 @@ sqlite> select count(*) from employees where hire_date < '1994-01-01';
 251149 --> variant3
 sqlite> select count(*) from employees where hire_date < '1997-01-01';
 287673 --> variant4
-sqlite> select count(*) from employees where hire_date < '2000-01-28';
-300023 --> variant5
+sqlite> select count(*) from employees where hire_date <= '2000-01-28';
+300024 --> variant5
 
 
 
@@ -272,54 +399,55 @@ sqlite> select count(*) from employees where hire_date < '2000-01-28';
 insert into v1_engineerpersonnel
 (empno, name, hiredate, title, deptname)
 select empno, name, hiredate, title, deptname
-from all_employee2
-where hiredate < '1988-01-01' and title in ('Enginner', 'Senior Engineer');
+from all_employee
+where hiredate < '1988-01-01' and title in ('Engineer', 'Senior Engineer');
+--> 47662
 
 insert into v1_otherpersonnel
 (empno, name, hiredate, title, deptname)
 select empno, name, hiredate, title, deptname
-from all_employee2
-where hiredate < '1988-01-01' and title not in ('Enginner', 'Senior Engineer');
-
+from all_employee
+where hiredate < '1988-01-01' and title not in ('Engineer', 'Senior Engineer');
+--> 57305
 
 insert into v2_empacct
 (empno, name, hiredate, title, deptname)
 select empno, name, hiredate, title, deptname
-from all_employee2
+from all_employee
 where hiredate < '1991-01-01';
 
 
 insert into v3_empacct
 (empno, name, hiredate, title, deptno)
 select empno, name, hiredate, title, deptno
-from all_employee2
+from all_employee
 where hiredate < '1994-01-01';
 
 
 insert into v4_empacct
 (empno, hiredate, title, deptno)
 select empno, hiredate, title, deptno
-from all_employee2
+from all_employee
 where hiredate < '1997-01-01';
 
 insert into v4_empbio
 (empno, sex, birthdate, name)
 select empno, sex, birthdate, name
-from all_employee2
+from all_employee
 where hiredate < '1997-01-01';
 
 
 insert into v5_empacct
 (empno, hiredate, title, deptno, salary)
-select empno, hiredate, title, deptno
-from all_employee2
-where hiredate < '2000-01-28';
+select empno, hiredate, title, deptno, salary
+from all_employee
+where hiredate <= '2000-01-28';
 
 insert into v5_empbio
 (empno, sex, birthdate, firstname, lastname)
 select empno, sex, birthdate, firstname, lastname
-from all_employee2
-where hiredate < '2000-01-28';
+from all_employee
+where hiredate <= '2000-01-28';
 
 ###############################################
 ###inserting values into the variational db:###
