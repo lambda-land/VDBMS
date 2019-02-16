@@ -26,19 +26,20 @@ empbio            = Relation "v_empbio"
 -- Attributes
 -- 
 
-empno, name, hiredate, title, deptname, title, salary :: Attribute
+empno, name, hiredate, title, deptname, salary :: Attribute
 deptno, managerno, sex, birthdate, firstname, lastname :: Attribute
 empno     = genAtt "empno"
 name      = genAtt "name"
 hiredate  = genAtt "hiredate"
 title     = genAtt "title"
 deptname  = genAtt "deptname"
-salary    = Attribute job "salary"
+salary    = Attribute (Just job) "salary"
 deptno    = genAtt "deptno"
-managerno = Attribute dept "managerno"
-sex       = Attribute empbio "sex"
-firstname = Attribute empbio "firstname"
-lastname  = Attribute empbio "lastname"
+managerno = Attribute (Just dept) "managerno"
+sex       = Attribute (Just empbio) "sex"
+firstname = Attribute (Just empbio) "firstname"
+lastname  = Attribute (Just empbio) "lastname"
+birthdate = Attribute (Just empbio) "birthdate"
 
 --  
 --  ** schema verison 1 

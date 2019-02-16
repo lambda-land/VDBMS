@@ -12,7 +12,7 @@ import VDB.FeatureExpr
 -- import VDB.BruteForce.BruteForceAlg2Sql
 -- import VDB.BruteForce.BruteForceAppSat
 -- import VDB.BruteForce.BruteForceSendQs
-import VDB.TypeSystem.Semantics (typeOfVquery')
+import VDB.TypeSystem (typeOfVquery')
 -- import VDB.ShowVresult
 import VDB.Schema
 import VDB.VTable
