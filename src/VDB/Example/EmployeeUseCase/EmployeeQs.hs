@@ -1,6 +1,10 @@
 -- | vqs for employee database.
 module VDB.Example.EmployeeUseCase.EmployeeQs where
 
+import VDB.Algebra
+import qualified VDB.Condition as C
+import qualified VDB.FeatureExpr as F
+import VDB.Type
 
 -- keep in mind that the employee use demos deploying
 -- every single version for the client of spl. so qs
@@ -33,8 +37,15 @@ module VDB.Example.EmployeeUseCase.EmployeeQs where
 --             join_(title=title) job, 
 --            prj_(empno, hiredate, salary) 
 --                empacct join_(title=title) job>)
+-- ASK ERIC: should it be empv1 or empv1 and not ...?
 empVQ1 :: Algebra
-empVQ1 = undefined
+empVQ1 = Proj [(Lit True, salary)]
+  Sel (C.And (Comp EQ (Attr empno) (Val $ SqlInt32 10004))
+      (C.And (Comp GT (C.Val $ SqlLocalDate '1991-01-01') (Attr hiredate))
+             (Comp LT (Attr hiredate) (C.Val $ SqlLocalDate '1992-01-01'))))
+  (AChc empv1 
+    ()
+    ())
 
 -- intent: return the managers (of department d001) on
 --         the year 1991.
@@ -162,20 +173,20 @@ empVQ16 = undefined
 
 -- intent:
 -- query:
-empVQ4 :: Algebra
-empVQ4 = undefined
+-- empVQ4 :: Algebra
+-- empVQ4 = undefined
 
 
 -- intent:
 -- query:
-empVQ4 :: Algebra
-empVQ4 = undefined
+-- empVQ4 :: Algebra
+-- empVQ4 = undefined
 
 
 -- intent:
 -- query:
-empVQ4 :: Algebra
-empVQ4 = undefined
+-- empVQ4 :: Algebra
+-- empVQ4 = undefined
 
 
 -- intent:

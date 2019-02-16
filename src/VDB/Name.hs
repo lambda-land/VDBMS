@@ -18,6 +18,15 @@ data Attribute = Attribute { attributeQualifier :: Maybe Relation, attributeName
 
 -- Attribute n  = Attribute Nothing n 
 
+-- | generates an attribute with a Nothing relation.
+genAtt :: String -> Attribute
+genAtt a = Attribute Nothing a
+
+-- | adds a relation to an attribute that doesn't have a relation yet.
+addRelToAtt :: Attribute -> Relation -> Attribute
+addRelToAtt (Attribute Nothing a) r = Attribute (Just r) a
+addRelToAtt _ _ = error "the attribute relation isn't Nothing!!"
+
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }
   deriving (Data,Eq,IsString,Ord,Show,Typeable)

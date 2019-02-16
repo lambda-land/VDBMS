@@ -10,7 +10,35 @@ import VDB.Variational
 import qualified Data.Map as M 
 import VDB.Example.SmartConstructor(constructRelMap, constructRowType)
 
+-- 
+-- Relations
+-- 
 
+engineerpersonnel, otherpersonnel, job, dept, empacct, empbio :: Relation
+engineerpersonnel = Relation "v_engineerpersonnel"
+otherpersonnel    = Relation "v_otherpersonnel"
+job               = Relation "v_job"
+dept              = Relation "v_dept"
+empacct           = Relation "v_empacct"
+empbio            = Relation "v_empbio"
+
+-- 
+-- Attributes
+-- 
+
+empno, name, hiredate, title, deptname, title, salary :: Attribute
+deptno, managerno, sex, birthdate, firstname, lastname :: Attribute
+empno     = genAtt "empno"
+name      = genAtt "name"
+hiredate  = genAtt "hiredate"
+title     = genAtt "title"
+deptname  = genAtt "deptname"
+salary    = Attribute job "salary"
+deptno    = genAtt "deptno"
+managerno = Attribute dept "managerno"
+sex       = Attribute empbio "sex"
+firstname = Attribute empbio "firstname"
+lastname  = Attribute empbio "lastname"
 
 --  
 --  ** schema verison 1 
