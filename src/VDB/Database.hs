@@ -39,6 +39,8 @@ import Database.HDBC.Sqlite3
 data SqlDatabase conn where 
   VariantDB :: IConnection conn => Schema -> Variant conn Bool -> SqlDatabase conn 
   VDB       :: IConnection conn => Schema -> conn -> SqlDatabase conn 
+  -- deriving (Eq)
+
 
 getSqlDBschema :: IConnection conn => SqlDatabase conn -> Schema
 getSqlDBschema (VariantDB s _) = s 
