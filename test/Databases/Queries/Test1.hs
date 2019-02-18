@@ -7,3 +7,5 @@ module Databases.Queries.Test1 where
 --   sel_{B=2} R ?=? F1<sel_{B=2} R, Empty>
 --   sel_{B=2 and C=6} R ?=? sel_{F1<B=2,C=6>} R
 --   R join_{C=C} S ?=? F2<R join_{C=C} S, Empty>
+--   prj_{A,C} R union S ?=? prj_{A,C} R union prj_{A,C} S
+--   prj_{A,C} R union S ?=? F2<prj_{A,C} R union S, Empty>
