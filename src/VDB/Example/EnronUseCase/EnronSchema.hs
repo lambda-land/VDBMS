@@ -10,7 +10,7 @@ import VDB.Variational
 import qualified Data.Map as M 
 import VDB.Example.SmartConstructor
 
-
+{-
 -- 
 --  Features
 -- 
@@ -764,3 +764,4 @@ alias_v8 = [ ("eid", TInt32)
 	       , ("nickname",  TString)
 	       ]
 
+-}

@@ -38,14 +38,16 @@ import VDB.Type
 --            prj_(empno, hiredate, salary) 
 --                empacct join_(title=title) job>)
 -- ASK ERIC: should it be empv1 or empv1 and not ...?
--- empVQ1 :: Algebra
--- empVQ1 = Proj [(Lit True, salary)]
---   Sel (C.And (Comp EQ (Attr empno) (Val $ SqlInt32 10004))
---       (C.And (Comp GT (C.Val $ SqlLocalDate '1991-01-01') (Attr hiredate))
---              (Comp LT (Attr hiredate) (C.Val $ SqlLocalDate '1992-01-01'))))
---   (AChc empv1 
---     ()
---     ())
+empVQ1subq1, empVQ1subq2, empVQ1subq3, empVQ1subq4 :: Algebra
+
+empVQ1 :: Algebra
+empVQ1 = Proj [(Lit True, salary)]
+  Sel (C.And (Comp EQ (Attr empno) (Val $ SqlInt32 10004))
+      (C.And (Comp GT (C.Val $ SqlLocalDate '1991-01-01') (Attr hiredate))
+             (Comp LT (Attr hiredate) (C.Val $ SqlLocalDate '1992-01-01'))))
+  (AChc empv1 
+    ()
+    ())
 
 -- intent: return the managers (of department d001) on
 --         the year 1991.
