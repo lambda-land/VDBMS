@@ -26,27 +26,42 @@ empbio            = Relation "v_empbio"
 -- Attributes
 -- 
 
-empno, name, hiredate, title, deptname, salary :: Attribute
-deptno, managerno, sex, birthdate, firstname, lastname :: Attribute
-empno     = undefined
-  -- genAtt "empno"
-name      = undefined
-  -- ÷genAtt "name"
-hiredate  = undefined
-  -- genAtt "hiredate"
-title     = undefined
-  -- genAtt "title"
-deptname  = undefined
-  -- genAtt "deptname"
-salary    = undefined
-  -- Attribute (Just job) "salary"
-deptno    = undefined
-  -- genAtt "deptno"
-managerno = Attribute "managerno"
-sex       = Attribute "sex"
-firstname = Attribute "firstname"
-lastname  = Attribute "lastname"
-birthdate = Attribute "birthdate"
+engineerpersonnelEmpno, otherpersonnelEmpno, empacctEmpno :: Attribute
+empbioEmpno, engineerpersonnelName, otherpersonnelName :: Attribute
+empacctName, empbioName, engineerpersonnelHiredate :: Attribute
+otherpersonnelHiredate, empacctHiredate, engineerpersonnelTitle :: Attribute
+otherpersonnelTitle, empacctTitle, jobTitle, engineerpersonnelDeptname :: Attribute
+otherpersonnelDeptname, empacctDeptname, empacctDeptno, deptname :: Attribute
+deptno, managerno, jobSalary, empacctSalary, sex, birthdate :: Attribute
+firstname, lastname :: Attribute
+engineerpersonnelEmpno    = Attribute "engineerpersonnelEmpno"
+otherpersonnelEmpno       = Attribute "otherpersonnelEmpno"
+empacctEmpno              = Attribute "empacctEmpno"
+empbioEmpno               = Attribute "empbioEmpno"
+engineerpersonnelName     = Attribute "engineerpersonnelName"
+otherpersonnelName        = Attribute "otherpersonnelName"
+empacctName               = Attribute "empacctName"
+empbioName                = Attribute "empbioName"
+engineerpersonnelHiredate = Attribute "engineerpersonnelHiredate"
+otherpersonnelHiredate    = Attribute "otherpersonnelHiredate"
+empacctHiredate           = Attribute "empacctHiredate"
+engineerpersonnelTitle    = Attribute "engineerpersonnelTitle"
+otherpersonnelTitle       = Attribute "otherpersonnelTitle"
+empacctTitle              = Attribute "empacctTitle"
+jobTitle                  = Attribute "jobTitle"
+engineerpersonnelDeptname = Attribute "engineerpersonnelDeptname"
+otherpersonnelDeptname    = Attribute "otherpersonnelDeptname"
+empacctDeptno             = Attribute "empacctDeptno"
+empacctDeptname           = Attribute "empacctDeptname"
+deptname                  = Attribute "deptname"
+deptno                    = Attribute "deptno"
+jobSalary                 = Attribute "jobSalary"
+empacctSalary             = Attribute "empacctSalary"
+managerno                 = Attribute "managerno"
+sex                       = Attribute "sex"
+firstname                 = Attribute "firstname"
+lastname                  = Attribute "lastname"
+birthdate                 = Attribute "birthdate"
 
 --  
 --  ** schema verison 1 
