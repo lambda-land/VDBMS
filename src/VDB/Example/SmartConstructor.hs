@@ -20,7 +20,7 @@ import qualified Data.Map as M
 --  ** smart contructor for plain query
 --
 plainAttr :: String -> Opt Attribute 
-plainAttr attrName = (F.Lit True, Attribute Nothing attrName)
+plainAttr attrName = (F.Lit True, Attribute attrName)
 
 plainAttrs :: [String] -> [Opt Attribute]
 plainAttrs []     = []
@@ -37,4 +37,4 @@ constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( Relation relName,
 
 -- | contruct rowType based on a list of [(Attribute Name, SqlType)]
 constructRowType ::  String -> [(String,SqlType)]  -> RowType
-constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> ( Attribute (Just (Relation relName)) attrName, (Lit True, t))) attrTypeList
+constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> ( Attribute  attrName, (Lit True, t))) attrTypeList

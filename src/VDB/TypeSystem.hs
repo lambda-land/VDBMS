@@ -134,7 +134,7 @@ typeProduct e e' = M.union unionWithoutIntersection
 addPrefix :: String -> TypeEnv -> TypeEnv
 addPrefix s r = M.fromList $ map updateAttName l
   where
-    updateAttName (a,(o,t)) = (Attribute Nothing (s ++ attributeName a), (o,t))
+    updateAttName (a,(o,t)) = (Attribute (s ++ attributeName a), (o,t))
     l = M.toList r
 
 -- addPrefix s = SM.mapKeys (\a -> Attribute(s ++ attributeName a))

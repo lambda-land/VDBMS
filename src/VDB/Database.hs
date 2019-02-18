@@ -102,7 +102,7 @@ validAtts c r s = case rowType of
 -- DANGER: changed Attribute to (Attribute (Just r))
 -- MAY CAUSE PROBLEMS!!!
 validAttsWithoutPres :: PresCondAtt -> Config Bool -> Relation -> Schema -> Set Attribute 
-validAttsWithoutPres p c r s = Set.delete (Attribute (Just r) $ presCondAttName p) $ validAtts c r s
+validAttsWithoutPres p c r s = Set.delete (Attribute $ presCondAttName p) $ validAtts c r s
 
 -------------------- run variational queries for approach1 -------------------------------
 type QueryText = T.Text

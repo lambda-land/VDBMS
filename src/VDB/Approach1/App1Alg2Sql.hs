@@ -132,7 +132,7 @@ prjAux oa = map (second (T.intercalate ", ")) groupedAttsText
   where 
     groupedAtts     = groupBy (\x y -> fst x == fst y) oa
     groupedAtts'    = map pushDownList' groupedAtts -- [(fexp,[attribute])]
-    groupedAttsText = map (second $ map getAttName) groupedAtts'
+    groupedAttsText = map (second $ map (T.pack . attributeName)) groupedAtts'
 
 -- | helper function for projection without qualified attributes.
 prjAuxUnqualified :: [Opt Attribute] -> [Vsubquery]
@@ -153,14 +153,14 @@ pushDownList' ((a,b):l) = (a,b:snd (pushDownList' l))
 
 -- | returns an attribute name with its qualified relation name if available.
 -- NOTE: it doesn't return qualified attributes!
-getAttName :: Attribute -> T.Text
-getAttName (Attribute _ a)   = T.append (T.pack a) " "
-getAttName (Attribute Nothing a)   = T.append (T.pack a) " "
-getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a, " "]
+-- getAttName :: Attribute -> T.Text
+-- getAttName (Attribute a)   = T.append (T.pack a) " "
+-- getAttName (Attribute a)   = T.append (T.pack a) " "
+-- getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a, " "]
 
 -- | get unquilified attribute names.
 getAttNameUnqualified :: Attribute -> T.Text
-getAttNameUnqualified (Attribute _ a)   = T.append (T.pack a) " "
+getAttNameUnqualified (Attribute a)   = T.append (T.pack a) " "
 
 
 -- | helper function for selection.
@@ -199,7 +199,7 @@ showAtom :: C.Atom -> T.Text
 showAtom (C.Val v)  = case safeConvert v of 
   Right val -> T.pack val
   _ -> error "safeConvert resulted in error!!! showAtom"
-showAtom (C.Attr a) = getAttName a
+showAtom (C.Attr a) = T.pack $ attributeName a
   -- case attributeQualifier a of 
   -- Just r  -> T.concat[T.pack $ relationName r, ".", T.pack $ attributeName a]
   -- Nothing -> T.pack $ attributeName a 
@@ -219,8 +219,8 @@ fexp2 = F.Or (F.Or v3 v4) v5
 q1, q2, q3, q4, q5, q6 :: Algebra 
 -- q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname")] $ TRef $ Relation "v_dept"
 -- select v_dept.deptname  from v_dept
-q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname"), 
-           (F.Lit True, Attribute (Just $ Relation "v_dept") "deptno")] $ TRef $ Relation "v_dept" 
+q1 = Proj [(F.Lit True, Attribute  "deptname"), 
+           (F.Lit True, Attribute  "deptno")] $ TRef $ Relation "v_dept" 
 -- select v_dept.deptname , v_dept.deptno  from v_dept
 -- q2 = Sel (C.Lit True) $ TRef $ Relation "v_dept" 
 -- select * from v_dept where True
