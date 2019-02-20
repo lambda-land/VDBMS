@@ -75,7 +75,7 @@ executables:
     - vdbms
 
 tests:
-  vsat-test:
+  vdbms-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -84,3 +84,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - vdbms
+    - tasty
+    - tasty-quickcheck
+    - tasty-hunit

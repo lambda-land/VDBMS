@@ -42,10 +42,8 @@ type VTuple = Opt SqlRow
 type VTuples = [VTuple]
 
 -- | returns a set of attributes from a tuple.
--- DANGER: changed Attribute to (Attribute Nothing)
--- MAY CAUSE PROBLEMS!!!
 rowAttSet :: SqlRow -> Set Attribute
-rowAttSet = S.map (Attribute Nothing) . M.keysSet 
+rowAttSet = S.map (Attribute) . M.keysSet 
 
 -- | returns a set of attributes from a table.
 tableAttSet :: SqlTable -> Set Attribute
@@ -64,7 +62,7 @@ constRowTypeOfSqlTable :: FeatureExpr -> SqlTable -> RowType
 constRowTypeOfSqlTable f t = M.map (\v -> (f,v)) row''
   where 
     row   = head t 
-    row'  = M.mapKeys (\s -> Attribute Nothing s) row 
+    row'  = M.mapKeys (\s -> Attribute s) row 
     row'' = M.map typeOf row'
 
 -- | inserts an attribute value pair to a sqlrow.
@@ -239,7 +237,7 @@ conformSqlVariantTableToSchema t r = updateVariant
 -- DANGER: changed Attribute to (Attribute Nothing)
 -- MAY CAUSE PROBLEMS!!!
 addTuplePresCond :: PresCondAtt -> SqlVariantTable -> SqlTable
-addTuplePresCond p vt = insertAttValToSqlTable (Attribute Nothing $ presCondAttName p) fexp t
+addTuplePresCond p vt = insertAttValToSqlTable (Attribute $ presCondAttName p) fexp t
   where 
     fexp = fexp2sqlval $ conf2fexp $ getConfig vt
     t    = getVariant vt

@@ -9,7 +9,7 @@
 --          
 -- | NOTE : 1. opt True --> do not insert feature Expr in attrFeatureEnv
 
-module VDB.Translations.AlgebraToSql where 
+module VDB.QueryTrans.AlgebraToSql where 
 
 import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 

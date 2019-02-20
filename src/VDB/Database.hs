@@ -16,7 +16,7 @@ import Data.Convertible
 
 import Control.Monad (zipWithM)
 
-import VDB.Translations.RelAlg2Sql (VariantQuery)
+import VDB.QueryTrans.RelAlg2Sql (VariantQuery)
 import VDB.FeatureExpr
 import VDB.Name
 import VDB.SAT
@@ -39,6 +39,8 @@ import Database.HDBC.Sqlite3
 data SqlDatabase conn where 
   VariantDB :: IConnection conn => Schema -> Variant conn Bool -> SqlDatabase conn 
   VDB       :: IConnection conn => Schema -> conn -> SqlDatabase conn 
+  -- deriving (Eq)
+
 
 getSqlDBschema :: IConnection conn => SqlDatabase conn -> Schema
 getSqlDBschema (VariantDB s _) = s 
@@ -100,7 +102,7 @@ validAtts c r s = case rowType of
 -- DANGER: changed Attribute to (Attribute (Just r))
 -- MAY CAUSE PROBLEMS!!!
 validAttsWithoutPres :: PresCondAtt -> Config Bool -> Relation -> Schema -> Set Attribute 
-validAttsWithoutPres p c r s = Set.delete (Attribute (Just r) $ presCondAttName p) $ validAtts c r s
+validAttsWithoutPres p c r s = Set.delete (Attribute $ presCondAttName p) $ validAtts c r s
 
 -------------------- run variational queries for approach1 -------------------------------
 type QueryText = T.Text
@@ -373,7 +375,6 @@ configVDBall ::  DBFilePath -> PresCondAtt -> SqlDatabase Connection
 configVDBall f p vdb cs = do
   -- let nums = [1..length cs]
   sequence $ zipWith (configVDB f p vdb) cs [1..]
-
 
 
 

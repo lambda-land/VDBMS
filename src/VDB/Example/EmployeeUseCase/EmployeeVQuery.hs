@@ -23,29 +23,29 @@ import Data.Tuple(swap)
 --
 
 -- | qualify the unqualified attribute into qualified attribute assiciated with their relation 
-qualifyQuery :: Schema -> Algebra -> Algebra
-qualifyQuery s (Proj optAttrList a) = let attrRelMap = makeAttrRelMap s
-                                          optAttrList' = map (qualifyOptAttr attrRelMap) optAttrList 
-                                      in Proj optAttrList' (qualifyQuery s a) 
-qualifyQuery s (SetOp op a1 a2)     =  let a1' = qualifyQuery s a1        
-                                           a2' = qualifyQuery s a2 
-                                        in SetOp op a1' a2'
-qualifyQuery s (Sel cond a)         = let a' = qualifyQuery s a
-                                      in Sel cond a'     
-qualifyQuery s (AChc  f a1 a2)      = let a1' = qualifyQuery s a1        
-                                          a2' = qualifyQuery s a2 
-                                      in AChc  f a1' a2'
-qualifyQuery s other                = other 
+-- qualifyQuery :: Schema -> Algebra -> Algebra
+-- qualifyQuery s (Proj optAttrList a) = let attrRelMap = makeAttrRelMap s
+--                                           optAttrList' = map (qualifyOptAttr attrRelMap) optAttrList 
+--                                       in Proj optAttrList' (qualifyQuery s a) 
+-- qualifyQuery s (SetOp op a1 a2)     =  let a1' = qualifyQuery s a1        
+--                                            a2' = qualifyQuery s a2 
+--                                         in SetOp op a1' a2'
+-- qualifyQuery s (Sel cond a)         = let a' = qualifyQuery s a
+--                                       in Sel cond a'     
+-- qualifyQuery s (AChc  f a1 a2)      = let a1' = qualifyQuery s a1        
+--                                           a2' = qualifyQuery s a2 
+--                                       in AChc  f a1' a2'
+-- qualifyQuery s other                = other 
                                                                         
 
 
 
-qualifyOptAttr :: M.Map String Relation  -> Opt Attribute -> Opt Attribute 
-qualifyOptAttr m optattr@(f, Attribute rel attrName) = case rel of 
-                                                        Nothing -> case M.lookup attrName m of 
-                                                                      Nothing  -> error $ "the attribute" ++ attrName ++ "is not in the schema"
-                                                                      relation -> (f, Attribute relation attrName)
-                                                        _       -> optattr
+-- qualifyOptAttr :: M.Map String Relation  -> Opt Attribute -> Opt Attribute 
+-- qualifyOptAttr m optattr@(f, Attribute rel attrName) = case rel of 
+--                                                         Nothing -> case M.lookup attrName m of 
+--                                                                       Nothing  -> error $ "the attribute" ++ attrName ++ "is not in the schema"
+--                                                                       relation -> (f, Attribute relation attrName)
+--                                                         _       -> optattr
 
 -- | make a Attribute Relation Map based on gaven schema 
 --   ** Noted that can only works good with unique attritbue and relation in schema. 
@@ -59,7 +59,7 @@ makeAttrRelMap (sf, relAttrMap) = let relAttrsList' = (M.toList relAttrMap)
                                 helper ((rel, attrlist):xs) = (createRelAttrList rel attrlist)  ++ helper xs 
                                 createRelAttrList :: Relation -> [Attribute] -> [(String,Relation)]
                                 createRelAttrList rel []     = []
-                                createRelAttrList rel ((Attribute _ attrName) :xs) =  (attrName, rel) : createRelAttrList rel xs
+                                createRelAttrList rel ((Attribute attrName) :xs) =  (attrName, rel) : createRelAttrList rel xs
 
 
 --

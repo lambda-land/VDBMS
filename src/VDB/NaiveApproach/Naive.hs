@@ -12,7 +12,7 @@ import VDB.Algebra
 -- import VDB.BruteForce.BruteForceAlg2Sql
 import VDB.NaiveApproach.NaiveAppConfig (applyConfigVariantTables)
 import VDB.NaiveApproach.NaiveSendQs (runNaiveQs)
-import VDB.Translations.RelAlg2Sql (alg2Sql)
+import VDB.QueryTrans.RelAlg2Sql (alg2Sql)
 -- import VDB.Vresult
 import VDB.SqlTable (SqlVariantTable)
 -- import VDB.Schema

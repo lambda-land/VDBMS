@@ -10,7 +10,58 @@ import VDB.Variational
 import qualified Data.Map as M 
 import VDB.Example.SmartConstructor(constructRelMap, constructRowType)
 
+-- 
+-- Relations
+-- 
 
+engineerpersonnel, otherpersonnel, job, dept, empacct, empbio :: Relation
+engineerpersonnel = Relation "v_engineerpersonnel"
+otherpersonnel    = Relation "v_otherpersonnel"
+job               = Relation "v_job"
+dept              = Relation "v_dept"
+empacct           = Relation "v_empacct"
+empbio            = Relation "v_empbio"
+
+-- 
+-- Attributes
+-- 
+
+engineerpersonnelEmpno, otherpersonnelEmpno, empacctEmpno :: Attribute
+empbioEmpno, engineerpersonnelName, otherpersonnelName :: Attribute
+empacctName, empbioName, engineerpersonnelHiredate :: Attribute
+otherpersonnelHiredate, empacctHiredate, engineerpersonnelTitle :: Attribute
+otherpersonnelTitle, empacctTitle, jobTitle, engineerpersonnelDeptname :: Attribute
+otherpersonnelDeptname, empacctDeptname, empacctDeptno, deptname :: Attribute
+deptno, managerno, jobSalary, empacctSalary, sex, birthdate :: Attribute
+firstname, lastname :: Attribute
+engineerpersonnelEmpno    = Attribute "engineerpersonnelEmpno"
+otherpersonnelEmpno       = Attribute "otherpersonnelEmpno"
+empacctEmpno              = Attribute "empacctEmpno"
+empbioEmpno               = Attribute "empbioEmpno"
+engineerpersonnelName     = Attribute "engineerpersonnelName"
+otherpersonnelName        = Attribute "otherpersonnelName"
+empacctName               = Attribute "empacctName"
+empbioName                = Attribute "empbioName"
+engineerpersonnelHiredate = Attribute "engineerpersonnelHiredate"
+otherpersonnelHiredate    = Attribute "otherpersonnelHiredate"
+empacctHiredate           = Attribute "empacctHiredate"
+engineerpersonnelTitle    = Attribute "engineerpersonnelTitle"
+otherpersonnelTitle       = Attribute "otherpersonnelTitle"
+empacctTitle              = Attribute "empacctTitle"
+jobTitle                  = Attribute "jobTitle"
+engineerpersonnelDeptname = Attribute "engineerpersonnelDeptname"
+otherpersonnelDeptname    = Attribute "otherpersonnelDeptname"
+empacctDeptno             = Attribute "empacctDeptno"
+empacctDeptname           = Attribute "empacctDeptname"
+deptname                  = Attribute "deptname"
+deptno                    = Attribute "deptno"
+jobSalary                 = Attribute "jobSalary"
+empacctSalary             = Attribute "empacctSalary"
+managerno                 = Attribute "managerno"
+sex                       = Attribute "sex"
+firstname                 = Attribute "firstname"
+lastname                  = Attribute "lastname"
+birthdate                 = Attribute "birthdate"
 
 --  
 --  ** schema verison 1 

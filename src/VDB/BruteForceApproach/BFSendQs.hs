@@ -2,7 +2,7 @@
 -- and gets the plain relational result
 module VDB.BruteForceApproach.BFSendQs where 
 
-import VDB.Translations.RelAlg2Sql (Query,VariantQuery)
+import VDB.QueryTrans.RelAlg2Sql (Query,VariantQuery)
 import VDB.Variant (Variant)
 import VDB.SqlTable
 

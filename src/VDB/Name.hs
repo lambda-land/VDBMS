@@ -10,13 +10,25 @@ newtype Feature = Feature { featureName :: String }
   deriving (Data,Eq,IsString,Ord,Show,Typeable)
 
 -- | An attribute (i.e. column) name.
--- newtype Attribute = Attribute { attributeName :: String }
-  -- deriving (Data,Eq,IsString,Ord,Show,Typeable)
+newtype Attribute = Attribute { attributeName :: String }
+  deriving (Data,Eq,IsString,Ord,Show,Typeable)
 
-data Attribute = Attribute { attributeQualifier :: Maybe Relation, attributeName :: String} 
-  deriving (Data,Eq,Ord,Show,Typeable)
+-- | Attriutes with their relations if exist.
+--   Note that we need this when we allow naming in queries
+--   as well as duplicate attribute names among all tables.
+-- data Attribute = Attribute { attributeQualifier :: Maybe Relation, attributeName :: String} 
+--   deriving (Data,Eq,Ord,Show,Typeable)
 
 -- Attribute n  = Attribute Nothing n 
+
+-- | generates an attribute with a Nothing relation.
+-- genAtt :: String -> Attribute
+-- genAtt a = Attribute Nothing a
+
+-- | adds a relation to an attribute that doesn't have a relation yet.
+-- addRelToAtt :: Attribute -> Relation -> Attribute
+-- addRelToAtt (Attribute Nothing a) r = Attribute (Just r) a
+-- addRelToAtt _ _ = error "the attribute relation isn't Nothing!!"
 
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }

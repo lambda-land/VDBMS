@@ -5,7 +5,7 @@ import Database.HDBC
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import VDB.Translations.VSqlToAlgebra
+import VDB.QueryTrans.VSqlToAlgebra
 import VDB.SQL
 import VDB.Algebra
 import VDB.Name 
@@ -26,9 +26,9 @@ import VDB.Example.EmployeeUseCase.EmployeeQuery
 import VDB.Example.EmployeeUseCase.EmployeeVQuery
 import VDB.Example.EmployeeUseCase.EmployeeVSchema
 import VDB.Example.EmployeeUseCase.EmployeeSchema
-import VDB.Example.EmployeeUseCase.SmallSampleForTest
+-- import VDB.Example.EmployeeUseCase.SmallSampleForTest
 
-import VDB.TypeSystem.Semantics
+import VDB.TypeSystem
 import qualified Data.Map as M 
 import Data.SBV
 

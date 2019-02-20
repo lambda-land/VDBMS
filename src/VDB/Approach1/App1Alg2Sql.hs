@@ -12,6 +12,7 @@ import qualified VDB.Condition as C
 import VDB.Variational
 import VDB.Type
 import VDB.SAT
+import VDB.Schema
 
 import Data.Convertible (safeConvert)
 import Data.Bifunctor (second)
@@ -22,10 +23,10 @@ import Data.Maybe (catMaybes)
 type Vquery = Opt T.Text
 type Vsubquery = Opt T.Text
 
-transVerify :: Algebra -> F.FeatureExpr -> [Vquery]
-transVerify q ctxt = catMaybes $ map verifyVquery vqs
+transVerify :: Algebra -> F.FeatureExpr -> Schema -> [Vquery]
+transVerify q ctxt s = catMaybes $ map verifyVquery vqs
   where 
-    vqs = trans q ctxt
+    vqs = trans q ctxt s
 
 -- | verifies a vquery to ensure that the fexp is satisfiable.
 --   and shrinks the presence condition assigned to the query.
@@ -38,7 +39,7 @@ verifyVquery vq
 
 
 -- | translates a vq to a list of vqs runnable in a relational db engine.
-trans :: Algebra -> F.FeatureExpr -> [Vquery]
+trans :: Algebra -> F.FeatureExpr -> Schema -> [Vquery]
 -- trans (SetOp s l r) ctxt = [setAux s lq rq | lq <- lres, rq <- rres]
 --   where 
 --     lres = trans l ctxt
@@ -58,23 +59,26 @@ trans :: Algebra -> F.FeatureExpr -> [Vquery]
   -- case (l, r) of
   -- ()
 -- 
--- trans (Proj oas q)  ctxt = case oas of 
---   [] -> error "syntactically incorrect vq!cannot have an empty list of vatt!!"
---   _ -> case q of 
---     SetOp Prod -> 
---     SetOp _ -> error "syntactically incorrect vq! cannot wrap union/diff in a proj!!"
---     Proj ->
---     Sel -> 
---     AChc ->
---     TRef ->
---     Empty -> 
-  
---   [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ( ", qt, " )"]
---   | (af,at) <- ares, (qf,qt) <- qres]
---   where 
---     qres = trans q ctxt
---     ares  = prjAux oas 
-trans (Sel c q)     ctxt = case q of 
+trans (Proj oas q)  ctxt s = case oas of 
+  [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
+  _  -> case q of 
+    -- SetOp Prod -> 
+    SetOp _ _ _-> error "syntactically incorrect vq! cannot wrap union/diff in a proj!!"
+    -- Proj -> -- qualified shit!!
+    -- Sel -> 
+    -- AChc ->
+    TRef r -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ", T.pack $ relationName r,
+      " where true "] | (af,at) <- ares, (qf,qt) <- qres]
+        where 
+          qres = trans q ctxt s
+          ares  = prjAux oas 
+    Empty -> error "syntactically incorrect vq! cannot project attributes from empty!"
+    _ -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ( ", qt, " ) where true"]
+      | (af,at) <- ares, (qf,qt) <- qres]
+        where 
+          qres = trans q ctxt s
+          ares  = prjAux oas 
+trans (Sel c q)     ctxt s = case q of 
   -- SetOp Prod ->
   SetOp Union _ _ -> error "syntactically incorrect vq! cannot wrap diff in a select!!"
   SetOp Diff _ _ -> error "syntactically incorrect vq! cannot wrap diff in a select!!"
@@ -87,26 +91,31 @@ trans (Sel c q)     ctxt = case q of
   --       qres = trans q' ctxt
   -- AChc f l r -> [mkOpt ()
   --   | ]
-  -- TRef r -> [mkOpt (F.And cf qf) (T.concat ["select * from ", T.pack $ relationName r, " where ", ct])
-  --   | (cf,ct) <- cres]
-  --     where
-  --         cres = selAux c ctxt
+  TRef r -> case lookupRowType r s of
+    Just (rf,_) -> [mkOpt (F.And cf rf) (T.concat ["select * from ", T.pack $ relationName r, " where ", ct])
+      | (cf,ct) <- cres]
+        where
+          cres = selAux c ctxt 
+    _ -> error $ "the relation " ++ relationName r ++ "doesn't exists in the database!!"
   Empty -> error "syntactically incorrect vq!! cannot select anything from empty!!"
   _ -> [mkOpt (F.And cf qf) (T.concat [qt, " and ", ct])
     | (cf,ct) <- cres, (qf,qt) <- qres]
-  where 
-    cres = selAux c ctxt
-    qres = trans q ctxt
-trans (AChc f l r)  ctxt = case (l, r) of 
-  (Empty, Empty) -> trans Empty ctxt
-  (Empty, rq)    -> trans rq (F.And (F.Not f) ctxt)
-  (lq, Empty)    -> trans lq (F.And f ctxt)
+      where 
+        cres = selAux c ctxt 
+        qres = trans q ctxt s 
+trans (AChc f l r)  ctxt s = case (l, r) of 
+  (Empty, Empty) -> trans Empty ctxt s 
+  (Empty, rq)    -> trans rq (F.And (F.Not f) ctxt) s
+  (lq, Empty)    -> trans lq (F.And f ctxt) s
   (lq, rq)       -> lres ++ rres
     where 
-      lres = trans lq (F.And f ctxt)
-      rres = trans rq (F.And (F.Not f) ctxt)
-trans (TRef r)      ctxt = [mkOpt ctxt $ T.append "select * from " $ T.pack (relationName r)]
-trans (Empty)       ctxt = [mkOpt ctxt  "select null"]
+      lres = trans lq (F.And f ctxt) s
+      rres = trans rq (F.And (F.Not f) ctxt) s
+trans (TRef r)      ctxt s = case lookupRowType r s of
+  Just (rf,_) -> [mkOpt (F.And ctxt rf) 
+    $ T.append "select * from " $ T.pack (relationName r)]
+  _           -> error $ "the relation " ++ relationName r ++ "doesn't exists in the database!!"
+trans (Empty)       ctxt _ = [mkOpt ctxt  "select null"]
 
 -- | helper function for Setop queries, i.e., union, diff, prod
 -- TODO: check!!!
@@ -116,15 +125,23 @@ setAux Diff  = \(lo, l) (ro, r) -> mkOpt (F.And lo (F.Not ro)) $ T.concat ["( ",
 setAux Prod  = \(lo, l) (ro, r) -> mkOpt (F.And lo ro) $ T.concat ["( ", l, " ) join ( ", r, " )"]
 -- setAux Prod  = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat ["select * from (" , l, ") join (", r, ")"]) -- the OLD one!!
 
--- | helper function for the projection query
+-- | helper function for the projection query with qualified attributes.
 prjAux :: [Opt Attribute] -> [Vsubquery]
 prjAux oa = map (second (T.intercalate ", ")) groupedAttsText
   -- map (second (T.concat . map getAttName)) groupedAtts'
   where 
     groupedAtts     = groupBy (\x y -> fst x == fst y) oa
     groupedAtts'    = map pushDownList' groupedAtts -- [(fexp,[attribute])]
-    groupedAttsText = map (second $ map getAttName) groupedAtts'
+    groupedAttsText = map (second $ map (T.pack . attributeName)) groupedAtts'
 
+-- | helper function for projection without qualified attributes.
+prjAuxUnqualified :: [Opt Attribute] -> [Vsubquery]
+prjAuxUnqualified oa = map (second (T.intercalate ", ")) groupedAttsText
+  -- map (second (T.concat . map getAttName)) groupedAtts'
+  where 
+    groupedAtts     = groupBy (\x y -> fst x == fst y) oa
+    groupedAtts'    = map pushDownList' groupedAtts -- [(fexp,[attribute])]
+    groupedAttsText = map (second $ map getAttNameUnqualified) groupedAtts'
 
 -- | constructs a list of attributes that have the same fexp.
 --   NOTE: this is unsafe since you're not checking if 
@@ -136,10 +153,15 @@ pushDownList' ((a,b):l) = (a,b:snd (pushDownList' l))
 
 -- | returns an attribute name with its qualified relation name if available.
 -- NOTE: it doesn't return qualified attributes!
-getAttName :: Attribute -> T.Text
-getAttName (Attribute _ a)   = T.append (T.pack a) " "
--- getAttName (Attribute Nothing a)   = T.append (T.pack a) " "
+-- getAttName :: Attribute -> T.Text
+-- getAttName (Attribute a)   = T.append (T.pack a) " "
+-- getAttName (Attribute a)   = T.append (T.pack a) " "
 -- getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a, " "]
+
+-- | get unquilified attribute names.
+getAttNameUnqualified :: Attribute -> T.Text
+getAttNameUnqualified (Attribute a)   = T.append (T.pack a) " "
+
 
 -- | helper function for selection.
 selAux :: C.Condition -> F.FeatureExpr -> [Vsubquery]
@@ -177,7 +199,7 @@ showAtom :: C.Atom -> T.Text
 showAtom (C.Val v)  = case safeConvert v of 
   Right val -> T.pack val
   _ -> error "safeConvert resulted in error!!! showAtom"
-showAtom (C.Attr a) = getAttName a
+showAtom (C.Attr a) = T.pack $ attributeName a
   -- case attributeQualifier a of 
   -- Just r  -> T.concat[T.pack $ relationName r, ".", T.pack $ attributeName a]
   -- Nothing -> T.pack $ attributeName a 
@@ -197,8 +219,8 @@ fexp2 = F.Or (F.Or v3 v4) v5
 q1, q2, q3, q4, q5, q6 :: Algebra 
 -- q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname")] $ TRef $ Relation "v_dept"
 -- select v_dept.deptname  from v_dept
-q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname"), 
-           (F.Lit True, Attribute (Just $ Relation "v_dept") "deptno")] $ TRef $ Relation "v_dept" 
+q1 = Proj [(F.Lit True, Attribute  "deptname"), 
+           (F.Lit True, Attribute  "deptno")] $ TRef $ Relation "v_dept" 
 -- select v_dept.deptname , v_dept.deptno  from v_dept
 -- q2 = Sel (C.Lit True) $ TRef $ Relation "v_dept" 
 -- select * from v_dept where True

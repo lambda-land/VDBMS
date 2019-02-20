@@ -3,7 +3,7 @@
 
 module VDB.Example.TwoPathTest where 
 
-import VDB.Translations.AlgebraToSql
+import VDB.QueryTrans.AlgebraToSql
 import VDB.Config
 import VDB.Algebra
 import VDB.Variational 

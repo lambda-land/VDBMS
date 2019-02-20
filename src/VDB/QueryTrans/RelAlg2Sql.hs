@@ -1,7 +1,7 @@
 -- Brute force translation of Variational relational algebra to SQL
 -- with raw queries, queries are written in sql as text and passed 
 -- to the rawQuery function
-module VDB.Translations.RelAlg2Sql where 
+module VDB.QueryTrans.RelAlg2Sql where 
 
 import VDB.Algebra
 import VDB.Name

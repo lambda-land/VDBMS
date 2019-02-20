@@ -78,5 +78,12 @@ sqlVariantTables2VTable p ts = VTable tabelSchema table
 
 
 
+---------------adjusting a vtable to a table schema---------
+
+-- | adjusts a vtable to a table schema.
+adjustVTable2TableSch :: TableSchema -> VTable -> VTable
+adjustVTable2TableSch = undefined
+
+
 
 
