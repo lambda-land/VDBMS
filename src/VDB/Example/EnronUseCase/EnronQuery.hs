@@ -13,7 +13,7 @@ import Data.Time
 
 import VDB.Example.SmartConstructor
 
-
+{-
 --
 -- ** Query in schema version 1 
 --
@@ -235,5 +235,5 @@ enronQ2_v8 :: Algebra
 enronQ2_v8 = let cond = C.Comp EQ (C.Attr (Attribute Nothing "empno")) (C.Val (SqlString "Manager"))
            in Proj (plainAttrs [ "firstname", "lastname", "email_id"]) $ Sel  cond  $ TRef (Relation "v_employee")
 
-
+-}
 

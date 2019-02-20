@@ -20,7 +20,7 @@ signature,addressbook, filtermsg, encrypt, autoresponder, forwardmsg, mailhost, 
 signature     = Feature "signature"
 addressbook   = Feature "addressbook"
 filtermsg     = Feature "filtermsg"
-encrypt       = Feature "encryption"
+encrypt       = Feature "encrypt"
 autoresponder = Feature "autoresponder"
 forwardmsg    = Feature "forwardmsg"
 mailhost      = Feature "mailhost"
@@ -34,19 +34,17 @@ remailmsg     = Feature "remailmsg"
 sign_addr_filter :: FeatureExpr
 sign_addr_filter = (Ref signature) `And` (Ref addressbook) `And` (Ref filtermsg)
 
--- | FeatureExpr for encrption
-encryption :: FeatureExpr 
-encryption = Ref encrypt
 
 -- | FeatureExpr for (autoresponder, forwardmsg, mailhost)
 auto_forward_mhost :: FeatureExpr
 auto_forward_mhost = (Ref autoresponder) `And` (Ref forwardmsg) `And` (Ref mailhost)
 
-remail :: FeatureExpr
-remail = Ref remailmsg
+-- | FeatureExpr for (encrypt, remail)
+encrpt_remail :: FeatureExpr
+encrpt_remail = (Ref remailmsg) `And` (Ref encrypt)
 
 -- 
--- Relation names
+-- Relations
 -- 
 v_employee, v_message, v_recipientInfo, v_referenceInfo, v_auto_msg, v_forward_msg,
   v_remail_msg, v_filter_msg, v_mailhost, v_alias :: String
@@ -63,789 +61,195 @@ v_alias         = "v_alias"
 
 
 -- 
--- Attribute names
+-- Attributes
 -- 
+
+-- | v_employee
+employeeEid, firstname, lastname, email_id, employeeFolder, status, sign, public_key,employeeDid :: Attribute
+employeeEid = Attribute "employeeEid"
+firstname = Attribute "firstname"
+lastname = Attribute "lastname"
+email_id= Attribute "email_id"
+employeeFolder= Attribute "employeeFolder"
+status= Attribute "status"
+sign= Attribute "sign"
+public_key= Attribute "public_key"
+employeeDid = Attribute "employeeDid"
+
+-- | v_message 
+messageMid, sender, date, message_id, subject, messageBody, messageFolder, is_signed, is_encrypted :: Attribute
+messageMid = Attribute "messageMid"
+sender = Attribute "sender"
+date = Attribute "date"
+message_id = Attribute "message_id"
+subject = Attribute "subject"
+messageBody = Attribute "messageBody"
+messageFolder = Attribute "messageFolder"
+is_signed = Attribute "is_signed"
+is_encrypted = Attribute "is_encrypted"
+
+ -- | v_recipientinfo
+rid, recipientInfoMid, rtype, rvalue_email, rvalue_nickname :: Attribute
+rid = Attribute "rid"
+recipientInfoMid = Attribute "recipientInfoMid"
+rtype = Attribute "rtype"
+rvalue_email = Attribute "rvalue_email"
+rvalue_nickname = Attribute "rvalue_nickname"
+
+-- | v_referenceInfo
+rfid, referenceInfoMid, reference :: Attribute 
+rfid = Attribute "rfid"
+referenceInfoMid = Attribute "referenceInfoMid"
+reference = Attribute "reference"
+
+-- | v_auto_msg 
+auto_msgEid, auto_msgSubject, auto_msgBody :: Attribute 
+auto_msgEid = Attribute "auto_msgEid"
+auto_msgSubject = Attribute "auto_msgSubject"
+auto_msgBody = Attribute "auto_msgBody"
+
+-- | v_forward_msg 
+v_forward_msgEid, forwardaddr :: Attribute
+v_forward_msgEid = Attribute "v_forward_msgEid"
+forwardaddr = Attribute "forwardaddr"
+
+-- | v_remail_msg 
+remail_msgEid, psuedonym :: Attribute
+remail_msgEid = Attribute "remail_msgEid"
+psuedonym = Attribute "psuedonym"
+
+
+-- | v_filter_msg 
+filter_msgEid, suffix :: Attribute
+filter_msgEid = Attribute "filter_msgEid"
+suffix = Attribute "suffix"
+
+-- | v_ailhost 
+mailhostDid, username :: Attribute
+mailhostDid = Attribute "mailhostDid"
+username = Attribute "username"
+
+-- | v_alias
+aliasEid, email, nickname :: Attribute 
+aliasEid = Attribute "aliasEid"
+email = Attribute "email"
+nickname = Attribute "nickname"
+
+
+
+
+
 
 --
 -- ** schema 1
 --    * enable feature: (signature, addressbook, filtermsg), 
---                     encryption, 
---                    (autoresponder, forwardmsg, mailhost),
---                     remailmsg
---    * disable feature: None
+
+--    * disable feature: (autoresponder, forwardmsg, mailhost),
+--                    	 (encrypt, remailmsg)
 
 -- | A configuration of enron email that disables all features.
 enronConfigAllDisabled :: Config Bool
 enronConfigAllDisabled = disableAll
 
 -- | enron email first configuration.
-enronConfig1 :: Config Bool
-enronConfig1 = enableMany 
-  [signature, addressbook, filtermsg, encrypt, autoresponder, forwardmsg, 
-   mailhost, remailmsg] enronConfigAllDisabled
+-- enronConfig :: Config Bool
+-- enronConfig = enableMany 
+--   [signature, addressbook, filtermsg] enronConfigAllDisabled
 
-enronSchema1 :: Schema 
-enronSchema1 = ( sign_addr_filter `And` encryption `And` auto_forward_mhost `And` remail, 
-								   constructRelMap [ ( v_employee,  employeelist_v1)
-                                                   , ( v_message,    message_v1)
-                                                   , ( v_recipientInfo,  recipientInfo_v1)
-                                                   , ( v_referenceInfo,  referenceInfo_v1)
-                                                   , ( v_auto_msg,  recipientInfo_v1)
-                                                   , ( v_forward_msg,  recipientInfo_v1)
-                                                   , ( v_remail_msg,  recipientInfo_v1)
-                                                   , ( v_filter_msg,  recipientInfo_v1)
-                                                   , ( v_mailhost,  mailhost_v1)
-                                                   , ( v_alias,  alias_v1)
 
+enronSchema :: Schema 
+enronSchema = ( sign_addr_filter, M.fromList [ ( Relation v_employee,  (Lit True, employee_rowtype))
+                                              , ( Relation v_message,   ( Lit True , message_rowtype))
+                                              , ( Relation v_recipientInfo, ( Lit True , recipientInfo_rowtype))
+                                              , ( Relation v_referenceInfo, ( Lit True , referenceInfo_rowtype))
+                                              , ( Relation v_auto_msg, ( Ref autoresponder , auto_msg_rowtype))
+                                              , ( Relation v_forward_msg, ( Ref forwardmsg , forward_msg_rowtype))
+                                              , ( Relation v_remail_msg, ( Ref remailmsg , remail_msg_rowtype))
+                                              , ( Relation v_filter_msg, ( Ref filtermsg , filter_msg_rowtype))
+                                              , ( Relation v_mailhost, ( Ref mailhost , mailhost_rowtype))
+                                              , ( Relation  v_alias, ( Ref addressbook , alias_rowtype))
                                                    ]
                )
 
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key, did, presCond)
-employeelist_v1 :: [(String, SqlType)]
-employeelist_v1 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("puclic_key", TString)
-	           , ("did", TInt32)
-	           ]
+employee_rowtype :: RowType 
+employee_rowtype =M.fromList [ ("eid", (Lit True, TInt32))
+                     , ("firstname",  (Lit True,TString))
+                     , ("lastname", (Lit True, TString))
+                     , ("email_id", (Lit True,TString))
+                     , ("folder", (Lit True,TString))
+                     , ("status", (Lit True, TString))
+                     , ("sign", (Ref signature, TString))
+                     , ("puclic_key", (Ref encrypt, TString))
+                     , ("did", (Ref mailhost,TInt32))
+                     ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, is_encrypted, presCond)
-message_v1 :: [(String, SqlType)]
-message_v1 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           , ("is_encrypted", TBool)
-		           ]
+message_rowtype :: RowType
+message_rowtype =  M.fromList  [ ("mid", (Lit True, TInt32)) 
+                     , ("sender",  (Lit True,TString))
+                     , ("date",  (Lit True,TString))
+                     , ("message_id", (Lit True, TInt32))
+                     , ("subject", (Lit True,TString))
+                     , ("body", (Lit True,TString))
+                     , ("folder", (Lit True,TString))
+                     , ("is_signed", (Ref signature, TBool))
+                     , ("is_encrypted", (Ref encrypt, TBool))
+                     ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
-recipientInfo_v1 :: [(String, SqlType)]
-recipientInfo_v1 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+recipientInfo_rowtype :: RowType
+recipientInfo_rowtype = M.fromList     [ ("rid", (Lit True, TInt32))
+							           , ("mid",  (Lit True, TInt32))
+							           , ("rtype",  (Lit True , TString))
+							           , ("rvalue_email", (Lit True , TString))
+							           , ("rvalue_nickname", (Lit True , TString))
+							           ]
+
 -- referenceInfo(rfid, mid,reference, presCond)
-referenceInfo_v1 :: [(String, SqlType)]
-referenceInfo_v1 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+referenceInfo_rowtype :: RowType
+referenceInfo_rowtype = M.fromList [ ("rfid", (Lit True, TInt32))
+						           , ("mid",  (Lit True, TInt32))
+						           , ("reference",  (Lit True , TString))
+						           ]
 
 
 -- auto_msg(eid, subject, body,presCond)
-auto_msg_v1 :: [(String, SqlType)]
-auto_msg_v1 =  [ ("eid", TInt32) 
-	           ,  ("subject",  TString)
-	           , ("body",  TString)
-	           ]
+auto_msg_rowtype :: RowType
+auto_msg_rowtype =  M.fromList [ ("eid", (Lit True, TInt32)) 
+					           ,  ("subject",  (Lit True , TString))
+					           , ("body",  (Lit True , TString))
+					           ]
 
 -- forward_msg(eid,forwardaddr, presCond)
-forward_msg_v1 :: [(String, SqlType)]
-forward_msg_v1 =  [ ("eid", TInt32)
-	              , ("forwardaddr",  TString)
-	              ]
+forward_msg_rowtype :: RowType
+forward_msg_rowtype =  M.fromList [ ("eid", (Lit True, TInt32))
+				              , ("forwardaddr",  (Lit True , TString))
+				              ]
 
 -- remail_msg(eid, psuedonym, presCond)
-remail_msg_v1 :: [(String, SqlType)]
-remail_msg_v1 =   [ ("eid", TInt32) 
-	              , ("psuedonym",  TString)
-	              ]
+remail_msg_rowtype:: RowType
+remail_msg_rowtype =   M.fromList [ ("eid", (Lit True, TInt32)) 
+					              , ("psuedonym",  (Lit True , TString))
+					              ]
 
 -- filter_msg(eid, suffix, presCond)
-filter_msg_v1 :: [(String, SqlType)]
-filter_msg_v1 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+filter_msg_rowtype :: RowType
+filter_msg_rowtype = M.fromList [ ("eid", (Lit True, TInt32)) 
+					            , ("suffix",  (Lit True , TString))
+					            ]
 
--- mailhost(did, domain, presCond)
-mailhost_v1 :: [(String, SqlType)]
-mailhost_v1 = [ ("did", TInt32)
-	          , ("domain",  TString)
-	          ]
-
--- alias(eid, email, nickname, presCond)
-alias_v1 :: [(String, SqlType)]
-alias_v1 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
-
---
--- ** schema 2
---    * enable feature: (signature, addressbook, filtermsg), 
---                     encryption, 
---                    (autoresponder, forwardmsg, mailhost),
---                     
---    * disable feature: remailmsg
-
--- | enron email 2nd configuration.
-enronConfig2 :: Config Bool
-enronConfig2 = enableMany 
-  [signature, addressbook, filtermsg, encrypt, autoresponder, forwardmsg, 
-   mailhost] enronConfigAllDisabled
-
--- | enron email 2nd schema
-enronSchema2 :: Schema 
-enronSchema2 = ( sign_addr_filter `Or` encryption `Or` auto_forward_mhost, 
-								   constructRelMap [ ( v_employee,  employeelist_v2)
-                                                   , ( v_message,    message_v2)
-                                                   , ( v_recipientInfo,  recipientInfo_v2)
-                                                   , ( v_referenceInfo,  referenceInfo_v2)
-                                                   , ( v_auto_msg,  recipientInfo_v2)
-                                                   , ( v_forward_msg,  recipientInfo_v2)
-                                                   , ( v_filter_msg,  recipientInfo_v2)
-                                                   , ( v_mailhost,  mailhost_v1)
-                                                   , ( v_alias,  alias_v2)
-
-                                                   ]
-               )
-
-
--- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key,did, presCond)
-employeelist_v2 :: [(String, SqlType)]
-employeelist_v2 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("did", TInt32)
-	           , ("puclic_key", TString)
-	           ]
-
-
--- message(mid, sender, date, message_id, subject, body, folder, is_signed, is_encrypted, presCond)
-message_v2 :: [(String, SqlType)]
-message_v2 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           , ("is_encrypted", TBool)
-		           ]
-
--- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
-recipientInfo_v2 :: [(String, SqlType)]
-recipientInfo_v2 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
--- referenceInfo(rfid, mid,reference, presCond)
-referenceInfo_v2 :: [(String, SqlType)]
-referenceInfo_v2 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
-
-
--- auto_msg(eid, subject, body,presCond)
-auto_msg_v2 :: [(String, SqlType)]
-auto_msg_v2 =  [ ("eid", TInt32) 
-	           ,  ("subject",  TString)
-	           , ("body",  TString)
-	           ]
-
--- forward_msg(eid,forwardaddr, presCond)
-forward_msg_v2 :: [(String, SqlType)]
-forward_msg_v2 =  [ ("eid", TInt32)
-	              , ("forwardaddr",  TString)
-	              ]
-
-
--- filter_msg(eid, suffix, presCond)
-filter_msg_v2 :: [(String, SqlType)]
-filter_msg_v2 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
-
--- mailhost(did, domain, presCond)
-mailhost_v2 :: [(String, SqlType)]
-mailhost_v2 = [ ("did", TInt32)
-	          , ("domain",  TString)
-	          ]
+-- -- mailhost(did, domain, presCond)
+mailhost_rowtype :: RowType
+mailhost_rowtype = M.fromList [ ("did", (Lit True, TInt32))
+					          , ("username",  (Lit True , TString))
+					          ]
 
 -- alias(eid, email, nickname, presCond)
-alias_v2 :: [(String, SqlType)]
-alias_v2 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
-
-
---
--- ** schema 3
---    * enable feature: (signature, addressbook, filtermsg), 
---                     encryption, 
---                     remailmsg
---    * disable feature: (autoresponder, forwardmsg, mailhost)
-
--- | enron email 3rd configuration.
-enronConfig3 :: Config Bool
-enronConfig3 = enableMany 
-  [signature, addressbook, filtermsg, encrypt,remailmsg] enronConfigAllDisabled
-
-
-
-
--- | enron email 3rd schema 
-enronSchema3 :: Schema 
-enronSchema3 = ( sign_addr_filter `Or` encryption `Or` remail, 
-								   constructRelMap [ ( v_employee,  employeelist_v3)
-                                                   , ( v_message,    message_v3)
-                                                   , ( v_recipientInfo,  recipientInfo_v3)
-                                                   , ( v_referenceInfo,  referenceInfo_v3)
-                                                   , ( v_remail_msg,  recipientInfo_v3)
-                                                   , ( v_filter_msg,  recipientInfo_v3)
-                                                   , ( v_alias,  alias_v3)
-                                                   ]
-               )
-
-
--- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key, did, presCond)
-employeelist_v3 :: [(String, SqlType)]
-employeelist_v3 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("puclic_key", TString)
-	           ]
-
-
--- message(mid, sender, date, message_id, subject, body, folder, is_signed, is_encrypted, presCond)
-message_v3 :: [(String, SqlType)]
-message_v3 =  [ ("mid", TInt32) 
-	           , ("sender",  TString)
-	           , ("date",  TString)
-	           , ("message_id", TInt32)
-	           , ("subject", TString)
-	           , ("body", TString)
-	           , ("folder", TString)
-	           , ("is_signed", TBool)
-	           , ("is_encrypted", TBool)
-	           ]
-
--- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
-recipientInfo_v3 :: [(String, SqlType)]
-recipientInfo_v3 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
--- referenceInfo(rfid, mid,reference, presCond)
-referenceInfo_v3 :: [(String, SqlType)]
-referenceInfo_v3 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
-
-
--- remail_msg(eid, psuedonym, presCond)
-remail_msg_v3 :: [(String, SqlType)]
-remail_msg_v3 =   [ ("eid", TInt32) 
-	              , ("psuedonym",  TString)
-	              ]
-
--- filter_msg(eid, suffix, presCond)
-filter_msg_v3 :: [(String, SqlType)]
-filter_msg_v3 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
-
-
--- alias(eid, email, nickname, presCond)
-alias_v3 :: [(String, SqlType)]
-alias_v3 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
-
-
---
--- ** schema 4
---    * enable feature: (signature, addressbook, filtermsg), 
---                     encryption, 
---                     
---    * disable feature: (autoresponder, forwardmsg, mailhost)
---                       remailmsg
-
--- | enron email 4th configuration.
-enronConfig4 :: Config Bool
-enronConfig4 = enableMany 
-  [signature, addressbook, filtermsg, encrypt] enronConfigAllDisabled
-
-
--- | enron email 4th schema 
-enronSchema4 :: Schema 
-enronSchema4 = ( sign_addr_filter `Or` encryption, 
-								   constructRelMap [ ( v_employee,  employeelist_v4)
-                                                   , ( v_message,    message_v4)
-                                                   , ( v_recipientInfo,  recipientInfo_v4)
-                                                   , ( v_referenceInfo,  referenceInfo_v4)
-                                                   , ( v_filter_msg,  recipientInfo_v4)
-                                                   , ( v_alias,  alias_v4)
-                                                   ]
-               )
-
-
--- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key, did, presCond)
-employeelist_v4 :: [(String, SqlType)]
-employeelist_v4 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("puclic_key", TString)
-	           ]
-
-
--- message(mid, sender, date, message_id, subject, body, folder, is_signed, is_encrypted, presCond)
-message_v4 :: [(String, SqlType)]
-message_v4 =  [ ("mid", TInt32) 
-	           , ("sender",  TString)
-	           , ("date",  TString)
-	           , ("message_id", TInt32)
-	           , ("subject", TString)
-	           , ("body", TString)
-	           , ("folder", TString)
-	           , ("is_signed", TBool)
-	           , ("is_encrypted", TBool)
-	           ]
-
--- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
-recipientInfo_v4 :: [(String, SqlType)]
-recipientInfo_v4 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
--- referenceInfo(rfid, mid,reference, presCond)
-referenceInfo_v4 :: [(String, SqlType)]
-referenceInfo_v4 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
-
-
--- filter_msg(eid, suffix, presCond)
-filter_msg_v4 :: [(String, SqlType)]
-filter_msg_v4 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
-
-
--- alias(eid, email, nickname, presCond)
-alias_v4 :: [(String, SqlType)]
-alias_v4 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
-
-
---
--- ** schema 5
---    * enable feature: (signature, addressbook, filtermsg), 
---                    (autoresponder, forwardmsg, mailhost),
---                     remailmsg
---    * disable feature: encryption
---                     
-
--- | enron email 5th configuration.
-enronConfig5 :: Config Bool
-enronConfig5 = enableMany 
-  [signature, addressbook, filtermsg, autoresponder, forwardmsg, 
-   mailhost, remailmsg] enronConfigAllDisabled
-
--- | enron email 5th schema
-enronSchema5 :: Schema 
-enronSchema5 = ( sign_addr_filter `Or` auto_forward_mhost `Or` remail, 
-	                               constructRelMap [ ( v_employee,  employeelist_v5)
-                                                   , ( v_message,    message_v5)
-                                                   , ( v_recipientInfo,  recipientInfo_v5)
-                                                   , ( v_referenceInfo,  referenceInfo_v5)
-                                                   , ( v_auto_msg,  recipientInfo_v5)
-                                                   , ( v_forward_msg,  recipientInfo_v5)
-                                                   , ( v_remail_msg,  recipientInfo_v5)
-                                                   , ( v_filter_msg,  recipientInfo_v5)
-                                                   , ( v_mailhost,  mailhost_v5)
-                                                   , ( v_alias,  alias_v5)
-                                                   ]
-               )
-
-
--- employeelist(eid, firstname, lastname, email_id, folder, status, sign, did, presCond)
-employeelist_v5 :: [(String, SqlType)]
-employeelist_v5 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("did", TInt32)
-	           ]
-
-
--- message(mid, sender, date, message_id, subject, body, folder, is_signed, presCond)
-message_v5 :: [(String, SqlType)]
-message_v5 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           ]
-
--- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
-recipientInfo_v5 :: [(String, SqlType)]
-recipientInfo_v5 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
-
--- referenceInfo(rfid, mid,reference, presCond)
-referenceInfo_v5 :: [(String, SqlType)]
-referenceInfo_v5 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
-
-
--- auto_msg(eid, subject, body,presCond)
-auto_msg_v5 :: [(String, SqlType)]
-auto_msg_v5 =  [ ("eid", TInt32) 
-	           ,  ("subject",  TString)
-	           , ("body",  TString)
-	           ]
-
--- forward_msg(eid,forwardaddr, presCond)
-forward_msg_v5 :: [(String, SqlType)]
-forward_msg_v5 =  [ ("eid", TInt32)
-	              , ("forwardaddr",  TString)
-	              ]
-
--- remail_msg(eid, psuedonym, presCond)
-remail_msg_v5 :: [(String, SqlType)]
-remail_msg_v5 =   [ ("eid", TInt32) 
-	              , ("psuedonym",  TString)
-	              ]
-
--- filter_msg(eid, suffix, presCond)
-filter_msg_v5 :: [(String, SqlType)]
-filter_msg_v5 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
-
--- mailhost(did, domain, presCond)
-mailhost_v5 :: [(String, SqlType)]
-mailhost_v5 = [ ("did", TInt32)
-	          , ("domain",  TString)
-	          ]
-
--- alias(eid, email, nickname, presCond)
-alias_v5 :: [(String, SqlType)]
-alias_v5 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
-
---
--- ** schema 6
---    * enable feature: (signature, addressbook, filtermsg), 
---                    (autoresponder, forwardmsg, mailhost),
---                     
---    * disable feature: encryption
---                      ,remailmsg
---                     
-
--- | enron email 6th configuration.
-enronConfig6 :: Config Bool
-enronConfig6 = enableMany 
-  [signature, addressbook, filtermsg, autoresponder, forwardmsg, 
-   mailhost] enronConfigAllDisabled
-
--- | enron email 6th schema
-enronSchema6 :: Schema 
-enronSchema6 = ( sign_addr_filter `Or` auto_forward_mhost, 
-								   constructRelMap [ ( v_employee,  employeelist_v6)
-                                                   , ( v_message,    message_v6)
-                                                   , ( v_recipientInfo,  recipientInfo_v6)
-                                                   , ( v_referenceInfo,  referenceInfo_v6)
-                                                   , ( v_auto_msg,  recipientInfo_v6)
-                                                   , ( v_forward_msg,  recipientInfo_v6)
-                                                   , ( v_filter_msg,  recipientInfo_v6)
-                                                   , ( v_mailhost,  mailhost_v6)
-                                                   , ( v_alias,  alias_v6)
-                                                   ]
-               )
-
-
--- employeelist(eid, firstname, lastname, email_id, folder, status, sign, did, presCond)
-employeelist_v6 :: [(String, SqlType)]
-employeelist_v6 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("did", TInt32)
-	           ]
-
-
--- message(mid, sender, date, message_id, subject, body, folder, is_signed, presCond)
-message_v6 :: [(String, SqlType)]
-message_v6 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           ]
-
--- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
-recipientInfo_v6 :: [(String, SqlType)]
-recipientInfo_v6 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
-
--- referenceInfo(rfid, mid,reference, presCond)
-referenceInfo_v6 :: [(String, SqlType)]
-referenceInfo_v6 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
-
-
--- auto_msg(eid, subject, body,presCond)
-auto_msg_v6 :: [(String, SqlType)]
-auto_msg_v6 =  [ ("eid", TInt32) 
-	           ,  ("subject",  TString)
-	           , ("body",  TString)
-	           ]
-
--- forward_msg(eid,forwardaddr, presCond)
-forward_msg_v6 :: [(String, SqlType)]
-forward_msg_v6 =  [ ("eid", TInt32)
-	              , ("forwardaddr",  TString)
-	              ]
-
--- filter_msg(eid, suffix, presCond)
-filter_msg_v6 :: [(String, SqlType)]
-filter_msg_v6 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
-
--- mailhost(did, domain, presCond)
-mailhost_v6 :: [(String, SqlType)]
-mailhost_v6 = [ ("did", TInt32)
-	          , ("domain",  TString)
-	          ]
-
--- alias(eid, email, nickname, presCond)
-alias_v6 :: [(String, SqlType)]
-alias_v6 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
-
---
--- ** schema 7
---    * enable feature: (signature, addressbook, filtermsg), 
---                      remailmsg
---    * disable feature: encryption, 
---                       (autoresponder, forwardmsg, mailhost),
-
--- | enron email 7th configuration.
-enronConfig7 :: Config Bool
-enronConfig7 = enableMany 
-  [signature, addressbook, filtermsg,  remailmsg] enronConfigAllDisabled
-
--- | enron email 7th schema 
-enronSchema7 :: Schema 
-enronSchema7 = (sign_addr_filter `Or` remail, 
-	                               constructRelMap [ ( v_employee,  employeelist_v7)
-                                                   , ( v_message,    message_v7)
-                                                   , ( v_recipientInfo,  recipientInfo_v7)
-                                                   , ( v_referenceInfo,  referenceInfo_v7)
-                                                   , ( v_remail_msg,  recipientInfo_v7)
-                                                   , ( v_filter_msg,  recipientInfo_v7)
-                                                   , ( v_alias,  alias_v7)
-                                                   ]
-               )
-
-
--- employeelist(eid, firstname, lastname, email_id, folder, status, sign,  presCond)
-employeelist_v7 :: [(String, SqlType)]
-employeelist_v7 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           ]
-
-
--- message(mid, sender, date, message_id, subject, body, folder, is_signed, presCond)
-message_v7 :: [(String, SqlType)]
-message_v7 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           ]
-
--- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
-recipientInfo_v7 :: [(String, SqlType)]
-recipientInfo_v7 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
--- referenceInfo(rfid, mid,reference, presCond)
-referenceInfo_v7 :: [(String, SqlType)]
-referenceInfo_v7 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
-
-
-
--- remail_msg(eid, psuedonym, presCond)
-remail_msg_v7 :: [(String, SqlType)]
-remail_msg_v7 =   [ ("eid", TInt32) 
-	              , ("psuedonym",  TString)
-	              ]
-
--- filter_msg(eid, suffix, presCond)
-filter_msg_v7 :: [(String, SqlType)]
-filter_msg_v7 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
-
-
--- alias(eid, email, nickname, presCond)
-alias_v7 :: [(String, SqlType)]
-alias_v7 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
-
---
--- ** schema 8
---    * enable feature: (signature, addressbook, filtermsg), 
---
---    * disable feature: encryption, 
---                       (autoresponder, forwardmsg, mailhost),
---                       remailmsg
-
--- | enron email 8th configuration.
-enronConfig8 :: Config Bool
-enronConfig8 = enableMany 
-  [signature, addressbook, filtermsg] enronConfigAllDisabled
-
-
--- | enron email 8th schema 
-enronSchema8 :: Schema 
-enronSchema8 = ( sign_addr_filter, constructRelMap [ ( v_employee,  employeelist_v8)
-                                                   , ( v_message,    message_v8)
-                                                   , ( v_recipientInfo,  recipientInfo_v8)
-                                                   , ( v_referenceInfo,  referenceInfo_v8)
-                                                   , ( v_filter_msg,  recipientInfo_v8)
-                                                   , ( v_alias,  alias_v8)
-                                                   ]
-               )
-
-
--- employeelist(eid, firstname, lastname, email_id, folder, status, sign,  presCond)
-employeelist_v8 :: [(String, SqlType)]
-employeelist_v8  = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           ]
-
-
--- message(mid, sender, date, message_id, subject, body, folder, is_signed, presCond)
-message_v8 :: [(String, SqlType)]
-message_v8 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           ]
-
--- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
-recipientInfo_v8 :: [(String, SqlType)]
-recipientInfo_v8 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
--- referenceInfo(rfid, mid,reference, presCond)
-referenceInfo_v8 :: [(String, SqlType)]
-referenceInfo_v8 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
-
-
-
--- filter_msg(eid, suffix, presCond)
-filter_msg_v8 :: [(String, SqlType)]
-filter_msg_v8 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
-
-
--- alias(eid, email, nickname, presCond)
-alias_v8 :: [(String, SqlType)]
-alias_v8 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+alias_rowtype :: RowType
+alias_rowtype = M.fromList [ ("eid", (Lit True, TInt32))
+				       , ("email",  (Lit True , TString))
+				       , ("nickname",  (Lit True , TString))
+				       ]
 
