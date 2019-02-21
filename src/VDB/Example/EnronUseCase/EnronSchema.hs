@@ -14,7 +14,7 @@ import VDB.Example.SmartConstructor
 -- 
 --  Features
 -- 
-
+{-
 -- | FeatureExpr for  (signature, addressbook, filtermsg)
 sign_addr_filter :: FeatureExpr
 sign_addr_filter = (Ref (Feature "signature")) `And` (Ref (Feature "addressbook")) `And` (Ref (Feature "filtermsg"))
@@ -763,4 +763,4 @@ alias_v8 = [ ("eid", TInt32)
 	       , ("email",  TString)
 	       , ("nickname",  TString)
 	       ]
-
+-}
