@@ -5,6 +5,7 @@ import VDB.Algebra
 import qualified VDB.Condition as C
 import qualified VDB.FeatureExpr as F
 import VDB.Type
+import VDB.Example.SmartConstructor
 
 -- keep in mind that the employee use demos deploying
 -- every single version for the client of spl. so qs
@@ -20,6 +21,16 @@ import VDB.Type
 -- configuration to the final result of a vq or getting the
 -- plain q of a vq and then running it on the appropriate 
 -- variant. 
+
+-- engineerpersonnelEmpno, otherpersonnelEmpno, empacctEmpno :: Attribute
+-- empbioEmpno, engineerpersonnelName, otherpersonnelName :: Attribute
+-- empacctName, empbioName, engineerpersonnelHiredate :: Attribute
+-- otherpersonnelHiredate, empacctHiredate, engineerpersonnelTitle :: Attribute
+-- otherpersonnelTitle, empacctTitle, jobTitle, engineerpersonnelDeptname :: Attribute
+-- otherpersonnelDeptname, empacctDeptname, empacctDeptno, deptname :: Attribute
+-- deptno, managerno, jobSalary, empacctSalary, sex, birthdate :: Attribute
+-- firstname, lastname :: Attribute
+
 
 -- 
 -- first set of quesries:
@@ -39,7 +50,9 @@ import VDB.Type
 --                empacct join_(title=title) job>)
 -- ASK ERIC: should it be empv1 or empv1 and not ...?
 empVQ1subq1, empVQ1subq2, empVQ1subq3, empVQ1subq4 :: Algebra
-
+empVQ1subq1 = Proj 
+  (plainAttrs [engineerpersonnelEmpno, engineerpersonnelHiredate,
+               engineerpersonnelTitle]) engineerpersonnel
 empVQ1 :: Algebra
 empVQ1 = Proj [(Lit True, salary)]
   Sel (C.And (Comp EQ (Attr empno) (Val $ SqlInt32 10004))
