@@ -19,10 +19,10 @@ import qualified Data.Map as M
 --
 --  ** smart contructor for plain query
 --
-plainAttr :: String -> Opt Attribute 
-plainAttr attrName = (F.Lit True, Attribute Nothing attrName)
+plainAttr :: Attribute -> Opt Attribute 
+plainAttr attrName = (F.Lit True, attrName)
 
-plainAttrs :: [String] -> [Opt Attribute]
+plainAttrs :: [Attribute] -> [Opt Attribute]
 plainAttrs []     = []
 plainAttrs (x:xs) = plainAttr x : plainAttrs xs 
 
@@ -32,9 +32,9 @@ plainAttrs (x:xs) = plainAttr x : plainAttrs xs
 --
 
 -- | contruct plain Schema without tag assigned based on a list of [(Relatin Name, [Attribute name, Sqltype])] 
-constructRelMap :: [(String, [(String, SqlType)])] -> M.Map Relation (Opt RowType) 
-constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( Relation relName, (Lit True, constructRowType relName rt))) nrlist
+constructRelMap :: [(Relation, [(Attribute, SqlType)])] -> M.Map Relation (Opt RowType) 
+constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( relName, (Lit True, constructRowType relName rt))) nrlist
 
 -- | contruct rowType based on a list of [(Attribute Name, SqlType)]
-constructRowType ::  String -> [(String,SqlType)]  -> RowType
-constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> ( Attribute (Just (Relation relName)) attrName, (Lit True, t))) attrTypeList
+constructRowType ::  Relation -> [(Attribute,SqlType)]  -> RowType
+constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> ( addRelToAtt attrName relName, (Lit True, t))) attrTypeList

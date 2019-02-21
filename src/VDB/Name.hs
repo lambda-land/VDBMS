@@ -22,10 +22,11 @@ data Attribute = Attribute { attributeQualifier :: Maybe Relation, attributeName
 genAtt :: String -> Attribute
 genAtt a = Attribute Nothing a
 
--- | adds a relation to an attribute that doesn't have a relation yet.
+-- | adds a relation to an attribute doesn't have a relation yet
+--   or update the relation of an attribute.
 addRelToAtt :: Attribute -> Relation -> Attribute
 addRelToAtt (Attribute Nothing a) r = Attribute (Just r) a
-addRelToAtt _ _ = error "the attribute relation isn't Nothing!!"
+addRelToAtt (Attribute _ a) r       = Attribute (Just r) a
 
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }
