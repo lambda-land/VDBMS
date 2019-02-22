@@ -78,15 +78,16 @@ typeOfVquery' :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv'
 --   Just t' -> case typeProj as t' of 
 --     Just t | typeSubsume t t' -> Just (cxtAppType f t')
 --   _ -> Nothing
--- typeOfVquery' (Sel c q)          f s = case typeOfVquery' q f s of
---   Just t | typeOfVcond c f t -> Just (cxtAppType f t)
---   _ -> Nothing
+typeOfVquery' (Sel c q)          f s = case typeOfVquery' q f s of
+  Just ts@(_,r) | typeOfVcond c f r -> Just $ appFexpTableSch f ts
+  _ -> Nothing
 -- typeOfVquery' (AChc d q q')      f s = case (typeOfVquery' q (F.And f d) s, typeOfVquery' q' (F.And f (F.Not d)) s) of 
---   (Just t, Just t') -> Just (typeUnion (cxtAppType (F.And f d) t) (cxtAppType (F.And f (F.Not d)) t'))
---   _ -> Nothing
--- typeOfVquery' (TRef r)           f s = case lookupRowType r s of 
---   Just (f',t) | tautology (F.imply f f') -> Just (cxtAppType f t)
---   _ -> Nothing
+--   (Just ts@(tf,tr), Just ts'@(tf',tr')) -> Just $ appFexpTableSch (F.Or tf tf') $ typeUnion tr tr'
+  -- mkOpt  (typeUnion (cxtAppType (F.And f d) t) (cxtAppType (F.And f (F.Not d)) t'))
+  -- _ -> Nothing
+typeOfVquery' (TRef r)           f s = case lookupRowType r s of 
+  Just ts@(f',_) | tautology (F.imply f f') -> Just $ appFexpTableSch f ts
+  _ -> Nothing
 typeOfVquery' Empty              f _ = Just $ mkOpt f M.empty
 
 -- | context appication to type enviornment
