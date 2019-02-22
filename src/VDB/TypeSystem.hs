@@ -33,31 +33,31 @@ import qualified Data.Set as Set
 
 type VariationalContext = F.FeatureExpr
 
-type TypeEnv = RowType
+-- type TypeEnv = RowType
 type TypeEnv' = TableSchema
 
 --
 -- * static semantics of variational conditions:
 --   based on inference rules in the PVLDB paper 
 --
-typeOfVcond :: C.Condition -> VariationalContext -> TypeEnv -> Bool
+typeOfVcond :: C.Condition -> VariationalContext -> TypeEnv' -> Bool
 typeOfVcond (C.Lit True)     _ _ = True
 typeOfVcond (C.Lit False)    _ _ = True
-typeOfVcond (C.Comp _ l r)   f t = case (l, r) of 
-  (C.Attr a, C.Val v)  -> case lookupAttFexpTypeInRowType a t of 
-                            Just (f',t') -> tautology (F.imply f f') &&
+typeOfVcond (C.Comp _ l r)   ctx env@(envf,envr) = case (l, r) of 
+  (C.Attr a, C.Val v)  -> case lookupAttFexpTypeInRowType a envr of 
+                            Just (f',t') -> tautology (F.imply ctx (F.And envf f')) &&
                               typeOf v == t'
                             _ -> False
-  (C.Attr a, C.Attr a') -> case (lookupAttFexpTypeInRowType a t, lookupAttFexpTypeInRowType a' t) of 
-                            (Just (f',t'), Just (f'',t'')) | t' == t'' -> tautology (F.imply f f') 
-                                                                        && tautology (F.imply f f'')
+  (C.Attr a, C.Attr a') -> case (lookupAttFexpTypeInRowType a envr, lookupAttFexpTypeInRowType a' envr) of 
+                            (Just (f',t'), Just (f'',t'')) | t' == t'' -> tautology (F.imply ctx (F.And envf f'))
+                                                                        && tautology (F.imply ctx (F.And envf f''))
                             _ -> False
   _ -> False
-typeOfVcond (C.Not c)      f t = typeOfVcond c f t
-typeOfVcond (C.Or l r)     f t = typeOfVcond l f t && typeOfVcond r f t
-typeOfVcond (C.And l r)    f t = typeOfVcond l f t && typeOfVcond r f t
-typeOfVcond (C.CChc d l r) f t = typeOfVcond l (F.And f d) t 
-  && typeOfVcond r (F.And f (F.Not d)) t
+typeOfVcond (C.Not c)      ctx env = typeOfVcond c ctx env
+typeOfVcond (C.Or l r)     ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
+typeOfVcond (C.And l r)    ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
+typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env 
+  && typeOfVcond r (F.And ctx (F.Not d)) env
 
 
 -- 
@@ -74,156 +74,153 @@ typeOfVquery' :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv'
 -- typeOfVquery' (SetOp Prod q q')  f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
 --   (Just t, Just t') -> Just (typeProduct t t')
 --   _ -> Nothing
--- typeOfVquery' (Proj as q)        f s = case typeOfVquery' q f s of 
---   Just t' -> case typeProj as t' of 
---     Just t | typeSubsume t t' -> Just (cxtAppType f t')
---   _ -> Nothing
-typeOfVquery' (Sel c q)          f s = case typeOfVquery' q f s of
-  Just ts@(_,r) | typeOfVcond c f r -> Just $ appFexpTableSch f ts
+typeOfVquery' (Proj as q)        ctx s = case typeOfVquery' q ctx s of 
+  Just t' -> case typeProj as t' of 
+    Just t | typeSubsume t t' -> Just (cxtAppType ctx t')
+  _ -> Nothing
+typeOfVquery' (Sel c q)          ctx s = case typeOfVquery' q ctx s of
+  Just env | typeOfVcond c ctx env -> Just $ appFexpTableSch ctx env
   _ -> Nothing
 -- typeOfVquery' (AChc d q q')      f s = case (typeOfVquery' q (F.And f d) s, typeOfVquery' q' (F.And f (F.Not d)) s) of 
 --   (Just ts@(tf,tr), Just ts'@(tf',tr')) -> Just $ appFexpTableSch (F.Or tf tf') $ typeUnion tr tr'
   -- mkOpt  (typeUnion (cxtAppType (F.And f d) t) (cxtAppType (F.And f (F.Not d)) t'))
   -- _ -> Nothing
-typeOfVquery' (TRef r)           f s = case lookupRowType r s of 
-  Just ts@(f',_) | tautology (F.imply f f') -> Just $ appFexpTableSch f ts
+typeOfVquery' (TRef r)           ctx s = case lookupRowType r s of 
+  Just t | tautology (F.imply ctx $ getFexp t) -> Just $ appFexpTableSch ctx t
   _ -> Nothing
-typeOfVquery' Empty              f _ = Just $ mkOpt f M.empty
+typeOfVquery' Empty              ctx _ = Just $ appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
+-- mkOpt f M.empty
 
--- | context appication to type enviornment
--- cxtAppType' :: VariationalContext -> TypeEnv' -> TypeEnv'
--- cxtAppType' ctx (f,r) = SM.map (\(f',t) -> ((F.And f f'),t)) r
---   | 
-
+-- | applies the ctx to the table schema.
+--   it drops the attributes that (f_A and ctx and f_R) is unsatisfiable.
+--   but it doesn't update the pres cond of attributes. it only
+--   updates the pres cond of the table.
+-- appCtxTableSch :: FeatureExpr -> TypeEnv' -> TypeEnv'
+-- appCtxTableSch = appFexpTableSch
 
 --
 -- * static semantics of variational queires
 --   based on inference rules in the PVLDB paper
 --   f<q,q'> case: note that it doesen't have duplicate attributes
 --
-typeOfVquery :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv
-typeOfVquery (SetOp Union q q') f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
-  (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
-  _ -> Nothing
-typeOfVquery (SetOp Diff q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
-  (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
-  _ -> Nothing
-typeOfVquery (SetOp Prod q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
-  (Just t, Just t') -> Just (typeProduct t t')
-  _ -> Nothing
-typeOfVquery (Proj as q)        f s = case typeOfVquery q f s of 
-  Just t' -> case typeProj as t' of 
-    Just t | typeSubsume t t' -> Just (cxtAppType f t')
-  _ -> Nothing
-typeOfVquery (Sel c q)          f s = case typeOfVquery q f s of
-  Just t | typeOfVcond c f t -> Just (cxtAppType f t)
-  _ -> Nothing
-typeOfVquery (AChc d q q')      f s = case (typeOfVquery q (F.And f d) s, typeOfVquery q' (F.And f (F.Not d)) s) of 
-  (Just t, Just t') -> Just (typeUnion (cxtAppType (F.And f d) t) (cxtAppType (F.And f (F.Not d)) t'))
-  _ -> Nothing
-typeOfVquery (TRef r)           f s = case lookupRowType r s of 
-  Just (f',t) | tautology (F.imply f f') -> Just (cxtAppType f t)
-  _ -> Nothing
-typeOfVquery Empty              _ _ = Just M.empty
+-- typeOfVquery :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv
+-- typeOfVquery (SetOp Union q q') f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+--   (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
+--   _ -> Nothing
+-- typeOfVquery (SetOp Diff q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+--   (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
+--   _ -> Nothing
+-- typeOfVquery (SetOp Prod q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
+--   (Just t, Just t') -> Just (typeProduct t t')
+--   _ -> Nothing
+-- typeOfVquery (Proj as q)        f s = case typeOfVquery q f s of 
+--   Just t' -> case typeProj as t' of 
+--     Just t | typeSubsume t t' -> Just (cxtAppType f t')
+--   _ -> Nothing
+-- typeOfVquery (Sel c q)          f s = case typeOfVquery q f s of
+--   Just t | typeOfVcond c f t -> Just (cxtAppType f t)
+--   _ -> Nothing
+-- typeOfVquery (AChc d q q')      f s = case (typeOfVquery q (F.And f d) s, typeOfVquery q' (F.And f (F.Not d)) s) of 
+--   (Just t, Just t') -> Just (typeUnion (cxtAppType (F.And f d) t) (cxtAppType (F.And f (F.Not d)) t'))
+--   _ -> Nothing
+-- typeOfVquery (TRef r)           f s = case lookupRowType r s of 
+--   Just (f',t) | tautology (F.imply f f') -> Just (cxtAppType f t)
+--   _ -> Nothing
+-- typeOfVquery Empty              _ _ = Just M.empty
 
 
 
 -- | context appication to type enviornment
-cxtAppType :: VariationalContext -> TypeEnv -> TypeEnv
-cxtAppType f r = SM.map (\(f',t) -> ((F.And f f'),t)) r
+cxtAppType :: VariationalContext -> TypeEnv'-> TypeEnv'
+cxtAppType f r = undefined
+-- SM.map (\(f',t) -> ((F.And f f'),t)) r
 
 -- | Type enviornment equilvanecy, checks that the vCtxt are 
 --   equivalent, both env have the same set of attributes,
 --   and attributes fexp are equivalent
-typeEq :: TypeEnv -> TypeEnv -> Bool
-typeEq r r' = getRowTypeAtts r == getRowTypeAtts r' &&
-  SM.isSubmapOfBy (\(o,t) (o',t') -> t == t' && equivalent o o') r r'
-  -- attTypeEq as as' && equivAttFexp as as' -- OLD
+typeEq :: TypeEnv'-> TypeEnv'-> Bool
+typeEq r r' = undefined
+	-- getRowTypeAtts r == getRowTypeAtts r' &&
+ --  SM.isSubmapOfBy (\(o,t) (o',t') -> t == t' && equivalent o o') r r'
+
 
 
 -- | Type enviornment cross product. does this cause any problem?!?!?
 --   specifically adding prefix to attributes!!!
 --   any other ideas for updating the keys?!?!?
-typeProduct :: TypeEnv -> TypeEnv -> TypeEnv
-typeProduct e e' = M.union unionWithoutIntersection
-                           (M.union updatedT updatedT')
-  where 
-    -- unionWithoutIntersection = M.difference (M.union e e') (M.intersection e e')
-    unionWithoutIntersection = StrictM.merge StrictM.preserveMissing 
-                                             StrictM.preserveMissing 
-                                             matched e e'
-    matched = StrictM.zipWithMaybeMatched (\_ _ _ -> Nothing)
-    t  = M.difference e unionWithoutIntersection
-    t' = M.difference e' unionWithoutIntersection
-    updatedT  = addPrefix "1." t
-    updatedT' = addPrefix "2." t'
+typeProduct :: TypeEnv'-> TypeEnv'-> TypeEnv'
+typeProduct e e' = undefined
+	-- M.union unionWithoutIntersection
+ --                           (M.union updatedT updatedT')
+ --  where 
+ --    unionWithoutIntersection = StrictM.merge StrictM.preserveMissing 
+ --                                             StrictM.preserveMissing 
+ --                                             matched e e'
+ --    matched = StrictM.zipWithMaybeMatched (\_ _ _ -> Nothing)
+ --    t  = M.difference e unionWithoutIntersection
+ --    t' = M.difference e' unionWithoutIntersection
+ --    updatedT  = addPrefix "1." t
+ --    updatedT' = addPrefix "2." t'
 
 -- | aux for type product. adds prefix to attributes of a typeEnv
-addPrefix :: String -> TypeEnv -> TypeEnv
-addPrefix s r = M.fromList $ map updateAttName l
-  where
-    updateAttName (a,(o,t)) = (Attribute Nothing (s ++ attributeName a), (o,t))
-    l = M.toList r
+addPrefix :: String -> TypeEnv' -> TypeEnv'
+addPrefix s r = undefined
+	-- M.fromList $ map updateAttName l
+ --  where
+ --    updateAttName (a,(o,t)) = (Attribute Nothing (s ++ attributeName a), (o,t))
+ --    l = M.toList r
 
--- addPrefix s = SM.mapKeys (\a -> Attribute(s ++ attributeName a))
-  -- M.fromList $ map updateAttName l
-  -- where
-  --   updateAttName (a,(o,t)) = (Attribute(s ++ attributeName a), (o,t))
-  --   l = M.toList r
-
+{-
 -- | type enviornment join, when we have the same attribute
 --   in both type env we combine their feature expr.
 --   add it when you add natural join to your operands!
-{-typeJoin :: TypeEnv -> TypeEnv -> TypeEnv
-typeJoin r r' = undefined-}
+typeJoin :: TypeEnv -> TypeEnv -> TypeEnv
+typeJoin r r' = undefined
   -- SM.unionWith 
   -- (\(o,t) (o',t') -> if t==t' then ((F.And o o'),t) else) r r'
+-}
 
--- | Projects a list of optional attributes from a type env
-typeProj :: [Opt Attribute] -> TypeEnv -> Maybe TypeEnv
-typeProj ((p,a):pas) r 
-  | elem a as = case lookupAttFexpTypeInRowType a r of 
-                    Just (f,at) -> case typeProj pas r of 
-                                     Just t -> Just $ M.union (M.singleton a (F.And p f,at)) t
+-- | Projects a list of optional attributes from a type env.
+--   it updates included attribute's pres cond by the fexp
+--   assigned to them in the list. it keeps the pres cond of
+--   the whole table the same as before.
+typeProj :: [Opt Attribute] -> TypeEnv' -> Maybe TypeEnv'
+typeProj ((p,a):pas) env 
+  | elem a as = case lookupAttFexpTypeInRowType a $ getObj env of 
+                    Just (f,at) -> case typeProj pas env of 
+                                     Just t -> Just $ mkOpt (getFexp env) $ M.union (M.singleton a (F.And p f,at)) $ getObj t
+                                     _ -> Nothing
                     _ -> Nothing
   | otherwise = Nothing
-    where as = getRowTypeAtts r 
-typeProj [] r = Just M.empty
+    where as = getTableSchAtts env 
+typeProj [] env = Just $ mkOpt (getFexp env) M.empty
 
 -- | projecting a type env onto another type env,
 --   i.e. getting the attributes that exists in the first one from the 
 --   second one. it'll check that all attributes in t exists in t'
 --   in the typesubsume function. So we're not checking it here again!
-typeEnvPrj :: TypeEnv -> TypeEnv -> TypeEnv
-typeEnvPrj t t' = M.restrictKeys t as 
-  where
-    as = M.keysSet $ M.intersection t t'
+typeEnvPrj :: TypeEnv' -> TypeEnv' -> TypeEnv'
+typeEnvPrj t t' = undefined
+	-- M.restrictKeys t as 
+ --  where
+ --    as = M.keysSet $ M.intersection t t'
 
--- | t is subsumed by t'. according to the def. in PVLDB paper
-typeSubsume :: TypeEnv -> TypeEnv -> Bool
-typeSubsume t t' 
+-- | env is subsumed by env'.
+typeSubsume :: TypeEnv' -> TypeEnv' -> Bool
+typeSubsume env env' 
   | Set.null (Set.difference at at') = M.foldr (&&) True res
   | otherwise = False
     where 
-      res = M.intersectionWith implies t filteredt'
+      res = M.intersectionWith implies env filteredt'
       -- implies :: (FeatureExpr,Type) -> (FeatureExpr,Type) -> FeatureExpr
       implies (f,_) (f',_) = tautology (F.imply f f')
-      filteredt' = typeEnvPrj t t'
-      at  = getAttTypeFromRowType t
-      at' = getAttTypeFromRowType t'
+      filteredt' = typeEnvPrj env env'
+      at  = getAttTypeFromRowType env
+      at' = getAttTypeFromRowType env'
 
                               
 -- | union two type. doesn't evaluate the feature expressions.
-typeUnion :: TypeEnv -> TypeEnv -> TypeEnv
-typeUnion = rowTypeUnion
--- e e' = StrictM.merge 
---                    StrictM.preserveMissing 
---                    StrictM.preserveMissing 
---                    matched e e'
---   where 
---     matched = StrictM.zipWithMaybeMatched (\_ (o,t) (o',t') -> 
---       case t==t' of
---         True -> Just ((F.Or o o'),t)
---         _    -> Nothing)
-
+typeUnion :: TypeEnv'-> TypeEnv'-> TypeEnv'
+typeUnion = undefined
+	-- rowTypeUnion
 
