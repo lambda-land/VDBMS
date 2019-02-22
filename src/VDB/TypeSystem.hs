@@ -35,8 +35,6 @@ type VariationalContext = F.FeatureExpr
 
 type TypeEnv = RowType
 type TypeEnv' = TableSchema
--- type RowType = [Opt (Attribute, Type)]
--- type RowType = Map Attribute (Opt Type)
 
 --
 -- * static semantics of variational conditions:
@@ -65,10 +63,37 @@ typeOfVcond (C.CChc d l r) f t = typeOfVcond l (F.And f d) t
 -- 
 -- static semantics that returns a table schema,
 -- i.e. it includes the fexp of the whole table!
--- DISCUSS IN MEETING!!
 -- 
 typeOfVquery' :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv'
-typeOfVquery' = undefined
+-- typeOfVquery' (SetOp Union q q') f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
+--   (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
+--   _ -> Nothing
+-- typeOfVquery' (SetOp Diff q q')  f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
+--   (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
+--   _ -> Nothing
+-- typeOfVquery' (SetOp Prod q q')  f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
+--   (Just t, Just t') -> Just (typeProduct t t')
+--   _ -> Nothing
+-- typeOfVquery' (Proj as q)        f s = case typeOfVquery' q f s of 
+--   Just t' -> case typeProj as t' of 
+--     Just t | typeSubsume t t' -> Just (cxtAppType f t')
+--   _ -> Nothing
+-- typeOfVquery' (Sel c q)          f s = case typeOfVquery' q f s of
+--   Just t | typeOfVcond c f t -> Just (cxtAppType f t)
+--   _ -> Nothing
+-- typeOfVquery' (AChc d q q')      f s = case (typeOfVquery' q (F.And f d) s, typeOfVquery' q' (F.And f (F.Not d)) s) of 
+--   (Just t, Just t') -> Just (typeUnion (cxtAppType (F.And f d) t) (cxtAppType (F.And f (F.Not d)) t'))
+--   _ -> Nothing
+-- typeOfVquery' (TRef r)           f s = case lookupRowType r s of 
+--   Just (f',t) | tautology (F.imply f f') -> Just (cxtAppType f t)
+--   _ -> Nothing
+typeOfVquery' Empty              f _ = Just $ mkOpt f M.empty
+
+-- | context appication to type enviornment
+-- cxtAppType' :: VariationalContext -> TypeEnv' -> TypeEnv'
+-- cxtAppType' ctx (f,r) = SM.map (\(f',t) -> ((F.And f f'),t)) r
+--   | 
+
 
 --
 -- * static semantics of variational queires
@@ -99,6 +124,8 @@ typeOfVquery (TRef r)           f s = case lookupRowType r s of
   Just (f',t) | tautology (F.imply f f') -> Just (cxtAppType f t)
   _ -> Nothing
 typeOfVquery Empty              _ _ = Just M.empty
+
+
 
 -- | context appication to type enviornment
 cxtAppType :: VariationalContext -> TypeEnv -> TypeEnv

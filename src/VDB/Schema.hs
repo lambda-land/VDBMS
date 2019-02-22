@@ -18,6 +18,7 @@ import VDB.Name
 import VDB.Variational
 import VDB.Type
 import VDB.Config (Config, equivConfig)
+import VDB.SAT (satisfiable)
 
 -- | Type of a relation in the database.
 -- type RowType = [Opt (Attribute, Type)]
@@ -195,6 +196,24 @@ equivConfigOnSchema :: Schema -> Config Bool -> Config Bool -> Bool
 equivConfigOnSchema s c c' = equivConfig fs c c'
   where fs = features $ featureModel s
 
+-- | applying a feature expression to table schema and 
+--   and dropping the attributes that shouldn't be present anymore.
+--   i.e. their pres cond is unsatisfiable.
+appFexpTableSch :: FeatureExpr -> TableSchema -> TableSchema
+appFexpTableSch f (tf,tr) 
+    | satisfiable f' = mkOpt f' $ appFexpRowType f tr
+    | otherwise = error $ "applying the fexp " ++ show f ++ "to table schema results in an invalid table schema!!"
+  where 
+    f' = shrinkFeatureExpr (And f tf)
+
+-- | applies a feature expression to a row type.
+--   note that it doesn't apply the fexp to the attributes.
+--   it just filters the attributes without updating their pres cond.
+--   since the fexp is being conjoined with the table pres cond and
+--   that would propagate to attributes too so we don't actually 
+--   need to update attribute's pres cond.
+appFexpRowType :: FeatureExpr -> RowType -> RowType
+appFexpRowType f r = M.filter (\(f',_) -> satisfiable (And f f')) r
 
 ------------- constructing table schema (opt rowtype) ----------
 
