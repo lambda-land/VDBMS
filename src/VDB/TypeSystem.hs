@@ -195,28 +195,32 @@ typeProj ((p,a):pas) env
     where as = getTableSchAtts env 
 typeProj [] env = Just $ mkOpt (getFexp env) M.empty
 
--- | projecting a type env onto another type env,
+-- | projecting a row type onto another row type,
 --   i.e. getting the attributes that exists in the first one from the 
 --   second one. it'll check that all attributes in t exists in t'
 --   in the typesubsume function. So we're not checking it here again!
-typeEnvPrj :: TypeEnv' -> TypeEnv' -> TypeEnv'
-typeEnvPrj t t' = undefined
-	-- M.restrictKeys t as 
- --  where
- --    as = M.keysSet $ M.intersection t t'
+typeEnvPrj :: RowType -> RowType -> RowType
+typeEnvPrj t t' = M.restrictKeys t as 
+  where
+    as = M.keysSet $ M.intersection t t'
 
 -- | env is subsumed by env'.
 typeSubsume :: TypeEnv' -> TypeEnv' -> Bool
 typeSubsume env env' 
-  | Set.null (Set.difference at at') = M.foldr (&&) True res
+  | Set.null (Set.difference at at') && 
+    (tautology $ F.imply (getFexp env) (getFexp env')) = M.foldr (&&) True res
   | otherwise = False
     where 
-      res = M.intersectionWith implies env filteredt'
+      res = M.intersectionWith implies envObj filteredt'
       -- implies :: (FeatureExpr,Type) -> (FeatureExpr,Type) -> FeatureExpr
       implies (f,_) (f',_) = tautology (F.imply f f')
-      filteredt' = typeEnvPrj env env'
-      at  = getAttTypeFromRowType env
-      at' = getAttTypeFromRowType env'
+      filteredt' = typeEnvPrj (M.map (\(f,t) -> (F.And f envFexp,t)) envObj) (M.map (\(f,t) -> (F.And f envFexp',t)) envObj')
+      at  = getAttTypeFromRowType envObj
+      at' = getAttTypeFromRowType envObj'
+      envObj = getObj env
+      envFexp = getFexp env
+      envObj' = getObj env'
+      envFexp' = getFexp env'
 
                               
 -- | union two type. doesn't evaluate the feature expressions.
