@@ -59,32 +59,37 @@ typeOfVcond (C.And l r)    ctx env = typeOfVcond l ctx env && typeOfVcond r ctx 
 typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env 
   && typeOfVcond r (F.And ctx (F.Not d)) env
 
+-- | verifies and similifies the final type env return by the type system, i.e.,
+--   checks the satisfiability of all attributes' pres conds conjoined
+--   with table pres cond.
+-- SHRINK!!!
+verifyTypeEnv :: TypeEnv' -> Maybe TypeEnv'
+verifyTypeEnv = undefined
 
 -- 
 -- static semantics that returns a table schema,
 -- i.e. it includes the fexp of the whole table!
 -- 
 typeOfVquery' :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv'
--- typeOfVquery' (SetOp Union q q') f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
---   (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
---   _ -> Nothing
--- typeOfVquery' (SetOp Diff q q')  f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
---   (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
---   _ -> Nothing
--- typeOfVquery' (SetOp Prod q q')  f s = case (typeOfVquery' q f s, typeOfVquery' q' f s) of 
---   (Just t, Just t') -> Just (typeProduct t t')
---   _ -> Nothing
+typeOfVquery' (SetOp Union q q') ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+  (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
+  _ -> Nothing
+typeOfVquery' (SetOp Diff q q')  ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+  (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
+  _ -> Nothing
+typeOfVquery' (SetOp Prod q q')  ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+  (Just t, Just t') -> Just (typeProduct t t')
+  _ -> Nothing
 typeOfVquery' (Proj as q)        ctx s = case typeOfVquery' q ctx s of 
   Just t' -> case typeProj as t' of 
-    Just t | typeSubsume t t' -> Just (cxtAppType ctx t')
+    Just t | typeSubsume t t' -> Just $ appFexpTableSch ctx t'
   _ -> Nothing
 typeOfVquery' (Sel c q)          ctx s = case typeOfVquery' q ctx s of
   Just env | typeOfVcond c ctx env -> Just $ appFexpTableSch ctx env
   _ -> Nothing
--- typeOfVquery' (AChc d q q')      f s = case (typeOfVquery' q (F.And f d) s, typeOfVquery' q' (F.And f (F.Not d)) s) of 
---   (Just ts@(tf,tr), Just ts'@(tf',tr')) -> Just $ appFexpTableSch (F.Or tf tf') $ typeUnion tr tr'
-  -- mkOpt  (typeUnion (cxtAppType (F.And f d) t) (cxtAppType (F.And f (F.Not d)) t'))
-  -- _ -> Nothing
+typeOfVquery' (AChc d q q')      ctx s = case (typeOfVquery' q (F.And ctx d) s, typeOfVquery' q' (F.And ctx (F.Not d)) s) of 
+  (Just t, Just t') -> Just $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
+  _ -> Nothing
 typeOfVquery' (TRef r)           ctx s = case lookupRowType r s of 
   Just t | tautology (F.imply ctx $ getFexp t) -> Just $ appFexpTableSch ctx t
   _ -> Nothing
@@ -131,44 +136,43 @@ typeOfVquery' Empty              ctx _ = Just $ appFexpTableSch ctx $ mkOpt (F.L
 
 
 -- | context appication to type enviornment
-cxtAppType :: VariationalContext -> TypeEnv'-> TypeEnv'
-cxtAppType f r = undefined
+-- cxtAppType :: VariationalContext -> TypeEnv'-> TypeEnv'
+-- cxtAppType f r = undefined
 -- SM.map (\(f',t) -> ((F.And f f'),t)) r
 
 -- | Type enviornment equilvanecy, checks that the vCtxt are 
 --   equivalent, both env have the same set of attributes,
 --   and attributes fexp are equivalent
 typeEq :: TypeEnv'-> TypeEnv'-> Bool
-typeEq r r' = undefined
-	-- getRowTypeAtts r == getRowTypeAtts r' &&
- --  SM.isSubmapOfBy (\(o,t) (o',t') -> t == t' && equivalent o o') r r'
-
-
+typeEq lenv renv = equivalent (getFexp lenv) (getFexp renv) 
+  && getRowTypeAtts (getObj lenv) == getRowTypeAtts (getObj renv) 
+  && SM.isSubmapOfBy (\(o,t) (o',t') -> t == t' && equivalent o o') (getObj lenv) (getObj renv) 
 
 -- | Type enviornment cross product. does this cause any problem?!?!?
 --   specifically adding prefix to attributes!!!
 --   any other ideas for updating the keys?!?!?
 typeProduct :: TypeEnv'-> TypeEnv'-> TypeEnv'
-typeProduct e e' = undefined
-	-- M.union unionWithoutIntersection
- --                           (M.union updatedT updatedT')
- --  where 
- --    unionWithoutIntersection = StrictM.merge StrictM.preserveMissing 
- --                                             StrictM.preserveMissing 
- --                                             matched e e'
- --    matched = StrictM.zipWithMaybeMatched (\_ _ _ -> Nothing)
- --    t  = M.difference e unionWithoutIntersection
- --    t' = M.difference e' unionWithoutIntersection
- --    updatedT  = addPrefix "1." t
- --    updatedT' = addPrefix "2." t'
+typeProduct lenv renv = mkOpt (F.Or (getFexp lenv) (getFexp renv)) rt
+  where
+    rt = M.union unionWithoutIntersection
+                           (M.union updatedT updatedT')
+    lrowtype = getObj lenv
+    rrowtype = getObj renv
+    unionWithoutIntersection = StrictM.merge StrictM.preserveMissing 
+                                             StrictM.preserveMissing 
+                                             matched lrowtype rrowtype
+    matched = StrictM.zipWithMaybeMatched (\_ _ _ -> Nothing)
+    t  = M.difference lrowtype unionWithoutIntersection
+    t' = M.difference rrowtype unionWithoutIntersection
+    updatedT  = addPrefix "1." t
+    updatedT' = addPrefix "2." t'
 
 -- | aux for type product. adds prefix to attributes of a typeEnv
-addPrefix :: String -> TypeEnv' -> TypeEnv'
-addPrefix s r = undefined
-	-- M.fromList $ map updateAttName l
- --  where
- --    updateAttName (a,(o,t)) = (Attribute Nothing (s ++ attributeName a), (o,t))
- --    l = M.toList r
+addPrefix :: String -> RowType -> RowType
+addPrefix s r = M.fromList $ map updateAttName l
+  where
+    updateAttName (a,(o,t)) = (Attribute Nothing (s ++ attributeName a), (o,t))
+    l = M.toList r
 
 {-
 -- | type enviornment join, when we have the same attribute
@@ -224,7 +228,7 @@ typeSubsume env env'
 
                               
 -- | union two type. doesn't evaluate the feature expressions.
-typeUnion :: TypeEnv'-> TypeEnv'-> TypeEnv'
-typeUnion = undefined
-	-- rowTypeUnion
+-- typeUnion :: TypeEnv'-> TypeEnv'-> TypeEnv'
+-- typeUnion = undefined
+-- 	-- rowTypeUnion
 
