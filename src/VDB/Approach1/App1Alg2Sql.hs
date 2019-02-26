@@ -23,10 +23,10 @@ import Data.Maybe (catMaybes)
 type Vquery = Opt T.Text
 type Vsubquery = Opt T.Text
 
-transVerify :: Algebra -> F.FeatureExpr -> Schema -> [Vquery]
-transVerify q ctxt s = catMaybes $ map verifyVquery vqs
+transVerify :: Algebra -> F.FeatureExpr -> [Vquery]
+transVerify q ctxt = catMaybes $ map verifyVquery vqs
   where 
-    vqs = trans q ctxt s
+    vqs = trans q ctxt
 
 -- | verifies a vquery to ensure that the fexp is satisfiable.
 --   and shrinks the presence condition assigned to the query.
@@ -39,7 +39,7 @@ verifyVquery vq
 
 
 -- | translates a vq to a list of vqs runnable in a relational db engine.
-trans :: Algebra -> F.FeatureExpr -> Schema -> [Vquery]
+trans :: Algebra -> F.FeatureExpr -> [Vquery]
 -- trans (SetOp s l r) ctxt = [setAux s lq rq | lq <- lres, rq <- rres]
 --   where 
 --     lres = trans l ctxt
@@ -59,63 +59,60 @@ trans :: Algebra -> F.FeatureExpr -> Schema -> [Vquery]
   -- case (l, r) of
   -- ()
 -- 
-trans (Proj oas q)  ctxt s = case oas of 
-  [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
-  _  -> case q of 
-    -- SetOp Prod -> 
-    SetOp _ _ _-> error "syntactically incorrect vq! cannot wrap union/diff in a proj!!"
-    -- Proj -> -- qualified shit!!
-    -- Sel -> 
-    -- AChc ->
-    TRef r -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ", T.pack $ relationName r,
-      " where true "] | (af,at) <- ares, (qf,qt) <- qres]
-        where 
-          qres = trans q ctxt s
-          ares  = prjAux oas 
-    Empty -> error "syntactically incorrect vq! cannot project attributes from empty!"
-    _ -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ( ", qt, " ) where true"]
-      | (af,at) <- ares, (qf,qt) <- qres]
-        where 
-          qres = trans q ctxt s
-          ares  = prjAux oas 
-trans (Sel c q)     ctxt s = case q of 
-  -- SetOp Prod ->
-  SetOp Union _ _ -> error "syntactically incorrect vq! cannot wrap diff in a select!!"
-  SetOp Diff _ _ -> error "syntactically incorrect vq! cannot wrap diff in a select!!"
-  -- Proj -> 
-  -- Sel c' q' -> [mkOpt (F.And cf' (F.And cf qf)) (T.concat [qt, " and ", cf, " and ", cf'])
-  --   | (cf',ct') <- cres', (cf,ct) <- cres, (qf,qt) <- qres]
-  --     where 
-  --       cres = selAux c ctxt
-  --       cres' = selAux c' ctxt
-  --       qres = trans q' ctxt
-  -- AChc f l r -> [mkOpt ()
-  --   | ]
-  TRef r -> case lookupRowType r s of
-    Just (rf,_) -> [mkOpt (F.And cf rf) (T.concat ["select * from ", T.pack $ relationName r, " where ", ct])
-      | (cf,ct) <- cres]
-        where
-          cres = selAux c ctxt 
-    _ -> error $ "the relation " ++ relationName r ++ "doesn't exists in the database!!"
-  Empty -> error "syntactically incorrect vq!! cannot select anything from empty!!"
-  _ -> [mkOpt (F.And cf qf) (T.concat [qt, " and ", ct])
-    | (cf,ct) <- cres, (qf,qt) <- qres]
-      where 
-        cres = selAux c ctxt 
-        qres = trans q ctxt s 
-trans (AChc f l r)  ctxt s = case (l, r) of 
-  (Empty, Empty) -> trans Empty ctxt s 
-  (Empty, rq)    -> trans rq (F.And (F.Not f) ctxt) s
-  (lq, Empty)    -> trans lq (F.And f ctxt) s
+-- trans (Proj oas q)  ctxt s = case oas of 
+--   [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
+--   _  -> case q of 
+--     -- SetOp Prod -> 
+--     SetOp _ _ _-> error "syntactically incorrect vq! cannot wrap union/diff in a proj!!"
+--     -- Proj -> -- qualified shit!!
+--     -- Sel -> 
+--     -- AChc ->
+--     TRef r -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ", T.pack $ relationName r,
+--       " where true "] | (af,at) <- ares, (qf,qt) <- qres]
+--         where 
+--           qres = trans q ctxt s
+--           ares  = prjAux oas 
+--     Empty -> error "syntactically incorrect vq! cannot project attributes from empty!"
+--     _ -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ( ", qt, " ) where true"]
+--       | (af,at) <- ares, (qf,qt) <- qres]
+--         where 
+--           qres = trans q ctxt s
+--           ares  = prjAux oas 
+-- trans (Sel c q)     ctxt s = case q of 
+--   -- SetOp Prod ->
+--   SetOp Union _ _ -> error "syntactically incorrect vq! cannot wrap diff in a select!!"
+--   SetOp Diff _ _ -> error "syntactically incorrect vq! cannot wrap diff in a select!!"
+--   -- Proj -> 
+--   -- Sel c' q' -> [mkOpt (F.And cf' (F.And cf qf)) (T.concat [qt, " and ", cf, " and ", cf'])
+--   --   | (cf',ct') <- cres', (cf,ct) <- cres, (qf,qt) <- qres]
+--   --     where 
+--   --       cres = selAux c ctxt
+--   --       cres' = selAux c' ctxt
+--   --       qres = trans q' ctxt
+--   -- AChc f l r -> [mkOpt ()
+--   --   | ]
+--   TRef r -> case lookupRowType r s of
+--     Just (rf,_) -> [mkOpt (F.And cf rf) (T.concat ["select * from ", T.pack $ relationName r, " where ", ct])
+--       | (cf,ct) <- cres]
+--         where
+--           cres = selAux c ctxt 
+--     _ -> error $ "the relation " ++ relationName r ++ "doesn't exists in the database!!"
+--   Empty -> error "syntactically incorrect vq!! cannot select anything from empty!!"
+--   _ -> [mkOpt (F.And cf qf) (T.concat [qt, " and ", ct])
+--     | (cf,ct) <- cres, (qf,qt) <- qres]
+--       where 
+--         cres = selAux c ctxt 
+--         qres = trans q ctxt s 
+trans (AChc f l r)  ctxt = case (l, r) of 
+  (Empty, Empty) -> trans Empty ctxt 
+  (Empty, rq)    -> trans rq (F.And (F.Not f) ctxt)
+  (lq, Empty)    -> trans lq (F.And f ctxt)
   (lq, rq)       -> lres ++ rres
     where 
-      lres = trans lq (F.And f ctxt) s
-      rres = trans rq (F.And (F.Not f) ctxt) s
-trans (TRef r)      ctxt s = case lookupRowType r s of
-  Just (rf,_) -> [mkOpt (F.And ctxt rf) 
-    $ T.append "select * from " $ T.pack (relationName r)]
-  _           -> error $ "the relation " ++ relationName r ++ "doesn't exists in the database!!"
-trans (Empty)       ctxt _ = [mkOpt ctxt  "select null"]
+      lres = trans lq (F.And f ctxt)
+      rres = trans rq (F.And (F.Not f) ctxt)
+trans (TRef r)      ctxt = [mkOpt ctxt $ T.append "select * from " $ T.pack (relationName r)]
+trans (Empty)       ctxt = [mkOpt ctxt  "select null"]
 
 -- | helper function for Setop queries, i.e., union, diff, prod
 -- TODO: check!!!
