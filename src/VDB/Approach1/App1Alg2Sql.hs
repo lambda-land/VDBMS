@@ -39,6 +39,9 @@ verifyVquery vq
 
 
 -- | translates a vq to a list of vqs runnable in a relational db engine.
+--   little optimization is combined with it, e.g., 
+--   sel sel == sel.
+--   sel prj == prj sel instead of prj *
 trans :: Algebra -> F.FeatureExpr -> [Vquery]
 -- trans (SetOp s l r) ctxt = [setAux s lq rq | lq <- lres, rq <- rres]
 --   where 
@@ -78,31 +81,30 @@ trans :: Algebra -> F.FeatureExpr -> [Vquery]
 --         where 
 --           qres = trans q ctxt s
 --           ares  = prjAux oas 
--- trans (Sel c q)     ctxt s = case q of 
---   -- SetOp Prod ->
---   SetOp Union _ _ -> error "syntactically incorrect vq! cannot wrap diff in a select!!"
---   SetOp Diff _ _ -> error "syntactically incorrect vq! cannot wrap diff in a select!!"
---   -- Proj -> 
---   -- Sel c' q' -> [mkOpt (F.And cf' (F.And cf qf)) (T.concat [qt, " and ", cf, " and ", cf'])
---   --   | (cf',ct') <- cres', (cf,ct) <- cres, (qf,qt) <- qres]
---   --     where 
---   --       cres = selAux c ctxt
---   --       cres' = selAux c' ctxt
---   --       qres = trans q' ctxt
---   -- AChc f l r -> [mkOpt ()
---   --   | ]
---   TRef r -> case lookupRowType r s of
---     Just (rf,_) -> [mkOpt (F.And cf rf) (T.concat ["select * from ", T.pack $ relationName r, " where ", ct])
---       | (cf,ct) <- cres]
---         where
---           cres = selAux c ctxt 
---     _ -> error $ "the relation " ++ relationName r ++ "doesn't exists in the database!!"
---   Empty -> error "syntactically incorrect vq!! cannot select anything from empty!!"
---   _ -> [mkOpt (F.And cf qf) (T.concat [qt, " and ", ct])
---     | (cf,ct) <- cres, (qf,qt) <- qres]
---       where 
---         cres = selAux c ctxt 
---         qres = trans q ctxt s 
+trans (Sel c q)     ctxt = case q of 
+  -- SetOp Prod -> COME BACK TO THIS ONE!!!!!
+  Proj as q' -> [mkOpt (F.And (F.And qf cf) af) $ T.concat ["select ", at, " from ( ", qt, " ) where ", ct]
+    | (af,at) <- ares, (cf,ct) <- cres, (qf,qt) <- qres]
+      where 
+        ares = prjAux as 
+        qres = trans q' ctxt
+        cres = selAux c ctxt
+  Sel c' q' -> [mkOpt (F.And cf' (F.And cf qf)) $ T.concat ["select * from ( ", qt, " ) where ", ct, " and ", ct']
+    | (cf',ct') <- cres', (cf,ct) <- cres, (qf,qt) <- qres]
+      where 
+        cres = selAux c ctxt
+        cres' = selAux c' ctxt
+        qres = trans q' ctxt
+  TRef r -> [mkOpt cf $ T.concat ["select * from ", T.pack $ relationName r, " where ", ct]
+    | (cf,ct) <- cres]
+      where 
+        cres = selAux c ctxt
+  Empty -> error "syntactically incorrect vq!! cannot select anything from empty!!"
+  _ -> [mkOpt (F.And cf qf) (T.concat ["select * from ( ", qt, " ) where ", ct])
+    | (cf,ct) <- cres, (qf,qt) <- qres]
+      where 
+        cres = selAux c ctxt 
+        qres = trans q ctxt 
 trans (AChc f l r)  ctxt = case (l, r) of 
   (Empty, Empty) -> trans Empty ctxt 
   (Empty, rq)    -> trans rq (F.And (F.Not f) ctxt)
@@ -132,13 +134,12 @@ prjAux oa = map (second (T.intercalate ", ")) groupedAttsText
     groupedAttsText = map (second $ map getAttName) groupedAtts'
 
 -- | helper function for projection without qualified attributes.
-prjAuxUnqualified :: [Opt Attribute] -> [Vsubquery]
-prjAuxUnqualified oa = map (second (T.intercalate ", ")) groupedAttsText
-  -- map (second (T.concat . map getAttName)) groupedAtts'
-  where 
-    groupedAtts     = groupBy (\x y -> fst x == fst y) oa
-    groupedAtts'    = map pushDownList' groupedAtts -- [(fexp,[attribute])]
-    groupedAttsText = map (second $ map getAttNameUnqualified) groupedAtts'
+-- prjAuxUnqualified :: [Opt Attribute] -> [Vsubquery]
+-- prjAuxUnqualified oa = map (second (T.intercalate ", ")) groupedAttsText
+--   where 
+--     groupedAtts     = groupBy (\x y -> fst x == fst y) oa
+--     groupedAtts'    = map pushDownList' groupedAtts -- [(fexp,[attribute])]
+--     groupedAttsText = map (second $ map getAttNameUnqualified) groupedAtts'
 
 -- | constructs a list of attributes that have the same fexp.
 --   NOTE: this is unsafe since you're not checking if 
@@ -147,18 +148,15 @@ pushDownList' :: [(a,b)] -> (a,[b])
 pushDownList' [(a,b)] = (a,[b])
 pushDownList' ((a,b):l) = (a,b:snd (pushDownList' l))
 
-
 -- | returns an attribute name with its qualified relation name if available.
 -- NOTE: it doesn't return qualified attributes!
 getAttName :: Attribute -> T.Text
-getAttName (Attribute _ a)   = T.append (T.pack a) " "
 getAttName (Attribute Nothing a)   = T.append (T.pack a) " "
 getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a, " "]
 
 -- | get unquilified attribute names.
-getAttNameUnqualified :: Attribute -> T.Text
-getAttNameUnqualified (Attribute _ a)   = T.append (T.pack a) " "
-
+-- getAttNameUnqualified :: Attribute -> T.Text
+-- getAttNameUnqualified (Attribute _ a)   = T.append (T.pack a) " "
 
 -- | helper function for selection.
 selAux :: C.Condition -> F.FeatureExpr -> [Vsubquery]
