@@ -64,7 +64,9 @@ typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env
 --   with table pres cond.
 -- SHRINK!!!
 verifyTypeEnv :: TypeEnv' -> Maybe TypeEnv'
-verifyTypeEnv = undefined
+verifyTypeEnv env 
+  | satisfiable (getFexp env) = Just $ propagateFexpToTsch env
+  | otherwise = Nothing
 
 -- 
 -- static semantics that returns a table schema,

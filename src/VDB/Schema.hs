@@ -241,8 +241,14 @@ appFexpRowType f t = M.filter (\(f',_) -> satisfiable (And (And f f') $ getFexp 
 
 
 -- | propagates the table pres cond to its attributes.
--- propagateFexpToTsch :: TableSchema -> TableSchema 
--- propagateFexpToTsch = undefined 
+propagateFexpToTsch :: TableSchema -> TableSchema 
+propagateFexpToTsch t = mkOpt (shrinkFeatureExpr tf) $ shrinkFexRowType $ appFexpRowType tf t
+  where
+    tf = getFexp t
+
+-- | shrinks the feature expression of all attributes in a row type
+shrinkFexRowType :: RowType -> RowType
+shrinkFexRowType = M.map (\(f,t) -> (shrinkFeatureExpr f,t))
 
 ------------- constructing table schema (opt rowtype) ----------
 
