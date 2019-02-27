@@ -4,6 +4,7 @@ module VDB.Type where
 import Prelude hiding (Ordering(..))
 
 import Data.Data (Data,Typeable)
+import Data.Text (Text)
 -- import Data.Time (ZonedTime)
 import Data.Time.LocalTime (ZonedTime,zonedTimeToUTC)
 
@@ -95,6 +96,15 @@ typeOf (SqlEpochTime _)             = TEpochTime
 typeOf (SqlTimeDiff _)              = TTimeDiff
 typeOf SqlNull                      = TNull
 -- typeOf x                            = error "what the hell kind of sqlvalue is this?  " ++ show x
+
+-- | printing comps.
+showComp :: CompOp -> Text
+showComp EQ  = " == "
+showComp NEQ = " <> "
+showComp LT  = " < "
+showComp LTE = " <= "
+showComp GTE = " >= "
+showComp GT  = " > "
 
 
 -- | Semantics of a comparison operation.

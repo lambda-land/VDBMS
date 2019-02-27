@@ -148,21 +148,11 @@ pushDownList' :: [(a,b)] -> (a,[b])
 pushDownList' [(a,b)] = (a,[b])
 pushDownList' ((a,b):l) = (a,b:snd (pushDownList' l))
 
--- | returns an attribute name with its qualified relation name if available.
--- NOTE: it doesn't return qualified attributes!
-getAttName :: Attribute -> T.Text
-getAttName (Attribute Nothing a)   = T.append (T.pack a) " "
-getAttName (Attribute (Just r) a)  = T.concat [T.pack $ relationName r, ".", T.pack a, " "]
-
--- | get unquilified attribute names.
--- getAttNameUnqualified :: Attribute -> T.Text
--- getAttNameUnqualified (Attribute _ a)   = T.append (T.pack a) " "
-
 -- | helper function for selection.
 selAux :: C.Condition -> F.FeatureExpr -> [Vsubquery]
 selAux (C.Lit b)      ctx = [mkOpt ctx $ T.pack $ show b]
 selAux (C.Comp op latom ratom) ctx = [mkOpt ctx $ 
-  T.concat[showAtom latom, showComp op, showAtom ratom]]
+  T.concat[C.showAtom latom, showComp op, C.showAtom ratom]]
 selAux (C.Not c)      ctx = map (second (\q -> T.concat ["not ( ", q, " ) "])) cres
   where cres = selAux c ctx
 selAux (C.Or l r)     ctx = [mkOpt (F.And fl fr) (T.concat [" ( ", ql, " ) or ( ", qr, " ) "]) 
@@ -179,25 +169,6 @@ selAux (C.CChc f l r) ctx = lres ++ rres
   where
     lres = selAux l (F.And f ctx)
     rres = selAux r (F.And (F.Not f) ctx)
-
--- | helper for selAux.
-showComp :: CompOp -> T.Text
-showComp EQ  = " == "
-showComp NEQ = " <> "
-showComp LT  = " < "
-showComp LTE = " <= "
-showComp GTE = " >= "
-showComp GT  = " > "
-
--- | helper for selAux.
-showAtom :: C.Atom -> T.Text
-showAtom (C.Val v)  = case safeConvert v of 
-  Right val -> T.pack val
-  _ -> error "safeConvert resulted in error!!! showAtom"
-showAtom (C.Attr a) = getAttName a
-  -- case attributeQualifier a of 
-  -- Just r  -> T.concat[T.pack $ relationName r, ".", T.pack $ attributeName a]
-  -- Nothing -> T.pack $ attributeName a 
 
 -- | tests:
 v1, v2, v3, v4, v5 :: F.FeatureExpr

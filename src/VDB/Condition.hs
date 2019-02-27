@@ -2,8 +2,9 @@
 module VDB.Condition where
 
 import Data.Data (Data,Typeable)
-
 import Data.SBV (Boolean(..))
+import Data.Convertible (safeConvert)
+import qualified Data.Text as T (pack,Text)
 
 import VDB.FeatureExpr (FeatureExpr)
 import VDB.Name
@@ -17,6 +18,17 @@ data Atom
    = Val  SqlValue
    | Attr Attribute
   deriving (Data,Eq,Show,Typeable,Ord)
+
+-- | print atoms.
+showAtom :: Atom -> T.Text
+showAtom (Val v)  = case safeConvert v of 
+  Right val -> T.pack val
+  _ -> error "safeConvert resulted in error!!! showAtom"
+showAtom (Attr a) = getAttName a
+  -- case attributeQualifier a of 
+  -- Just r  -> T.concat[T.pack $ relationName r, ".", T.pack $ attributeName a]
+  -- Nothing -> T.pack $ attributeName a 
+
 
 -- | Variational conditions.
 data Condition

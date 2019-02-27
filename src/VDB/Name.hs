@@ -1,8 +1,10 @@
 -- | Typed symbol domains.
 module VDB.Name where
 
+import Prelude hiding (concat)
 import Data.Data (Data,Typeable)
 import Data.String (IsString)
+import Data.Text (Text, pack, concat, append)
 
 
 -- | A feature is a named, boolean configuration option.
@@ -27,6 +29,11 @@ genAtt a = Attribute Nothing a
 addRelToAtt :: Attribute -> Relation -> Attribute
 addRelToAtt (Attribute Nothing a) r = Attribute (Just r) a
 addRelToAtt (Attribute _ a) r       = Attribute (Just r) a
+
+-- | returns an attribute name with its qualified relation name if available.
+getAttName :: Attribute -> Text
+getAttName (Attribute Nothing a)   = append (pack a) " "
+getAttName (Attribute (Just r) a)  = concat [pack $ relationName r, ".", pack a, " "]
 
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }
