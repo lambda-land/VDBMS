@@ -158,7 +158,7 @@ enronConfigAllDisabled = disableAll
 
 
 enronSchema :: Schema 
-enronSchema = ( sign_addr_filter, M.fromList [ ( Relation v_employee,  (Lit True, employee_rowtype))
+enronSchema = ( Lit True, M.fromList [ ( Relation v_employee,  (Lit True, employee_rowtype))
                                               , ( Relation v_message,   ( Lit True , message_rowtype))
                                               , ( Relation v_recipientInfo, ( Lit True , recipientInfo_rowtype))
                                               , ( Relation v_referenceInfo, ( Lit True , referenceInfo_rowtype))
