@@ -62,25 +62,25 @@ trans :: Algebra -> F.FeatureExpr -> [Vquery]
   -- case (l, r) of
   -- ()
 -- 
--- trans (Proj oas q)  ctxt s = case oas of 
---   [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
---   _  -> case q of 
---     -- SetOp Prod -> 
---     SetOp _ _ _-> error "syntactically incorrect vq! cannot wrap union/diff in a proj!!"
---     -- Proj -> -- qualified shit!!
---     -- Sel -> 
---     -- AChc ->
---     TRef r -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ", T.pack $ relationName r,
---       " where true "] | (af,at) <- ares, (qf,qt) <- qres]
---         where 
---           qres = trans q ctxt s
---           ares  = prjAux oas 
---     Empty -> error "syntactically incorrect vq! cannot project attributes from empty!"
---     _ -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ( ", qt, " ) where true"]
---       | (af,at) <- ares, (qf,qt) <- qres]
---         where 
---           qres = trans q ctxt s
---           ares  = prjAux oas 
+trans (Proj oas q)  ctxt = case oas of 
+  [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
+  _  -> case q of 
+    Proj oas' q' -> [mkOpt (F.And (F.And af qf) af') $ T.concat ["select ", at, " , ", at', " from ( ", qt, " ) "]
+      | (af,at) <- ares, (af',at') <- ares', (qf,qt) <- qres]
+        where 
+          ares = prjAux oas 
+          ares' = prjAux oas'
+          qres = trans q' ctxt
+    TRef r -> [mkOpt af $ T.concat ["select ", at, " from ", T.pack $ relationName r] 
+      | (af,at) <- ares]
+        where 
+          ares  = prjAux oas 
+    Empty -> error "syntactically incorrect vq! cannot project attributes from empty!"
+    _ -> [mkOpt (F.And af qf) $ T.concat ["select ", at, " from ( ", qt, " ) "]
+      | (af,at) <- ares, (qf,qt) <- qres]
+        where 
+          qres = trans q ctxt 
+          ares = prjAux oas 
 trans (Sel c q)     ctxt = case q of 
   -- SetOp Prod -> COME BACK TO THIS ONE!!!!!
   Proj as q' -> [mkOpt (F.And (F.And qf cf) af) $ T.concat ["select ", at, " from ( ", qt, " ) where ", ct]
