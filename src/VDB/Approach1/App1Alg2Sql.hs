@@ -55,13 +55,26 @@ trans :: Algebra -> F.FeatureExpr -> [Vquery]
 --   where 
 --     lres = trans l ctxt
 --     rres = trans r ctxt
--- trans (SetOp Prod l r) ctxt = [setAux Prod lq rq | lq <- lres, rq <- rres]
---   where 
---     lres = trans l ctxt
---     rres = trans r ctxt
-  -- case (l, r) of
-  -- ()
--- 
+trans (SetOp Prod l r) ctxt = case (l, r) of 
+  (TRef l', TRef r') -> [mkOpt ctxt $ T.concat ["select * from ", T.pack $ relationName l',
+    "  join ", T.pack $ relationName r']]
+  -- (TRef _, Empty) -> trans l ctxt -- these two are captured by the more general
+  -- (Empty, TRef _) -> trans r ctxt -- rule (Empty,_)
+  (Empty, _) -> trans r ctxt -- note: this captures (Empty,Empty) too!
+  (_, Empty) -> trans l ctxt
+  (TRef l', _) -> [mkOpt rf $ T.concat ["select * from ", T.pack $ relationName l',
+    " join ( ", rt, " ) "] | (rf,rt) <- rres]
+      where 
+        rres = trans r ctxt
+  (_, TRef r') -> [mkOpt lf $ T.concat ["select * from ( ", lt, " ) join ", 
+    T.pack $ relationName r'] | (lf,lt) <- lres]
+      where
+        lres = trans l ctxt
+  _ -> [mkOpt (F.And lf rf) $ T.concat ["select * from ( ", lt, " ) join ( ", rt, " ) "]
+    | (lf,lt) <- lres, (rf,rt) <- rres]
+      where
+        lres = trans l ctxt
+        rres = trans r ctxt
 trans (Proj oas q)  ctxt = case oas of 
   [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
   _  -> case q of 
@@ -71,6 +84,8 @@ trans (Proj oas q)  ctxt = case oas of
           ares = prjAux oas 
           ares' = prjAux oas'
           qres = trans q' ctxt
+    -- SetOp Prod l r -> 
+    -- Sel c q' -> 
     TRef r -> [mkOpt af $ T.concat ["select ", at, " from ", T.pack $ relationName r] 
       | (af,at) <- ares]
         where 
@@ -82,13 +97,33 @@ trans (Proj oas q)  ctxt = case oas of
           qres = trans q ctxt 
           ares = prjAux oas 
 trans (Sel c q)     ctxt = case q of 
-  -- SetOp Prod -> COME BACK TO THIS ONE!!!!!
-  Proj as q' -> [mkOpt (F.And (F.And qf cf) af) $ T.concat ["select ", at, " from ( ", qt, " ) where ", ct]
-    | (af,at) <- ares, (cf,ct) <- cres, (qf,qt) <- qres]
-      where 
-        ares = prjAux as 
-        qres = trans q' ctxt
-        cres = selAux c ctxt
+  SetOp Prod l r -> case (l,r) of 
+    (TRef l', TRef r') -> [mkOpt cf $ T.concat ["select * from ", T.pack $ relationName l',
+      " join ", T.pack $ relationName r', " where ", ct] | (cf,ct) <- cres]
+    (Empty, _) -> trans (Sel c r) ctxt
+    (_, Empty) -> trans (Sel c l) ctxt
+    (_, TRef r') -> [mkOpt (F.And cf lf) $ T.concat ["select * from ( ", lt, " ) join ", 
+      T.pack $ relationName r', " where ", ct] | (cf,ct) <- cres, (lf,lt) <- lres]
+        where
+          lres = trans l ctxt
+    (TRef l', _) -> [mkOpt (F.And cf rf) $ T.concat ["select * from ", T.pack $ relationName l',
+      " join ( ", rt, " ) where ", ct] | (cf,ct) <- cres, (rf,rt) <- rres]
+        where
+          rres = trans r ctxt
+    _ -> [mkOpt (F.And (F.And lf rf) cf) $ T.concat ["select * from ( ", lt, " ) join ( ", 
+      rt, " ) where ", ct] | (cf,ct) <- cres, (rf,rt) <- rres, (lf,lt) <- lres]
+        where
+          rres = trans r ctxt
+          lres = trans l ctxt
+    where 
+      cres = selAux c ctxt
+  Proj as q' -> trans (Proj as $ Sel c q') ctxt
+  -- [mkOpt (F.And (F.And qf cf) af) $ T.concat ["select ", at, " from ( ", qt, " ) where ", ct]
+  --   | (af,at) <- ares, (cf,ct) <- cres, (qf,qt) <- qres]
+  --     where 
+  --       ares = prjAux as 
+  --       qres = trans q' ctxt
+  --       cres = selAux c ctxt
   Sel c' q' -> [mkOpt (F.And cf' (F.And cf qf)) $ T.concat ["select * from ( ", qt, " ) where ", ct, " and ", ct']
     | (cf',ct') <- cres', (cf,ct) <- cres, (qf,qt) <- qres]
       where 
@@ -118,10 +153,10 @@ trans (Empty)       ctxt = [mkOpt ctxt  "select null"]
 
 -- | helper function for Setop queries, i.e., union, diff, prod
 -- TODO: check!!!
-setAux :: SetOp -> Vquery -> Vquery -> Vquery
-setAux Union = \(lo, l) (ro, r) -> mkOpt (F.Or lo ro) $ T.concat ["( ", l, " ) union ( ", r, " )"]
-setAux Diff  = \(lo, l) (ro, r) -> mkOpt (F.And lo (F.Not ro)) $ T.concat ["( ", l, " ) minus ( ", r, " )"]
-setAux Prod  = \(lo, l) (ro, r) -> mkOpt (F.And lo ro) $ T.concat ["( ", l, " ) join ( ", r, " )"]
+-- setAux :: SetOp -> Vquery -> Vquery -> Vquery
+-- setAux Union = \(lo, l) (ro, r) -> mkOpt (F.Or lo ro) $ T.concat [l, " union ", r, ]
+-- setAux Diff  = \(lo, l) (ro, r) -> mkOpt (F.And lo (F.Not ro)) $ T.concat [l, " minus ", r]
+-- -- setAux Prod  = \(lo, l) (ro, r) -> mkOpt (F.And lo ro) $ T.concat ["( ", l, " ) join ( ", r, " )"]
 -- setAux Prod  = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat ["select * from (" , l, ") join (", r, ")"]) -- the OLD one!!
 
 -- | helper function for the projection query with qualified attributes.
