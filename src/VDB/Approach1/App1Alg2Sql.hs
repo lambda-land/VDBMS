@@ -43,10 +43,6 @@ verifyVquery vq
 --   sel sel == sel.
 --   sel prj == prj sel instead of prj *
 trans :: Algebra -> F.FeatureExpr -> [Vquery]
--- trans (SetOp s l r) ctxt = [setAux s lq rq | lq <- lres, rq <- rres]
---   where 
---     lres = trans l ctxt
---     rres = trans r ctxt
 -- trans (SetOp Union l r) ctxt = [setAux Union lq rq | lq <- lres, rq <- rres]
 --   where 
 --     lres = trans l ctxt
@@ -78,15 +74,43 @@ trans (SetOp Prod l r) ctxt = case (l, r) of
 trans (Proj oas q)  ctxt = case oas of 
   [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
   _  -> case q of 
-    Proj oas' q' -> [mkOpt (F.And (F.And af qf) af') $ T.concat ["select ", at, " , ", at', " from ( ", qt, " ) "]
-      | (af,at) <- ares, (af',at') <- ares', (qf,qt) <- qres]
-        where 
-          ares = prjAux oas 
-          ares' = prjAux oas'
+    Proj oas' q' -> trans (Proj (oas ++ oas') q') ctxt
+    -- [mkOpt (F.And (F.And af qf) af') $ T.concat ["select ", at, " , ", at', " from ( ", qt, " ) "]
+    --   | (af,at) <- ares, (af',at') <- ares', (qf,qt) <- qres]
+    --     where 
+    --       ares = prjAux oas 
+    --       ares' = prjAux oas'
+    --       qres = trans q' ctxt
+    Sel c q' -> [mkOpt (F.And (F.And af cf) qf) $ T.concat ["select ", at, " from ( ", qt, " ) where ", ct]
+      | (af,at) <- ares, (cf,ct) <- cres, (qf,qt) <- qres]
+        where
+          ares = prjAux oas
+          cres = selAux c ctxt
           qres = trans q' ctxt
-    -- SetOp Prod l r -> 
-    -- Sel c q' -> 
-    TRef r -> [mkOpt af $ T.concat ["select ", at, " from ", T.pack $ relationName r] 
+    SetOp Prod l r -> case (l,r) of
+      (TRef l', TRef r') -> [mkOpt (F.And ctxt af) $ T.concat ["select ", at, " from ", T.pack $ relationName l',
+        " join ", T.pack $ relationName r'] | (af,at) <- ares]
+          where
+            ares = prjAux oas
+      (Empty, _) -> trans r ctxt
+      (_, Empty) -> trans l ctxt
+      (TRef l', _) -> [mkOpt (F.And af rf) $ T.concat ["select ", at, " from ", T.pack $ relationName l',
+        " join ( ", rt, " ) "] | (af,at) <- ares, (rf,rt) <- rres]
+          where
+            ares = prjAux oas
+            rres = trans r ctxt
+      (_, TRef r') -> [mkOpt (F.And af lf) $ T.concat ["select ", at, " from ( ", lt, " ) join ",
+        T.pack $ relationName r'] | (af,at) <- ares, (lf,lt) <- lres]
+          where
+            ares = prjAux oas
+            lres = trans l ctxt
+      _ -> [mkOpt (F.And (F.And lf rf) af) $ T.concat ["select ", at, " from ( ", lt, " ) join ( ", rt, " ) "]
+        | (af,at) <- ares, (lf,lt) <- lres, (rf,rt) <- rres]
+          where
+            ares = prjAux oas
+            rres = trans r ctxt
+            lres = trans l ctxt
+    TRef r -> [mkOpt (F.And af ctxt) $ T.concat ["select ", at, " from ", T.pack $ relationName r] 
       | (af,at) <- ares]
         where 
           ares  = prjAux oas 
@@ -124,12 +148,13 @@ trans (Sel c q)     ctxt = case q of
   --       ares = prjAux as 
   --       qres = trans q' ctxt
   --       cres = selAux c ctxt
-  Sel c' q' -> [mkOpt (F.And cf' (F.And cf qf)) $ T.concat ["select * from ( ", qt, " ) where ", ct, " and ", ct']
-    | (cf',ct') <- cres', (cf,ct) <- cres, (qf,qt) <- qres]
-      where 
-        cres = selAux c ctxt
-        cres' = selAux c' ctxt
-        qres = trans q' ctxt
+  Sel c' q' -> trans (Sel (C.And c c') q') ctxt
+  -- [mkOpt (F.And cf' (F.And cf qf)) $ T.concat ["select * from ( ", qt, " ) where ", ct, " and ", ct']
+  --   | (cf',ct') <- cres', (cf,ct) <- cres, (qf,qt) <- qres]
+  --     where 
+  --       cres = selAux c ctxt
+  --       cres' = selAux c' ctxt
+  --       qres = trans q' ctxt
   TRef r -> [mkOpt cf $ T.concat ["select * from ", T.pack $ relationName r, " where ", ct]
     | (cf,ct) <- cres]
       where 
@@ -206,30 +231,30 @@ selAux (C.CChc f l r) ctx = lres ++ rres
     rres = selAux r (F.And (F.Not f) ctx)
 
 -- | tests:
-v1, v2, v3, v4, v5 :: F.FeatureExpr
-v1 = F.Ref "v_1"
-v2 = F.Ref "v_2"
-v3 = F.Ref "v_3"
-v4 = F.Ref "v_4"
-v5 = F.Ref "v_5"
+-- v1, v2, v3, v4, v5 :: F.FeatureExpr
+-- v1 = F.Ref "v_1"
+-- v2 = F.Ref "v_2"
+-- v3 = F.Ref "v_3"
+-- v4 = F.Ref "v_4"
+-- v5 = F.Ref "v_5"
 
-fexp1, fexp2 :: F.FeatureExpr
-fexp1 = F.Lit True
-fexp2 = F.Or (F.Or v3 v4) v5
+-- fexp1, fexp2 :: F.FeatureExpr
+-- fexp1 = F.Lit True
+-- fexp2 = F.Or (F.Or v3 v4) v5
 
-q1, q2, q3, q4, q5, q6 :: Algebra 
--- q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname")] $ TRef $ Relation "v_dept"
--- select v_dept.deptname  from v_dept
-q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname"), 
-           (F.Lit True, Attribute (Just $ Relation "v_dept") "deptno")] $ TRef $ Relation "v_dept" 
--- select v_dept.deptname , v_dept.deptno  from v_dept
--- q2 = Sel (C.Lit True) $ TRef $ Relation "v_dept" 
--- select * from v_dept where True
-q2 = Sel (C.Lit True) q1
-q3 = undefined
-q4 = undefined
-q5 = undefined
-q6 = undefined
+-- q1, q2, q3, q4, q5, q6 :: Algebra 
+-- -- q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname")] $ TRef $ Relation "v_dept"
+-- -- select v_dept.deptname  from v_dept
+-- q1 = Proj [(F.Lit True, Attribute (Just $ Relation "v_dept") "deptname"), 
+--            (F.Lit True, Attribute (Just $ Relation "v_dept") "deptno")] $ TRef $ Relation "v_dept" 
+-- -- select v_dept.deptname , v_dept.deptno  from v_dept
+-- -- q2 = Sel (C.Lit True) $ TRef $ Relation "v_dept" 
+-- -- select * from v_dept where True
+-- q2 = Sel (C.Lit True) q1
+-- q3 = undefined
+-- q4 = undefined
+-- q5 = undefined
+-- q6 = undefined
 
 -- vqManual = AChc (Ref $ Feature "v1") empQ1_v1 
 --                  (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
