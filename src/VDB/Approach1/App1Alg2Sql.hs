@@ -43,14 +43,6 @@ verifyVquery vq
 --   sel sel == sel.
 --   sel prj == prj sel instead of prj *
 trans :: Algebra -> F.FeatureExpr -> [Vquery]
--- trans (SetOp Union l r) ctxt = [setAux Union lq rq | lq <- lres, rq <- rres]
---   where 
---     lres = trans l ctxt
---     rres = trans r ctxt
--- trans (SetOp Diff l r) ctxt = [setAux Diff lq rq | lq <- lres, rq <- rres]
---   where 
---     lres = trans l ctxt
---     rres = trans r ctxt
 trans (SetOp Prod l r) ctxt = case (l, r) of 
   (TRef l', TRef r') -> [mkOpt ctxt $ T.concat ["select * from ", T.pack $ relationName l',
     "  join ", T.pack $ relationName r']]
@@ -71,6 +63,24 @@ trans (SetOp Prod l r) ctxt = case (l, r) of
       where
         lres = trans l ctxt
         rres = trans r ctxt
+trans (SetOp o l r) ctxt = case (l,r) of
+  (TRef l', TRef r') -> [mkOpt ctxt $ T.concat ["select * from ", T.pack $ relationName l', ot,
+    " select * from ", T.pack $ relationName r']]
+  (Empty, Empty) -> trans Empty ctxt
+  (TRef l', _) -> [mkOpt rf $ T.concat ["select * from ", T.pack $ relationName l', ot, rt] 
+    | (rf,rt) <- rres]
+      where
+        rres = trans r ctxt
+  (_, TRef r') -> [mkOpt lf $ T.concat [lt, ot, " select * from ", T.pack $ relationName r']
+    | (lf,lt) <- lres]
+      where 
+        lres = trans l ctxt
+  _ -> [mkOpt (F.And lf rf) $ T.concat [lt, ot, rt] | (lf,lt) <- lres, (rf,rt) <- rres]
+    where 
+      lres = trans l ctxt
+      rres = trans r ctxt
+  where 
+    ot = if o == Union then " union " else " except"
 trans (Proj oas q)  ctxt = case oas of 
   [] -> error "syntactically incorrect vq! cannot have an empty list of vatt!!"
   _  -> case q of 
@@ -110,6 +120,26 @@ trans (Proj oas q)  ctxt = case oas of
             ares = prjAux oas
             rres = trans r ctxt
             lres = trans l ctxt
+    SetOp o l r -> case (l,r) of
+      (TRef l', TRef r') -> [mkOpt (F.And af ctxt) $ T.concat ["select ", at, " from ", T.pack $ relationName l',
+        ot, " select ", at, " from ", T.pack $ relationName r'] | (af,at) <- ares]
+      (Empty, Empty) -> trans Empty ctxt
+      (TRef l', _) -> [mkOpt (F.And af rf) $ T.concat ["select ", at, " from ", T.pack $ relationName l',
+        ot, " select ", at, " from ( ", rt, " ) "] | (af,at) <- ares, (rf,rt) <- rres]
+          where
+            rres = trans r ctxt
+      (_, TRef r') -> [mkOpt (F.And af lf) $ T.concat ["select ", at, " from ( ", lt, " ) ", ot, 
+        " select ", at, " from ", T.pack $ relationName r'] | (af,at) <- ares, (lf,lt) <- lres]
+          where 
+            lres = trans l ctxt
+      _ -> [mkOpt (F.And (F.And lf rf) af) $ T.concat ["select ", at, " from ( ", lt, " ) ", ot,
+        " select ", at, " from ( ", rt, " ) "] | (af,at) <- ares, (lf,lt) <- lres, (rf,rt) <- rres]
+          where
+            lres = trans l ctxt
+            rres = trans r ctxt
+      where
+        ares = prjAux oas
+        ot = if o == Union then " union " else " except"
     TRef r -> [mkOpt (F.And af ctxt) $ T.concat ["select ", at, " from ", T.pack $ relationName r] 
       | (af,at) <- ares]
         where 
@@ -141,6 +171,27 @@ trans (Sel c q)     ctxt = case q of
           lres = trans l ctxt
     where 
       cres = selAux c ctxt
+  SetOp o l r -> case (l,r) of
+    (TRef l', TRef r') -> [mkOpt cf $ T.concat ["select * from ", T.pack $ relationName l', 
+      " where ", ct, ot, " select * from ", T.pack $ relationName r', " where ", ct]
+      | (cf,ct) <- cres]
+    (Empty, Empty) -> trans Empty ctxt
+    (TRef l', _) -> [mkOpt (F.And cf rf) $ T.concat ["select * from ", T.pack $ relationName l',
+      " where ", ct, ot, " select * from ( ", rt, " ) where ", ct] | (cf,ct) <- cres, (rf,rt) <- rres]
+        where
+          rres = trans r ctxt
+    (_, TRef r') -> [mkOpt (F.And cf lf) $ T.concat ["select * from ( ", lt, " ) where ", ct, ot,
+      " select * from ", T.pack $ relationName r', " where ", ct] | (cf,ct) <- cres, (lf,lt) <- lres]
+        where 
+          lres = trans l ctxt
+    _ -> [mkOpt (F.And (F.And lf rf) cf) $ T.concat ["select * from ( ", lt, " ) where ", ct, ot,
+      " select * from ( ", rt, " ) where ", ct] | (cf,ct) <- cres, (lf,lt) <- lres, (rf,rt) <- rres]
+        where 
+          rres = trans r ctxt
+          lres = trans l ctxt
+    where 
+      cres = selAux c ctxt
+      ot = if o == Union then " union " else " except"
   Proj as q' -> trans (Proj as $ Sel c q') ctxt
   -- [mkOpt (F.And (F.And qf cf) af) $ T.concat ["select ", at, " from ( ", qt, " ) where ", ct]
   --   | (af,at) <- ares, (cf,ct) <- cres, (qf,qt) <- qres]
