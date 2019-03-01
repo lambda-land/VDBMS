@@ -90,36 +90,32 @@ trans (Proj oas q)  ctxt = case oas of
     --     where 
     --       ares = prjAux oas 
     --       ares' = prjAux oas'
-    --       qres = trans q' ctxt
+    --       qres = trans q' ctxt    
     Sel c q' -> [mkOpt (F.And (F.And af cf) qf) $ T.concat ["select ", at, " from ( ", qt, " ) where ", ct]
       | (af,at) <- ares, (cf,ct) <- cres, (qf,qt) <- qres]
         where
-          ares = prjAux oas
           cres = selAux c ctxt
           qres = trans q' ctxt
     SetOp Prod l r -> case (l,r) of
       (TRef l', TRef r') -> [mkOpt (F.And ctxt af) $ T.concat ["select ", at, " from ", T.pack $ relationName l',
         " join ", T.pack $ relationName r'] | (af,at) <- ares]
-          where
-            ares = prjAux oas
       (Empty, _) -> trans r ctxt
       (_, Empty) -> trans l ctxt
       (TRef l', _) -> [mkOpt (F.And af rf) $ T.concat ["select ", at, " from ", T.pack $ relationName l',
         " join ( ", rt, " ) "] | (af,at) <- ares, (rf,rt) <- rres]
           where
-            ares = prjAux oas
             rres = trans r ctxt
       (_, TRef r') -> [mkOpt (F.And af lf) $ T.concat ["select ", at, " from ( ", lt, " ) join ",
         T.pack $ relationName r'] | (af,at) <- ares, (lf,lt) <- lres]
           where
-            ares = prjAux oas
             lres = trans l ctxt
       _ -> [mkOpt (F.And (F.And lf rf) af) $ T.concat ["select ", at, " from ( ", lt, " ) join ( ", rt, " ) "]
         | (af,at) <- ares, (lf,lt) <- lres, (rf,rt) <- rres]
           where
-            ares = prjAux oas
             rres = trans r ctxt
             lres = trans l ctxt
+      where 
+        ares = prjAux oas 
     SetOp o l r -> case (l,r) of
       (TRef l', TRef r') -> [mkOpt (F.And af ctxt) $ T.concat ["select ", at, " from ", T.pack $ relationName l',
         ot, " select ", at, " from ", T.pack $ relationName r'] | (af,at) <- ares]
@@ -225,15 +221,7 @@ trans (AChc f l r)  ctxt = case (l, r) of
       lres = trans lq (F.And f ctxt)
       rres = trans rq (F.And (F.Not f) ctxt)
 trans (TRef r)      ctxt = [mkOpt ctxt $ T.append "select * from " $ T.pack (relationName r)]
-trans (Empty)       ctxt = [mkOpt ctxt  "select null"]
-
--- | helper function for Setop queries, i.e., union, diff, prod
--- TODO: check!!!
--- setAux :: SetOp -> Vquery -> Vquery -> Vquery
--- setAux Union = \(lo, l) (ro, r) -> mkOpt (F.Or lo ro) $ T.concat [l, " union ", r, ]
--- setAux Diff  = \(lo, l) (ro, r) -> mkOpt (F.And lo (F.Not ro)) $ T.concat [l, " minus ", r]
--- -- setAux Prod  = \(lo, l) (ro, r) -> mkOpt (F.And lo ro) $ T.concat ["( ", l, " ) join ( ", r, " )"]
--- setAux Prod  = \(lo, l) (ro, r) -> ((F.Or lo ro), T.concat ["select * from (" , l, ") join (", r, ")"]) -- the OLD one!!
+trans (Empty)       ctxt = [mkOpt ctxt  "select null"]  
 
 -- | helper function for the projection query with qualified attributes.
 prjAux :: [Opt Attribute] -> [Vsubquery]
@@ -242,7 +230,7 @@ prjAux oa = map (second (T.intercalate ", ")) groupedAttsText
   where 
     groupedAtts     = groupBy (\x y -> fst x == fst y) oa
     groupedAtts'    = map pushDownList' groupedAtts -- [(fexp,[attribute])]
-    groupedAttsText = map (second $ map getAttName) groupedAtts'
+    groupedAttsText = map (second $ map (T.pack . getAttName)) groupedAtts'
 
 -- | helper function for projection without qualified attributes.
 -- prjAuxUnqualified :: [Opt Attribute] -> [Vsubquery]
@@ -263,7 +251,7 @@ pushDownList' ((a,b):l) = (a,b:snd (pushDownList' l))
 selAux :: C.Condition -> F.FeatureExpr -> [Vsubquery]
 selAux (C.Lit b)      ctx = [mkOpt ctx $ T.pack $ show b]
 selAux (C.Comp op latom ratom) ctx = [mkOpt ctx $ 
-  T.concat[C.showAtom latom, showComp op, C.showAtom ratom]]
+  T.concat[T.pack $ show latom, T.pack $ show op, T.pack $ show ratom]]
 selAux (C.Not c)      ctx = map (second (\q -> T.concat ["not ( ", q, " ) "])) cres
   where cres = selAux c ctx
 selAux (C.Or l r)     ctx = [mkOpt (F.And fl fr) (T.concat [" ( ", ql, " ) or ( ", qr, " ) "]) 

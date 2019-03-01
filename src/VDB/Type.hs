@@ -61,7 +61,19 @@ data Value
 
 -- | Comparison operations.
 data CompOp = EQ | NEQ | LT | LTE | GTE | GT
-  deriving (Data,Eq,Show,Typeable,Ord)
+  deriving (Data,Eq,Typeable,Ord)
+
+-- | pretty print compOp
+prettyCompOp :: CompOp -> String
+prettyCompOp EQ  = " == "
+prettyCompOp NEQ = " <> "
+prettyCompOp LT  = " < "
+prettyCompOp LTE = " <= "
+prettyCompOp GTE = " >= "
+prettyCompOp GT  = " > "
+
+instance Show CompOp where 
+  show = prettyCompOp
 
 {-
 -- | Get the type of a value.
@@ -97,14 +109,6 @@ typeOf (SqlTimeDiff _)              = TTimeDiff
 typeOf SqlNull                      = TNull
 -- typeOf x                            = error "what the hell kind of sqlvalue is this?  " ++ show x
 
--- | printing comps.
-showComp :: CompOp -> Text
-showComp EQ  = " == "
-showComp NEQ = " <> "
-showComp LT  = " < "
-showComp LTE = " <= "
-showComp GTE = " >= "
-showComp GT  = " > "
 
 
 -- | Semantics of a comparison operation.

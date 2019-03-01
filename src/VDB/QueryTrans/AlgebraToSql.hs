@@ -10,7 +10,7 @@
 -- | NOTE : 1. opt True --> do not insert feature Expr in attrFeatureEnv
 
 module VDB.QueryTrans.AlgebraToSql where 
-
+{-
 import Prelude hiding (EQ ,LT ,GT)
 -- import VDB.SQL 
 import VDB.Algebra
@@ -238,7 +238,7 @@ prettyValue = show
 -- 
 --  Examples
 -- 
-{-
+
 t0 =  (Relation "taughtby")
 t1 = (Relation "courselevel")
 a1 = Attribute "course"

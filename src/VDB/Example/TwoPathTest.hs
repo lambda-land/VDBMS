@@ -3,6 +3,7 @@
 
 module VDB.Example.TwoPathTest where 
 
+{-
 import VDB.QueryTrans.AlgebraToSql
 import VDB.Config
 import VDB.Algebra
@@ -11,8 +12,8 @@ import VDB.Name
 
 import qualified Data.Map as Map
 
-{-import Database.HDBC hiding (run)
-import Database.HDBC.PostgreSQL-}
+import Database.HDBC hiding (run)
+import Database.HDBC.PostgreSQL
 
 import Test.QuickCheck 
 import Test.QuickCheck.Monadic
@@ -28,15 +29,15 @@ configFromVQuery c achc@(AChc _ _ _)  = configFromVQuery c $ configure c achc
 configFromVQuery _ (TRef  r)          = From r 
 configFromVQuery _ (Empty)            = EmptyQuery
 
-{-- commented the following since I was getting some errors
+commented the following since I was getting some errors
 type QResult =  [[SqlValue]]
 type VQResult = [[SqlValue]]
 
 configFromVResult :: Config Bool -> IO VQResult -> IO QResult 
 configFromVResult = undefined 
---}
 
-{-queryDB :: SqlQuery -> IO [[SqlValue]]
+
+queryDB :: SqlQuery -> IO [[SqlValue]]
 queryDB sqlQ = do
                  conn <- connectPostgreSQL "host=localhost dbname=test"
                  result <- quickQuery conn sqlQ []
@@ -47,7 +48,7 @@ queryVDB :: SqlQuery -> IO [[SqlValue]]
 queryVDB sqlQ = do
                  conn <- connectPostgreSQL "host=localhost dbname=test"
                  result <- quickQuery conn sqlQ []
-                 return result -}
+                 return result 
                  -- mapM_ print $ map sqlRowToString result
 
 -- | Property1:
@@ -83,7 +84,7 @@ instance  Arbitrary Relation where
 --    | TRef  Relation
 --    | Empty 
 
-{-
+
 genSetOp :: Gen SetOp
 genSetOp = elements [Union, Diff, Prod]
 

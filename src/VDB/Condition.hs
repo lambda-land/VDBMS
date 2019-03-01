@@ -17,18 +17,20 @@ import Database.HDBC (SqlValue)
 data Atom
    = Val  SqlValue
    | Attr Attribute
-  deriving (Data,Eq,Show,Typeable,Ord)
+  deriving (Data,Eq,Typeable,Ord)
 
--- | print atoms.
-showAtom :: Atom -> T.Text
-showAtom (Val v)  = case safeConvert v of 
-  Right val -> T.pack val
+-- | pretty print atoms.
+prettyAtom :: Atom -> String
+prettyAtom (Val v)  = case safeConvert v of 
+  Right val -> val
   _ -> error "safeConvert resulted in error!!! showAtom"
-showAtom (Attr a) = getAttName a
+prettyAtom (Attr a) = getAttName a
   -- case attributeQualifier a of 
   -- Just r  -> T.concat[T.pack $ relationName r, ".", T.pack $ attributeName a]
   -- Nothing -> T.pack $ attributeName a 
 
+instance Show Atom where
+  show = prettyAtom
 
 -- | Variational conditions.
 data Condition
@@ -39,6 +41,13 @@ data Condition
    | And  Condition Condition
    | CChc FeatureExpr Condition Condition
   deriving (Data,Eq,Show,Typeable,Ord)
+
+-- | pretty print conditions
+-- prettyCondition :: Condition -> String
+-- prettyCondition = undefined
+
+-- instance Show Condition where
+--   show = prettyCondition
 
 instance Variational Condition where
 
