@@ -9,6 +9,7 @@ import VDB.Variational
 import VDB.Schema
 import VDB.SAT
 import VDB.Type
+import VDB.Config
 
 -- import Data.Map(Map)
 import qualified Data.Map as M 
