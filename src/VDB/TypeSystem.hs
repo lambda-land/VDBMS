@@ -59,6 +59,21 @@ typeOfVcond (C.And l r)    ctx env = typeOfVcond l ctx env && typeOfVcond r ctx 
 typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env 
   && typeOfVcond r (F.And ctx (F.Not d)) env
 
+-- | check commuty diagram for type system.
+typeCommutyDiagram :: [Config] -> VariationalContext -> Schema -> Algebra -> Bool
+typeCommutyDiagram cs ctx s vq = foldr (flip typeDiagram_c ctx s vq) cs
+  where
+    vEnv = typeOfVquery' vq ctx s 
+    vEnv_c = configureTypeEnv vEnv c
+    q_c = configureVquery vq c 
+    env_c = typeOfVquery' q_c (F.Lit True) s 
+    typeDiagram_c c ctx s vq = vEnv_c == env_c
+
+-- | applies a config to a type env.
+configureTypeEnv :: TypeEnv' -> Config -> TypeEnv'
+configureTypeEnv env c = undefined
+
+
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
 --   with table pres cond.

@@ -26,6 +26,18 @@ data Algebra
    | Empty 
   deriving (Data,Eq,Show,Typeable,Ord)
 
+-- data From = From Sql 
+--           | FromProdRel From From
+--           | FromRel Relation 
+--           -- | Empty
+
+-- newtype Where = Where { whereCondition :: Condition}
+
+-- data Sql = Select [Opt Attribute] From Where
+--          | SqlChc FeatureExpr Sql Sql
+--          | SqlUnion Sql Sql
+--          | SqlDiff Sql Sql
+
 
 instance Variational Algebra where
 

@@ -114,8 +114,6 @@ trans (Proj oas q)  ctxt = case oas of
           where
             rres = trans r ctxt
             lres = trans l ctxt
-      where 
-        ares = prjAux oas 
     SetOp o l r -> case (l,r) of
       (TRef l', TRef r') -> [mkOpt (F.And af ctxt) $ T.concat ["select ", at, " from ", T.pack $ relationName l',
         ot, " select ", at, " from ", T.pack $ relationName r'] | (af,at) <- ares]
@@ -134,7 +132,7 @@ trans (Proj oas q)  ctxt = case oas of
             lres = trans l ctxt
             rres = trans r ctxt
       where
-        ares = prjAux oas
+        -- ares = prjAux oas
         ot = if o == Union then " union " else " except"
     TRef r -> [mkOpt (F.And af ctxt) $ T.concat ["select ", at, " from ", T.pack $ relationName r] 
       | (af,at) <- ares]
@@ -145,7 +143,9 @@ trans (Proj oas q)  ctxt = case oas of
       | (af,at) <- ares, (qf,qt) <- qres]
         where 
           qres = trans q ctxt 
-          ares = prjAux oas 
+          -- ares = prjAux oas 
+    where
+      ares = prjAux oas 
 trans (Sel c q)     ctxt = case q of 
   SetOp Prod l r -> case (l,r) of 
     (TRef l', TRef r') -> [mkOpt cf $ T.concat ["select * from ", T.pack $ relationName l',

@@ -46,6 +46,19 @@ data Condition
 -- prettyCondition :: Condition -> String
 -- prettyCondition = undefined
 
+-- | pretty prints pure relational conditions.
+prettyRelCondition :: Condition -> String
+prettyRelCondition (CChc _ _ _) = error "cannot pretty print a choice of conditions!!"
+prettyRelCondition c = top c
+  where
+    top (Comp c l r) = show l ++ show c ++ show r
+    top (And l r) = sub l ++ " AND " ++ sub r
+    top (Or l r) = sub l ++ " OR " ++ sub r
+    top c = sub c
+    sub (Lit b) = if b then " true " else " false "
+    sub (Not c) = " NOT " ++ sub c
+    sub c = " ( " ++ top c ++ " ) "
+
 -- instance Show Condition where
 --   show = prettyCondition
 
