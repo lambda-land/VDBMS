@@ -10,6 +10,7 @@ import VDB.Schema
 import VDB.SAT
 import VDB.Type
 import VDB.Config
+import VDB.VqueryConfigSem
 
 -- import Data.Map(Map)
 import qualified Data.Map as M 
@@ -61,17 +62,21 @@ typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env
   && typeOfVcond r (F.And ctx (F.Not d)) env
 
 -- | check commuty diagram for type system.
-typeCommutyDiagram :: [Config] -> VariationalContext -> Schema -> Algebra -> Bool
-typeCommutyDiagram cs ctx s vq = foldr (flip typeDiagram_c ctx s vq) cs
+typeCommutyDiagram :: [Config Bool] -> VariationalContext -> Schema -> Algebra -> Bool
+typeCommutyDiagram cs ctx s vq = foldr (&&) True (map (typeDiagram_c ctx s vq) cs)
   where
-    vEnv = typeOfVquery' vq ctx s 
-    vEnv_c = configureTypeEnv vEnv c
-    q_c = configureVquery vq c 
-    env_c = typeOfVquery' q_c (F.Lit True) s 
-    typeDiagram_c c ctx s vq = vEnv_c == env_c
+    typeDiagram_c ctx s vq c = case (vEnv,env_c) of
+      (Just env, Just envc) -> vEnv_c == envc
+        where vEnv_c = configureTypeEnv env c
+      (Nothing, _) -> error "the vq isn't type correct!"
+      (Just _, Nothing) -> error "sth went terribly wrong when checking type diagram!!"
+      where 
+        vEnv = typeOfVquery' vq ctx s 
+        q_c = configureVquery vq c 
+        env_c = typeOfVquery' q_c (F.Lit True) s 
 
 -- | applies a config to a type env.
-configureTypeEnv :: TypeEnv' -> Config -> TypeEnv'
+configureTypeEnv :: TypeEnv' -> Config Bool -> TypeEnv'
 configureTypeEnv env c = undefined
 
 
