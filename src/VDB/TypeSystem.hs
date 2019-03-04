@@ -77,7 +77,7 @@ typeCommutyDiagram cs ctx s vq = foldr (&&) True (map (typeDiagram_c ctx s vq) c
 
 -- | applies a config to a type env.
 configureTypeEnv :: TypeEnv' -> Config Bool -> TypeEnv'
-configureTypeEnv env c = undefined
+configureTypeEnv env c = appConfRowType' c env
 
 
 -- | verifies and similifies the final type env return by the type system, i.e.,
