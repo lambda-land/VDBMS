@@ -1,10 +1,19 @@
 -- | vqs for employee database.
 module VDB.Example.EmployeeUseCase.EmployeeQs where
 
+import Prelude hiding (Ordering(..))
+
 import VDB.Algebra
 import qualified VDB.Condition as C
 import qualified VDB.FeatureExpr as F
 import VDB.Type
+import VDB.Name
+import VDB.Variational
+import VDB.Example.EmployeeUseCase.EmployeeSchema
+
+import Database.HDBC 
+-- import Data.Time.LocalTime
+import Data.Time.Calendar
 
 -- keep in mind that the employee use demos deploying
 -- every single version for the client of spl. so qs
@@ -21,6 +30,10 @@ import VDB.Type
 -- plain q of a vq and then running it on the appropriate 
 -- variant. 
 
+-- | attaches the feature expression true to an attribute. 
+trueAtt :: Attribute -> Opt Attribute
+trueAtt a = (F.Lit True, a)
+
 -- 
 -- first set of quesries:
 -- taken from the prima paper, adjusted to the employee database. 
@@ -29,23 +42,62 @@ import VDB.Type
 -- 
 
 -- intent: return the salary value of the emp 10004
---         on the year 1991.
+--         on the year 1991. 
 -- query: 
 -- prj_salary 
 --    (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01)
---       v1 < (prj_(empno,hiredate,title) eng UNION other)
---             join_(title=title) job, 
 --            prj_(empno, hiredate, salary) 
---                empacct join_(title=title) job>)
--- ASK ERIC: should it be empv1 or empv1 and not ...?
--- empVQ1 :: Algebra
--- empVQ1 = Proj [(Lit True, salary)]
---   Sel (C.And (Comp EQ (Attr empno) (Val $ SqlInt32 10004))
---       (C.And (Comp GT (C.Val $ SqlLocalDate '1991-01-01') (Attr hiredate))
---              (Comp LT (Attr hiredate) (C.Val $ SqlLocalDate '1992-01-01'))))
---   (AChc empv1 
---     ()
---     ())
+--                empacct join_(title=title) job)
+-- note:
+-- the year 1991 is included in variants v3, v4, and v5. we only
+-- write the query for these variants for a fair comparison against
+-- prima.
+empVQ1 :: Algebra
+empVQ1 = Proj [trueAtt salary] $
+  Sel (C.And (C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
+      (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
+             (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))))
+  (Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
+    Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
+
+-- more optimized based on relational alg opt rules. prj and sel place
+-- have been exchanged. check translations of them to see if they return
+-- the same query.
+empVQ1' :: Algebra
+empVQ1' = Proj [trueAtt salary] $
+  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
+    Sel (C.And (C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
+        (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
+               (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101)))) $
+    Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job)    
+
+-- more optimized based on sel_c sel_c' == sel_{c and c'}
+empVQ1'' :: Algebra
+empVQ1'' = Proj [trueAtt salary] $
+  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
+    Sel ((C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
+         `C.And` (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
+         `C.And` (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))
+         `C.And` (C.Comp EQ (C.Attr title) (C.Attr title))) $ SetOp Prod (TRef empacct) (TRef job)    
+
+-- the naive query of empVQ1:
+--            v3 or v4 <prj_salary (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01)
+--                                       prj_(empno, hiredate, salary) 
+--                                            empacct join_(title=title) job),
+--                      prj_salary (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01) job)>
+empVQ1naive :: Algebra
+empVQ1naive = AChc (F.Or empv3 empv4)
+        (Proj [trueAtt salary] $
+              Sel (C.And (C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
+                  (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
+                         (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101)))) $
+                  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
+                       Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
+        (Proj [trueAtt salary] $
+              Sel (C.And (C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
+                  (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
+                         (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))))
+                  (TRef job))
 
 -- intent: return the managers (of department d001) on
 --         the year 1991.
