@@ -56,10 +56,14 @@ trueAtt a = (F.Lit True, a)
 empVQ1 :: Algebra
 empVQ1 = Proj [trueAtt salary] $
   Sel (C.And (C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
-      (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-             (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))))
+             yearCond)
   (Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
     Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
+
+-- | the year 1991 condition
+yearCond :: C.Condition
+yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
+                 (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))
 
 -- more optimized based on relational alg opt rules. prj and sel place
 -- have been exchanged. check translations of them to see if they return
@@ -69,8 +73,7 @@ empVQ1' :: Algebra
 empVQ1' = Proj [trueAtt salary] $
   Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
     Sel (C.And (C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
-        (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-               (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101)))) $
+               yearCond) $
     Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job)    
 
 -- more optimized based on sel_c sel_c' == sel_{c and c'}
@@ -79,8 +82,7 @@ empVQ1'' :: Algebra
 empVQ1'' = Proj [trueAtt salary] $
   Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
     Sel ((C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
-         `C.And` (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-         `C.And` (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))
+         `C.And` yearCond
          `C.And` (C.Comp EQ (C.Attr title) (C.Attr title))) $ SetOp Prod (TRef empacct) (TRef job)    
 
 -- the naive query of empVQ1:
@@ -93,14 +95,12 @@ empVQ1naive :: Algebra
 empVQ1naive = AChc (F.Or empv3 empv4)
         (Proj [trueAtt salary] $
               Sel (C.And (C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
-                  (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-                         (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101)))) $
+                         yearCond) $
                   Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
                        Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
         (Proj [trueAtt salary] $
               Sel (C.And (C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004))
-                  (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-                         (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))))
+                         yearCond)
                   (TRef job))
 
 -- intent: return the managers (of department d001) on
@@ -114,8 +114,7 @@ empVQ1naive = AChc (F.Or empv3 empv4)
 empVQ2 :: Algebra
 empVQ2 = Proj [trueAtt managerno] $
   Sel ((C.Comp EQ (C.Attr deptno) (C.Val $ SqlInt32 001))
-       `C.And` (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-       `C.And` (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))
+       `C.And` yearCond
        `C.And` (C.Comp EQ (C.Attr empno) (C.Attr managerno))) $
       SetOp Prod (TRef empacct) (TRef dept)
 
@@ -136,11 +135,10 @@ empVQ3 = Proj [trueAtt managerno] $
       SetOp Prod (TRef dept) $
                  Proj [trueAtt deptno] $
                       Sel ((C.Comp EQ (C.Attr deptno) (C.Val $ SqlInt32 001))
-                          `C.And` (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-                          `C.And` (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))) $
+                          `C.And` yearCond) $
                           TRef empacct
 
--- ASK Eric: should I consider the first two variants?
+-- ASK Eric: should I consider the first two variants? I think I should!
 empVQ3naive :: Algebra
 empVQ3naive = AChc empv3 empVQ3 (AChc empv4 empVQ3 $ AChc empv5 empVQ3 Empty)
 
@@ -160,8 +158,7 @@ empVQ4 :: Algebra
 empVQ4 = Proj [trueAtt salary] $
   (Sel (C.Comp EQ (C.Attr title) (C.Attr title))
        (SetOp Prod (Sel (C.Comp EQ (C.Attr managerno) (C.Attr empno))
-                        (SetOp Prod (Sel (C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-                                                (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101)))
+                        (SetOp Prod (Sel yearCond
                                          (TRef empacct))
                                     (TRef dept)))
                    (TRef job)))
