@@ -50,5 +50,3 @@ instance Variational Algebra where
   choiceMap _ (TRef r)      = TRef r
   choiceMap _ Empty         = Empty
 
-
-

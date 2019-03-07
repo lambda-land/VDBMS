@@ -61,9 +61,9 @@ typeOfVcond (C.And l r)    ctx env = typeOfVcond l ctx env && typeOfVcond r ctx 
 typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env 
   && typeOfVcond r (F.And ctx (F.Not d)) env
 
--- | check commuty diagram for type system.
-typeCommutyDiagram :: [Config Bool] -> VariationalContext -> Schema -> Algebra -> Bool
-typeCommutyDiagram cs ctx s vq = foldr (&&) True (map (typeDiagram_c ctx s vq) cs)
+-- | check commuting diagram for type system.
+typeCommutingDiagram :: [Config Bool] -> VariationalContext -> Schema -> Algebra -> Bool
+typeCommutingDiagram cs ctx s vq = foldr (&&) True (map (typeDiagram_c ctx s vq) cs)
   where
     typeDiagram_c ctx s vq c = case (vEnv,env_c) of
       (Just env, Just envc) -> vEnv_c == envc

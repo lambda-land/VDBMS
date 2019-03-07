@@ -143,7 +143,7 @@ empVQ3 = Proj [trueAtt managerno] $
                           `C.And` yearCond) $
                           TRef empacct
 
--- ASK Eric: should I consider the first two variants? I think I should!
+-- ASK Eric: should I consider the first two variants? I think I should! YES!
 -- ASK Eric: max num of variants???
 -- classification: 5-3-2-1
 empVQ3naive :: Algebra
