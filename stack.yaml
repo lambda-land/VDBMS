@@ -13,5 +13,6 @@ packages:
 - .
 flags: {}
 # extra-deps: [HDBC-sqlite3-2.3.3.1, time-1.9.2]
-extra-deps: [HDBC-sqlite3-2.3.3.1]
+extra-deps: [HDBC-sqlite3-2.3.3.1, haskelldb-2.2.4]
+# extra-deps: [HDBC-sqlite3-2.3.3.1]
    
