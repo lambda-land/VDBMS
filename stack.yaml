@@ -4,12 +4,14 @@
 # The resolver determines which packages are used to resolve the dependencies
 # in the Cabal build file.
 # https://www.stackage.org/lts-10.8
-resolver: lts-10.8
+# resolver: lts-10.8
+resolver: lts-11.14
 
 system-ghc: false
 allow-newer: true
 packages: 
 - .
 flags: {}
-extra-deps: [HDBC-sqlite3-2.3.3.1, time-1.9.2]
+# extra-deps: [HDBC-sqlite3-2.3.3.1, time-1.9.2]
+extra-deps: [HDBC-sqlite3-2.3.3.1]
    

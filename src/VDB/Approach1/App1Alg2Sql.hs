@@ -223,6 +223,7 @@ trans (AChc f l r)  ctxt = case (l, r) of
 trans (TRef r)      ctxt = [mkOpt ctxt $ T.append "select * from " $ T.pack (relationName r)]
 trans (Empty)       ctxt = [mkOpt ctxt  "select null"]  
 
+
 -- | helper function for the projection query with qualified attributes.
 prjAux :: [Opt Attribute] -> [Vsubquery]
 prjAux oa = map (second (T.intercalate ", ")) groupedAttsText

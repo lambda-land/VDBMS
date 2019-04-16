@@ -30,6 +30,9 @@ import Data.Time.Calendar
 -- plain q of a vq and then running it on the appropriate 
 -- variant. 
 
+newtype QueryT = QueryT String
+  deriving (Show, Eq)
+
 -- | attaches the feature expression true to an attribute. 
 trueAtt :: Attribute -> Opt Attribute
 trueAtt a = (F.Lit True, a)
@@ -59,6 +62,13 @@ empVQ1 = Proj [trueAtt salary] $
              yearCond)
   (Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
     Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
+
+empVQ1T :: QueryT
+empVQ1T = QueryT $ 
+  "SELECT salary" ++
+  "FROM (SELECT empno, hiredate, salary" ++
+        "FROM empacct INNER JOIN job)" ++
+  "WHERE empNo = 10004 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01"
 
 -- | the year 1991 condition
 yearCond :: C.Condition
@@ -122,6 +132,12 @@ empVQ2 = Proj [trueAtt managerno] $
        `C.And` (C.Comp EQ (C.Attr empno) (C.Attr managerno))) $
       SetOp Prod (TRef empacct) (TRef dept)
 
+empVQ2T :: QueryT
+empVQ2T = QueryT $
+  "SELECT managerno" ++
+  "FROM empacct INNER JOIN dept ON managerno = empNo" ++
+  "WHERE deptno = 001 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01"
+
 -- classification: 5-3-2-1
 empVQ2naive :: Algebra
 empVQ2naive = AChc empv3 empVQ2 (AChc empv4 empVQ2 $ AChc empv5 empVQ2 Empty)
@@ -143,8 +159,16 @@ empVQ3 = Proj [trueAtt managerno] $
                           `C.And` yearCond) $
                           TRef empacct
 
+empVQ3T :: QueryT
+empVQ3T = QueryT $
+  "SELECT managerno" ++
+  "FROM dept as t0, " ++
+                  "(SELECT deptno" ++
+                  " FROM empacct" ++
+                  " WHERE deptno = 001 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01) as t1" ++
+  "WHERE t0.deptno = t1.deptno"
+
 -- ASK Eric: should I consider the first two variants? I think I should! YES!
--- ASK Eric: max num of variants???
 -- classification: 5-3-2-1
 empVQ3naive :: Algebra
 empVQ3naive = AChc empv3 empVQ3 (AChc empv4 empVQ3 $ AChc empv5 empVQ3 Empty)
@@ -348,11 +372,14 @@ empVQ15 = undefined
 empVQ16 :: Algebra
 empVQ16 = undefined
 
+-------------------------------------------
+-- analysis queries
+-------------------------------------------
 
--- intent:
--- query:
--- empVQ4 :: Algebra
--- empVQ4 = undefined
+-- intent: for all employees get their salary
+-- query: 
+empVQ17 :: Algebra
+empVQ17 = undefined
 
 
 -- intent:

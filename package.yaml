@@ -87,3 +87,4 @@ tests:
     - tasty
     - tasty-quickcheck
     - tasty-hunit
+    - QuickCheck
