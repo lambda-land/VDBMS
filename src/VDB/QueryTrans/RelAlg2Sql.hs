@@ -16,7 +16,7 @@ import VDB.Variant
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 
--- import Database.HaskellDB
+import qualified Database.HaskellDB as HSDB
 
 type Query = String
 type VariantQuery = Variant Query Bool
