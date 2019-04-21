@@ -7,6 +7,8 @@ import VDB.Config
 import VDB.FeatureExpr
 import VDB.Name
 
+import Control.Arrow
+
 --
 -- * Optional values
 --
@@ -34,6 +36,32 @@ updateOptObj o (f,_) = mkOpt f o
 -- | updates fexp.
 updateFexp :: FeatureExpr -> Opt a -> Opt a 
 updateFexp f (_,o) = mkOpt f o
+
+-- | maps a function to the fexp of an opt a.
+mapFst :: (FeatureExpr -> FeatureExpr) 
+  -> [Opt a] -> [Opt a]
+mapFst f = fmap (first f)
+
+-- | maps a function to the second of an opt a.
+mapSnd :: (a -> b) -> [Opt a] -> [Opt b]
+mapSnd f = fmap (second f)
+
+-- | maps first and second at the same time.
+mapFstSnd :: (FeatureExpr -> FeatureExpr)
+  -> (a -> b) -> [Opt a] -> [Opt b]
+mapFstSnd f g = fmap (f *** g)
+-- mapFst f . mapSnd g
+
+-- | combines two opts together s.t. every two second
+--   elements will be combined with g and then their
+--   appropriate fexps will be combined with f.
+combOpts :: (FeatureExpr -> FeatureExpr -> FeatureExpr)
+  -> (a -> b -> b) 
+  -> [Opt a] -> [Opt b]
+  -> [Opt b]
+combOpts f g os1 os2 = 
+  [(f f1 f2, g o1 o2) | (f1, o1) <- os1, (f2,o2) <- os2]
+  -- (f *** g) <$> os1 <*> os2 -- this aint working!!
 
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a
