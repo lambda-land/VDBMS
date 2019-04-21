@@ -1,6 +1,6 @@
 add the source of a library to your project (in case you want to modify it:)
 
-1) change the version of the source to the version you want. 
+1) change the version of the source to the version you want in the source cabal file. 
 2) add the same version to your package.yaml as dependencies
 3) add the directory to extra-lib-dir and to packages
 4) add the source to lib
