@@ -1,0 +1,15 @@
+add the source of a library to your project (in case you want to modify it:)
+
+1) change the version of the source to the version you want. 
+2) add the same version to your package.yaml as dependencies
+3) add the directory to extra-lib-dir and to packages
+4) add the source to lib
+5) cd to the directory
+6) cabal sandbox init 
+7) cabal update
+8) finally submit changes to git
+9) remember to add the directory with the command:
+
+git submodule add <url> <dir>
+
+10) the url is the fork of the original prj that you made on your own git
