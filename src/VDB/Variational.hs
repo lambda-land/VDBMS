@@ -30,7 +30,7 @@ mkOpt :: FeatureExpr -> a -> Opt a
 mkOpt = (,)
 
 -- | updates obj.
-updateOptObj :: a -> Opt a -> Opt a 
+updateOptObj :: b -> Opt a -> Opt b
 updateOptObj o (f,_) = mkOpt f o 
 
 -- | updates fexp.
