@@ -7,7 +7,9 @@ import qualified VDB.FeatureExpr as F
 import qualified VDB.Condition as C
 import VDB.Variational
 
-
+-- removes choices in vq and returns a list of 
+-- opt vqs. note that the returned vq although
+-- written in our algebra doesn't have choices.
 removeChoiceInVq :: Algebra -> F.FeatureExpr -> [Opt Algebra]
 removeChoiceInVq (SetOp s q1 q2) ctx = 
   combOpts F.And (SetOp s) optQ1 optQ2
@@ -30,7 +32,7 @@ removeChoiceInVq other ctx = [mkOpt ctx other]
 -- removeChoice other ctx = [mkOpt other ctx]
 -- removeChoice Empty = undefined
 
--- removes choices from conditions
+-- removes choices from conditions.
 removeChoiceInCond :: C.Condition -> F.FeatureExpr -> [Opt C.Condition]
 removeChoiceInCond (C.Not c) ctx = mapSnd (C.Not) optCs
   where
