@@ -16,19 +16,7 @@ import VDB.Example.SmartConstructor
 --  Features
 -- 
 
-signature,addressbook, filtermsg, encrypt, autoresponder, forwardmsg, mailhost, remailmsg :: Feature
-signature     = Feature "signature"
-addressbook   = Feature "addressbook"
-filtermsg     = Feature "filtermsg"
-encrypt       = Feature "encrypt"
-autoresponder = Feature "autoresponder"
-forwardmsg    = Feature "forwardmsg"
-mailhost      = Feature "mailhost"
-remailmsg     = Feature "remailmsg"
-
--- 
--- Feature expressions
--- 
+{-
 
 -- | FeatureExpr for  (signature, addressbook, filtermsg)
 sign_addr_filter :: FeatureExpr
@@ -247,9 +235,11 @@ mailhost_rowtype = M.fromList [ ("did", (Lit True, TInt32))
 					          ]
 
 -- alias(eid, email, nickname, presCond)
-alias_rowtype :: RowType
-alias_rowtype = M.fromList [ ("eid", (Lit True, TInt32))
-				       , ("email",  (Lit True , TString))
-				       , ("nickname",  (Lit True , TString))
-				       ]
+
+alias_v8 :: [(String, SqlType)]
+alias_v8 = [ ("eid", TInt32)
+	       , ("email",  TString)
+	       , ("nickname",  TString)
+	       ]
+-}
 

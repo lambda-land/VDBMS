@@ -1,0 +1,3 @@
+[submodule "lib/haskelldb"]
+	path = lib/haskelldb
+	url = https://github.com/pataei/haskelldb.git

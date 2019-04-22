@@ -31,7 +31,7 @@ runTransFilterUnion :: IConnection conn => Algebra -> PresCondAtt
 runTransFilterUnion vq p vdb = do
   let sch = getSqlDBschema vdb 
       initialVarCtxt = featureModel sch 
-      transQs = transVerify vq initialVarCtxt sch
+      transQs = transVerify vq initialVarCtxt 
   res <- runVq transQs vdb -- [SqlVtable]
   let vtable = sqlVtables2VTable p res
       vtable_disjoin = updateSqlTable (disjoinDuplicate p) vtable
@@ -47,7 +47,7 @@ runTransFilterUnionWithTypeChecking vq p vdb = do
       initialVarCtxt = featureModel sch 
   case typeOfVquery' vq initialVarCtxt sch of 
     Just tableSchema -> do 
-      let transQs = transVerify vq initialVarCtxt sch
+      let transQs = transVerify vq initialVarCtxt 
       res <- runVq transQs vdb -- [SqlVtable]
       let vtable = sqlVtables2VTable p res
           vtable' = adjustVTable2TableSch tableSchema vtable

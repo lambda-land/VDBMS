@@ -18,6 +18,7 @@ import VDB.Name
 import VDB.Variational
 import VDB.Type
 import VDB.Config (Config, equivConfig)
+import VDB.SAT (satisfiable)
 
 -- | Type of a relation in the database.
 -- type RowType = [Opt (Attribute, Type)]
@@ -61,6 +62,30 @@ relArity r s = case rt of
 -- | get attributes of a rowtype.
 getRowTypeAtts :: RowType -> Set Attribute
 getRowTypeAtts = M.keysSet
+
+-- | get attributes of a table schema.
+getTableSchAtts :: TableSchema -> Set Attribute
+getTableSchAtts t = getRowTypeAtts $ getObj t
+
+-- | gets the attribute fexp conjoind with the table pres cond
+--   from a table schema
+-- lookupAttFexpInTableSch :: Attribute -> TableSchema -> Maybe FeatureExpr
+-- lookupAttFexpInTableSch a (tf,tr) = case M.lookup a tr of 
+--                                Just (f,_) 
+--                                  | satisfiable f' -> Just f'
+--                                  | otherwise -> Nothing
+--                                    where f' = And tf f
+--                                _ -> Nothing
+
+-- -- | gets the attribute pres cond conjoined with the table pres cond
+-- --   and the attribute type from a table schema.
+-- lookupAttFexpTypeInTableSch :: Attribute -> TableSchema -> Maybe (Opt SqlType)
+-- lookupAttFexpTypeInTableSch a (tf,tr) = case M.lookup a tr of 
+--                                           Just (f,t)
+--                                             | satisfiable f' -> Just (f',t)
+--                                             | otherwise -> Nothing
+--                                               where f' = And tf f 
+--                                           _ -> Nothing
 
 -- | get the attribute fexp from a rowtype
 lookupAttFexpInRowType :: Attribute -> RowType -> Maybe FeatureExpr
@@ -195,6 +220,35 @@ equivConfigOnSchema :: Schema -> Config Bool -> Config Bool -> Bool
 equivConfigOnSchema s c c' = equivConfig fs c c'
   where fs = features $ featureModel s
 
+-- | applying a feature expression to table schema and 
+--   and dropping the attributes that shouldn't be present anymore.
+--   i.e. their pres cond is unsatisfiable.
+appFexpTableSch :: FeatureExpr -> TableSchema -> TableSchema
+appFexpTableSch f t
+    | satisfiable f' = mkOpt f' $ appFexpRowType f t
+    | otherwise = error $ "applying the fexp " ++ show f ++ "to table schema results in an invalid table schema!!"
+  where 
+    f' = shrinkFeatureExpr (And f $ getFexp t)
+
+-- | applies a feature expression to a table schema and returns a row type.
+--   note that it doesn't apply the fexp to the attributes.
+--   it just filters the attributes without updating their pres cond.
+--   since the fexp is being conjoined with the table pres cond and
+--   that would propagate to attributes too so we don't actually 
+--   need to update attribute's pres cond.
+appFexpRowType :: FeatureExpr -> TableSchema -> RowType
+appFexpRowType f t = M.filter (\(f',_) -> satisfiable (And (And f f') $ getFexp t)) $ getObj t
+
+
+-- | propagates the table pres cond to its attributes.
+propagateFexpToTsch :: TableSchema -> TableSchema 
+propagateFexpToTsch t = mkOpt (shrinkFeatureExpr tf) $ shrinkFexRowType $ appFexpRowType tf t
+  where
+    tf = getFexp t
+
+-- | shrinks the feature expression of all attributes in a row type
+shrinkFexRowType :: RowType -> RowType
+shrinkFexRowType = M.map (\(f,t) -> (shrinkFeatureExpr f,t))
 
 ------------- constructing table schema (opt rowtype) ----------
 

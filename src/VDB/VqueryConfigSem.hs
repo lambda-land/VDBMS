@@ -16,6 +16,17 @@ configureVquery (TRef r)       _ = TRef r
 configureVquery Empty          _ = Empty
  -- = flip configure
 
+-- | checks whether two configured queries are equivalent or not.
+equivConfedQs :: Algebra -> Algebra -> Bool
+equivConfedQs = (==)
+
+-- | checks commuting diagram for a variaitonal query.
+equivVqs :: [Config Bool] -> Algebra -> Algebra -> Bool
+equivVqs cs q q' = and $ zipWith equivConfedQs confq confq'
+  where 
+    confq  = map (configureVquery q) cs
+    confq' = map (configureVquery q') cs 
+
 
 -- test query
 -- vqtest :: Algebra
