@@ -29,4 +29,21 @@ validOptQs oqs s = catMaybees oqts
                           Just t -> updateOptObj (fst (getObj x), t) x : catMaybees xs
                           otherwise -> catMaybees xs
 
+-- checks for the validity of opt queries and gives back the ones that are
+-- valid. Note that it doesn't return the table schema anymore!
+-- checkValidityOptQs :: [Opt Algebra] -> Schema 
+--   -> [Opt Algebra]
+-- validOptQs oqs s = catMaybees oqts
+--   where
+--     filteredOqs = filter (\(o,q) -> satisfiable o) oqs
+--     shrinkedOqs = fmap (first F.shrinkFeatureExpr) filteredOqs
+    
+--     qt oq = updateOptObj (getObj oq,typeOfVquery' (getObj oq) (getFexp oq) s) oq
+--     oqts = fmap qt shrinkedOqs
+--     catMaybees [] = []
+--     catMaybees (x:xs) = case snd (getObj x) of 
+--                           Just t -> updateOptObj (fst (getObj x), t) x : catMaybees xs
+--                           otherwise -> catMaybees xs
+
+
 

@@ -63,6 +63,13 @@ combOpts f g os1 os2 =
   [(f f1 f2, g o1 o2) | (f1, o1) <- os1, (f2,o2) <- os2]
   -- (f *** g) <$> os1 <*> os2 -- this aint working!!
 
+-- | applies the function f to elements of the list
+--   and filters out the ones that return Nothing.
+filterMaybes :: (Opt a -> Maybe b) -> [Opt a] -> [Opt a]
+filterMaybes f os = [a | (a, Just b) <- os']
+  where
+    os' = zip os $ fmap f os
+
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a
 selectOpt f b (e,a) = (selectFeatureExpr f b e, a)

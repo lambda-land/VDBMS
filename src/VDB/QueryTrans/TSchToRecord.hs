@@ -7,4 +7,5 @@ import VDB.Schema
 
 import qualified Database.HaskellDB as HSDB
 
-import Language.Haskell.TH
+-- import Language.Haskell.TH
+
