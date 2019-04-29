@@ -136,6 +136,10 @@ lookupRel r s = case lookupRowType r s of
                   Just (_,rel) -> Just rel
                   _ -> Nothing
 
+-- | get the attributes of a relation in a database.
+lookupRelAttsList :: Relation -> Schema -> Maybe [Attribute]
+lookupRelAttsList r s = M.keys <$> lookupRel r s
+
 -- | Get the type and feature exp of an attribute in a database.
 lookupAttribute :: Attribute -> Relation -> Schema -> Maybe (Opt SqlType)
 lookupAttribute a r s = case lookupRowType r s of 
