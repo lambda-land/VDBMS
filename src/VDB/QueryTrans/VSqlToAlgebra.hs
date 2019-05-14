@@ -1,5 +1,5 @@
 -- | translation from V-SQL Query to Variational Relational Algebra
-module VDB.QueryTrans.VsqlToAlgebra where 
+module VDB.QueryTrans.VSqlToAlgebra where 
 
 import VDB.SQL 
 import VDB.Algebra

@@ -11,7 +11,7 @@ system-ghc: false
 allow-newer: true
 packages: 
 - .
-- lib/haskelldb
+# - lib/haskelldb
 #- /Users/Paris/Desktop/VDBMS/lib/haskelldb
 flags: {}
 # extra-deps: [HDBC-sqlite3-2.3.3.1, time-1.9.2]
@@ -19,6 +19,6 @@ flags: {}
 extra-deps: [HDBC-sqlite3-2.3.3.1]
 
 extra-lib-dirs: 
-   - lib/haskelldb
+ # - lib/haskelldb 
 #  - /Users/Paris/Desktop/VDBMS/lib/haskelldb
    

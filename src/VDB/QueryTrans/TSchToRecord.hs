@@ -5,7 +5,7 @@ module VDB.QueryTrans.TSchToRecord where
 import VDB.Schema 
 
 
-import qualified Database.HaskellDB as HSDB
+-- import qualified Database.HaskellDB as HSDB
 
 -- import Language.Haskell.TH
 

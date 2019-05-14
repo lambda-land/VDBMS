@@ -1,0 +1,173 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 13c1a760453a01e135d2822d56b410e87d03a679466d520b2b275ce554046fff
+
+name:           vdbms
+version:        0.1.0.0
+synopsis:       A variational database management system
+description:    Please see the README on Github at <https://github.com/githubuser/my-app#readme>
+category:       Language
+homepage:       http://github.com/lambda-land/VDBMS
+author:         OSU DB-PL
+maintainer:     walkiner@oregonstate.edu
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      VDB.Algebra
+      VDB.Approach1.App1Alg2Sql
+      VDB.Approach1.App1Run
+      VDB.BruteForceApproach.BFAppSatPersist
+      VDB.BruteForceApproach.BFSendQs
+      VDB.BruteForceApproach.BFSendQsPersist
+      VDB.BruteForceApproach.BruteForce
+      VDB.Condition
+      VDB.Config
+      VDB.Database
+      VDB.DBsetup.EnronEmailDB
+      VDB.DBsetup.EnronEmailDBPersist
+      VDB.Example.EmployeeUseCase.EmployeeQs
+      VDB.Example.EmployeeUseCase.EmployeeQuery
+      VDB.Example.EmployeeUseCase.EmployeeSchema
+      VDB.Example.EmployeeUseCase.EmployeeVQuery
+      VDB.Example.EmployeeUseCase.EmployeeVSchema
+      VDB.Example.EnronUseCase.EnronQs
+      VDB.Example.EnronUseCase.EnronQuery
+      VDB.Example.EnronUseCase.EnronSchema
+      VDB.Example.Query
+      VDB.Example.QueryConstructor
+      VDB.Example.SmartConstructor
+      VDB.Example.TwoOption
+      VDB.Example.TwoPathTest
+      VDB.FeatureExpr
+      VDB.NaiveApproach.Naive
+      VDB.NaiveApproach.NaiveAppConfig
+      VDB.NaiveApproach.NaiveSendQs
+      VDB.Name
+      VDB.ParsingSQL
+      VDB.QueryTrans.AlgebraToSql
+      VDB.QueryTrans.OptVqToOptVqTblSch
+      VDB.QueryTrans.RelAlg2Sql
+      VDB.QueryTrans.TSchToRecord
+      VDB.QueryTrans.VqToOptVq
+      VDB.QueryTrans.VSqlToAlgebra
+      VDB.SAT
+      VDB.Schema
+      VDB.SQL
+      VDB.SqlTable
+      VDB.Table
+      VDB.Target
+      VDB.Type
+      VDB.TypeSystem
+      VDB.Variant
+      VDB.Variational
+      VDB.VqueryConfigSem
+      VDB.VTable
+  other-modules:
+      Paths_vdbms
+  hs-source-dirs:
+      src
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
+  build-depends:
+      HDBC
+    , HDBC-sqlite3 >=2.3.3.1
+    , QuickCheck
+    , base >=4.7 && <5
+    , bytestring
+    , clock
+    , conduit
+    , containers >=0.5 && <1
+    , convertible
+    , direct-sqlite
+    , directory
+    , megaparsec
+    , mtl
+    , parsec
+    , persistent >=2.9 && <3
+    , persistent-sqlite
+    , persistent-template
+    , sbv
+    , text
+    , time
+  default-language: Haskell2010
+
+executable vdbms
+  main-is: Main.hs
+  other-modules:
+      Paths_vdbms
+  hs-source-dirs:
+      app
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
+  build-depends:
+      HDBC
+    , HDBC-sqlite3 >=2.3.3.1
+    , QuickCheck
+    , base >=4.7 && <5
+    , bytestring
+    , clock
+    , conduit
+    , containers >=0.5 && <1
+    , convertible
+    , direct-sqlite
+    , directory
+    , megaparsec
+    , mtl
+    , parsec
+    , persistent >=2.9 && <3
+    , persistent-sqlite
+    , persistent-template
+    , sbv
+    , text
+    , time
+    , vdbms
+  default-language: Haskell2010
+
+test-suite vdbms-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Databases.Queries.Test1
+      Databases.Schemas.Test1
+      Gen.Query
+      Schema.Test
+      Tests
+      Paths_vdbms
+  hs-source-dirs:
+      test
+  default-extensions: OverloadedStrings FlexibleContexts DeriveGeneric GeneralizedNewtypeDeriving FlexibleInstances DeriveDataTypeable MultiParamTypeClasses GADTs TypeFamilies QuasiQuotes TemplateHaskell EmptyDataDecls StandaloneDeriving InstanceSigs
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HDBC
+    , HDBC-sqlite3 >=2.3.3.1
+    , QuickCheck
+    , base >=4.7 && <5
+    , bytestring
+    , clock
+    , conduit
+    , containers >=0.5 && <1
+    , convertible
+    , direct-sqlite
+    , directory
+    , megaparsec
+    , mtl
+    , parsec
+    , persistent >=2.9 && <3
+    , persistent-sqlite
+    , persistent-template
+    , sbv
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , text
+    , time
+    , vdbms
+  default-language: Haskell2010

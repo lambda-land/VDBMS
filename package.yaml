@@ -42,7 +42,7 @@ dependencies:
 - bytestring
 - directory
 - clock
-- haskelldb >= 2.2.5 
+# - haskelldb >= 2.2.5 
 #- template-haskell
 # - pretty >= 1.0 && < 2
 # - old-time >= 1.0 && < 2
