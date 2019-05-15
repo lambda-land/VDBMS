@@ -13,10 +13,10 @@ import Data.Time
 
 --
 --  ** smart contructor for plain query
---
-plainAttr :: String -> Opt Attribute 
-plainAttr attrName = (F.Lit True, Attribute Nothing attrName)
+-- --
+-- plainAttr :: String -> Opt Attribute 
+-- plainAttr attrName = (F.Lit True, Attribute Nothing attrName)
 
-plainAttrs :: [String] -> [Opt Attribute]
-plainAttrs []     = []
-plainAttrs (x:xs) = plainAttr x : plainAttrs xs 
+-- plainAttrs :: [String] -> [Opt Attribute]
+-- plainAttrs []     = []
+-- plainAttrs (x:xs) = plainAttr x : plainAttrs xs 

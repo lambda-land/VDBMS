@@ -10,7 +10,7 @@ import Database.HDBC
 import VDB.Type
 import Prelude hiding (Ordering(..))
 import Data.Time
-import VDB.Example.QueryConstructor
+import VDB.Example.SmartConstructor
 
 
 date2000 = SqlUTCTime $ UTCTime (fromGregorian 2000 1 1) 0

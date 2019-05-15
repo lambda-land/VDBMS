@@ -34,8 +34,9 @@ newtype QueryT = QueryT String
   deriving (Show, Eq)
 
 -- | attaches the feature expression true to an attribute. 
-trueAtt :: Attribute -> Opt Attribute
-trueAtt a = (F.Lit True, a)
+-- ** move to variational.hs
+-- trueAtt :: Attribute -> Opt Attribute
+-- trueAtt a = (F.Lit True, a)
 
 -- 
 -- first set of quesries:

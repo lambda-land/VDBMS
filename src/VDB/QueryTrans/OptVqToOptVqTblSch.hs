@@ -1,3 +1,4 @@
+
 -- | checks the validity of opt vqs, 1) fexp is send to sat solver
 --   2) the type system checks the query
 --   and returns the valid opt vq with shrinked fexp and and table sch.

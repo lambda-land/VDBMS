@@ -19,13 +19,12 @@ import qualified Data.Map as M
 --
 --  ** smart contructor for plain query
 --
-plainAttr :: Attribute -> Opt Attribute 
-plainAttr attrName = (F.Lit True, attrName)
+plainAttr :: String -> Opt Attribute 
+plainAttr attrName = (F.Lit True, Attribute Nothing attrName)
 
-plainAttrs :: [Attribute] -> [Opt Attribute]
+plainAttrs :: [String] -> [Opt Attribute]
 plainAttrs []     = []
 plainAttrs (x:xs) = plainAttr x : plainAttrs xs 
-
 
 --
 -- smart contructor for building schema 

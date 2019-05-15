@@ -17,6 +17,10 @@ import Control.Arrow
 --   a presence condition.
 type Opt a = (FeatureExpr, a)
 
+-- | attaches the feature expression true to an attribute. 
+trueAtt :: Attribute -> Opt Attribute
+trueAtt a = (Lit True, a)
+
 -- | gets the object of Opt a.
 getObj :: Opt a -> a
 getObj = snd

@@ -24,11 +24,19 @@ data Attribute = Attribute { attributeQualifier :: Maybe Relation, attributeName
 genAtt :: String -> Attribute
 genAtt a = Attribute Nothing a
 
+genQAtt :: (Relation,String) -> Attribute
+genQAtt = (\(rel,attr) -> addRelToAtt (genAtt attr) rel )
+
+-- | generate Attribute with its Qualified Relation
+genQAtts ::[(Relation,String)] -> [Attribute]
+genQAtts = map genQAtt
+
 -- | adds a relation to an attribute doesn't have a relation yet
 --   or update the relation of an attribute.
 addRelToAtt :: Attribute -> Relation -> Attribute
 addRelToAtt (Attribute Nothing a) r = Attribute (Just r) a
 addRelToAtt (Attribute _ a) r       = Attribute (Just r) a
+
 
 -- | returns an attribute name with its qualified relation name if available.
 getAttName :: Attribute -> String
