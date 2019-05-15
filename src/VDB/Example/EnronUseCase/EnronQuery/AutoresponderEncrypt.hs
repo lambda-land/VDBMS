@@ -24,18 +24,18 @@ import Prelude hiding (Ordering(..))
 -- * V-Query: autoresponder <encrypt <Q1,Q3>, Empty>
 
 
-enronVQ1 :: Algebra
-enronVQ1 = AChc autoresponder (AChc encrypt u1_Q1 u1_Q3) (Empty)
+enronVQ8 :: Algebra
+enronVQ8 = AChc autoresponder (AChc encrypt u8_Q1 u8_Q3) (Empty)
 
-u1_Q1 :: Algebra
-u1_Q1 = Proj (map trueAtt $ genQAtts [("v_auto_msg", "subject"), ("v_auto_msg", "body")]) 
+u8_Q1 :: Algebra
+u8_Q1 = Proj (map trueAtt $ genQAtts [("v_auto_msg", "subject"), ("v_auto_msg", "body")]) 
         $ Sel cond 
         $ joinRecEmpAuto
                     where cond1 = C.Comp EQ (C.Attr (genQAtt ("v_recipientinfo","mid"))) midValue
                           cond = C.And joinRecEmpAutoCond cond1
 
-u1_Q3 :: Algebra
-u1_Q3 = Proj (map trueAtt $ genQAtts [("v_message", "subject"), ("v_auto_msg", "subject"), ("v_auto_msg", "body")]) 
+u8_Q3 :: Algebra
+u8_Q3 = Proj (map trueAtt $ genQAtts [("v_message", "subject"), ("v_auto_msg", "subject"), ("v_auto_msg", "body")]) 
         $ Sel cond 
         $ SetOp Prod (TRef (Relation "v_message")) $ joinRecEmpAuto
                     where cond1 = C.Comp EQ (C.Attr (genQAtt ("v_recipientinfo","mid"))) midValue

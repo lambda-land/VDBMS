@@ -16,15 +16,22 @@ import VDB.Example.SmartConstructor
 midValue :: C.Atom
 midValue = (C.Val (SqlInt32 9138))
 
+eidValue :: C.Atom
+eidValue = (C.Val (SqlInt32 123))
+
 -- | All Feautres
-encrypt, autoresponder :: F.FeatureExpr
+encrypt, autoresponder, signature, remail,forwardmsg :: F.FeatureExpr
 encrypt = F.Ref $ Feature "encrypt"
 autoresponder = F.Ref $ Feature "autoresponder"
+signature = F.Ref $ Feature "signature"
+remail = F.Ref $ Feature "remail"
+forwardmsg = F.Ref $ Feature "forwardmsg"
 
 
 -- | Table reference 
-v_employee, v_message, v_recipientinfo, v_auto_msg :: Algebra
+v_employee, v_message, v_recipientinfo, v_auto_msg,v_forward_msg :: Algebra
 v_employee = TRef (Relation "v_employee")
 v_message = TRef (Relation "v_message")
 v_recipientinfo = TRef (Relation "v_recipientinfo")
 v_auto_msg = TRef (Relation "v_auto_msg")
+v_forward_msg = TRef (Relation "v_forward_msg")
