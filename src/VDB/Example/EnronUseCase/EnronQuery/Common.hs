@@ -19,6 +19,9 @@ midValue = (C.Val (SqlInt32 9138))
 eidValue :: C.Atom
 eidValue = (C.Val (SqlInt32 123))
 
+nullValue :: C.Atom 
+nullValue = C.Val SqlNull
+
 -- | All Feautres
 encrypt, autoresponder, signature, remail,forwardmsg :: F.FeatureExpr
 encrypt = F.Ref $ Feature "encrypt"
