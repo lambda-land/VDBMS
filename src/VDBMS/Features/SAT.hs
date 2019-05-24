@@ -10,7 +10,7 @@ module VDBMS.Features.SAT (
         satisfiable,
         unsatisfiable,
         tautology,
-        equivalent,
+        equivalent
 
 ) where
 

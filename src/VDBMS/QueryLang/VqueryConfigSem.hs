@@ -1,8 +1,11 @@
--- configuration semantics of vquery. 
-module VDBMS.QueryLang.VqueryConfigSem where 
+-- | Configuration semantics of vquery. 
+module VDBMS.QueryLang.VqueryConfigSem (
+
+        configureVquery
+
+) where 
 
 import VDBMS.QueryLang.Algebra
-import VDBMS.Features.Variational
 import VDBMS.Features.Config
 
 -- | given a vquery and a configuration returns
@@ -14,9 +17,14 @@ configureVquery (Sel cond q)   c = Sel (configure c cond) (configureVquery q c)
 configureVquery q@(AChc _ _ _) c = configureVquery (configure c q) c
 configureVquery (TRef r)       _ = TRef r
 configureVquery Empty          _ = Empty
- -- = flip configure
+
+-- Issues:
+-- * equivalency of queries (and confedQs) is wrong!
+-- * you should move equivVqs to some test file.
+
 
 -- | checks whether two configured queries are equivalent or not.
+--   need to rewrite this! because == won't cut it!
 equivConfedQs :: Algebra -> Algebra -> Bool
 equivConfedQs = (==)
 
@@ -28,14 +36,3 @@ equivVqs cs q q' = and $ zipWith equivConfedQs confq confq'
     confq' = map (configureVquery q') cs 
 
 
--- test query
--- vqtest :: Algebra
--- vqtest = Proj [(Ref "A", "A1"), (Lit True, "A2")] (TRef "R1")
-
--- conf1 :: Config Bool
--- conf1 "A" = True
-
--- configureVquery vqtest conf1
--- ===>
--- Proj [(TRUE,Attribute {attributeName = "A1"}),(TRUE,Attribute {attributeName = "A2"})] 
---      (TRef (Relation {relationName = "R1"}))

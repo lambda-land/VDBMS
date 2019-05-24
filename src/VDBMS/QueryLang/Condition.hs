@@ -1,15 +1,20 @@
 -- | Variational conditions in relational algebra and queries.
-module VDBMS.QueryLang.Condition where
+module VDBMS.QueryLang.Condition (
+
+        Atom(..),
+        Condition(..)
+
+) where
 
 import Data.Data (Data,Typeable)
 import Data.SBV (Boolean(..))
 import Data.Convertible (safeConvert)
 import qualified Data.Text as T (pack,Text)
 
-import VDBMS.Features.FeatureExpr (FeatureExpr)
+import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
 import VDBMS.VDB.Name
 import VDBMS.DBMS.Type
-import VDBMS.Features.Variational
+import VDBMS.Variational.Variational
 
 import Database.HDBC (SqlValue)
 
@@ -40,11 +45,7 @@ data Condition
    | Or   Condition Condition
    | And  Condition Condition
    | CChc FeatureExpr Condition Condition
-  deriving (Data,Eq,Show,Typeable,Ord)
-
--- | pretty print conditions
--- prettyCondition :: Condition -> String
--- prettyCondition = undefined
+  deriving (Data,Eq,Typeable,Ord)
 
 -- | pretty prints pure relational conditions.
 prettyRelCondition :: Condition -> String
@@ -59,8 +60,8 @@ prettyRelCondition c = top c
     sub (Not c) = " NOT " ++ sub c
     sub c = " ( " ++ top c ++ " ) "
 
--- instance Show Condition where
---   show = prettyCondition
+instance Show Condition where
+  show = prettyRelCondition
 
 instance Variational Condition where
 

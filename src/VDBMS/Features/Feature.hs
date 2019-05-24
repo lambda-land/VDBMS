@@ -1,8 +1,7 @@
 -- | Featues.
 module VDBMS.Features.Feature (
 
-        Feature,
-        featureName
+        Feature(..)
 
 ) where
 

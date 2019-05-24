@@ -1,11 +1,15 @@
 -- | Variational relational algebra.
-module VDBMS.QueryLang.Algebra where
+module VDBMS.QueryLang.Algebra (
+
+        Algebra(..)
+
+) where
 
 import Data.Data (Data,Typeable)
 
 import VDBMS.VDB.Name
-import VDBMS.Features.FeatureExpr (FeatureExpr)
-import VDBMS.Features.Variational
+import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
+import VDBMS.Variational.Variational
 import VDBMS.QueryLang.Condition
 
 -- | Basic set operations.
@@ -25,19 +29,6 @@ data Algebra
    | TRef  Relation
    | Empty 
   deriving (Data,Eq,Show,Typeable,Ord)
-
--- data From = From Sql 
---           | FromProdRel From From
---           | FromRel Relation 
---           -- | Empty
-
--- newtype Where = Where { whereCondition :: Condition}
-
--- data Sql = Select [Opt Attribute] From Where
---          | SqlChc FeatureExpr Sql Sql
---          | SqlUnion Sql Sql
---          | SqlDiff Sql Sql
-
 
 instance Variational Algebra where
 
