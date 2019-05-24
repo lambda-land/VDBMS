@@ -1,33 +1,34 @@
 module Main where
 
-import VDB.DBsetup.EnronEmailDB
+import VDBMS.DBsetup.EnronEmailDB
 
-import VDB.Example.EmployeeUseCase.EmployeeVSchema
-import VDB.Example.EmployeeUseCase.EmployeeSchema
-import VDB.Example.EmployeeUseCase.EmployeeQuery
-import VDB.Example.EmployeeUseCase.EmployeeVQuery
-import VDB.Database
-import VDB.VTable
-import VDB.Name
-import VDB.Approach1.App1Run
-import VDB.BruteForceApproach.BruteForce
-import VDB.Algebra
-import VDB.Name
-import VDB.FeatureExpr
-import VDB.Config
-import VDB.SqlTable
-import VDB.Variant
+-- import Example.EmployeeUseCase.EmployeeVSchema
+-- import Example.EmployeeUseCase.EmployeeSchema
+-- import Example.EmployeeUseCase.EmployeeQuery
+-- import Example.EmployeeUseCase.EmployeeVQuery
+-- import VDB.Database
+-- import VDB.VTable
+-- import VDB.Name
+-- import VDB.Approach1.App1Run
+-- import VDB.BruteForceApproach.BruteForce
+-- import VDB.Algebra
+-- import VDB.Name
+-- import VDB.FeatureExpr
+-- import VDB.Config
+-- import VDB.SqlTable
+-- import VDB.Variant
 
-import Database.HDBC
+-- import Database.HDBC
 import Database.HDBC.Sqlite3
 
-import System.Directory
-import System.Clock
-import System.CPUTime
-import Text.Printf
+-- import System.Directory
+-- import System.Clock
+-- import System.CPUTime
+-- import Text.Printf
 
 -- import VDB.Example.EmployeeUseCase.SmallSampleForTest
 
+{-- uncomment after modularization!
 
 time :: IO t -> IO t
 time a = do
@@ -188,7 +189,8 @@ c5 (Feature "v3") = False
 c5 (Feature "v4") = False
 c5 (Feature "v5") = True
 
+--}
 
--- main :: IO Connection
--- main = enronEmail
---main = return ()
+main :: IO Connection
+main = enronEmail
+-- main = return ()
