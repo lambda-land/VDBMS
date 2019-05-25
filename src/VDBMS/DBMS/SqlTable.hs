@@ -9,11 +9,12 @@ import qualified Data.Set as S
 import Data.List (deleteBy,groupBy)
 
 import VDBMS.Features.Variant 
-import VDBMS.Features.Variational 
+import VDBMS.Variational.Opt 
 import VDBMS.VDB.Name
 import VDBMS.Features.Config
-import VDBMS.Features.FeatureExpr 
-import VDBMS.VDB.Schema
+import VDBMS.Features.FeatureExpr.FeatureExpr
+import VDBMS.Features.ConfFexp
+import VDBMS.VDB.Schema.Schema
 import VDBMS.DBMS.Type
 import VDBMS.Features.SAT 
 

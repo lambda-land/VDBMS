@@ -7,6 +7,8 @@ module VDBMS.QueryLang.VqueryConfigSem (
 
 import VDBMS.QueryLang.Algebra
 import VDBMS.Features.Config
+import VDBMS.Variational.Opt
+import VDBMS.Variational.Variational
 
 -- | given a vquery and a configuration returns
 --   the pure relational query for that configuration.

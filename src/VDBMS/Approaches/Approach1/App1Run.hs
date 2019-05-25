@@ -4,7 +4,7 @@ module VDBMS.Approaches.Approach1.App1Run where
 
 import VDBMS.QueryLang.Algebra
 import VDBMS.VDB.Name
-import VDBMS.Features.FeatureExpr 
+import VDBMS.Features.FeatureExpr.FeatureExpr 
 -- import qualified VDB.Condition as C
 -- import qualified VDB.Target as T
 -- import VDB.Variational
@@ -14,7 +14,7 @@ import VDBMS.Features.FeatureExpr
 -- import VDB.BruteForce.BruteForceSendQs
 import VDBMS.TypeSystem (typeOfVquery')
 -- import VDB.ShowVresult
-import VDBMS.VDB.Schema
+import VDBMS.VDB.Schema.Schema
 import VDBMS.VDB.VTable
 import VDBMS.VDB.Database
 import VDBMS.Approaches.Approach1.App1Alg2Sql

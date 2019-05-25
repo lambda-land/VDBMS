@@ -28,7 +28,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 -- import VDBMS.Features.FeatureExpr.Ops (selectFeatureExpr)
 -- import VDBMS.Features.Feature
 
-import Control.Arrow (first, second)
+import Control.Arrow (first, second, (***))
 
 --
 -- * Optional values

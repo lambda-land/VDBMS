@@ -17,13 +17,14 @@ import Data.Convertible
 import Control.Monad (zipWithM)
 
 import VDBMS.QueryTrans.RelAlg2Sql (VariantQuery)
-import VDBMS.Features.FeatureExpr
+import VDBMS.Features.FeatureExpr.FeatureExpr
+import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Name
 import VDBMS.Features.SAT
-import VDBMS.VDB.Schema
-import VDBMS.Features.Variational
+import VDBMS.VDB.Schema.Schema
+import VDBMS.Variational.Opt
 import VDBMS.DBMS.Type
-import VDBMS.VDB.Table
+-- import VDBMS.VDB.Table
 import VDBMS.DBMS.SqlTable 
 import VDBMS.Features.Variant
 import VDBMS.Features.Config

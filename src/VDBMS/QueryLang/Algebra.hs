@@ -1,7 +1,8 @@
 -- | Variational relational algebra.
 module VDBMS.QueryLang.Algebra (
 
-        Algebra(..)
+        Algebra(..),
+        SetOp(..)
 
 ) where
 
@@ -10,6 +11,7 @@ import Data.Data (Data,Typeable)
 import VDBMS.VDB.Name
 import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
 import VDBMS.Variational.Variational
+import VDBMS.Variational.Opt
 import VDBMS.QueryLang.Condition
 
 -- | Basic set operations.

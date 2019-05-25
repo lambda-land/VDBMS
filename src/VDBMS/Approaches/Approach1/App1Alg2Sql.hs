@@ -7,12 +7,12 @@ import Prelude hiding (Ordering(..))
 
 import VDBMS.QueryLang.Algebra
 import VDBMS.VDB.Name
-import qualified VDBMS.Features.FeatureExpr as F
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import qualified VDBMS.QueryLang.Condition as C 
-import VDBMS.Features.Variational
+import VDBMS.Variational.Opt
 import VDBMS.DBMS.Type
 import VDBMS.Features.SAT
-import VDBMS.VDB.Schema
+import VDBMS.VDB.Schema.Schema
 
 import Data.Convertible (safeConvert)
 import Data.Bifunctor (second)

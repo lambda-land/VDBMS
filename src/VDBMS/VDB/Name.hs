@@ -1,5 +1,12 @@
 -- | Typed symbol domains.
-module VDBMS.VDB.Name where
+module VDBMS.VDB.Name (
+
+        Attribute(..),
+        Relation(..),
+        PresCondAtt(..),
+        getAttName
+
+) where
 
 -- import Prelude hiding (concat)
 import Data.Data (Data,Typeable)

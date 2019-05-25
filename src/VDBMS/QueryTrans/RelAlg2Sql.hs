@@ -5,9 +5,9 @@ module VDBMS.QueryTrans.RelAlg2Sql where
 
 import VDBMS.QueryLang.Algebra
 import VDBMS.VDB.Name
-import qualified VDBMS.Features.FeatureExpr as F
-import qualified VDBMS.QueryLang.Condition as C
-import VDBMS.Features.Variational
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+-- import qualified VDBMS.QueryLang.Condition as C
+import VDBMS.Variational.Opt
 import VDBMS.Features.Config  
 import VDBMS.QueryLang.VqueryConfigSem
 import VDBMS.Features.Variant

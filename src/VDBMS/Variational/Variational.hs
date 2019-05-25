@@ -1,7 +1,7 @@
 -- | A generic interface for variational things.
 module VDBMS.Variational.Variational (
         
-        Variational
+        Variational(..)
 
 ) where
 

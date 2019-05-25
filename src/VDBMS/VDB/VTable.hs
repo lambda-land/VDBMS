@@ -9,9 +9,9 @@ import VDBMS.VDB.Name
 -- import qualified VDB.FeatureExpr as F
 -- import qualified VDB.Condition as C
 -- import qualified VDB.Target as T
-import VDBMS.Features.Variational
+import VDBMS.Variational.Opt
 -- import VDB.Type  
-import VDBMS.VDB.Schema
+import VDBMS.VDB.Schema.Schema
 -- import VDB.BruteForce.BruteForceSendQs
 import VDBMS.DBMS.SqlTable 
 

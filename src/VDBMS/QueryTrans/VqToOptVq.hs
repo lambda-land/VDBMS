@@ -3,9 +3,9 @@ module VDBMS.QueryTrans.VqToOptVq where
 
 import VDBMS.QueryLang.Algebra
 import VDBMS.VDB.Name
-import qualified VDBMS.Features.FeatureExpr as F
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import qualified VDBMS.QueryLang.Condition as C
-import VDBMS.Features.Variational
+import VDBMS.Variational.Opt
 
 -- removes choices in vq and returns a list of 
 -- opt vqs. note that the returned vq although

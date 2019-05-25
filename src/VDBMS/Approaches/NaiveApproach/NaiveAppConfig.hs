@@ -3,7 +3,7 @@
 -- FALSE pres cond! at least not for now!!
 module VDBMS.Approaches.NaiveApproach.NaiveAppConfig where 
 
-import qualified VDBMS.Features.FeatureExpr as F
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.Approaches.NaiveApproach.NaiveSendQs
 import VDBMS.Features.Config
 import VDBMS.VDB.Name (PresCondAtt(..))

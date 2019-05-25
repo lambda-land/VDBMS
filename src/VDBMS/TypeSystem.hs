@@ -2,10 +2,10 @@ module VDBMS.TypeSystem where
 
 import VDBMS.QueryLang.Algebra 
 import VDBMS.VDB.Name
-import qualified VDBMS.Features.FeatureExpr as F
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import qualified VDBMS.QueryLang.Condition as C
-import VDBMS.Features.Variational
-import VDBMS.VDB.Schema
+import VDBMS.Variational.Opt
+import VDBMS.VDB.Schema.Schema
 import VDBMS.Features.SAT
 import VDBMS.DBMS.Type
 import VDBMS.Features.Config
