@@ -17,7 +17,7 @@ import VDBMS.DBMS.SqlTable (SqlVariantTable)
 -- import VDB.Schema
 import VDBMS.Features.Config
 import VDBMS.VDB.Name
-import VDBMS.VDB.VTable
+import VDBMS.VDB.Table.Table
 import VDBMS.VDB.Database
 
 import Database.HDBC
@@ -42,7 +42,7 @@ import Database.HDBC.Sqlite3
 --   3) run each q over its correspondent db ()
 --   4) aggregate the result from 3 into a vtable
 runBrute :: Algebra -> [Config Bool] -> PresCondAtt 
-            -> DBFilePath -> SqlDatabase Connection -> IO (VTable)
+            -> DBFilePath -> SqlDatabase Connection -> IO (Table)
 runBrute vq cs p f vdb = undefined
 -- do 
 --   let qs = alg2Sql vq cs -- [VariantQuery]

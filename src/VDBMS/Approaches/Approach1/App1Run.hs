@@ -15,7 +15,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.TypeSystem (typeOfVquery')
 -- import VDB.ShowVresult
 import VDBMS.VDB.Schema.Schema
-import VDBMS.VDB.VTable
+import VDBMS.VDB.Table.Table
 import VDBMS.VDB.Database
 import VDBMS.Approaches.Approach1.App1Alg2Sql
 import VDBMS.DBMS.SqlTable
@@ -27,7 +27,7 @@ import Database.HDBC
 
 -- runs trans-union-filter.
 runTransFilterUnion :: IConnection conn => Algebra -> PresCondAtt 
-                       -> SqlDatabase conn -> IO (VTable)
+                       -> SqlDatabase conn -> IO (Table)
 runTransFilterUnion vq p vdb = do
   let sch = getSqlDBschema vdb 
       initialVarCtxt = featureModel sch 
@@ -41,7 +41,7 @@ runTransFilterUnion vq p vdb = do
 
 -- runs trans-union-filter with static type checking.
 runTransFilterUnionWithTypeChecking :: IConnection conn => Algebra -> PresCondAtt 
-                       -> SqlDatabase conn -> IO (VTable)
+                       -> SqlDatabase conn -> IO (Table)
 runTransFilterUnionWithTypeChecking vq p vdb = do
   let sch = getSqlDBschema vdb 
       initialVarCtxt = featureModel sch 

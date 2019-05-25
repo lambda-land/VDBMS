@@ -1,40 +1,17 @@
--- Sends queries from the brute force translation to the db 
--- and gets the plain relational result
-module VDBMS.VDB.VTable where 
+-- | Generates vtables from results of quereis.
+module VDBMS.VDB.Table.GenTable (
 
---import Prelude hiding (EQ ,LT ,GT)
--- import VDB.SQL 
--- import VDB.Algebra
-import VDBMS.VDB.Name
--- import qualified VDB.FeatureExpr as F
--- import qualified VDB.Condition as C
--- import qualified VDB.Target as T
+        sqlVtables2VTable,
+        sqlVariantTables2VTable,
+        adjustVTable2TableSch
+
+) where 
+
+import VDBMS.VDB.Table.Core
+import VDBMS.VDB.Name (PresCondAtt)
 import VDBMS.Variational.Opt
--- import VDB.Type  
 import VDBMS.VDB.Schema.Schema
--- import VDB.BruteForce.BruteForceSendQs
 import VDBMS.DBMS.SqlTable 
-
--- import Data.Map
-
--- import Database.HDBC
-
--- | the result of a vq is a variational table.
---   variational table data type.
-data VTable = VTable TableSchema SqlTable
-  deriving (Eq, Show)
-
--- | returns the schema of the vtable.
-getTableSchema :: VTable -> TableSchema
-getTableSchema (VTable s _) = s 
-
--- | returns the table of the vtable.
-getSqlTable :: VTable -> SqlTable
-getSqlTable (VTable _ t) = t
-
--- | updates the sqltable of a vtable given a function.
-updateSqlTable :: (SqlTable -> SqlTable) -> VTable -> VTable
-updateSqlTable f (VTable s t) = VTable s $ f t
 
 ------------------- construct vtable for approach1 -------------------
 
@@ -46,8 +23,8 @@ updateSqlTable f (VTable s t) = VTable s $ f t
 --         a, A
 --         a, B
 --   ADD REMOVEDUPLICATE TO THE RESULT!
-sqlVtables2VTable :: PresCondAtt -> [SqlVtable] -> VTable
-sqlVtables2VTable p ts = VTable tabelSchema table 
+sqlVtables2VTable :: PresCondAtt -> [SqlVtable] -> Table
+sqlVtables2VTable p ts = mkVTable tabelSchema table 
   where
     tss         = map constSchemaFromSqlVtable ts -- [TableSchema]
     tabelSchema = combineTableSchema tss -- TableSchema
@@ -67,8 +44,8 @@ sqlVtables2VTable p ts = VTable tabelSchema table
 --     4) union all res of 3
 --   NOTES: DOESN'T WORK RN DUE TO CONF2FEXP AND FEXP2CONF! 
 --          TODO: FIX AFTER SIGMOD SUBMISSION!!!!
-sqlVariantTables2VTable :: PresCondAtt -> [SqlVariantTable] -> VTable
-sqlVariantTables2VTable p ts = VTable tabelSchema table 
+sqlVariantTables2VTable :: PresCondAtt -> [SqlVariantTable] -> Table
+sqlVariantTables2VTable p ts = mkVTable tabelSchema table 
   where
     tss         = map constructSchemaFromSqlVariantTable ts -- [TableSchema]
     tabelSchema = combineTableSchema tss -- TableSchema
@@ -81,7 +58,7 @@ sqlVariantTables2VTable p ts = VTable tabelSchema table
 ---------------adjusting a vtable to a table schema---------
 
 -- | adjusts a vtable to a table schema.
-adjustVTable2TableSch :: TableSchema -> VTable -> VTable
+adjustVTable2TableSch :: TableSchema -> Table -> Table
 adjustVTable2TableSch = undefined
 
 
