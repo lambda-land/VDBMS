@@ -1,7 +1,11 @@
 -- | tranlates linearized vqueries (qs i.e.without choices)
 --   to haskelldb queries. takes a linearized vq and 
 --   returns a sql query.
-module VDBMS.QueryTrans.OptVqToOptSql where 
+module VDBMS.QueryTrans.OptVqToOptSql (
+
+        transAlgebra2Sql
+
+) where 
 
 import Prelude hiding (Ordering(..))
 
