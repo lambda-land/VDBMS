@@ -10,7 +10,7 @@ import VDB.Type
 import Prelude hiding (Ordering(..))
 
 -- 
--- 1. interaction between autoresponder with encrypt
+-- 8. interaction between autoresponder with encrypt
 -- 
 -- * Situdation: Bob send an encrypted message to Jack who successfully decrypt it,
 --   and who has his autoreponder provisioned (but Jack has no encrypt key for Bob provisioned).
