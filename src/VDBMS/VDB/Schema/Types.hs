@@ -13,7 +13,7 @@ import Data.Map.Strict (Map)
 
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
-import VDBMS.DBMS.Type
+import VDBMS.DBMS.Value.Value
 import VDBMS.Features.FeatureExpr.FeatureExpr
 
 -- | Type of a relation in the database.

@@ -27,7 +27,7 @@ import VDBMS.VDB.Schema.ApplyFexp
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
-import VDBMS.DBMS.Type (SqlType)
+import VDBMS.DBMS.Value.Value (SqlType)
 
 -- | returns a relation arity.
 relArity :: Relation -> Schema -> Int 

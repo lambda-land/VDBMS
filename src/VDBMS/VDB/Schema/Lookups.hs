@@ -19,7 +19,7 @@ import VDBMS.VDB.Schema.Types
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
-import VDBMS.DBMS.Type (SqlType)
+import VDBMS.DBMS.Value.Value (SqlType)
 
 -- | gets the attribute fexp conjoind with the table pres cond
 --   from a table schema

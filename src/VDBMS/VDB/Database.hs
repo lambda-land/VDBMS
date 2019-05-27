@@ -23,7 +23,7 @@ import VDBMS.VDB.Name
 import VDBMS.Features.SAT
 import VDBMS.VDB.Schema.Schema
 import VDBMS.Variational.Opt
-import VDBMS.DBMS.Type
+import VDBMS.DBMS.Value.Value
 -- import VDBMS.VDB.Table
 import VDBMS.DBMS.SqlTable 
 import VDBMS.Features.Variant

@@ -7,7 +7,7 @@ import qualified VDBMS.QueryLang.Condition as C
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Schema
 import VDBMS.Features.SAT
-import VDBMS.DBMS.Type
+import VDBMS.DBMS.Value.Value
 import VDBMS.Features.Config
 import VDBMS.QueryLang.VqueryConfigSem
 

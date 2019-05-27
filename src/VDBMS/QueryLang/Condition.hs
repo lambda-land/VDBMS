@@ -13,7 +13,7 @@ import qualified Data.Text as T (pack,Text)
 
 import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
 import VDBMS.VDB.Name
-import VDBMS.DBMS.Type
+import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
 
 import Database.HDBC (SqlValue)

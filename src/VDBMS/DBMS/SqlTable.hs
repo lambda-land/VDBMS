@@ -15,7 +15,7 @@ import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Schema.Schema
-import VDBMS.DBMS.Type
+import VDBMS.DBMS.Value.Value
 import VDBMS.Features.SAT 
 
 import Database.HDBC 

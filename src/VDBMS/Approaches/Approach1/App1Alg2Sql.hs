@@ -10,7 +10,7 @@ import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import qualified VDBMS.QueryLang.Condition as C 
 import VDBMS.Variational.Opt
-import VDBMS.DBMS.Type
+import VDBMS.DBMS.Value.Value
 import VDBMS.Features.SAT
 import VDBMS.VDB.Schema.Schema
 
