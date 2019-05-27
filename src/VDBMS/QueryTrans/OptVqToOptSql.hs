@@ -1,13 +1,15 @@
--- | checks the validity of opt vqs, 1) fexp is send to sat solver
---   2) the type system checks the query
---   and returns the valid opt vq with shrinked fexp and and table sch.
--- TODO: apply the relaitonal optimizer here too!
+-- | tranlates linearized vqueries (qs i.e.without choices)
+--   to haskelldb queries. takes a linearized vq and 
+--   returns a sql query.
 module VDBMS.QueryTrans.OptVqToOptSql where 
+
+import Prelude hiding (Ordering(..))
 
 import qualified VDBMS.QueryLang.Algebra as A
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import qualified VDBMS.QueryLang.Condition as C
+import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Opt
 import VDBMS.TypeSystem
 import VDBMS.VDB.Schema.Schema
@@ -15,21 +17,59 @@ import VDBMS.Features.SAT
 
 -- import qualified Database.HaskellDB as HSDB
 import qualified Database.HaskellDB.PrimQuery as P
+import Database.HDBC (SqlValue(..))
 
 attListHSDB :: [Opt Attribute] -> P.Assoc 
-attListHSDB = undefined
+attListHSDB as = map a2a as'
+  where 
+    pcIsTrue :: Opt Attribute -> Bool 
+    pcIsTrue a = getFexp a == F.Lit True 
+    as' = filter pcIsTrue as
+    a2a :: Opt Attribute -> (P.Attribute,P.PrimExpr)
+    a2a a = (aName, P.AttrExpr aName)
+      where aName = attributeName $ getObj a
 
+-- | translates operators.
+--   helper for transCond2SqlCond.
+vdbmsOps2hsdbOps :: CompOp -> P.BinOp
+vdbmsOps2hsdbOps EQ = P.OpEq
+vdbmsOps2hsdbOps NEQ = P.OpNotEq
+vdbmsOps2hsdbOps LT = P.OpLt 
+vdbmsOps2hsdbOps LTE = P.OpLtEq
+vdbmsOps2hsdbOps GTE = P.OpGtEq
+vdbmsOps2hsdbOps GT = P.OpGt
+
+-- | translates sql values to literals.
+--   helper for transCond2SqlCond.
+--   TODO: complete it!!
+sqlvalue2literal :: SqlValue -> P.Literal
+sqlvalue2literal (SqlBool b)    = P.BoolLit b
+sqlvalue2literal (SqlString s)  = P.StringLit s
+sqlvalue2literal (SqlInteger i) = P.IntegerLit i 
+sqlvalue2literal (SqlDouble d)  = P.DoubleLit d 
+-- sqlvalue2literal (Sql) = P.DateLit c 
+-- sqlvalue2literal  = P.OtherLit s
+
+-- | translates atoms to primexpr.
+--   helper for transCond2SqlCond.
+atom2primExpr :: C.Atom -> P.PrimExpr
+atom2primExpr (C.Val v) = P.ConstExpr $ sqlvalue2literal v
+atom2primExpr (C.Attr a) = P.AttrExpr $ attributeName a
+
+-- | translates conditions of queries to sql conditions.
+--   helper for transAlgebra2Sql
 transCond2SqlCond :: C.Condition -> P.PrimExpr
 transCond2SqlCond (C.Lit b) = 
   P.ConstExpr $ P.BoolLit b
-transCond2SqlCond (C.Comp c al ar) = undefined
+transCond2SqlCond (C.Comp c al ar) = 
+  P.BinExpr (vdbmsOps2hsdbOps c) (atom2primExpr al) (atom2primExpr ar)
 transCond2SqlCond (C.Not c) = 
   P.UnExpr P.OpNot $ transCond2SqlCond c
 transCond2SqlCond (C.Or cl cr) = 
   P.BinExpr P.OpOr (transCond2SqlCond cl) (transCond2SqlCond cr)
 transCond2SqlCond (C.And cl cr) =  
   P.BinExpr P.OpAnd (transCond2SqlCond cl) (transCond2SqlCond cr)
-transCond2SqlCond (C.CChc _ _ _) = error "didn't expect to get get condition choices!!"
+transCond2SqlCond (C.CChc _ _ _) = error "didn't expect to get choices of conditions!!"
 
 
 
