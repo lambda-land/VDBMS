@@ -50,24 +50,6 @@ u9_Q3 = Proj (map trueAtt $ genQAtts [("v_recipientinfo", "rvalue"),("v_forward_
                     where cond = C.Comp EQ (C.Attr (genQAtt ("v_message","mid"))) midValue
 
 
-joinMsgEmpRec :: Algebra
-joinMsgEmpRec = SetOp Prod v_message $ SetOp Prod v_employee  v_recipientinfo 
-
-joinMsgEmpRecCond :: C.Condition
-joinMsgEmpRecCond = C.And cond1 cond2
-    where cond1 = C.Comp EQ (C.Attr (genQAtt ("v_message","mid"))) (C.Attr (genQAtt ("v_recipientinfo","mid")))
-          cond2 = C.Comp EQ (C.Attr (genQAtt ("v_recipientinfo","rvalue"))) (C.Attr (genQAtt ("v_employee","email_id")))
-
--- | same in the signatureForward 
-joinForwardEmpRecMsg :: Algebra
-joinForwardEmpRecMsg = SetOp Prod v_forward_msg $ SetOp Prod v_employee $ SetOp Prod v_recipientinfo v_message 
-
-joinForwardRecMsgEmpCond :: C.Condition
-joinForwardRecMsgEmpCond  = C.And cond1 $ C.And cond2 cond3
-                    where cond1 = C.Comp EQ (C.Attr (genQAtt ("v_forward_msg","eid"))) (C.Attr (genQAtt ("v_employee","eid")))
-                          cond2 = C.Comp EQ (C.Attr (genQAtt ("v_recipientinfo","rvalue"))) (C.Attr (genQAtt ("v_employee","email_id")))
-                          cond3 = C.Comp EQ (C.Attr (genQAtt ("v_message","mid"))) (C.Attr (genQAtt ("v_recipientinfo","mid")))
-
 -- | translted query of interaction between encrypt and forwardmsg
 
 -- (SELECT  rec.rvalue as recipientAddr, public_key, forwardAddr, concat("encrypt", " AND", "forwardmsg") as presCond

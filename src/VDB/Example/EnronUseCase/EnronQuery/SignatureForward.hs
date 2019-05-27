@@ -54,21 +54,6 @@ u27_Q4 = Proj (map trueAtt $ genQAtts [("v_message", "sender"), ("v_message", "s
         $ v_message
                     where cond = C.Comp EQ (C.Attr (genQAtt ("v_message","mid"))) midValue
 
-joinMsgEmp :: Algebra
-joinMsgEmp = SetOp Prod v_message v_employee 
-
-joinMsgEmpCond :: C.Condition
-joinMsgEmpCond = C.Comp EQ (C.Attr (genQAtt ("v_message","sender"))) (C.Attr (genQAtt ("v_employee","email_id")))
-
-
-joinForwardEmpRecMsg :: Algebra
-joinForwardEmpRecMsg = SetOp Prod v_forward_msg $ SetOp Prod v_employee $ SetOp Prod v_recipientinfo v_message 
-
-joinForwardRecMsgEmpCond :: C.Condition
-joinForwardRecMsgEmpCond  = C.And cond1 $ C.And cond2 cond3
-                    where cond1 = C.Comp EQ (C.Attr (genQAtt ("v_forward_msg","eid"))) (C.Attr (genQAtt ("v_employee","eid")))
-                          cond2 = C.Comp EQ (C.Attr (genQAtt ("v_recipientinfo","rvalue"))) (C.Attr (genQAtt ("v_employee","email_id")))
-                          cond3 = C.Comp EQ (C.Attr (genQAtt ("v_message","mid"))) (C.Attr (genQAtt ("v_recipientinfo","mid")))
 
 -- | translted query of interaction between signature and forwardmsg
 -- (SELECT sender, subject, body, date, NULL as forwardAddr, concat("signature", " AND", "forwardmsg")

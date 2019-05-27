@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d5ec3899778b00256a9587f19197b318e0f18f90029269c38ab5a24c6bd1d006
+-- hash: 5c056160ae0a973b3d50ae804419e36764ee378009cfddf1f644c3f9f273688a
 
 name:           vdbms
 version:        0.1.0.0
@@ -44,6 +44,7 @@ library
       VDB.Example.EnronUseCase.EnronQuery.AutoresponderEncrypt
       VDB.Example.EnronUseCase.EnronQuery.Common
       VDB.Example.EnronUseCase.EnronQuery.EncryptForward
+      VDB.Example.EnronUseCase.EnronQuery.EncryptRemail
       VDB.Example.EnronUseCase.EnronQuery.SignatureForward
       VDB.Example.EnronUseCase.EnronQuery.SignatureRemail
       VDB.Example.EnronUseCase.EnronSchema
