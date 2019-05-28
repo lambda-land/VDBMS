@@ -54,5 +54,15 @@ transOptVqs2Sql oqs s = unionAll prims
 -- λ> let prim1 = Project [("A", AttrExpr "A")] (BaseTable "R" ["A", "B"])
 -- λ> import Database.HaskellDB.Sql.Generate
 -- λ> sqlQuery prim1
+-- let sql1 = defaultSqlQuery defaultSqlGenerator prim1
 -- let sql1 = sqlQuery defaultSqlGenerator prim1
 -- λ> ppSqlSelect sql1
+-- λ> import Database.HaskellDB.PrimQuery
+-- λ> import Database.HaskellDB.Sql.Generate
+-- λ> let prim1 = Project [("A", AttrExpr "A")] (BaseTable "R" ["A", "B"])
+-- λ> let sql1 = defaultSqlQuery defaultSqlGenerator prim1
+-- λ> import Database.HaskellDB.Sql.Print
+-- λ> ppSql sql1
+-- λ> Database.HaskellDB.Sql.Print.ppSql sql1
+-- SELECT A
+-- FROM R as T1
