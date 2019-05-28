@@ -4,7 +4,7 @@ module VDBMS.Approaches.NaiveApproach.NaiveSendQs where
 
 import VDBMS.QueryTrans.RelAlg2Sql (Query,VariantQuery)
 import VDBMS.Features.Variant (Variant)
-import VDBMS.DBMS.SqlTable
+import VDBMS.DBMS.SqlTable.SqlVariantTable
 
 -- import Data.Text as T (Text, pack, append, concat, unpack)
 -- import Data.Map

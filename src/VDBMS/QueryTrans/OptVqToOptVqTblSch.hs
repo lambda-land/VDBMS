@@ -9,7 +9,7 @@ import VDBMS.QueryLang.Algebra
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- import qualified VDB.Condition as C
 import VDBMS.Variational.Opt
-import VDBMS.TypeSystem
+import VDBMS.TypeSystem.TypeSystem
 import VDBMS.VDB.Schema.Schema
 import VDBMS.Features.SAT 
 

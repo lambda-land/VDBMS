@@ -1,4 +1,4 @@
-module VDBMS.TypeSystem where 
+module VDBMS.TypeSystem.TypeSystem where 
 
 import VDBMS.QueryLang.Algebra 
 import VDBMS.VDB.Name

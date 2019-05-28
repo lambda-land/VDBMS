@@ -12,13 +12,13 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 -- import VDB.BruteForce.BruteForceAlg2Sql
 -- import VDB.BruteForce.BruteForceAppSat
 -- import VDB.BruteForce.BruteForceSendQs
-import VDBMS.TypeSystem (typeOfVquery')
+import VDBMS.TypeSystem.TypeSystem (typeOfVquery')
 -- import VDB.ShowVresult
 import VDBMS.VDB.Schema.Schema
 import VDBMS.VDB.Table.Table
 import VDBMS.VDB.Database
 import VDBMS.Approaches.Approach1.App1Alg2Sql
-import VDBMS.DBMS.SqlTable
+import VDBMS.DBMS.SqlTable.SqlVtable
 
 -- import Data.Map
 

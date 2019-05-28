@@ -25,7 +25,9 @@ import VDBMS.VDB.Schema.Schema
 import VDBMS.Variational.Opt
 import VDBMS.DBMS.Value.Value
 -- import VDBMS.VDB.Table
-import VDBMS.DBMS.SqlTable 
+import VDBMS.DBMS.SqlTable.SqlTable
+import VDBMS.DBMS.SqlTable.SqlVariantTable
+import VDBMS.DBMS.SqlTable.SqlVtable
 import VDBMS.Features.Variant
 import VDBMS.Features.Config
 

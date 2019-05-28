@@ -13,7 +13,7 @@ import VDBMS.QueryLang.Algebra
 -- import VDB.BruteForceApproach.BFConfigDB -- (applyConfigVariantTables)
 -- import VDB.BruteForceApproach.BFSendQs (runBFQs)
 import VDBMS.QueryTrans.RelAlg2Sql (alg2Sql)
-import VDBMS.DBMS.SqlTable (SqlVariantTable)
+import VDBMS.DBMS.SqlTable.SqlVariantTable (SqlVariantTable)
 -- import VDB.Schema
 import VDBMS.Features.Config
 import VDBMS.VDB.Name

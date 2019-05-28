@@ -7,7 +7,8 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.Approaches.NaiveApproach.NaiveSendQs
 import VDBMS.Features.Config
 import VDBMS.VDB.Name (PresCondAtt(..))
-import VDBMS.DBMS.SqlTable
+import VDBMS.DBMS.SqlTable.SqlTable
+import VDBMS.DBMS.SqlTable.SqlVariantTable
 
 import Data.Map.Strict (adjust)
 
