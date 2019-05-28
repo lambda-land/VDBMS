@@ -4,6 +4,7 @@
 module VDBMS.QueryTrans.OptVqsToSql where 
 
 import Prelude hiding (Ordering(..))
+import Data.List (nub, concat)
 
 import qualified VDBMS.QueryLang.Algebra as A
 -- import VDBMS.VDB.Name
@@ -19,17 +20,19 @@ import VDBMS.QueryTrans.OptVqToOptSql
 -- import qualified Database.HaskellDB as HSDB
 import qualified Database.HaskellDB.PrimQuery as P
 
-
+-- | creates a scheme from all primqueries in the list.
 allAttributes :: [P.PrimQuery] -> P.Scheme 
-allAttributes ps = undefined
-  where
-    as = nub $ map P.attributes ps
+allAttributes ps = nub $ concat $ map P.attributes ps
+
 
 nullAttributes :: P.PrimQuery -> P.Scheme -> P.Scheme
 nullAttributes = undefined
 
+
 addNullAttsToPrj :: P.PrimQuery -> P.Scheme -> P.PrimQuery
-addNullAttsToPrj = undefined
+addNullAttsToPrj p s = undefined
+  -- where
+  --   q = P.Project nullAssoc p
 
 concatFexp :: Opt P.PrimQuery -> P.PrimQuery
 concatFexp = undefined
@@ -45,3 +48,11 @@ transOptVqs2Sql oqs s = unionAll prims
     oprims' = mapSnd (flip addNullAttsToPrj allAtts) oprims
     prims   = map concatFexp oprims'
 
+-- examples:
+-- prim1 = Project [("A", AttrExpr "A")] (BaseTable "R" ["A", "B"])
+-- import Database.HaskellDB.PrimQuery
+-- λ> let prim1 = Project [("A", AttrExpr "A")] (BaseTable "R" ["A", "B"])
+-- λ> import Database.HaskellDB.Sql.Generate
+-- λ> sqlQuery prim1
+-- let sql1 = sqlQuery defaultSqlGenerator prim1
+-- λ> ppSqlSelect sql1
