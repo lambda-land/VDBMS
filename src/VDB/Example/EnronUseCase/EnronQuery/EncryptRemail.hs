@@ -9,6 +9,7 @@ import VDB.Variational
 import VDB.Type
 import Prelude hiding (Ordering(..))
 
+-- * NOTE: implement before is_remail column introduced
 -- 
 -- 10. interaction between encrypt with remail
 -- 

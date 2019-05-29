@@ -1,4 +1,4 @@
-module VDB.Example.EnronUseCase.EnronQuery.AutoresponderEncrypt where 
+module VDB.Example.EnronUseCase.EnronQuery.AutoresponderForward where 
 
 import VDB.Example.EnronUseCase.EnronQuery.Common
 import VDB.Algebra
@@ -31,7 +31,6 @@ import Prelude hiding (Ordering(..))
 enronVQ13 :: Algebra
 enronVQ13 = AChc forwardmsg (AChc autoresponder u13_Q1 u13_Q2) Empty
 
--- stop here
 u13_Q1 :: Algebra
 u13_Q1 = Proj (map trueAtt $ genQAtts [("v_message", "sender"), ("v_message", "subject"), ("v_forward_msg", "forwardAddr")]) 
         $ Sel cond 
