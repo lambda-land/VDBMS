@@ -77,9 +77,9 @@ mapFstSnd f g = fmap (f *** g)
 --   elements will be combined with g and then their
 --   appropriate fexps will be combined with f.
 combOpts :: (FeatureExpr -> FeatureExpr -> FeatureExpr)
-  -> (a -> b -> b) 
+  -> (a -> b -> c) 
   -> [Opt a] -> [Opt b]
-  -> [Opt b]
+  -> [Opt c]
 combOpts f g os1 os2 = 
   [(f f1 f2, g o1 o2) | (f1, o1) <- os1, (f2,o2) <- os2]
   -- (f *** g) <$> os1 <*> os2 -- this aint working!!
