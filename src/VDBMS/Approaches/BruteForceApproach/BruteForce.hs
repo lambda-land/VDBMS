@@ -2,7 +2,7 @@
 -- and gets the plain relational result
 module VDBMS.Approaches.BruteForceApproach.BruteForce where 
 
-import VDBMS.QueryLang.Algebra
+import VDBMS.QueryLang.Variational.Algebra
 -- import VDB.Name
 -- import qualified VDB.FeatureExpr as F
 -- import qualified VDB.Condition as C

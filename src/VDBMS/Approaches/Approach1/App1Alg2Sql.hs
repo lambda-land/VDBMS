@@ -5,10 +5,10 @@ module VDBMS.Approaches.Approach1.App1Alg2Sql where
 
 import Prelude hiding (Ordering(..))
 
-import VDBMS.QueryLang.Algebra
+import VDBMS.QueryLang.Variational.Algebra
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import qualified VDBMS.QueryLang.Condition as C 
+import qualified VDBMS.QueryLang.Variational.Condition as C 
 import VDBMS.Variational.Opt
 import VDBMS.DBMS.Value.Value
 import VDBMS.Features.SAT

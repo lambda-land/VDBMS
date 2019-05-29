@@ -9,10 +9,10 @@ module VDBMS.QueryTrans.OptVqToOptSql (
 
 import Prelude hiding (Ordering(..))
 
-import qualified VDBMS.QueryLang.Algebra as A
+import qualified VDBMS.QueryLang.Variational.Algebra as A
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import qualified VDBMS.QueryLang.Condition as C
+import qualified VDBMS.QueryLang.Variational.Condition as C
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Opt
 import VDBMS.TypeSystem.TypeSystem

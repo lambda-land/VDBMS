@@ -6,7 +6,7 @@ module VDBMS.QueryTrans.OptVqsToSql where
 import Prelude hiding (Ordering(..))
 import Data.List (nub, concat)
 
-import qualified VDBMS.QueryLang.Algebra as A
+import qualified VDBMS.QueryLang.Variational.Algebra as A
 -- import VDBMS.VDB.Name
 -- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- import qualified VDBMS.QueryLang.Condition as C

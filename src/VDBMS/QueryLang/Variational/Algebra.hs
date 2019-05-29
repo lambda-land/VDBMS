@@ -1,5 +1,5 @@
 -- | Variational relational algebra.
-module VDBMS.QueryLang.Algebra (
+module VDBMS.QueryLang.Variational.Algebra (
 
         Algebra(..),
         SetOp(..)
@@ -12,11 +12,8 @@ import VDBMS.VDB.Name
 import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
 import VDBMS.Variational.Variational
 import VDBMS.Variational.Opt
-import VDBMS.QueryLang.Condition
-
--- | Basic set operations.
-data SetOp = Union | Diff | Prod
-  deriving (Data,Eq,Show,Typeable, Ord)
+import VDBMS.QueryLang.Variational.Condition
+import VDBMS.QueryLang.Basics.SetOp
 
 -- | Variational relational algebra.
 --   Note that a query such as TRef R isn't acceptable

@@ -1,10 +1,10 @@
 -- | translates a vq to a list of opt vq.
 module VDBMS.QueryTrans.VqToOptVq where 
 
-import VDBMS.QueryLang.Algebra
+import VDBMS.QueryLang.Variational.Algebra
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import qualified VDBMS.QueryLang.Condition as C
+import qualified VDBMS.QueryLang.Variational.Condition as C
 import VDBMS.Variational.Opt
 
 -- removes choices in vq and returns a list of 
