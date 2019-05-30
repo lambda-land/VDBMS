@@ -1,5 +1,9 @@
 -- | Configuration semantics of vquery. 
-module VDBMS.QueryLang.VariationalToRelational.LinearizeQuery where 
+module VDBMS.QueryLang.VariationalToRelational.LinearizeQuery (
+
+        linearize
+
+) where 
 
 import VDBMS.QueryLang.Variational.Algebra
 import VDBMS.QueryLang.Relational.Algebra

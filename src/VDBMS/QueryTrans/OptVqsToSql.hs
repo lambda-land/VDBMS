@@ -6,7 +6,7 @@ module VDBMS.QueryTrans.OptVqsToSql where
 import Prelude hiding (Ordering(..))
 import Data.List (nub, concat)
 
-import qualified VDBMS.QueryLang.Variational.Algebra as A
+import qualified VDBMS.QueryLang.Relational.Algebra as A
 -- import VDBMS.VDB.Name
 -- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- import qualified VDBMS.QueryLang.Condition as C
@@ -40,7 +40,7 @@ concatFexp = undefined
 unionAll :: [P.PrimQuery] -> P.PrimQuery
 unionAll ps = undefined
 
-transOptVqs2Sql :: [Opt A.Algebra] -> Schema -> P.PrimQuery
+transOptVqs2Sql :: [Opt A.RAlgebra] -> Schema -> P.PrimQuery
 transOptVqs2Sql oqs s = unionAll prims
   where
     oprims  = mapSnd (flip transAlgebra2Sql s) oqs -- [Opt P.PrimExpr]

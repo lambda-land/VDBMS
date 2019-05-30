@@ -9,10 +9,10 @@ module VDBMS.QueryTrans.OptVqToOptSql (
 
 import Prelude hiding (Ordering(..))
 
-import qualified VDBMS.QueryLang.Variational.Algebra as A
+import qualified VDBMS.QueryLang.Relational.Algebra as A
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import qualified VDBMS.QueryLang.Variational.Condition as C
+import qualified VDBMS.QueryLang.Relational.Condition as C
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Opt
 import VDBMS.TypeSystem.TypeSystem
@@ -23,15 +23,16 @@ import VDBMS.Features.SAT
 import qualified Database.HaskellDB.PrimQuery as P
 import Database.HDBC (SqlValue(..))
 
-attListHSDB :: [Opt Attribute] -> P.Assoc 
-attListHSDB as = map a2a as'
-  where 
-    pcIsTrue :: Opt Attribute -> Bool 
-    pcIsTrue a = getFexp a == F.Lit True 
-    as' = filter pcIsTrue as
-    a2a :: Opt Attribute -> (P.Attribute,P.PrimExpr)
-    a2a a = (aName, P.AttrExpr aName)
-      where aName = attributeName $ getObj a
+attListHSDB :: [Attribute] -> P.Assoc 
+attListHSDB as = map (\a -> (attributeName a, P.AttrExpr (attributeName a))) as
+  -- map a2a as'
+  -- where 
+  --   pcIsTrue :: Opt Attribute -> Bool 
+  --   pcIsTrue a = getFexp a == F.Lit True 
+  --   as' = filter pcIsTrue as
+  --   a2a :: Opt Attribute -> (P.Attribute,P.PrimExpr)
+  --   a2a a = (aName, P.AttrExpr aName)
+  --     where aName = attributeName $ getObj a
 
 -- | translates operators.
 --   helper for transCond2SqlCond.
@@ -62,23 +63,23 @@ atom2primExpr (C.Attr a) = P.AttrExpr $ attributeName a
 
 -- | translates conditions of queries to sql conditions.
 --   helper for transAlgebra2Sql
-transCond2SqlCond :: C.Condition -> P.PrimExpr
-transCond2SqlCond (C.Lit b) = 
+transCond2SqlCond :: C.RCondition -> P.PrimExpr
+transCond2SqlCond (C.RLit b) = 
   P.ConstExpr $ P.BoolLit b
-transCond2SqlCond (C.Comp c al ar) = 
+transCond2SqlCond (C.RComp c al ar) = 
   P.BinExpr (vdbmsOps2hsdbOps c) (atom2primExpr al) (atom2primExpr ar)
-transCond2SqlCond (C.Not c) = 
+transCond2SqlCond (C.RNot c) = 
   P.UnExpr P.OpNot $ transCond2SqlCond c
-transCond2SqlCond (C.Or cl cr) = 
+transCond2SqlCond (C.ROr cl cr) = 
   P.BinExpr P.OpOr (transCond2SqlCond cl) (transCond2SqlCond cr)
-transCond2SqlCond (C.And cl cr) =  
+transCond2SqlCond (C.RAnd cl cr) =  
   P.BinExpr P.OpAnd (transCond2SqlCond cl) (transCond2SqlCond cr)
-transCond2SqlCond (C.CChc _ _ _) = error "didn't expect to get choices of conditions!!"
+-- transCond2SqlCond (C.CChc _ _ _) = error "didn't expect to get choices of conditions!!"
 
 
 
-transAlgebra2Sql :: A.Algebra -> Schema -> P.PrimQuery
-transAlgebra2Sql (A.SetOp o lq rq) s = P.Binary o' lsql rsql
+transAlgebra2Sql :: A.RAlgebra -> Schema -> P.PrimQuery
+transAlgebra2Sql (A.RSetOp o lq rq) s = P.Binary o' lsql rsql
   where
     lsql = transAlgebra2Sql lq s 
     rsql = transAlgebra2Sql rq s
@@ -86,20 +87,20 @@ transAlgebra2Sql (A.SetOp o lq rq) s = P.Binary o' lsql rsql
            A.Union -> P.Union
            A.Diff -> P.Difference
            A.Prod -> P.Times
-transAlgebra2Sql (A.Proj as q) s = P.Project assoc sql
+transAlgebra2Sql (A.RProj as q) s = P.Project assoc sql
   where
     sql = transAlgebra2Sql q s 
     assoc = attListHSDB as
-transAlgebra2Sql (A.Sel c q) s = P.Restrict c' sql
+transAlgebra2Sql (A.RSel c q) s = P.Restrict c' sql
   where
     sql = transAlgebra2Sql q s
     c' = transCond2SqlCond c
-transAlgebra2Sql (A.AChc _ _ _) _ = error "didn't expect to get query choices here!!"
-transAlgebra2Sql (A.TRef r) s = case scheme of 
+-- transRelAlgebra2Sql (A.AChc _ _ _) _ = error "didn't expect to get query choices here!!"
+transAlgebra2Sql (A.RTRef r) s = case scheme of 
   Just sch -> P.BaseTable (relationName r) $ fmap attributeName sch
   _ -> error $ "the relation " ++ (relationName r) ++ " deons't exist in the db!!"
   where
     scheme = lookupRelAttsList r s
-transAlgebra2Sql A.Empty _ = P.Empty
+transAlgebra2Sql A.REmpty _ = P.Empty
 
 
