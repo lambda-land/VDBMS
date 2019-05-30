@@ -26,3 +26,7 @@ trans q s = mapSnd (flip transAlgebra2Sql s) validQs
   where
     linearizedQs = linearize q
     validQs = validifyOpts linearizedQs
+
+
+-- Martin's idea: send this concurrently instead of making them into
+-- one query

@@ -1,4 +1,11 @@
-module VDBMS.TypeSystem.TypeSystem where 
+-- | Statically syntesizes the types of vqs.
+module VDBMS.TypeSystem.TypeSystem (
+
+        TypeEnv'
+        , VariationalContext
+        , typeOfVquery'
+
+) where 
 
 import VDBMS.QueryLang.Variational.Algebra 
 import VDBMS.VDB.Name
@@ -10,29 +17,12 @@ import VDBMS.Features.SAT
 import VDBMS.DBMS.Value.Value
 import VDBMS.Features.Config
 import VDBMS.QueryLang.Variational.ConfigQuery
--- import VDBMS.QueryLang.Basics.SetOp
--- import VDBMS.QueryLang.Basics.Atom
 
 import Prelude hiding (EQ,LT , GT)
--- import Data.Map(Map)
 import qualified Data.Map as M 
--- import qualified Data.Map.Internal as IM
--- import qualified Data.Map.Lazy as LM
 import qualified Data.Map.Strict as SM
 import qualified Data.Map.Merge.Strict as StrictM
-
-
---import Data.Traversable
-
--- import Control.Monad.State
--- import Control.Monad (liftM2)
-
--- import Data.Set(Set) 
 import qualified Data.Set as Set 
-
--- import Data.List((\\),nub)
-
--- import Data.Maybe(catMaybes)
 
 
 type VariationalContext = F.FeatureExpr
@@ -61,25 +51,7 @@ typeOfVcond (C.Not c)      ctx env = typeOfVcond c ctx env
 typeOfVcond (C.Or l r)     ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
 typeOfVcond (C.And l r)    ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
 typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env 
-  && typeOfVcond r (F.And ctx (F.Not d)) env
-
--- | check commuting diagram for type system.
-typeCommutingDiagram :: [Config Bool] -> VariationalContext -> Schema -> Algebra -> Bool
-typeCommutingDiagram cs ctx s vq = foldr (&&) True (map (typeDiagram_c ctx s vq) cs)
-  where
-    typeDiagram_c ctx s vq c = case (vEnv,env_c) of
-      (Just env, Just envc) -> vEnv_c == envc
-        where vEnv_c = configureTypeEnv env c
-      (Nothing, _) -> error "the vq isn't type correct!"
-      (Just _, Nothing) -> error "sth went terribly wrong when checking type diagram!!"
-      where 
-        vEnv = typeOfVquery' vq ctx s 
-        q_c = configureVquery vq c 
-        env_c = typeOfVquery' q_c (F.Lit True) s 
-
--- | applies a config to a type env.
-configureTypeEnv :: TypeEnv' -> Config Bool -> TypeEnv'
-configureTypeEnv = flip appConfRowType' 
+  && typeOfVcond r (F.And ctx (F.Not d)) env 
 
 
 -- | verifies and similifies the final type env return by the type system, i.e.,

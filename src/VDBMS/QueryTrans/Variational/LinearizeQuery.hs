@@ -34,18 +34,3 @@ linearize (AChc f q1 q2)  = mapFst (F.And f) (linearize q1) ++
                             mapFst (F.And (F.Not f)) (linearize q2)
 linearize (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
 linearize Empty           = pure $ mkOpt (F.Lit True) REmpty
--- linearize (SetOp s q1 q2) = [mkOpt (F.And (getFexp oq1) (getFexp oq2))
---                                    (RSetOp s (getObj oq1) (getObj oq2))
---                               | oq1 <- linearize q1, oq2 <- linearize q2]
--- linearize (Proj as q)     = [mkOpt (F.And (getFexp oq) (getFexp oas))
---                                    (RProj (getObj oas) (getObj oq))
---                               | oq <- linearize q, oas <- groupAtts as]
--- linearize (Sel c q)      = [mkOpt (F.And (getFexp oc) (getFexp oq)) 
---                                   (RSel (getObj oc) (getObj oq)) 
---                              | oc <-linearizeCond c, oq <- linearize q]
--- linearize (AChc f q1 q2) = [mkOpt (F.And f (getFexp oq)) (getObj oq)
---                              | oq <- linearize q1] ++
---                            [mkOpt (F.And (F.Not f) (getFexp oq)) (getObj oq)
---                              | oq <- linearize q2]
--- linearize (TRef r)       = [mkOpt (F.Lit True) (RTRef r)]
--- linearize Empty          = [mkOpt (F.Lit True) REmpty]

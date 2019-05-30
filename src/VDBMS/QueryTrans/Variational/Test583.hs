@@ -15,4 +15,8 @@ import VDBMS.QueryTrans.Variational.AlgebraToOptSqls
 -- import VDBMS.QueryLang.Relational.Condition
 
 import Database.HaskellDB.PrimQuery 
+import Database.HaskellDB.Sql.Print
+import Database.HaskellDB.Sql.Generate
 
+-- printSql :: Algebra -> Schema -> Doc
+-- printSql q s = map () $ trans q s 

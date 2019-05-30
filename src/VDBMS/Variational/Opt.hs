@@ -25,7 +25,7 @@ import Data.List (groupBy)
 
 import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.Features.SAT (equivalent)
+import VDBMS.Features.SAT (equivalent,satisfiable)
 -- import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
 -- import VDBMS.Features.FeatureExpr.Core (evalFeatureExpr)
 -- import VDBMS.Features.FeatureExpr.Ops (selectFeatureExpr)
@@ -103,7 +103,7 @@ groupOpts os = fmap pushDown groupOs
 -- | checks to see if elements of the list are satisfiable.
 --   if so keeps them, if not drops them.
 validifyOpts :: [Opt a] -> [Opt a]
-validifyOpts = undefined
+validifyOpts os = filter (satisfiable . fst) os
 
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a
