@@ -4,7 +4,9 @@ module VDBMS.VDB.Name (
         Attribute(..),
         Relation(..),
         PresCondAtt(..),
-        getAttName
+        getAttName,
+        addRelToAtt,
+        genAtt
 
 ) where
 
