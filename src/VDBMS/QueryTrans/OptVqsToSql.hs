@@ -15,7 +15,7 @@ import VDBMS.Variational.Opt
 -- import VDBMS.TypeSystem
 import VDBMS.VDB.Schema.Schema
 -- import VDBMS.Features.SAT 
-import VDBMS.QueryTrans.OptVqToOptSql 
+import VDBMS.QueryTrans.Relational.AlgebraToSql
 
 -- import qualified Database.HaskellDB as HSDB
 import qualified Database.HaskellDB.PrimQuery as P

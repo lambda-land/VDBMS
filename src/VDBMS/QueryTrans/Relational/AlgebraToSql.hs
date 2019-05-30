@@ -1,7 +1,5 @@
--- | tranlates linearized vqueries (qs i.e.without choices)
---   to haskelldb queries. takes a linearized vq and 
---   returns a sql query.
-module VDBMS.QueryTrans.OptVqToOptSql (
+-- | tranlates relational queries to sql.
+module VDBMS.QueryTrans.Relational.AlgebraToSql (
 
         transAlgebra2Sql
 

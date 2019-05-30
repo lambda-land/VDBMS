@@ -1,5 +1,5 @@
 -- | Configuration semantics of vquery. 
-module VDBMS.QueryLang.VariationalToRelational.LinearizeQuery (
+module VDBMS.QueryTrans.Variational.LinearizeQuery (
 
         linearize
 
