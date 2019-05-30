@@ -91,51 +91,7 @@ typeOfVquery' (TRef r)           ctx s = case lookupRowType r s of
   Just t | tautology (F.imply ctx $ getFexp t) -> Just $ appFexpTableSch ctx t
   _ -> Nothing
 typeOfVquery' Empty              ctx _ = Just $ appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
--- mkOpt f M.empty
 
--- | applies the ctx to the table schema.
---   it drops the attributes that (f_A and ctx and f_R) is unsatisfiable.
---   but it doesn't update the pres cond of attributes. it only
---   updates the pres cond of the table.
--- appCtxTableSch :: FeatureExpr -> TypeEnv' -> TypeEnv'
--- appCtxTableSch = appFexpTableSch
-
---
--- * static semantics of variational queires
---   based on inference rules in the PVLDB paper
---   f<q,q'> case: note that it doesen't have duplicate attributes
---
--- typeOfVquery :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv
--- typeOfVquery (SetOp Union q q') f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
---   (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
---   _ -> Nothing
--- typeOfVquery (SetOp Diff q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
---   (Just t, Just t') | typeEq (cxtAppType f t) (cxtAppType f t') -> Just t
---   _ -> Nothing
--- typeOfVquery (SetOp Prod q q')  f s = case (typeOfVquery q f s, typeOfVquery q' f s) of 
---   (Just t, Just t') -> Just (typeProduct t t')
---   _ -> Nothing
--- typeOfVquery (Proj as q)        f s = case typeOfVquery q f s of 
---   Just t' -> case typeProj as t' of 
---     Just t | typeSubsume t t' -> Just (cxtAppType f t')
---   _ -> Nothing
--- typeOfVquery (Sel c q)          f s = case typeOfVquery q f s of
---   Just t | typeOfVcond c f t -> Just (cxtAppType f t)
---   _ -> Nothing
--- typeOfVquery (AChc d q q')      f s = case (typeOfVquery q (F.And f d) s, typeOfVquery q' (F.And f (F.Not d)) s) of 
---   (Just t, Just t') -> Just (typeUnion (cxtAppType (F.And f d) t) (cxtAppType (F.And f (F.Not d)) t'))
---   _ -> Nothing
--- typeOfVquery (TRef r)           f s = case lookupRowType r s of 
---   Just (f',t) | tautology (F.imply f f') -> Just (cxtAppType f t)
---   _ -> Nothing
--- typeOfVquery Empty              _ _ = Just M.empty
-
-
-
--- | context appication to type enviornment
--- cxtAppType :: VariationalContext -> TypeEnv'-> TypeEnv'
--- cxtAppType f r = undefined
--- SM.map (\(f',t) -> ((F.And f f'),t)) r
 
 -- | Type enviornment equilvanecy, checks that the vCtxt are 
 --   equivalent, both env have the same set of attributes,
@@ -171,15 +127,6 @@ addPrefix s r = M.fromList $ map updateAttName l
     updateAttName (a,(o,t)) = (Attribute Nothing (s ++ attributeName a), (o,t))
     l = M.toList r
 
-{-
--- | type enviornment join, when we have the same attribute
---   in both type env we combine their feature expr.
---   add it when you add natural join to your operands!
-typeJoin :: TypeEnv -> TypeEnv -> TypeEnv
-typeJoin r r' = undefined
-  -- SM.unionWith 
-  -- (\(o,t) (o',t') -> if t==t' then ((F.And o o'),t) else) r r'
--}
 
 -- | Projects a list of optional attributes from a type env.
 --   it updates included attribute's pres cond by the fexp
@@ -224,8 +171,3 @@ typeSubsume env env'
       envFexp' = getFexp env'
 
                               
--- | union two type. doesn't evaluate the feature expressions.
--- typeUnion :: TypeEnv'-> TypeEnv'-> TypeEnv'
--- typeUnion = undefined
--- 	-- rowTypeUnion
-
