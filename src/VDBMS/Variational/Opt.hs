@@ -14,15 +14,17 @@ module VDBMS.Variational.Opt (
         selectOpt,
         configureOpt,
         configureOptList,
-        configureOptListRetOpt
+        configureOptListRetOpt,
+        groupOpts
 
 ) where
 
 import Data.Maybe (catMaybes)
-
+import Data.List (groupBy)
 
 import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
+import VDBMS.Features.SAT (equivalent)
 -- import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
 -- import VDBMS.Features.FeatureExpr.Core (evalFeatureExpr)
 -- import VDBMS.Features.FeatureExpr.Ops (selectFeatureExpr)
@@ -83,6 +85,19 @@ combOpts :: (FeatureExpr -> FeatureExpr -> FeatureExpr)
 combOpts f g os1 os2 = 
   [(f f1 f2, g o1 o2) | (f1, o1) <- os1, (f2,o2) <- os2]
   -- (f *** g) <$> os1 <*> os2 -- this aint working!!
+
+-- | helper for groupOpts.
+--   pushes down the list and picks the first of head.
+pushDown :: [(a,b)] -> (a,[b])
+-- pushDown [] = error "got an empty list of opts!!!"
+pushDown [(a,b)] = (a,[b])
+pushDown ((a,b):l) = (a,b:snd (pushDown l))
+
+-- | groups objects of opt that their fexp are equiv together. 
+groupOpts :: [Opt a] -> [Opt [a]]
+groupOpts os = fmap pushDown groupOs
+  where
+    groupOs = groupBy (\x y -> equivalent (fst x) (fst y)) os
 
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a

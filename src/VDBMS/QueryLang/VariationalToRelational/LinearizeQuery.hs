@@ -12,9 +12,6 @@ import qualified VDBMS.QueryLang.Variational.Condition as C
 import VDBMS.QueryLang.Relational.Condition
 
 
-groupAtts :: [Opt Attribute] -> [Opt [Attribute]]
-groupAtts = undefined
-
 linearizeCond :: C.Condition -> [Opt RCondition]
 linearizeCond (C.Lit b)        = pure $ mkOpt (F.Lit True) (RLit b)
 linearizeCond (C.Comp c a1 a2) = pure $ mkOpt (F.Lit True) (RComp c a1 a2)
@@ -27,7 +24,7 @@ linearizeCond (C.CChc f c1 c2) = mapFst (F.And f) (linearizeCond c1) ++
 
 linearize :: Algebra -> [Opt RAlgebra]
 linearize (SetOp s q1 q2) = combOpts F.And (RSetOp s) (linearize q1) (linearize q2)
-linearize (Proj as q)     = combOpts F.And RProj (groupAtts as) (linearize q)
+linearize (Proj as q)     = combOpts F.And RProj (groupOpts as) (linearize q)
 linearize (Sel c q)       = combOpts F.And RSel (linearizeCond c) (linearize q)
 linearize (AChc f q1 q2)  = mapFst (F.And f) (linearize q1) ++
                             mapFst (F.And (F.Not f)) (linearize q2)
