@@ -15,7 +15,8 @@ module VDBMS.Variational.Opt (
         configureOpt,
         configureOptList,
         configureOptListRetOpt,
-        groupOpts
+        groupOpts,
+        validifyOpts
 
 ) where
 
@@ -98,6 +99,11 @@ groupOpts :: [Opt a] -> [Opt [a]]
 groupOpts os = fmap pushDown groupOs
   where
     groupOs = groupBy (\x y -> equivalent (fst x) (fst y)) os
+
+-- | checks to see if elements of the list are satisfiable.
+--   if so keeps them, if not drops them.
+validifyOpts :: [Opt a] -> [Opt a]
+validifyOpts = undefined
 
 -- | Apply a selection to an optional value.
 selectOpt :: Feature -> Bool -> Opt a -> Opt a

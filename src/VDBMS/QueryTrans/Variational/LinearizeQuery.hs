@@ -1,4 +1,4 @@
--- | Configuration semantics of vquery. 
+-- | linearizes variational queries.
 module VDBMS.QueryTrans.Variational.LinearizeQuery (
 
         linearize
