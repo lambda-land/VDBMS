@@ -46,3 +46,17 @@ selectHelper f b e l r = case selectFeatureExpr f b e of
 configureHelper :: Config Bool -> FeatureExpr -> a -> a -> a
 configureHelper c f l r = if evalFeatureExpr c f then l else r
 
+
+-- class Variational a where 
+--   select :: Feature -> Bool -> a -> a
+--   configure :: Config Bool -> a -> a
+--   vmap :: (FeatureExpr -> ) -> a -> a
+
+-- class Choice a where
+--   choice :: FeatureExpr -> a -> a -> a
+
+
+-- class Optional a where 
+--   opt :: FeatureExpr -> a -> a
+
+
