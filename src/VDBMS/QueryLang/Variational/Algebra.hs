@@ -34,7 +34,9 @@ instance Variational Algebra where
   choice = AChc
 
   choiceMap g (SetOp o l r) = SetOp o (choiceMap g l) (choiceMap g r)
+  -- the following is wrong!!!
   choiceMap g (Proj as e)   = Proj as (choiceMap g e)
+  -- choiceMap g (Proj as e)   = Proj (configureOptListRetOpt g as) (choiceMap g e)
   choiceMap g (Sel  c  e)   = Sel  c  (choiceMap g e)
   choiceMap g (AChc f l r)  = g f l r
   choiceMap _ (TRef r)      = TRef r

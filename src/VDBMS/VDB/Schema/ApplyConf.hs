@@ -6,12 +6,18 @@ module VDBMS.VDB.Schema.ApplyConf (
         appConfSchema',
         appConfSchemaStrct,
         appConfRowType,
-        appConfRowType'
+        appConfRowType',
+        -- validRels,
+        -- validAtts,
+        -- validAttsWithoutPres
 
 ) where
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
+-- import Data.Set (Set)
+-- import qualified Data.Set as Set
+
 
 import Control.Arrow (first)
 
@@ -69,3 +75,29 @@ appConfRowType' c r = updateOptObj (M.filter
   -- M.map (first $ Lit . evalFeatureExpr c) r)
 --  M.map (\(f,t) -> (Lit (evalFeatureExpr c f),t)) r 
 
+{--
+-- 
+-- used for configuring a variaitonal db to a variant db.
+-- 
+
+-- | helper func for configVDB. returns a list of valid tables in a variant.
+validRels :: Config Bool -> Schema -> [Relation]
+validRels c s = Set.toList $ getRels vs 
+  where 
+    vs = appConfSchema' c s 
+
+-- | returns a set of valid attributes for a relation in a given config 
+--   of a vdb.
+validAtts :: Config Bool -> Relation -> Schema -> Set Attribute 
+validAtts c r s = case rowType of 
+        Just atts -> getRowTypeAtts atts
+        _         -> Set.empty
+  where 
+    rowType = lookupRel r $ appConfSchema' c s
+
+-- | drops the pres cond from valid atts.
+-- DANGER: changed Attribute to (Attribute (Just r))
+-- MAY CAUSE PROBLEMS!!!
+validAttsWithoutPres :: PresCondAtt -> Config Bool -> Relation -> Schema -> Set Attribute 
+validAttsWithoutPres p c r s = Set.delete (Attribute (Just r) $ presCondAttName p) $ validAtts c r s
+--}

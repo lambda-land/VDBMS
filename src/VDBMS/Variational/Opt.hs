@@ -41,6 +41,17 @@ import Control.Arrow (first, second, (***))
 --   a presence condition.
 type Opt a = (FeatureExpr, a)
 
+-- data Opt' f a = Opt f a
+
+-- instance Variational (Opt a) where
+--   opt (f,x) = x
+
+--   choiceMap = undefined
+
+
+-- instance Monoid a => Optional FeatureExpr a where 
+--   data Opt 
+
 -- | gets the object of Opt a.
 getObj :: Opt a -> a
 getObj = snd

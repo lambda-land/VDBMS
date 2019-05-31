@@ -16,7 +16,7 @@ import VDBMS.TypeSystem.TypeSystem (typeOfVquery')
 -- import VDB.ShowVresult
 import VDBMS.VDB.Schema.Schema
 import VDBMS.VDB.Table.Table
-import VDBMS.VDB.Database
+-- import VDBMS.VDB.Database
 import VDBMS.Approaches.Approach1.App1Alg2Sql
 import VDBMS.DBMS.SqlTable.SqlVtable
 
@@ -24,7 +24,7 @@ import VDBMS.DBMS.SqlTable.SqlVtable
 
 import Database.HDBC
 
-
+{--
 -- runs trans-union-filter.
 runTransFilterUnion :: IConnection conn => Algebra -> PresCondAtt 
                        -> SqlDatabase conn -> IO (Table)
@@ -60,3 +60,4 @@ runTransFilterUnionWithTypeChecking vq p vdb = do
 
 -- TODO: write checks, one should involve type system
 
+--}

@@ -18,11 +18,12 @@ import VDBMS.DBMS.SqlTable.SqlVariantTable (SqlVariantTable)
 import VDBMS.Features.Config
 import VDBMS.VDB.Name
 import VDBMS.VDB.Table.Table
-import VDBMS.VDB.Database
+-- import VDBMS.VDB.Database
 
 import Database.HDBC
 import Database.HDBC.Sqlite3
 
+{--
 -- | runs a variational query for a specific list of configurations 
 --   over a variational database. it returns a variational table. 
 --   Note that a variational query should be run over all configs
@@ -70,7 +71,7 @@ bruteForSigmod vq cs dbs = do
 
 
 -- TODO: write checks!!!
-
+--}
 
 
 
