@@ -38,6 +38,7 @@ dependencies:
 # - time >= 1.0
 - direct-sqlite
 - HDBC-sqlite3 >= 2.3.3.1 
+- HDBC-postgresql >= 2.3.2.6
 - convertible
 - bytestring
 - directory
@@ -69,6 +70,7 @@ default-extensions:
   - EmptyDataDecls
   - StandaloneDeriving
   - InstanceSigs
+  - FunctionalDependencies
 
 
 executables:
