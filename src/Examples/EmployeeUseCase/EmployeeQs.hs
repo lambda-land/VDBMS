@@ -1,15 +1,16 @@
 -- | vqs for employee database.
-module Example.EmployeeUseCase.EmployeeQs where
+module Examples.EmployeeUseCase.EmployeeQs where
 
 import Prelude hiding (Ordering(..))
 
-import VDB.Algebra
-import qualified VDB.Condition as C
-import qualified VDB.FeatureExpr as F
-import VDB.Type
-import VDB.Name
-import VDB.Variational
-import Example.EmployeeUseCase.EmployeeSchema
+import VDBMS.QueryLang.Variational.Algebra
+import qualified VDBMS.QueryLang.Variational.Condition as C
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+import VDBMS.VDB.Name
+import VDBMS.Variational.Opt 
+import Database.HDBC
+import VDBMS.DBMS.Value.Value
+import Examples.EmployeeUseCase.EmployeeSchema
 
 import Database.HDBC 
 -- import Data.Time.LocalTime
