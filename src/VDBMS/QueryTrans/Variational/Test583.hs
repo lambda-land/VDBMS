@@ -21,5 +21,6 @@ import Database.HaskellDB.Sql.Generate
 import Text.PrettyPrint (Doc)
 
 printSql :: Algebra -> Schema -> Doc
-printSql q s = undefined
--- map () $ trans q s 
+printSql q s = mapSnd (ppSql (sqlQuery defaultSqlGenerator)) primQs
+  where
+    primQs = trans q s 
