@@ -12,7 +12,7 @@ import Database.HDBC
 import VDBMS.DBMS.Value.Value
 import Examples.EmployeeUseCase.EmployeeSchema
 
-import Database.HDBC 
+-- import Database.HDBC 
 -- import Data.Time.LocalTime
 import Data.Time.Calendar
 
@@ -78,7 +78,7 @@ yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) 
 
 -- | employee id = 10004 condition
 empCond :: C.Condition
-empCond = C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004)
+empCond = C.Comp EQ (C.Attr empno) (C.Val $ SqlInteger 10004)
 
 -- more optimized based on relational alg opt rules. prj and sel place
 -- have been exchanged. check translations of them to see if they return
