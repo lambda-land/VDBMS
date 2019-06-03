@@ -11,14 +11,15 @@ import VDBMS.VDB.Database.Database
 import qualified Database.HDBC as H
 import qualified Database.HDBC.PostgreSQL as P
 
-instance Database String P.Connection where 
-  data DB String p s = PostgresHDBC String p s
-  data Connection String P.Connection = PostgresConn String P.Connection
-  connection (PostgresHDBC path p s) = P.connectPostgreSQL path
-  disconnect (PostgresConn path c) = H.disconnect c
-  schema (PostgresHDBC path p s) = s 
-  presCond (PostgresHDBC path p s) = p
-  runQ (PostgresHDBC path p s) = undefined
+-- need to have one instance of a specific external library at a time.
+-- instance Database String P.Connection where 
+--   data DB String p s = PostgresHDBC String p s
+--   data Connection String P.Connection = PostgresConn String P.Connection
+--   connection (PostgresHDBC path p s) = P.connectPostgreSQL path
+--   disconnect (PostgresConn path c) = H.disconnect c
+--   schema (PostgresHDBC path p s) = s 
+--   presCond (PostgresHDBC path p s) = p
+--   runQ (PostgresHDBC path p s) = undefined
 
 
-ex1 = PostgresHDBC "../../../databases/testDB/test1.db" 
+-- ex1 = PostgresHDBC "../../../databases/testDB/test1.db" 
