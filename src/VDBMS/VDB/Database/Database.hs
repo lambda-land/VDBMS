@@ -19,7 +19,7 @@ class Database path c | path -> c where
   runQ :: DB path p s -> Query -> IO Table
 
 
-
+-- | Gets all valid configuration of a vdb.
 getAllConfig :: Database path c => DB path p Schema -> [Config Bool]
 getAllConfig db = validConfsOfFexp $ featureModel $ schema db
 
