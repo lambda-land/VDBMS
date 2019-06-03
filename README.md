@@ -23,7 +23,31 @@ other Haskell dependencies.
 
 ## How to Use
 
-TODO
+Unfortunately, the implementation of VDBMS is not complete yet. However, you can still run some examples and see some output to
+see how our translation is working. 
+
+In order to run examples, simply fire up GHCi in the project directory by running the following command:
+
+	```bash
+	> stack ghci
+	```
+
+Now you can see the final SQL query of a variational query over the Employee database by running the following:
+
+	```bash
+	> printSql q  employeeVSchema
+	```
+
+You can choose any of the sample queries written in src/Examples/EmployeeUseCase/EmployeeQs.hs and src/Examples/EmployeeUseCase/EmployeeQuery.hs.
+
+For example:
+	```bash
+	> printSql empVQ1naive  employeeVSchema
+	```
+
+Results in:
+```TO BE COMPLETED!
+```
 
 
 ## Papers
