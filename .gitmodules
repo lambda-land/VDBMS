@@ -1,3 +1,6 @@
 [submodule "lib/haskelldb"]
 	path = lib/haskelldb
 	url = https://github.com/pataei/haskelldb.git
+[submodule "databases/convertingDBs/mysql2sqlite"]
+	path = databases/convertingDBs/mysql2sqlite
+	url = https://github.com/pataei/mysql2sqlite.git
