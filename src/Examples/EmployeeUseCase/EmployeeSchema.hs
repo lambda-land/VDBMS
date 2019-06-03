@@ -10,7 +10,6 @@ import VDBMS.DBMS.Value.Value
 import qualified Data.Map as M 
 import Examples.SmartConstructor(constructRelMap, constructRowType)
 
-
 -- 
 -- Features
 -- 
