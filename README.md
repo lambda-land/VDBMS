@@ -46,7 +46,19 @@ For example:
 ```
 
 Results in:
-```TO BE COMPLETED!
+```
+[((v3 OR v4) AND (TRUE AND ((TRUE AND (TRUE AND TRUE)) AND (TRUE AND (TRUE AND (TRUE AND TRUE))))),
+SELECT salary
+FROM (SELECT empno,
+             hiredate,
+             salary
+      FROM v_empacct as T1,
+           v_job as T2
+      WHERE (title = title)) as T1
+WHERE ((empno = 10004) AND ((56370-11-19 > hiredate) AND (hiredate < 56398-04-06)))),(NOT (v3 OR v4) AND (TRUE AND ((TRUE AND (TRUE AND TRUE)) AND TRUE)),
+SELECT salary
+FROM v_job as T1
+WHERE ((empno = 10004) AND ((56370-11-19 > hiredate) AND (hiredate < 56398-04-06))))]
 ```
 
 
