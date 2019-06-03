@@ -44,7 +44,8 @@ dependencies:
 - directory
 - clock
 - haskelldb >= 2.2.5 
-- syb #scrap your boilerplate
+- pretty
+# - syb #scrap your boilerplate
 #- template-haskell
 # - pretty >= 1.0 && < 2
 # - old-time >= 1.0 && < 2

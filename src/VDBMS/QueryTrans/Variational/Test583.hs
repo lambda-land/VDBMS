@@ -4,8 +4,8 @@ module VDBMS.QueryTrans.Variational.Test583 where
 import VDBMS.QueryTrans.Variational.AlgebraToOptSqls
 -- import VDBMS.QueryTrans.Variational.LinearizeQuery
 -- import VDBMS.QueryTrans.Relational.AlgebraToSql
--- import VDBMS.VDB.Schema.Schema
--- import VDBMS.QueryLang.Relational.Algebra
+import VDBMS.VDB.Schema.Schema
+import VDBMS.QueryLang.Variational.Algebra
 -- import VDBMS.Features.Config
 -- import VDBMS.Variational.Opt
 -- import VDBMS.Variational.Variational
@@ -18,5 +18,8 @@ import Database.HaskellDB.PrimQuery
 import Database.HaskellDB.Sql.Print
 import Database.HaskellDB.Sql.Generate
 
--- printSql :: Algebra -> Schema -> Doc
--- printSql q s = map () $ trans q s 
+import Text.PrettyPrint (Doc)
+
+printSql :: Algebra -> Schema -> Doc
+printSql q s = undefined
+-- map () $ trans q s 
