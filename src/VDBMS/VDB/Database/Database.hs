@@ -6,8 +6,15 @@ import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Schema.Schema
 import VDBMS.VDB.Table.Table
 
+-- | A query sent to the db engine is just a string.
 type Query = String
 
+-- | Database contains the path to the stored data,
+--   the connection used to connect to it, the 
+--   variational schema, and the presence condition 
+--   attribute name. This is instantiated for each
+--   external library and db engine used to connect to
+--   and store the data.
 class Database path c | path -> c where
   data DB path :: * -> * -> *
   data Connection path c :: *
