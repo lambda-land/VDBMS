@@ -36,14 +36,14 @@ u13_Q1 = Proj (map trueAtt $ genQAtts [("v_message", "sender"), ("v_message", "s
         $ Sel cond 
         $ joinForwardEmpRecMsg
                     where cond1 = C.Comp EQ (C.Attr (genQAtt ("v_message","mid"))) midValue
-                          cond = C.And joinForwardEmpRecMsgCond cond1
+                          cond = C.And joinForwardRecMsgEmpCond cond1
 
 u13_Q2 :: Algebra
 u13_Q2 = Proj (map trueAtt $ genQAtts [("v_recipientinfo", "rvalue"), ("v_message", "subject"), ("v_forward_msg", "forwardAddr")]) 
         $ Sel cond 
         $ joinForwardEmpRecMsg
                     where cond1 = C.Comp EQ (C.Attr (genQAtt ("v_message","mid"))) midValue
-                          cond = C.And joinForwardEmpRecMsgCond cond1
+                          cond = C.And joinForwardRecMsgEmpCond cond1
 
 -- | translated Query for interaction between forwardmsg and autoresponder
 

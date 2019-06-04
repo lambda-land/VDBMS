@@ -22,7 +22,7 @@ import Prelude hiding (Ordering(..))
 
 
 enronVQ5 :: Algebra
-enronVQ5 = AChc (F.And signature (F.Not remail)) u5_Q1 Empty
+enronVQ5 = AChc (F.And signature (F.Not remailmsg)) u5_Q1 Empty
 
 u5_Q1 :: Algebra
 u5_Q1 = Proj (map trueAtt $ genQAtts [("v_employee", "email_id"), ("v_employee", "sign")]) 

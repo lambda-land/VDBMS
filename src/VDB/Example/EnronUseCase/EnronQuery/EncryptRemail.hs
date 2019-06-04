@@ -27,7 +27,7 @@ import Prelude hiding (Ordering(..))
 
 
 enronVQ10 :: Algebra
-enronVQ10 = AChc encrypt (AChc remail u10_Q1 u10_Q2) (AChc remail u10_Q3 u10_Q4)
+enronVQ10 = AChc encrypt (AChc remailmsg u10_Q1 u10_Q2) (AChc remailmsg u10_Q3 u10_Q4)
 
 -- | remove the sender's address from header line before encrypt
 u10_Q1 :: Algebra

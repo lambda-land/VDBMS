@@ -16,18 +16,26 @@ import VDB.Example.SmartConstructor
 midValue :: C.Atom
 midValue = (C.Val (SqlInt32 9138))
 
+midValueFromRemailer :: C.Atom
+midValueFromRemailer = (C.Val (SqlInt32 1082))
+
 eidValue :: C.Atom
 eidValue = (C.Val (SqlInt32 123))
 
 nullValue :: C.Atom 
 nullValue = C.Val SqlNull
 
+trueValue :: C.Atom
+trueValue = C.Val (SqlBool True)
+
+falseValue :: C.Atom
+falseValue = C.Val (SqlBool False)
 -- | All Feautres
-encrypt, autoresponder, signature, remail,forwardmsg :: F.FeatureExpr
+encrypt, autoresponder, signature, remailmsg,forwardmsg :: F.FeatureExpr
 encrypt = F.Ref $ Feature "encrypt"
 autoresponder = F.Ref $ Feature "autoresponder"
 signature = F.Ref $ Feature "signature"
-remail = F.Ref $ Feature "remail"
+remailmsg = F.Ref $ Feature "remailmsg"
 forwardmsg = F.Ref $ Feature "forwardmsg"
 
 
@@ -78,4 +86,12 @@ joinRemailEmpRecMsg = SetOp Prod v_remail_msg joinMsgEmpRec
 joinRemailEmpRecMsgCond :: C.Condition
 joinRemailEmpRecMsgCond  = C.And cond joinMsgEmpRecCond
                     where cond = C.Comp EQ (C.Attr (genQAtt ("v_remail_msg","eid"))) (C.Attr (genQAtt ("v_employee","eid")))
+
+-- | Join v_auto_msg with v_employee + v_message + v_recipientinfo
+joinAutoEmpRecMsgCond :: C.Condition
+joinAutoEmpRecMsgCond  = C.And cond joinMsgEmpRecCond
+                    where cond = C.Comp EQ (C.Attr (genQAtt ("v_auto_msg","eid"))) (C.Attr (genQAtt ("v_employee","eid")))
+
+joinAutoEmpRecMsg :: Algebra
+joinAutoEmpRecMsg = SetOp Prod v_auto_msg joinMsgEmpRec
 
