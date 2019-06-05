@@ -10,7 +10,7 @@ import VDB.Type
 import Prelude hiding (Ordering(..))
 
 -- 
--- 27. interaction between signature with forwardmessage
+-- 27. interaction between signature(virify) with forwardmessage
 -- 
 -- * Situdation: Bob sent a signed message to Jack's old email address which automatically forward 
 --               message to new email address (hall@research). The signed message may be altered 

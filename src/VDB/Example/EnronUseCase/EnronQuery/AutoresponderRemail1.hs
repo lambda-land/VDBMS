@@ -1,4 +1,4 @@
-module VDB.Example.EnronUseCase.EnronQuery.AutoresponderRemailI where 
+module VDB.Example.EnronUseCase.EnronQuery.AutoresponderRemail1 where 
 
 import VDB.Example.EnronUseCase.EnronQuery.Common
 import VDB.Algebra
