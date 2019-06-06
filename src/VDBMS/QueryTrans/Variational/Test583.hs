@@ -21,6 +21,9 @@ import Database.HaskellDB.Sql.Default (defaultSqlQuery, defaultSqlGenerator)
 
 import Text.PrettyPrint (Doc)
 
+-- | prints a list of opt sql generated from a variational query.
+--   TODO: remove shrinkFexp from here! only shrink fexp when 
+--         sending the queries.
 printSql :: Algebra -> Schema -> [Opt Doc]
 printSql q s = mapFstSnd (shrinkFeatureExpr) 
                          (ppSql . (defaultSqlQuery defaultSqlGenerator)) 
