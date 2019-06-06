@@ -10,6 +10,7 @@ import VDBMS.QueryLang.Variational.Algebra
 import VDBMS.Variational.Opt
 -- import VDBMS.Variational.Variational
 import VDBMS.Features.FeatureExpr.FeatureExpr 
+import VDBMS.TypeSystem.TypeSystem
 -- import VDBMS.VDB.Name
 -- import qualified VDBMS.QueryLang.Variational.Condition as C
 -- import VDBMS.QueryLang.Relational.Condition
@@ -30,3 +31,9 @@ printSql q s = mapFstSnd (shrinkFeatureExpr)
                          (ppSql . (defaultSqlQuery defaultSqlGenerator)) 
                        $ trans q s 
 
+printSql' :: Algebra -> Schema -> [Opt Doc]
+printSql' q s | typeOfVquery' q (featureModel s) s /= Nothing
+  = mapFstSnd (shrinkFeatureExpr) 
+              (ppSql . (defaultSqlQuery defaultSqlGenerator)) 
+            $ trans q s 
+printSql' q s | otherwise = error "type error in query!!"
