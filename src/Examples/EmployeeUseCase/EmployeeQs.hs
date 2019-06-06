@@ -38,6 +38,26 @@ newtype QueryT = QueryT String
 trueAtt :: Attribute -> Opt Attribute
 trueAtt a = (F.Lit True, a)
 
+vq0, vq1, vq2, vq3 :: Algebra
+
+-- \pi_name empacct
+vq0 = Proj [trueAtt name]
+           (TRef empacct)
+
+-- \pi_{name^v3, empno^v4} empacct
+vq1 = Proj [(empv3, name), (empv4, empno)]
+           (TRef empacct)
+
+-- \pi_name empv3<empacct, empacct \bowtie empbio>
+vq2 = Proj [trueAtt name] $
+      AChc empv3 (TRef empacct) $
+                  SetOp Prod (TRef empacct) (TRef empbio)
+
+-- \pi_title (\sigma_{v3<salary > 5000, salary > 10000>} job)
+vq3 = Proj [trueAtt title] $
+           Sel (C.CChc empv3 empCond' empCond'') $
+               TRef job
+
 -- 
 -- first set of quesries:
 -- taken from the prima paper, adjusted to the employee database. 
@@ -79,6 +99,13 @@ yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) 
 -- | employee id = 10004 condition
 empCond :: C.Condition
 empCond = C.Comp EQ (C.Attr empno) (C.Val $ SqlInteger 10004)
+
+empCond' :: C.Condition
+empCond' = C.Comp EQ (C.Attr salary) (C.Val $ SqlInteger 50000)
+
+empCond'' :: C.Condition
+empCond'' = C.Comp EQ (C.Attr salary) (C.Val $ SqlInteger 10000)
+
 
 -- more optimized based on relational alg opt rules. prj and sel place
 -- have been exchanged. check translations of them to see if they return

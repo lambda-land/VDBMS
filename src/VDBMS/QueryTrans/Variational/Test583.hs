@@ -23,7 +23,8 @@ import Text.PrettyPrint (Doc)
 
 -- | prints a list of opt sql generated from a variational query.
 --   TODO: remove shrinkFexp from here! only shrink fexp when 
---         sending the queries.
+--         sending the queries. don't forget to type check the queries 
+--         before running them!
 printSql :: Algebra -> Schema -> [Opt Doc]
 printSql q s = mapFstSnd (shrinkFeatureExpr) 
                          (ppSql . (defaultSqlQuery defaultSqlGenerator)) 
