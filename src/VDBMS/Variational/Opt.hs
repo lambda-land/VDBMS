@@ -17,6 +17,7 @@ module VDBMS.Variational.Opt (
         configureOptListRetOpt,
         groupOpts,
         validifyOpts
+        -- pretty
 
 ) where
 

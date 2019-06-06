@@ -9,7 +9,7 @@ import VDBMS.QueryLang.Variational.Algebra
 -- import VDBMS.Features.Config
 import VDBMS.Variational.Opt
 -- import VDBMS.Variational.Variational
--- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+import VDBMS.Features.FeatureExpr.FeatureExpr 
 -- import VDBMS.VDB.Name
 -- import qualified VDBMS.QueryLang.Variational.Condition as C
 -- import VDBMS.QueryLang.Relational.Condition
@@ -22,6 +22,7 @@ import Database.HaskellDB.Sql.Default (defaultSqlQuery, defaultSqlGenerator)
 import Text.PrettyPrint (Doc)
 
 printSql :: Algebra -> Schema -> [Opt Doc]
-printSql q s = mapSnd (ppSql . (defaultSqlQuery defaultSqlGenerator)) 
-                    $ trans q s 
+printSql q s = mapFstSnd (shrinkFeatureExpr) 
+                         (ppSql . (defaultSqlQuery defaultSqlGenerator)) 
+                       $ trans q s 
 

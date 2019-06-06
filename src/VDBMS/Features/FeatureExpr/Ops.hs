@@ -41,8 +41,10 @@ shrinkFeatureExpr (Not (Not e)) = shrinkFeatureExpr e
 shrinkFeatureExpr (And l r)
     | tautology l               = shrinkFeatureExpr r
     | tautology r               = shrinkFeatureExpr l
+    | otherwise                 = And (shrinkFeatureExpr l) (shrinkFeatureExpr r)
 shrinkFeatureExpr (Or l r)
     | unsatisfiable l           = shrinkFeatureExpr r
     | unsatisfiable r           = shrinkFeatureExpr l
+    | otherwise                 = Or (shrinkFeatureExpr l) (shrinkFeatureExpr r)
 shrinkFeatureExpr e = e
 

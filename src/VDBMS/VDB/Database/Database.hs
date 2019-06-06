@@ -25,6 +25,13 @@ class Database path c | path -> c where
   -- mkStmt :: DB c p s -> String -> IO Stmt
   runQ :: DB path p s -> Query -> IO Table
 
+-- -- bundle all of them up in one data type
+-- class Database c where 
+--   data DB 
+
+-- class Database conn path | conn -> path where
+--   connect :: path -> IO conn 
+--   disconnect :: 
 
 -- | Gets all valid configuration of a vdb.
 getAllConfig :: Database path c => DB path p Schema -> [Config Bool]
