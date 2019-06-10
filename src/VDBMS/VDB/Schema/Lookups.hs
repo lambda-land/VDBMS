@@ -62,33 +62,31 @@ lookupRowType r (_,m) = maybe (throwM $ MissingRelation r) return $ M.lookup r m
 -- | Get the feature expression of a relation in a database.
 lookupRelationFexp :: MonadThrow m => Relation -> Schema -> m FeatureExpr
 lookupRelationFexp r s = lookupRowType r s >>= return . fst
-  -- maybe (throwM $ MissingRelation r) (return . fst) $ 
-  -- case lookupRowType r s of 
-  --                          Just (f,_) -> Just f
-  --                          _ -> Nothing
-
 
 -- | Get the row type of a relation in a database.
-lookupRel :: Relation -> Schema -> Maybe RowType
-lookupRel r s = case lookupRowType r s of 
-                  Just (_,rel) -> Just rel
-                  _ -> Nothing
+lookupRel :: MonadThrow m => Relation -> Schema -> m RowType
+lookupRel r s = lookupRowType r s >>= return . snd
+ -- case lookupRowType r s of 
+ --                  Just (_,rel) -> Just rel
+ --                  _ -> Nothing
 
 -- | get the attributes of a relation in a database.
-lookupRelAttsList :: Relation -> Schema -> Maybe [Attribute]
+lookupRelAttsList :: MonadThrow m => Relation -> Schema -> m [Attribute]
 lookupRelAttsList r s = M.keys <$> lookupRel r s
 
 -- | Get the type and feature exp of an attribute in a database.
-lookupAttribute :: Attribute -> Relation -> Schema -> Maybe (Opt SqlType)
-lookupAttribute a r s = case lookupRowType r s of 
-                          Just (_,rt) -> lookupAttFexpTypeInRowType a rt
-                          _ -> Nothing
+lookupAttribute :: MonadThrow m => Attribute -> Relation -> Schema 
+                                -> m (Opt SqlType)
+lookupAttribute a r s = lookupRel r s >>= lookupAttFexpTypeInRowType a
+  -- case lookupRowType r s of 
+  --                         Just (_,rt) -> lookupAttFexpTypeInRowType a rt
+  --                         _ -> Nothing
 
 -- | helper func for lookupAttInRel -- apply new rowtypes
-retrieve ::  Map Attribute (Opt SqlType) -> Attribute -> Maybe (FeatureExpr, SqlType)
-retrieve m a = case M.toList m of 
-                [] -> Nothing
-                ((x,(y,z)):xs) -> if a == x then (Just (y,z)) else retrieve (M.fromList xs) a
+-- retrieve ::  Map Attribute (Opt SqlType) -> Attribute -> Maybe (FeatureExpr, SqlType)
+-- retrieve m a = case M.toList m of 
+--                 [] -> Nothing
+--                 ((x,(y,z)):xs) -> if a == x then (Just (y,z)) else retrieve (M.fromList xs) a
 
 
 -- | helper func for lookupAttInRel -- old
@@ -97,13 +95,15 @@ retrieve m a = case M.toList m of
 -- retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
 
 -- | Get the type of an attribute in a database.
-lookupAttType :: Attribute -> Relation -> Schema -> Maybe SqlType
-lookupAttType a r s = case lookupAttribute a r s of 
-                        Just (_,t) -> Just t
-                        _ -> Nothing
+lookupAttType :: MonadThrow m => Attribute -> Relation -> Schema -> m SqlType
+lookupAttType a r s = lookupAttribute a r s >>= return . snd
+  -- case lookupAttribute a r s of 
+  --                       Just (_,t) -> Just t
+  --                       _ -> Nothing
 
 -- | Get the feature expression of an attribute in adatabase.
-lookupAttFexp :: Attribute -> Relation -> Schema -> Maybe FeatureExpr
-lookupAttFexp a r s = case lookupAttribute a r s of 
-                        Just (f,_) -> Just f
-                        _ -> Nothing
+lookupAttFexp :: MonadThrow m => Attribute -> Relation -> Schema -> m FeatureExpr
+lookupAttFexp a r s = lookupAttribute a r s >>= return . fst
+  -- case lookupAttribute a r s of 
+  --                       Just (f,_) -> Just f
+  --                       _ -> Nothing
