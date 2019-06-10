@@ -5,6 +5,7 @@ import VDBMS.Features.Config
 import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Schema.Schema
 import VDBMS.VDB.Table.Table
+import VDBMS.VDB.Name (PresCondAtt)
 
 -- | A query sent to the db engine is just a string.
 type Query = String
@@ -17,10 +18,14 @@ type Query = String
 --   and store the data.
 class Database conn where 
   type Path conn 
-  connect :: Path conn -> IO conn 
+  connect :: Path conn -> PresCondAtt -> Schema -> IO conn 
   disconnect :: conn -> IO ()
   schema :: conn -> Schema
+  presCond :: conn -> PresCondAtt
   runQ :: conn -> Query -> IO Table
+  -- | Gets all valid configuration of a vdb.
+  getAllConfig :: conn -> [Config Bool]
+  getAllConfig c = validConfsOfFexp $ featureModel $ schema c
 
 -- class Database path c | path -> c where
 --   data DB path :: * -> * -> *
