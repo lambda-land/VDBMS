@@ -5,14 +5,14 @@ where mid = 9138)
 
 union all 
 
-(SELECT sender, subject, body, NULL as date, sign, NULL as forwardAddr, concat("signature", " AND ", "(NOT forwardmsg)")
+(SELECT sender, subject, body, NULL as date, sign, NULL as forwardAddr, concat("signature", " AND ", "(NOT forwardmsg)") as presCond
 FROM v_message msg
 inner join v_employee emp on msg.sender = emp.email_id
 where msg.mid = 9138)
 
 union all 
 
-(SELECT sender, subject, body, NULL as date, NULL as sign, forwardAddr, concat("(NOT signature)", " AND ", " forwardmsg")
+(SELECT sender, subject, body, NULL as date, NULL as sign, forwardAddr, concat("(NOT signature)", " AND ", " forwardmsg") as presCond
 FROM v_forward_msg  fmsg 
 inner join v_employee emp on fmsg.eid = emp.eid
 inner join v_recipientinfo rec on rec.rvalue = emp.email_id 
@@ -22,7 +22,7 @@ where msg.mid = 9138)
 union all 
 
 
-(SELECT sender, subject, body, NULL as date, NULL as sign, NULL as forwardAddr, concat("(NOT signature)", " AND", "(NOT forwardmsg)")
+(SELECT sender, subject, body, NULL as date, NULL as sign, NULL as forwardAddr, concat("(NOT signature)", " AND", "(NOT forwardmsg)") as presCond
 FROM v_message 
 where mid = 9138)
 

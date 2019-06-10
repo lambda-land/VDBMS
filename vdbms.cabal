@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9707afdbfceceb745e163f849e5bd7ab5e0654848023a5db749d72aef17084e1
+-- hash: e103e673f597d1e125ee0b4fc5fc040f892d1bc2148fe8c2dc77c86bf6812048
 
 name:           vdbms
 version:        0.1.0.0
@@ -41,6 +41,7 @@ library
       VDB.Example.EmployeeUseCase.EmployeeVSchema
       VDB.Example.EnronUseCase.EnronQs
       VDB.Example.EnronUseCase.EnronQuery
+      VDB.Example.EnronUseCase.EnronQuery.AddressbookEncrypt
       VDB.Example.EnronUseCase.EnronQuery.AutoresponderEncrypt
       VDB.Example.EnronUseCase.EnronQuery.AutoresponderForward
       VDB.Example.EnronUseCase.EnronQuery.AutoresponderRemail1

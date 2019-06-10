@@ -19,6 +19,9 @@ midValue = (C.Val (SqlInt32 9138))
 midValueFromRemailer :: C.Atom
 midValueFromRemailer = (C.Val (SqlInt32 1082))
 
+midValueEncrypted :: C.Atom 
+midValueEncrypted = (C.Val (SqlInt32 2893))
+
 eidValue :: C.Atom
 eidValue = (C.Val (SqlInt32 123))
 
