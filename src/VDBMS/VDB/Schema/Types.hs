@@ -52,8 +52,6 @@ schemaStrct = getObj
 -- | Errors querying schema.
 data SchemaError = MissingRelation Relation
                  | MissingAttribute Attribute
-                 -- | Others
-  -- deriving (Eq,Ord,Show)
   deriving (Data,Eq,Generic,Ord,Read,Show,Typeable)
 
 instance Exception SchemaError
