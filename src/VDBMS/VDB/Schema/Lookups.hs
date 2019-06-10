@@ -66,9 +66,6 @@ lookupRelationFexp r s = lookupRowType r s >>= return . fst
 -- | Get the row type of a relation in a database.
 lookupRel :: MonadThrow m => Relation -> Schema -> m RowType
 lookupRel r s = lookupRowType r s >>= return . snd
- -- case lookupRowType r s of 
- --                  Just (_,rel) -> Just rel
- --                  _ -> Nothing
 
 -- | get the attributes of a relation in a database.
 lookupRelAttsList :: MonadThrow m => Relation -> Schema -> m [Attribute]
@@ -78,32 +75,11 @@ lookupRelAttsList r s = M.keys <$> lookupRel r s
 lookupAttribute :: MonadThrow m => Attribute -> Relation -> Schema 
                                 -> m (Opt SqlType)
 lookupAttribute a r s = lookupRel r s >>= lookupAttFexpTypeInRowType a
-  -- case lookupRowType r s of 
-  --                         Just (_,rt) -> lookupAttFexpTypeInRowType a rt
-  --                         _ -> Nothing
-
--- | helper func for lookupAttInRel -- apply new rowtypes
--- retrieve ::  Map Attribute (Opt SqlType) -> Attribute -> Maybe (FeatureExpr, SqlType)
--- retrieve m a = case M.toList m of 
---                 [] -> Nothing
---                 ((x,(y,z)):xs) -> if a == x then (Just (y,z)) else retrieve (M.fromList xs) a
-
-
--- | helper func for lookupAttInRel -- old
--- retrieve :: Eq b => [(a,(b,c))] -> b -> Maybe (a,c)
--- retrieve [] _ = Nothing
--- retrieve ((x,(y,z)):xs) v = if v == y then (Just (x,z)) else retrieve xs v
 
 -- | Get the type of an attribute in a database.
 lookupAttType :: MonadThrow m => Attribute -> Relation -> Schema -> m SqlType
 lookupAttType a r s = lookupAttribute a r s >>= return . snd
-  -- case lookupAttribute a r s of 
-  --                       Just (_,t) -> Just t
-  --                       _ -> Nothing
 
 -- | Get the feature expression of an attribute in adatabase.
 lookupAttFexp :: MonadThrow m => Attribute -> Relation -> Schema -> m FeatureExpr
 lookupAttFexp a r s = lookupAttribute a r s >>= return . fst
-  -- case lookupAttribute a r s of 
-  --                       Just (f,_) -> Just f
-  --                       _ -> Nothing
