@@ -1,4 +1,4 @@
--- | A generic interface for variational things.
+-- | A generic interface for optional things.
 module VDBMS.Variational.Opt (
         
         Opt,
@@ -26,12 +26,22 @@ import Data.List (groupBy)
 import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.SAT (equivalent,satisfiable)
+import VDBMS.Variational.Variational
 -- import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
 -- import VDBMS.Features.FeatureExpr.Core (evalFeatureExpr)
 -- import VDBMS.Features.FeatureExpr.Ops (selectFeatureExpr)
 -- import VDBMS.Features.Feature
 
 import Control.Arrow (first, second, (***))
+
+
+class (Variational a, Monoid a) => Optional a where
+  
+  -- | Create an opt.
+  opt :: FeatureExpr -> a -> Opt a 
+
+  
+
 
 --
 -- * Optional values

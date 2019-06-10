@@ -46,15 +46,15 @@ prettyRelCondition c = top c
 instance Show Condition where
   show = prettyRelCondition
 
-instance Variational Condition where
+-- instance Variational Condition where
 
-  choice = CChc
+--   choice = CChc
 
-  choiceMap g (Not c)      = Not (choiceMap g c)
-  choiceMap g (Or  l r)    = Or  (choiceMap g l) (choiceMap g r)
-  choiceMap g (And l r)    = And (choiceMap g l) (choiceMap g r)
-  choiceMap g (CChc f l r) = g f l r
-  choiceMap _ c            = c
+--   choiceMap g (Not c)      = Not (choiceMap g c)
+--   choiceMap g (Or  l r)    = Or  (choiceMap g l) (choiceMap g r)
+--   choiceMap g (And l r)    = And (choiceMap g l) (choiceMap g r)
+--   choiceMap g (CChc f l r) = g f l r
+--   choiceMap _ c            = c
 
 instance Boolean Condition where
   true  = Lit True
