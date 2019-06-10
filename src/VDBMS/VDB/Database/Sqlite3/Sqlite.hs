@@ -17,8 +17,7 @@ data Sqlite3 = Sqlite3 PresCondAtt Schema S.Database
 
 instance Database Sqlite3 where
   type Path Sqlite3 = Text
-  connect t p s = do conn <- S.open t
-                     return $ Sqlite3 p s conn
+  connect t p s = S.open t >>= return . Sqlite3 p s
   disconnect (Sqlite3 p s c) = S.close c
   schema (Sqlite3 p s c) = s 
   presCond (Sqlite3 p s c) = p

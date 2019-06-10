@@ -43,8 +43,7 @@ data SqliteHDBC = SqliteHDBC PresCondAtt Schema S.Connection
 
 instance Database SqliteHDBC where
   type Path SqliteHDBC = FilePath
-  connect f p s = do conn <- S.connectSqlite3 f
-                     return $ SqliteHDBC p s conn 
+  connect f p s = S.connectSqlite3 f >>= return . SqliteHDBC p s
   disconnect (SqliteHDBC p s c) = H.disconnect c
   schema (SqliteHDBC p s c) = s
   presCond (SqliteHDBC p s c) = p
