@@ -15,15 +15,22 @@ type Query = String
 --   attribute name. This is instantiated for each
 --   external library and db engine used to connect to
 --   and store the data.
-class Database path c | path -> c where
-  data DB path :: * -> * -> *
-  data Connection path c :: *
-  connection :: DB path p s -> IO c
-  disconnect :: Connection path c -> IO ()
-  schema :: DB path p s -> s
-  presCond :: DB path p s -> p
-  -- mkStmt :: DB c p s -> String -> IO Stmt
-  runQ :: DB path p s -> Query -> IO Table
+class Database conn where 
+  type Path conn 
+  connect :: Path conn -> IO conn 
+  disconnect :: conn -> IO ()
+  schema :: conn -> Schema
+  runQ :: conn -> Query -> IO Table
+
+-- class Database path c | path -> c where
+--   data DB path :: * -> * -> *
+--   data Connection path c :: *
+--   connection :: DB path p s -> IO c
+--   disconnect :: Connection path c -> IO ()
+--   schema :: DB path p s -> s
+--   presCond :: DB path p s -> p
+--   -- mkStmt :: DB c p s -> String -> IO Stmt
+--   runQ :: DB path p s -> Query -> IO Table
 
 -- -- bundle all of them up in one data type
 -- class Database c where 
@@ -34,8 +41,8 @@ class Database path c | path -> c where
 --   disconnect :: 
 
 -- | Gets all valid configuration of a vdb.
-getAllConfig :: Database path c => DB path p Schema -> [Config Bool]
-getAllConfig db = validConfsOfFexp $ featureModel $ schema db
+-- getAllConfig :: Database path c => DB path p Schema -> [Config Bool]
+-- getAllConfig db = validConfsOfFexp $ featureModel $ schema db
 
   
 
