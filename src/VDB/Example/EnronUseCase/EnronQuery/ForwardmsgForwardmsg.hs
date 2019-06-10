@@ -33,7 +33,7 @@ enronVQ18 = AChc forwardmsg (u18_Q1) Empty
 -- 	SELECT forward.forwardAddr
 --     from v_forward_msg forward )
 
--- | undefined because there is no "int" operation in metalanguages
+-- | undefined because there is no "in" operation in metalanguages
 u18_Q1 :: Algebra
 u18_Q1 = undefined 
 

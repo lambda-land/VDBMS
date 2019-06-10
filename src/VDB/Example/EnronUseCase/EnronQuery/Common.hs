@@ -95,3 +95,11 @@ joinAutoEmpRecMsgCond  = C.And cond joinMsgEmpRecCond
 joinAutoEmpRecMsg :: Algebra
 joinAutoEmpRecMsg = SetOp Prod v_auto_msg joinMsgEmpRec
 
+-- | Join v_employee with  v_forward_msg + v_remail_msg
+joinEmpForwardRemailCond :: C.Condition 
+joinEmpForwardRemailCond = C.And cond1 cond2
+    where cond1 = C.Comp EQ (C.Attr (genQAtt ("v_employee","eid"))) (C.Attr (genQAtt ("v_forward_msg","eid")))
+          cond2 = C.Comp EQ (C.Attr (genQAtt ("v_employee","eid"))) (C.Attr (genQAtt ("v_remail_msg","eid")))
+
+joinEmpForwardRemail :: Algebra
+joinEmpForwardRemail = SetOp Prod v_employee (SetOp Prod v_forward_msg v_remail_msg)

@@ -1,11 +1,21 @@
 
 -- | Q1: find the loop from email_id and forwardAddr
-SELECT *
-FROM v_employee emp 
+-- SELECT emp.eid, emp.email_id, forward.forwardAddr
+-- FROM v_employee emp
+-- inner join v_forward_msg forward on forward.eid = emp.eid
+-- where emp.email_id in ( 
+-- 	SELECT forward.forwardAddr
+--     from v_forward_msg forward )
+
+-- | translated VQ
+SELECT emp.eid, emp.email_id, forward.forwardAddr,  "forwardmsg" as presCond
+FROM v_employee emp
+inner join v_forward_msg forward on forward.eid = emp.eid
 where emp.email_id in ( 
 	SELECT forward.forwardAddr
     from v_forward_msg forward )
 
+    
 -- SELECT * 
 -- FROM v_forward_msg
 
