@@ -11,6 +11,19 @@ import VDBMS.VDB.Database.Database
 import qualified Database.SQLite3 as S
 import Data.Text
 
+-- | A database residing in Sqlite and using directsqlite
+--   to connect to it. 
+data SqliteDirect = SqliteDirect PresCondAtt Schema S.Database
+
+instance Database SqliteDirect where
+  type Path SqliteDirect = Text
+  connect t p s = do conn <- S.open t
+                     return $ SqliteDirect p s conn
+  disconnect (SqliteDirect p s c) = S.close c
+  schema (SqliteDirect p s c) = s 
+  presCond (SqliteDirect p s c) = p
+  runQ = undefined
+
 -- instance Database Text S.Database where 
 --   data DB Text p s = Sqlite3 Text p s
 --   data Connection Text S.Database = Sqlite3Conn Text S.Database

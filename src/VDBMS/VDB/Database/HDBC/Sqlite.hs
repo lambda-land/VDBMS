@@ -51,14 +51,5 @@ instance Database SqliteHDBC where
   runQ = undefined
 
 
--- instance Database FilePath S.Connection where 
---   data DB FilePath p s = SqliteHDBC FilePath p s
---   data Connection FilePath S.Connection = SqliteConn FilePath S.Connection
---   connection (SqliteHDBC path p s) = S.connectSqlite3 path
---   disconnect (SqliteConn p c) = H.disconnect c
---   schema (SqliteHDBC path p s) = s 
---   presCond (SqliteHDBC path p s) = p
---   runQ (SqliteHDBC path p s) = undefined
-
 
 -- ex1 = SqliteHDBC "../../../databases/testDB/test1.db" 
