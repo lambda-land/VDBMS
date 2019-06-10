@@ -4,12 +4,18 @@ module VDBMS.VDB.Schema.Types (
         RowType(..),
         TableSchema(..),
         Schema(..),
+        SchemaError(..),
         featureModel,
         schemaStrct
 
 ) where
 
+import Data.Data (Data, Typeable)
+import GHC.Generics (Generic)
+
 import Data.Map.Strict (Map)
+
+import Control.Monad.Catch (Exception)
 
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
@@ -42,3 +48,12 @@ featureModel = getFexp
 -- | Gets the structure of schema.
 schemaStrct :: Schema -> Map Relation TableSchema
 schemaStrct = getObj 
+
+-- | Errors querying schema.
+data SchemaError = MissingRelation Relation
+                 | MissingAttribute Attribute
+                 -- | Others
+  -- deriving (Eq,Ord,Show)
+  deriving (Data,Eq,Generic,Ord,Read,Show,Typeable)
+
+instance Exception SchemaError

@@ -15,6 +15,8 @@ module VDBMS.VDB.Schema.Lookups (
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
+import Control.Monad.Catch
+
 import VDBMS.VDB.Schema.Types
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
@@ -42,19 +44,22 @@ import VDBMS.DBMS.Value.Value (SqlType)
 --                                           _ -> Nothing
 
 -- | get the attribute fexp from a rowtype
-lookupAttFexpInRowType :: Attribute -> RowType -> Maybe FeatureExpr
-lookupAttFexpInRowType a r = case M.lookup a r of 
-                               Just (f,_) -> Just f
-                               _ -> Nothing
-
+lookupAttFexpInRowType :: MonadThrow m => Attribute -> RowType -> m FeatureExpr
+lookupAttFexpInRowType a r = 
+  maybe (throwM $ MissingAttribute a) (return . fst) $ M.lookup a r
+  
 -- | Get the fexp and type of an attribute in a rowtype
-lookupAttFexpTypeInRowType :: Attribute -> RowType -> Maybe (Opt SqlType)
-lookupAttFexpTypeInRowType = M.lookup
+lookupAttFexpTypeInRowType :: MonadThrow m => Attribute -> RowType 
+                                           -> m (Opt SqlType)
+lookupAttFexpTypeInRowType a r = 
+  maybe (throwM $ MissingAttribute a) return $ M.lookup a r
 
 -- | Get the schema of a relation in the database, where 
 -- 	the relation schema is stored as a row type.
-lookupRowType :: Relation -> Schema -> Maybe (TableSchema)
-lookupRowType r (_,m) = M.lookup r m
+lookupRowType :: MonadThrow m => Relation -> Schema -> m (TableSchema)
+lookupRowType r (_,m) = maybe (throwM $ MissingRelation r) return $ M.lookup r m
+-- lookupRowType r (_,m) | Just t <- M.lookup r m = return t 
+--                       | otherwise = throwM $ MissingRelation r
 
 -- | Get the feature expression of a relation in a database.
 lookupRelationFexp :: Relation -> Schema -> Maybe FeatureExpr

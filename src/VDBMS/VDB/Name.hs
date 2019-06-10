@@ -21,7 +21,7 @@ import Data.String (IsString)
   -- deriving (Data,Eq,IsString,Ord,Show,Typeable)
 
 data Attribute = Attribute { attributeQualifier :: Maybe Relation, attributeName :: String} 
-  deriving (Data,Eq,Ord,Show,Typeable)
+  deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- Attribute n  = Attribute Nothing n 
 
@@ -42,11 +42,11 @@ getAttName (Attribute (Just r) a)  = concat [relationName r, ".", a, " "]
 
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }
-  deriving (Data,Eq,IsString,Ord,Show,Typeable)
+  deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)
 
 -- | Name of presence condition attribute in db.
 newtype PresCondAtt = PresCondAtt { presCondAttName :: String }
-  deriving (Data,Eq,IsString,Ord,Show,Typeable)  
+  deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)  
 
 -- | A feasible type to use while creating sql tables.
 -- newtype CreateSqlTableType = CreateSqlTableType { typeName :: String}
