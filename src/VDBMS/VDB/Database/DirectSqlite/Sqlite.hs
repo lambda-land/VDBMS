@@ -13,15 +13,15 @@ import Data.Text
 
 -- | A database residing in Sqlite and using directsqlite
 --   to connect to it. 
-data SqliteDirect = SqliteDirect PresCondAtt Schema S.Database
+data Sqlite3 = Sqlite3 PresCondAtt Schema S.Database
 
-instance Database SqliteDirect where
-  type Path SqliteDirect = Text
+instance Database Sqlite3 where
+  type Path Sqlite3 = Text
   connect t p s = do conn <- S.open t
-                     return $ SqliteDirect p s conn
-  disconnect (SqliteDirect p s c) = S.close c
-  schema (SqliteDirect p s c) = s 
-  presCond (SqliteDirect p s c) = p
+                     return $ Sqlite3 p s conn
+  disconnect (Sqlite3 p s c) = S.close c
+  schema (Sqlite3 p s c) = s 
+  presCond (Sqlite3 p s c) = p
   runQ = undefined
 
 -- instance Database Text S.Database where 
