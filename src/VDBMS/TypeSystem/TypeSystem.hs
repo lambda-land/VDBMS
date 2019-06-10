@@ -24,6 +24,7 @@ import qualified Data.Map.Strict as SM
 import qualified Data.Map.Merge.Strict as StrictM
 import qualified Data.Set as Set 
 
+-- import Control.Monad.Catch -- for handling errors
 
 type VariationalContext = F.FeatureExpr
 

@@ -45,6 +45,7 @@ dependencies:
 - clock
 - haskelldb >= 2.2.5 
 - pretty
+- exceptions
 # - syb #scrap your boilerplate
 #- template-haskell
 # - pretty >= 1.0 && < 2

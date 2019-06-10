@@ -31,9 +31,3 @@ printSql q s = mapFstSnd (shrinkFeatureExpr)
                          (ppSql . (defaultSqlQuery defaultSqlGenerator)) 
                        $ trans q s 
 
-printSql' :: Algebra -> Schema -> [Opt Doc]
-printSql' q s | typeOfVquery' q (featureModel s) s /= Nothing
-  = mapFstSnd (shrinkFeatureExpr) 
-              (ppSql . (defaultSqlQuery defaultSqlGenerator)) 
-            $ trans q s 
-printSql' q s | otherwise = error "type error in query!!"
