@@ -5,7 +5,7 @@ module VDBMS.Variational.Variational (
 
 ) where
 
-import VDBMS.Features.Config
+import qualified VDBMS.Features.Config as C
 import VDBMS.Features.FeatureExpr.FeatureExpr
 -- import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
 -- import VDBMS.Features.FeatureExpr.Core (evalFeatureExpr)
@@ -31,7 +31,7 @@ class Variational a where
   -- select f b = choiceMap (selectHelper f b)
 
   -- | Fully configure a variational thing.
-  configure :: Config Bool -> a -> a
+  configure :: C.Config Bool -> a -> b
   -- configure c = choiceMap (configureHelper c)
 
 
@@ -47,16 +47,10 @@ class Variational a where
 -- configureHelper c f l r = if evalFeatureExpr c f then l else r
 
 
--- class Variational a where 
---   select :: Feature -> Bool -> a -> a
---   configure :: Config Bool -> a -> a
---   vmap :: (FeatureExpr -> ) -> a -> a
-
--- class Choice a where
---   choice :: FeatureExpr -> a -> a -> a
-
-
--- class Optional a where 
---   opt :: FeatureExpr -> a -> a
-
-
+-- Alex idea:
+class V v where
+  type NV v :: *
+  type Config v :: *
+  config :: Config v -> v -> NV v
+  vmap :: (V u) => (NV v -> NV u) -> v -> u
+  -- law: f (config c v) = config c ((vmap f) v)

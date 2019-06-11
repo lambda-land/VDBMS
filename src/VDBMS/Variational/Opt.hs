@@ -35,10 +35,10 @@ import VDBMS.Variational.Variational
 import Control.Arrow (first, second, (***))
 
 
-class (Variational a, Monoid a) => Optional a where
+class Variational a => Optional a b | a -> b where
   
   -- | Create an opt.
-  opt :: FeatureExpr -> a -> Opt a 
+  opt :: FeatureExpr -> a -> b 
 
   
 

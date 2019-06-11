@@ -15,6 +15,11 @@ import VDBMS.Variational.Opt
 import VDBMS.QueryLang.Variational.Condition
 import VDBMS.QueryLang.Basics.SetOp
 
+data Att = OptAtt FeatureExpr Attribute
+
+-- data OptionalAtts = OptAtts OptionalAtts OptionalAtt
+--    | OneOptAtt OptionalAtt
+
 -- | Variational relational algebra.
 --   Note that a query such as TRef R isn't acceptable
 --   because a query must use projection to project
@@ -23,6 +28,7 @@ import VDBMS.QueryLang.Basics.SetOp
 data Algebra
    = SetOp SetOp Algebra Algebra
    | Proj  [Opt Attribute] Algebra
+   -- | Proj OptionalAtts Algebra
    | Sel   Condition Algebra
    | AChc  FeatureExpr Algebra Algebra
    | TRef  Relation
