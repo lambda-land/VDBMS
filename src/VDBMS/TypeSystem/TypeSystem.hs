@@ -37,11 +37,12 @@ type TypeEnv' = TableSchema
 
 -- | Errors in type env.
 data TypeError = RelationInvalid Relation VariationalContext F.FeatureExpr
-               | VcondNotHold C.Condition VariationalContext TypeEnv'
-               | DoesntSubsumeTypeEnv TypeEnv' TypeEnv'
-               | NotEquiveTypeEnv TypeEnv' TypeEnv' VariationalContext TypeEnv' TypeEnv'
-               | AttributeNotInTypeEnv Attribute TypeEnv' (Set Attribute)
-  deriving (Data,Eq,Generic,Ord,Show,Typeable)
+  | VcondNotHold C.Condition VariationalContext TypeEnv'
+  | DoesntSubsumeTypeEnv TypeEnv' TypeEnv'
+  | NotEquiveTypeEnv TypeEnv' TypeEnv' VariationalContext TypeEnv' TypeEnv'
+  | AttributeNotInTypeEnv Attribute TypeEnv' (Set Attribute)
+  | EnvFexpUnsat F.FeatureExpr TypeEnv'
+    deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
 
@@ -53,14 +54,27 @@ typeOfVcond :: C.Condition -> VariationalContext -> TypeEnv' -> Bool
 typeOfVcond (C.Lit True)     _ _ = True
 typeOfVcond (C.Lit False)    _ _ = True
 typeOfVcond (C.Comp _ l r)   ctx env@(envf,envr) = case (l, r) of 
-  (C.Attr a, C.Val v)  -> case lookupAttFexpTypeInRowType a envr of 
-                            Just (f',t') -> tautology (F.imply ctx (F.And envf f')) &&
-                              typeOf v == t'
-                            _ -> False
-  (C.Attr a, C.Attr a') -> case (lookupAttFexpTypeInRowType a envr, lookupAttFexpTypeInRowType a' envr) of 
+  (C.Attr a, C.Val v)  -> 
+    maybe False
+          (\ (f',t') -> 
+            tautology (F.imply ctx (F.And envf f')) && typeOf v == t') 
+          $ lookupAttFexpTypeInRowType a envr
+  -- case lookupAttFexpTypeInRowType a envr of 
+  --                           Just (f',t') -> tautology (F.imply ctx (F.And envf f')) &&
+  --                             typeOf v == t'
+  --                           _ -> False
+  (C.Attr a, C.Attr a') -> 
+    case (lookupAttFexpTypeInRowType a envr, lookupAttFexpTypeInRowType a' envr) of 
                             (Just (f',t'), Just (f'',t'')) | t' == t'' -> tautology (F.imply ctx (F.And envf f'))
                                                                         && tautology (F.imply ctx (F.And envf f''))
                             _ -> False
+                                -- maybe False 
+    --       (\ ((f',t'), (f'',t'')) ->
+    --          t' == t'' 
+    --          && tautology (F.imply ctx (F.And envf f'))
+    --          && tautology (F.imply ctx (F.And envf f'')))
+    --       $ (lookupAttFexpTypeInRowType a envr, lookupAttFexpTypeInRowType a' envr)
+
   _ -> False
 typeOfVcond (C.Not c)      ctx env = typeOfVcond c ctx env
 typeOfVcond (C.Or l r)     ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
@@ -69,14 +83,15 @@ typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env
   && typeOfVcond r (F.And ctx (F.Not d)) env 
 
 
+
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
 --   with table pres cond.
 -- SHRINK!!!
-verifyTypeEnv :: TypeEnv' -> Maybe TypeEnv'
+verifyTypeEnv :: MonadThrow m => TypeEnv' -> m TypeEnv'
 verifyTypeEnv env 
-  | satisfiable (getFexp env) = Just $ propagateFexpToTsch env
-  | otherwise = Nothing
+  | satisfiable (getFexp env) = return $ propagateFexpToTsch env
+  | otherwise = throwM $ EnvFexpUnsat (getFexp env) env
 
 -- 
 -- static semantics that returns a table schema,
