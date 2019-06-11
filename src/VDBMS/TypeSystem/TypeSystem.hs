@@ -97,7 +97,8 @@ verifyTypeEnv env
 -- static semantics that returns a table schema,
 -- i.e. it includes the fexp of the whole table!
 -- 
-typeOfVquery' :: MonadThrow m => Algebra -> VariationalContext -> Schema -> m TypeEnv'
+typeOfVquery' :: MonadThrow m => Algebra -> VariationalContext 
+                              -> Schema -> m TypeEnv'
 typeOfVquery' (SetOp Union q q') ctx s = 
   do t  <- typeOfVquery' q ctx s
      t' <- typeOfVquery' q' ctx s
