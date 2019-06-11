@@ -17,11 +17,6 @@ class Variational a where
 
   -- | Create a choice.
   -- choice :: FeatureExpr -> a -> a -> a
-  -- opt :: (f, a) -> a
-  -- opt (f, x) = choice f x mempty
-  -- choice f x _ = opt f x
-  -- {-# MINIMAL choice | opt #-}
-  -- choice f x y = opt f x ? opt (Not f) y
 
   -- | Map a function over all choices.
   -- choiceMap :: (FeatureExpr -> a -> a -> a) -> a -> a
