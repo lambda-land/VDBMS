@@ -23,6 +23,7 @@ import qualified Data.Map as M
 import qualified Data.Map.Strict as SM
 import qualified Data.Map.Merge.Strict as StrictM
 import qualified Data.Set as Set 
+import Data.Set (Set)
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -36,6 +37,10 @@ type TypeEnv' = TableSchema
 
 -- | Errors in type env.
 data TypeError = RelationInvalid Relation VariationalContext F.FeatureExpr
+               | VcondNotHold C.Condition VariationalContext TypeEnv'
+               | DoesntSubsumeTypeEnv TypeEnv' TypeEnv'
+               | NotEquiveTypeEnv TypeEnv' TypeEnv' VariationalContext TypeEnv' TypeEnv'
+               | AttributeNotInTypeEnv Attribute TypeEnv' (Set Attribute)
   deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
@@ -78,25 +83,60 @@ verifyTypeEnv env
 -- i.e. it includes the fexp of the whole table!
 -- 
 typeOfVquery' :: MonadThrow m => Algebra -> VariationalContext -> Schema -> m TypeEnv'
--- typeOfVquery' (SetOp Union q q') ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
---   (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
---   _ -> Nothing
--- typeOfVquery' (SetOp Diff q q')  ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
---   (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
---   _ -> Nothing
--- typeOfVquery' (SetOp Prod q q')  ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
---   (Just t, Just t') -> Just (typeProduct t t')
---   _ -> Nothing
--- typeOfVquery' (Proj as q)        ctx s = case typeOfVquery' q ctx s of 
---   Just t' -> case typeProj as t' of 
---     Just t | typeSubsume t t' -> Just $ appFexpTableSch ctx t'
---   _ -> Nothing
--- typeOfVquery' (Sel c q)          ctx s = case typeOfVquery' q ctx s of
---   Just env | typeOfVcond c ctx env -> Just $ appFexpTableSch ctx env
---   _ -> Nothing
--- typeOfVquery' (AChc d q q')      ctx s = case (typeOfVquery' q (F.And ctx d) s, typeOfVquery' q' (F.And ctx (F.Not d)) s) of 
---   (Just t, Just t') -> Just $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
---   _ -> Nothing
+typeOfVquery' (SetOp Union q q') ctx s = 
+  do t  <- typeOfVquery' q ctx s
+     t' <- typeOfVquery' q' ctx s
+     let env  = appFexpTableSch ctx t
+         env' = appFexpTableSch ctx t'
+     if typeEq env env' 
+     then return t
+     else throwM $ NotEquiveTypeEnv env env' ctx t t'
+  -- case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+  -- (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
+  -- _ -> Nothing
+typeOfVquery' (SetOp Diff q q')  ctx s = 
+  do t  <- typeOfVquery' q ctx s
+     t' <- typeOfVquery' q' ctx s
+     let env = appFexpTableSch ctx t
+         env' = appFexpTableSch ctx t'
+     if typeEq env env'
+     then return t 
+     else throwM $ NotEquiveTypeEnv env env' ctx t t' 
+  -- case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+  -- (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
+  -- _ -> Nothing
+typeOfVquery' (SetOp Prod q q')  ctx s = 
+  do t  <- typeOfVquery' q ctx s
+     t' <- typeOfVquery' q' ctx s
+     return $ typeProduct t t'
+  -- case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+  -- (Just t, Just t') -> Just (typeProduct t t')
+  -- _ -> Nothing
+typeOfVquery' (Proj as q)        ctx s = 
+  do t' <- typeOfVquery' q ctx s
+     t  <-  typeProj as t'
+     if typeSubsume t t'
+     then return $ appFexpTableSch ctx t'
+     else throwM $ DoesntSubsumeTypeEnv t t'
+  -- case typeOfVquery' q ctx s of 
+  -- Just t' -> case typeProj as t' of 
+  --   Just t | typeSubsume t t' -> Just $ appFexpTableSch ctx t'
+  -- _ -> Nothing
+typeOfVquery' (Sel c q)          ctx s = 
+  do env <- typeOfVquery' q ctx s
+     if typeOfVcond c ctx env 
+     then return $ appFexpTableSch ctx env
+     else throwM $ VcondNotHold c ctx env
+  -- case typeOfVquery' q ctx s of
+  -- Just env | typeOfVcond c ctx env -> Just $ appFexpTableSch ctx env
+  -- _ -> Nothing
+typeOfVquery' (AChc d q q')      ctx s = 
+  do t <- typeOfVquery' q (F.And ctx d) s
+     t' <- typeOfVquery' q' (F.And ctx (F.Not d)) s
+     return $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
+  -- case (typeOfVquery' q (F.And ctx d) s, typeOfVquery' q' (F.And ctx (F.Not d)) s) of 
+  -- (Just t, Just t') -> Just $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
+  -- _ -> Nothing
 typeOfVquery' (TRef r)           ctx s = 
   do t <- lookupRowType r s
      if tautology (F.imply ctx $ getFexp t)
@@ -147,16 +187,20 @@ addPrefix s r = M.fromList $ map updateAttName l
 --   it updates included attribute's pres cond by the fexp
 --   assigned to them in the list. it keeps the pres cond of
 --   the whole table the same as before.
-typeProj :: [Opt Attribute] -> TypeEnv' -> Maybe TypeEnv'
+typeProj :: MonadThrow m => [Opt Attribute] -> TypeEnv' -> m TypeEnv'
 typeProj ((p,a):pas) env 
-  | elem a as = case lookupAttFexpTypeInRowType a $ getObj env of 
-                    Just (f,at) -> case typeProj pas env of 
-                                     Just t -> Just $ mkOpt (getFexp env) $ M.union (M.singleton a (F.And p f,at)) $ getObj t
-                                     _ -> Nothing
-                    _ -> Nothing
-  | otherwise = Nothing
+  | elem a as = 
+    do (f,at) <- lookupAttFexpTypeInRowType a $ getObj env
+       t <- typeProj pas env
+       return $ mkOpt (getFexp env) $ M.union (M.singleton a (F.And p f,at)) $ getObj t
+    -- case lookupAttFexpTypeInRowType a $ getObj env of 
+    --                 Just (f,at) -> case typeProj pas env of 
+    --                                  Just t -> Just $ mkOpt (getFexp env) $ M.union (M.singleton a (F.And p f,at)) $ getObj t
+    --                                  _ -> Nothing
+    --                 _ -> Nothing
+  | otherwise = throwM $ AttributeNotInTypeEnv a env as
     where as = getTableSchAtts env 
-typeProj [] env = Just $ mkOpt (getFexp env) M.empty
+typeProj [] env = return $ mkOpt (getFexp env) M.empty
 
 -- | projecting a row type onto another row type,
 --   i.e. getting the attributes that exists in the first one from the 
