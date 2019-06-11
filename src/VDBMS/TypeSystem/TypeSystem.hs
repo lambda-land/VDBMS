@@ -24,12 +24,21 @@ import qualified Data.Map.Strict as SM
 import qualified Data.Map.Merge.Strict as StrictM
 import qualified Data.Set as Set 
 
--- import Control.Monad.Catch -- for handling errors
+import Data.Data (Data, Typeable)
+import GHC.Generics (Generic)
+
+import Control.Monad.Catch 
 
 type VariationalContext = F.FeatureExpr
 
 -- type TypeEnv = RowType
 type TypeEnv' = TableSchema
+
+-- | Errors in type env.
+data TypeError = RelationInvalid Relation VariationalContext F.FeatureExpr
+  deriving (Data,Eq,Generic,Ord,Show,Typeable)
+
+instance Exception TypeError  
 
 --
 -- * static semantics of variational conditions:
@@ -68,30 +77,35 @@ verifyTypeEnv env
 -- static semantics that returns a table schema,
 -- i.e. it includes the fexp of the whole table!
 -- 
-typeOfVquery' :: Algebra -> VariationalContext -> Schema -> Maybe TypeEnv'
-typeOfVquery' (SetOp Union q q') ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
-  (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
-  _ -> Nothing
-typeOfVquery' (SetOp Diff q q')  ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
-  (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
-  _ -> Nothing
-typeOfVquery' (SetOp Prod q q')  ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
-  (Just t, Just t') -> Just (typeProduct t t')
-  _ -> Nothing
-typeOfVquery' (Proj as q)        ctx s = case typeOfVquery' q ctx s of 
-  Just t' -> case typeProj as t' of 
-    Just t | typeSubsume t t' -> Just $ appFexpTableSch ctx t'
-  _ -> Nothing
-typeOfVquery' (Sel c q)          ctx s = case typeOfVquery' q ctx s of
-  Just env | typeOfVcond c ctx env -> Just $ appFexpTableSch ctx env
-  _ -> Nothing
-typeOfVquery' (AChc d q q')      ctx s = case (typeOfVquery' q (F.And ctx d) s, typeOfVquery' q' (F.And ctx (F.Not d)) s) of 
-  (Just t, Just t') -> Just $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
-  _ -> Nothing
-typeOfVquery' (TRef r)           ctx s = case lookupRowType r s of 
-  Just t | tautology (F.imply ctx $ getFexp t) -> Just $ appFexpTableSch ctx t
-  _ -> Nothing
-typeOfVquery' Empty              ctx _ = Just $ appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
+typeOfVquery' :: MonadThrow m => Algebra -> VariationalContext -> Schema -> m TypeEnv'
+-- typeOfVquery' (SetOp Union q q') ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+--   (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
+--   _ -> Nothing
+-- typeOfVquery' (SetOp Diff q q')  ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+--   (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
+--   _ -> Nothing
+-- typeOfVquery' (SetOp Prod q q')  ctx s = case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
+--   (Just t, Just t') -> Just (typeProduct t t')
+--   _ -> Nothing
+-- typeOfVquery' (Proj as q)        ctx s = case typeOfVquery' q ctx s of 
+--   Just t' -> case typeProj as t' of 
+--     Just t | typeSubsume t t' -> Just $ appFexpTableSch ctx t'
+--   _ -> Nothing
+-- typeOfVquery' (Sel c q)          ctx s = case typeOfVquery' q ctx s of
+--   Just env | typeOfVcond c ctx env -> Just $ appFexpTableSch ctx env
+--   _ -> Nothing
+-- typeOfVquery' (AChc d q q')      ctx s = case (typeOfVquery' q (F.And ctx d) s, typeOfVquery' q' (F.And ctx (F.Not d)) s) of 
+--   (Just t, Just t') -> Just $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
+--   _ -> Nothing
+typeOfVquery' (TRef r)           ctx s = 
+  do t <- lookupRowType r s
+     if tautology (F.imply ctx $ getFexp t)
+     then return $ appFexpTableSch ctx t
+     else throwM $ RelationInvalid r ctx (getFexp t)
+ -- case lookupRowType r s of 
+ --  Just t | tautology (F.imply ctx $ getFexp t) -> Just $ appFexpTableSch ctx t
+ --  _ -> Nothing
+typeOfVquery' Empty              ctx _ = return $ appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
 
 
 -- | Type enviornment equilvanecy, checks that the vCtxt are 
