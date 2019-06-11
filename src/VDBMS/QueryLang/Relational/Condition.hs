@@ -26,7 +26,6 @@ data RCondition
    | RNot  RCondition
    | ROr   RCondition RCondition
    | RAnd  RCondition RCondition
-   -- | CChc FeatureExpr Condition Condition
   deriving (Data,Eq,Typeable,Ord)
 
 -- | pretty prints pure relational conditions.

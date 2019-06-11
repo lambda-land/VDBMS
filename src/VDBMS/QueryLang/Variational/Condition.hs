@@ -50,7 +50,6 @@ instance Show Condition where
 instance Variational Condition where
 
   type NonVariational Condition = RCondition
-  -- type Configr Condition = Config Bool 
   
   configure c (Lit b)      = RLit b
   configure c (Comp o l r) = RComp o l r
@@ -60,15 +59,6 @@ instance Variational Condition where
   configure c (CChc f l r) 
     | evalFeatureExpr c f  = configure c l
     | otherwise            = configure c r
-  -- configure c cond         = cond
-
-  -- choice = CChc
-
-  -- choiceMap g (Not c)      = Not (choiceMap g c)
-  -- choiceMap g (Or  l r)    = Or  (choiceMap g l) (choiceMap g r)
-  -- choiceMap g (And l r)    = And (choiceMap g l) (choiceMap g r)
-  -- choiceMap g (CChc f l r) = g f l r
-  -- choiceMap _ c            = c
 
 instance Boolean Condition where
   true  = Lit True
