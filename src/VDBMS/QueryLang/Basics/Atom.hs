@@ -26,6 +26,7 @@ data Atom
   deriving (Data,Eq,Typeable,Ord)
 
 -- data AtomError = UnsafeConversion Atom
+-- add error from safeconvert too!
 --   deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 

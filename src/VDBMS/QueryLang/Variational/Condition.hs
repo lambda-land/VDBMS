@@ -11,11 +11,12 @@ import Data.SBV (Boolean(..))
 -- import Data.Convertible (safeConvert)
 -- import qualified Data.Text as T (pack,Text)
 
-import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
+import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr, evalFeatureExpr)
 -- import VDBMS.VDB.Name
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
 import VDBMS.QueryLang.Basics.Atom
+import VDBMS.QueryLang.Relational.Condition
 
 import Database.HDBC (SqlValue)
 
@@ -46,15 +47,28 @@ prettyRelCondition c = top c
 instance Show Condition where
   show = prettyRelCondition
 
--- instance Variational Condition where
+instance Variational Condition where
 
---   choice = CChc
+  type NonVariational Condition = RCondition
+  -- type Configr Condition = Config Bool 
+  
+  configure c (Lit b)      = RLit b
+  configure c (Comp o l r) = RComp o l r
+  configure c (Not cond)   = RNot $ configure c cond
+  configure c (Or l r)     = ROr (configure c l) (configure c r)
+  configure c (And l r)    = RAnd (configure c l) (configure c r)
+  configure c (CChc f l r) 
+    | evalFeatureExpr c f  = configure c l
+    | otherwise            = configure c r
+  -- configure c cond         = cond
 
---   choiceMap g (Not c)      = Not (choiceMap g c)
---   choiceMap g (Or  l r)    = Or  (choiceMap g l) (choiceMap g r)
---   choiceMap g (And l r)    = And (choiceMap g l) (choiceMap g r)
---   choiceMap g (CChc f l r) = g f l r
---   choiceMap _ c            = c
+  -- choice = CChc
+
+  -- choiceMap g (Not c)      = Not (choiceMap g c)
+  -- choiceMap g (Or  l r)    = Or  (choiceMap g l) (choiceMap g r)
+  -- choiceMap g (And l r)    = And (choiceMap g l) (choiceMap g r)
+  -- choiceMap g (CChc f l r) = g f l r
+  -- choiceMap _ c            = c
 
 instance Boolean Condition where
   true  = Lit True

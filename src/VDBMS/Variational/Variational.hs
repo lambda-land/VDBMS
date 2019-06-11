@@ -5,7 +5,7 @@ module VDBMS.Variational.Variational (
 
 ) where
 
-import qualified VDBMS.Features.Config as C
+import VDBMS.Features.Config 
 import VDBMS.Features.FeatureExpr.FeatureExpr
 -- import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
 -- import VDBMS.Features.FeatureExpr.Core (evalFeatureExpr)
@@ -14,6 +14,8 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 
 -- | A type class for variational things.
 class Variational a where
+  type NonVariational a :: *
+  -- type Configr a :: *
 
   -- | Create a choice.
   -- choice :: FeatureExpr -> a -> a -> a
@@ -22,11 +24,20 @@ class Variational a where
   -- choiceMap :: (FeatureExpr -> a -> a -> a) -> a -> a
 
   -- | Partially configure a variational thing.
-  select :: Feature -> Bool -> a -> a
+  -- select :: Feature -> Bool -> a -> a
   -- select f b = choiceMap (selectHelper f b)
 
-  -- | Fully configure a variational thing.
-  configure :: C.Config Bool -> a -> b
+  -- | Fully configure a variational thing and return the
+  --   non-variational correspondent of it.
+  configure :: Config Bool -> a -> NonVariational a
+
+  -- | Map a function of non-variational things to
+  --   variaitonal things.
+  -- vmap :: (Variational b) 
+  --   => (NonVariational a -> NonVariational b)
+  --   -> a -> b
+
+  -- configure :: C.Config Bool -> a -> b
   -- configure c = choiceMap (configureHelper c)
 
 
@@ -43,9 +54,12 @@ class Variational a where
 
 
 -- Alex idea:
-class V v where
-  type NV v :: *
-  type Config v :: *
-  config :: Config v -> v -> NV v
-  vmap :: (V u) => (NV v -> NV u) -> v -> u
-  -- law: f (config c v) = config c ((vmap f) v)
+-- class V v where
+--   type NV v :: *
+--   type Config v :: *
+--   config :: Config v -> v -> NV v
+--   vmap :: (V u) => (NV v -> NV u) -> v -> u
+--   law: f (config c v) = config c ((vmap f) v)
+
+
+
