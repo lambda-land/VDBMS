@@ -91,9 +91,6 @@ typeOfVquery' (SetOp Union q q') ctx s =
      if typeEq env env' 
      then return t
      else throwM $ NotEquiveTypeEnv env env' ctx t t'
-  -- case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
-  -- (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
-  -- _ -> Nothing
 typeOfVquery' (SetOp Diff q q')  ctx s = 
   do t  <- typeOfVquery' q ctx s
      t' <- typeOfVquery' q' ctx s
@@ -102,50 +99,32 @@ typeOfVquery' (SetOp Diff q q')  ctx s =
      if typeEq env env'
      then return t 
      else throwM $ NotEquiveTypeEnv env env' ctx t t' 
-  -- case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
-  -- (Just t, Just t') | typeEq (appFexpTableSch ctx t) (appFexpTableSch ctx t') -> Just t
-  -- _ -> Nothing
 typeOfVquery' (SetOp Prod q q')  ctx s = 
   do t  <- typeOfVquery' q ctx s
      t' <- typeOfVquery' q' ctx s
      return $ typeProduct t t'
-  -- case (typeOfVquery' q ctx s, typeOfVquery' q' ctx s) of 
-  -- (Just t, Just t') -> Just (typeProduct t t')
-  -- _ -> Nothing
 typeOfVquery' (Proj as q)        ctx s = 
   do t' <- typeOfVquery' q ctx s
      t  <-  typeProj as t'
      if typeSubsume t t'
      then return $ appFexpTableSch ctx t'
      else throwM $ DoesntSubsumeTypeEnv t t'
-  -- case typeOfVquery' q ctx s of 
-  -- Just t' -> case typeProj as t' of 
-  --   Just t | typeSubsume t t' -> Just $ appFexpTableSch ctx t'
-  -- _ -> Nothing
 typeOfVquery' (Sel c q)          ctx s = 
   do env <- typeOfVquery' q ctx s
      if typeOfVcond c ctx env 
      then return $ appFexpTableSch ctx env
      else throwM $ VcondNotHold c ctx env
-  -- case typeOfVquery' q ctx s of
-  -- Just env | typeOfVcond c ctx env -> Just $ appFexpTableSch ctx env
-  -- _ -> Nothing
 typeOfVquery' (AChc d q q')      ctx s = 
   do t <- typeOfVquery' q (F.And ctx d) s
      t' <- typeOfVquery' q' (F.And ctx (F.Not d)) s
      return $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
-  -- case (typeOfVquery' q (F.And ctx d) s, typeOfVquery' q' (F.And ctx (F.Not d)) s) of 
-  -- (Just t, Just t') -> Just $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
-  -- _ -> Nothing
 typeOfVquery' (TRef r)           ctx s = 
   do t <- lookupRowType r s
      if tautology (F.imply ctx $ getFexp t)
      then return $ appFexpTableSch ctx t
      else throwM $ RelationInvalid r ctx (getFexp t)
- -- case lookupRowType r s of 
- --  Just t | tautology (F.imply ctx $ getFexp t) -> Just $ appFexpTableSch ctx t
- --  _ -> Nothing
-typeOfVquery' Empty              ctx _ = return $ appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
+typeOfVquery' Empty              ctx _ = 
+  return $ appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
 
 
 -- | Type enviornment equilvanecy, checks that the vCtxt are 
@@ -193,11 +172,6 @@ typeProj ((p,a):pas) env
     do (f,at) <- lookupAttFexpTypeInRowType a $ getObj env
        t <- typeProj pas env
        return $ mkOpt (getFexp env) $ M.union (M.singleton a (F.And p f,at)) $ getObj t
-    -- case lookupAttFexpTypeInRowType a $ getObj env of 
-    --                 Just (f,at) -> case typeProj pas env of 
-    --                                  Just t -> Just $ mkOpt (getFexp env) $ M.union (M.singleton a (F.And p f,at)) $ getObj t
-    --                                  _ -> Nothing
-    --                 _ -> Nothing
   | otherwise = throwM $ AttributeNotInTypeEnv a env as
     where as = getTableSchAtts env 
 typeProj [] env = return $ mkOpt (getFexp env) M.empty
