@@ -9,7 +9,6 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- import qualified VDBMS.QueryLang.Condition as C
 import VDBMS.Variational.Opt
 import VDBMS.Features.Config  
-import VDBMS.QueryLang.Variational.ConfigQuery
 import VDBMS.Features.Variant
 
 -- import Data.Text as T (Text, pack, append, concat)
@@ -25,13 +24,14 @@ type VariantQuery = Variant Query Bool
 --   and returns a list of relational sql queries tagged with
 --   their configuration.
 alg2Sql :: Algebra -> [Config Bool] -> [VariantQuery]
-alg2Sql q cs = map (variantQ q) cs 
-  where
-    variantQ :: Algebra -> Config Bool -> VariantQuery
-    variantQ cQ c = case relAlgTrans configuredQ of 
-      Just relQ -> (relQ, c)
-      _ -> error "configuring vquery went wrong!!"
-      where configuredQ = configureVquery cQ c
+alg2Sql q cs = undefined
+  -- map (variantQ q) cs 
+  -- where
+  --   variantQ :: Algebra -> Config Bool -> VariantQuery
+  --   variantQ cQ c = case relAlgTrans configuredQ of 
+  --     Just relQ -> (relQ, c)
+  --     _ -> error "configuring vquery went wrong!!"
+  --     where configuredQ = configure cQ c
 
 
 

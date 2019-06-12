@@ -16,7 +16,6 @@ import VDBMS.VDB.Schema.Schema
 import VDBMS.Features.SAT
 import VDBMS.DBMS.Value.Value
 import VDBMS.Features.Config
-import VDBMS.QueryLang.Variational.ConfigQuery
 
 import Prelude hiding (EQ,LT , GT)
 import qualified Data.Map as M 

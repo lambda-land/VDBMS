@@ -7,7 +7,6 @@ module VDBMS.QueryLang.Variational.Properties (
 
 import VDBMS.QueryLang.Variational.Algebra
 import VDBMS.Features.Config
-import VDBMS.QueryLang.Variational.ConfigQuery
 -- import VDBMS.Variational.Opt
 -- import VDBMS.Variational.Variational
 
@@ -23,9 +22,10 @@ equivConfedQs = (==)
 
 -- | checks commuting diagram for a variaitonal query.
 equivVqs :: [Config Bool] -> Algebra -> Algebra -> Bool
-equivVqs cs q q' = and $ zipWith equivConfedQs confq confq'
-  where 
-    confq  = map (configureVquery q) cs
-    confq' = map (configureVquery q') cs 
+equivVqs cs q q' = undefined
+-- and $ zipWith equivConfedQs confq confq'
+ --  where 
+ --    confq  = map (configure q) cs
+ --    confq' = map (configure q') cs 
 
 
