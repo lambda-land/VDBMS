@@ -46,6 +46,7 @@ dependencies:
 - haskelldb >= 2.2.5 
 - pretty
 - exceptions
+# - lens
 # - syb #scrap your boilerplate
 #- template-haskell
 # - pretty >= 1.0 && < 2

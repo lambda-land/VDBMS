@@ -17,7 +17,9 @@ type Query = String
 --   external library and db engine used to connect to
 --   and store the data.
 class Database conn where 
+
   type Path conn 
+
   connect :: Path conn -> PresCondAtt -> Schema -> IO conn 
   disconnect :: conn -> IO ()
   schema :: conn -> Schema

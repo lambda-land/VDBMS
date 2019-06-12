@@ -11,12 +11,13 @@ import Data.SBV (Boolean(..))
 -- import Data.Convertible (safeConvert)
 -- import qualified Data.Text as T (pack,Text)
 
-import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr, evalFeatureExpr)
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- import VDBMS.VDB.Name
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
 import VDBMS.QueryLang.Basics.Atom
 import VDBMS.QueryLang.Relational.Condition
+import VDBMS.Variational.Opt
 
 import Database.HDBC (SqlValue)
 
@@ -28,7 +29,7 @@ data Condition
    | Not  Condition
    | Or   Condition Condition
    | And  Condition Condition
-   | CChc FeatureExpr Condition Condition
+   | CChc F.FeatureExpr Condition Condition
   deriving (Data,Eq,Typeable,Ord)
 
 -- | pretty prints pure relational conditions.
@@ -50,15 +51,26 @@ instance Show Condition where
 instance Variational Condition where
 
   type NonVariational Condition = RCondition
+
+  type Variant Condition = Opt RCondition
   
-  configure c (Lit b)      = RLit b
-  configure c (Comp o l r) = RComp o l r
-  configure c (Not cond)   = RNot $ configure c cond
-  configure c (Or l r)     = ROr (configure c l) (configure c r)
-  configure c (And l r)    = RAnd (configure c l) (configure c r)
+  configure c (Lit b)        = RLit b
+  configure c (Comp o l r)   = RComp o l r
+  configure c (Not cond)     = RNot $ configure c cond
+  configure c (Or l r)       = ROr (configure c l) (configure c r)
+  configure c (And l r)      = RAnd (configure c l) (configure c r)
   configure c (CChc f l r) 
-    | evalFeatureExpr c f  = configure c l
-    | otherwise            = configure c r
+    | F.evalFeatureExpr c f  = configure c l
+    | otherwise              = configure c r
+
+  linearize (Lit b)        = pure $ mkOpt (F.Lit True) (RLit b)
+  linearize (Comp c a1 a2) = pure $ mkOpt (F.Lit True) (RComp c a1 a2)
+  linearize (Not c)        = mapSnd RNot $ linearize c
+  linearize (Or c1 c2)     = combOpts F.And ROr (linearize c1) (linearize c2)
+  linearize (And c1 c2)    = combOpts F.And RAnd (linearize c1) (linearize c2)
+  linearize (CChc f c1 c2) = mapFst (F.And f) (linearize c1) ++
+                             mapFst (F.And (F.Not f)) (linearize c2)
+
 
 instance Boolean Condition where
   true  = Lit True
