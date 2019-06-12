@@ -3,8 +3,8 @@ module VDBMS.DBMS.Value.Value (
 
         module VDBMS.DBMS.Value.Type,
         module VDBMS.DBMS.Value.Core,
-        module VDBMS.DBMS.Value.CompOp,
-        module VDBMS.DBMS.Value.Eval
+        module VDBMS.DBMS.Value.CompOp
+        -- module VDBMS.DBMS.Value.Eval
 
 ) where
 
