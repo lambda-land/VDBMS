@@ -16,7 +16,7 @@ import Data.Convertible
 
 import Control.Monad (zipWithM)
 
-import VDBMS.QueryTrans.RelAlg2Sql (VariantQuery)
+-- import VDBMS.QueryTrans.RelAlg2Sql (VariantQuery)
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Name

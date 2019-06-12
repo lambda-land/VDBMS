@@ -2,7 +2,7 @@
 -- and gets the plain relational result
 module VDBMS.Approaches.BruteForceApproach.BruteForce where 
 
-import VDBMS.QueryLang.Variational.Algebra
+-- import VDBMS.QueryLang.Variational.Algebra
 -- import VDB.Name
 -- import qualified VDB.FeatureExpr as F
 -- import qualified VDB.Condition as C
@@ -12,16 +12,16 @@ import VDBMS.QueryLang.Variational.Algebra
 -- import VDB.BruteForce.BruteForceAlg2Sql
 -- import VDB.BruteForceApproach.BFConfigDB -- (applyConfigVariantTables)
 -- import VDB.BruteForceApproach.BFSendQs (runBFQs)
-import VDBMS.QueryTrans.RelAlg2Sql (alg2Sql)
-import VDBMS.DBMS.SqlTable.SqlVariantTable (SqlVariantTable)
+-- import VDBMS.QueryTrans.RelAlg2Sql (alg2Sql)
+-- import VDBMS.DBMS.SqlTable.SqlVariantTable (SqlVariantTable)
 -- import VDB.Schema
-import VDBMS.Features.Config
-import VDBMS.VDB.Name
-import VDBMS.VDB.Table.Table
+-- import VDBMS.Features.Config
+-- import VDBMS.VDB.Name
+-- import VDBMS.VDB.Table.Table
 -- import VDBMS.VDB.Database
 
-import Database.HDBC
-import Database.HDBC.Sqlite3
+-- import Database.HDBC
+-- import Database.HDBC.Sqlite3
 
 {--
 -- | runs a variational query for a specific list of configurations 
