@@ -2,7 +2,6 @@
 module VDBMS.VDB.Database.HDBC.PostgreSQL where
 
 import VDBMS.VDB.Schema.Schema
--- import VDBMS.VDB.Table.Table
 import VDBMS.VDB.Name
 import VDBMS.VDB.Database.Database
 

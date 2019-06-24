@@ -1,10 +1,7 @@
 -- | Sqlite database.
 module VDBMS.VDB.Database.Sqlite3.Sqlite where
 
--- import VDBMS.Features.Config
--- import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Schema.Schema
--- import VDBMS.VDB.Table.Table
 import VDBMS.VDB.Name
 import VDBMS.VDB.Database.Database
 

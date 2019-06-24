@@ -11,9 +11,9 @@ import VDBMS.VDB.Table.Core
 import VDBMS.VDB.Name (PresCondAtt)
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Schema
-import VDBMS.DBMS.SqlTable.SqlVtable
-import VDBMS.DBMS.SqlTable.SqlVariantTable
-import VDBMS.DBMS.SqlTable.SqlVtableApplyFexpOps
+import VDBMS.DBMS.Table.SqlVtable
+import VDBMS.DBMS.Table.SqlVariantTable
+import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
 
 ------------------- construct vtable for approach1 -------------------
 
