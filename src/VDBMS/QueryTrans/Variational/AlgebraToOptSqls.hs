@@ -5,18 +5,11 @@ module VDBMS.QueryTrans.Variational.AlgebraToOptSqls (
 
 ) where 
 
-import VDBMS.QueryLang.Variational.Algebra
--- import VDBMS.QueryTrans.Variational.LinearizeQuery
+import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.QueryTrans.Relational.AlgebraToSql
 import VDBMS.VDB.Schema.Schema
--- import VDBMS.QueryLang.Relational.Algebra
--- import VDBMS.Features.Config
 import VDBMS.Variational.Opt
 import VDBMS.Variational.Variational
--- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
--- import VDBMS.VDB.Name
--- import qualified VDBMS.QueryLang.Variational.Condition as C
--- import VDBMS.QueryLang.Relational.Condition
 
 import Database.HaskellDB.PrimQuery 
 

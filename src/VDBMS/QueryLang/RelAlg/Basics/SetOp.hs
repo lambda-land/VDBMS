@@ -1,5 +1,5 @@
 -- | Relational set operations.
-module VDBMS.QueryLang.Basics.SetOp (
+module VDBMS.QueryLang.RelAlg.Basics.SetOp (
 
         SetOp(..)
 

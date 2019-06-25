@@ -1,5 +1,5 @@
 -- | Variational conditions in variational algebra and queries.
-module VDBMS.QueryLang.Variational.Condition (
+module VDBMS.QueryLang.RelAlg.Variational.Condition (
 
         Condition(..),
         Atom(..)
@@ -15,8 +15,8 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- import VDBMS.VDB.Name
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
-import VDBMS.QueryLang.Basics.Atom
-import VDBMS.QueryLang.Relational.Condition
+import VDBMS.QueryLang.RelAlg.Basics.Atom
+import VDBMS.QueryLang.RelAlg.Relational.Condition
 import VDBMS.Variational.Opt
 
 import Database.HDBC (SqlValue)

@@ -6,15 +6,9 @@ module VDBMS.QueryTrans.OptVqsToSql where
 import Prelude hiding (Ordering(..))
 import Data.List (nub, concat)
 
-import qualified VDBMS.QueryLang.Relational.Algebra as A
--- import VDBMS.VDB.Name
--- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
--- import qualified VDBMS.QueryLang.Condition as C
--- import VDBMS.DBMS.Value.Value
+import qualified VDBMS.QueryLang.RelAlg.Relational.Algebra as A
 import VDBMS.Variational.Opt
--- import VDBMS.TypeSystem
 import VDBMS.VDB.Schema.Schema
--- import VDBMS.Features.SAT 
 import VDBMS.QueryTrans.Relational.AlgebraToSql
 
 -- import qualified Database.HaskellDB as HSDB

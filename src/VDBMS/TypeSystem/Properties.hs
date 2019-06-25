@@ -5,7 +5,7 @@ module VDBMS.TypeSystem.Properties (
 
 ) where 
 
-import VDBMS.QueryLang.Variational.Algebra 
+import VDBMS.QueryLang.RelAlg.Variational.Algebra 
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Schema.Schema
 import VDBMS.Features.Config

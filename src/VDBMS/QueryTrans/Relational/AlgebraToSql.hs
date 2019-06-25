@@ -7,10 +7,10 @@ module VDBMS.QueryTrans.Relational.AlgebraToSql (
 
 import Prelude hiding (Ordering(..))
 
-import qualified VDBMS.QueryLang.Relational.Algebra as A
+import qualified VDBMS.QueryLang.RelAlg.Relational.Algebra as A
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import qualified VDBMS.QueryLang.Relational.Condition as C
+import qualified VDBMS.QueryLang.RelAlg.Relational.Condition as C
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Opt
 import VDBMS.TypeSystem.TypeSystem
@@ -112,7 +112,6 @@ transAlgebra2Sql (A.RSel c q) s = P.Restrict c' sql
   where
     sql = transAlgebra2Sql q s
     c' = transCond2SqlCond c
--- transRelAlgebra2Sql (A.AChc _ _ _) _ = error "didn't expect to get query choices here!!"
 transAlgebra2Sql (A.RTRef r) s = case scheme of 
   Just sch -> P.BaseTable (relationName r) $ fmap attributeName sch
   _ -> error $ "the relation " ++ (relationName r) ++ " deons't exist in the db!!"

@@ -1,12 +1,12 @@
  -- | Example Queries upon an employee data base
 module Examples.SmartConstructor where
 
-import qualified VDBMS.QueryLang.Variational.Condition as C
+import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import Database.HDBC
 import Prelude hiding (Ordering(..))
 
-import VDBMS.QueryLang.Variational.Algebra
+import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.VDB.Schema.Schema
 -- import VDB.FeatureExpr
 import VDBMS.VDB.Name

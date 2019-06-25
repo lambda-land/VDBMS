@@ -1,11 +1,11 @@
 -- | Configuration semantics of vquery. 
-module VDBMS.QueryLang.Variational.Properties (
+module VDBMS.QueryLang.RelAlg.Variational.Properties (
 
         equivVqs
 
 ) where 
 
-import VDBMS.QueryLang.Variational.Algebra
+import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.Features.Config
 -- import VDBMS.Variational.Opt
 -- import VDBMS.Variational.Variational

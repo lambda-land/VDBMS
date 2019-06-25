@@ -2,18 +2,11 @@
 module VDBMS.QueryTrans.Variational.Test583 where 
 
 import VDBMS.QueryTrans.Variational.AlgebraToOptSqls
--- import VDBMS.QueryTrans.Variational.LinearizeQuery
--- import VDBMS.QueryTrans.Relational.AlgebraToSql
 import VDBMS.VDB.Schema.Schema
-import VDBMS.QueryLang.Variational.Algebra
--- import VDBMS.Features.Config
+import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.Variational.Opt
--- import VDBMS.Variational.Variational
 import VDBMS.Features.FeatureExpr.FeatureExpr 
 import VDBMS.TypeSystem.TypeSystem
--- import VDBMS.VDB.Name
--- import qualified VDBMS.QueryLang.Variational.Condition as C
--- import VDBMS.QueryLang.Relational.Condition
 
 import Database.HaskellDB.PrimQuery 
 import Database.HaskellDB.Sql.Print

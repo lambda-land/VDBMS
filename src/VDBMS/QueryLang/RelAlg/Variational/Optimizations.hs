@@ -1,7 +1,7 @@
 -- | Configuration semantics of vquery. 
-module VDBMS.QueryLang.Variational.Optimizations where 
+module VDBMS.QueryLang.RelAlg.Variational.Optimizations where 
 
-import VDBMS.QueryLang.Variational.Algebra
+import VDBMS.QueryLang.RelAlg.Variational.Algebra
 -- import VDBMS.Features.Config
 -- import VDBMS.QueryLang.ConfigQuery
 -- import VDBMS.Variational.Opt

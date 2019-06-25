@@ -4,7 +4,7 @@
 -- TODO: apply the relaitonal optimizer here too!
 module VDBMS.QueryTrans.OptVqToOptVqTblSch where 
 
-import VDBMS.QueryLang.Variational.Algebra
+import VDBMS.QueryLang.RelAlg.Variational.Algebra
 -- import VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- import qualified VDB.Condition as C

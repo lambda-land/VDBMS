@@ -1,5 +1,5 @@
 -- | Relational conditions in relational algebra and queries.
-module VDBMS.QueryLang.Relational.Condition (
+module VDBMS.QueryLang.RelAlg.Relational.Condition (
 
         RCondition(..),
         Atom(..)
@@ -15,7 +15,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
 import VDBMS.VDB.Name
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
-import VDBMS.QueryLang.Basics.Atom
+import VDBMS.QueryLang.RelAlg.Basics.Atom
 
 import Database.HDBC (SqlValue)
 

@@ -1,5 +1,5 @@
 -- | Atoms.
-module VDBMS.QueryLang.Basics.Atom (
+module VDBMS.QueryLang.RelAlg.Basics.Atom (
 
         Atom(..)
 
