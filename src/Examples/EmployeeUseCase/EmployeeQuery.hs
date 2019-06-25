@@ -67,7 +67,7 @@ empQ1_v3 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_
 --   FROM   empacct, empbio
 --   WHERE empacct.empno = empbio.empno  
 empQ1_v4 :: Algebra
-empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct")) "empno")) (C.Attr (Attribute (Just (Relation "v_empbio")) "empno"))
+empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute "empno")) (C.Attr (Attribute "empno"))
            in Proj (plainAttrs [ "empno", "name", "hiredate"]) $ Sel  cond1  $ SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
 
                
@@ -82,7 +82,7 @@ empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct")
   -- WHERE empacct.empno = empbio.empno 
 empQ1_v5 :: Algebra 
 empQ1_v5 = Proj (plainAttrs [ "empno", "firstname","lastname", "hiredate"]) $ Sel cond1 $ SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
-         where cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct"))  "empno")) (C.Attr (Attribute (Just "v_empbio") "empno"))
+         where cond1 = C.Comp EQ (C.Attr (Attribute  "empno")) (C.Attr (Attribute "empno"))
 
 
 empJoin :: Algebra
@@ -90,8 +90,8 @@ empJoin = SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
   -- where cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct")) "empno")) (C.Attr (Attribute (Just (Relation "v_empbio")) "empno"))
 
 empQ1_v4and5 :: Algebra
-empQ1_v4and5 = Proj [(F.Lit True, Attribute (Just $ Relation "v_empacct") "empno"),
-                     (F.And (F.Ref $ F.Feature "v4") (F.Not $ F.Ref $ F.Feature "v5"), Attribute (Just $ Relation "v_empbio") "name"),
-                     (F.And (F.Not $ F.Ref $ F.Feature "v4") (F.Ref $ F.Feature "v5"), Attribute Nothing "firstname"),
-                     (F.And (F.Not $ F.Ref $ F.Feature "v4") (F.Ref $ F.Feature "v5"), Attribute Nothing "lastname"),
-                     (F.Lit True, Attribute Nothing "hiredate")] empJoin
+empQ1_v4and5 = Proj [(F.Lit True, Attribute "empno"),
+                     (F.And (F.Ref $ F.Feature "v4") (F.Not $ F.Ref $ F.Feature "v5"), Attribute "name"),
+                     (F.And (F.Not $ F.Ref $ F.Feature "v4") (F.Ref $ F.Feature "v5"), Attribute "firstname"),
+                     (F.And (F.Not $ F.Ref $ F.Feature "v4") (F.Ref $ F.Feature "v5"), Attribute "lastname"),
+                     (F.Lit True, Attribute "hiredate")] empJoin

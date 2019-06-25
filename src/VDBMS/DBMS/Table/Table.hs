@@ -50,7 +50,7 @@ type SqlTable = [SqlRow]
 -- DANGER: changed Attribute to (Attribute Nothing)
 -- MAY CAUSE PROBLEMS!!!
 rowAttSet :: SqlRow -> Set Attribute
-rowAttSet = S.map (Attribute Nothing) . M.keysSet 
+rowAttSet = S.map Attribute . M.keysSet 
 
 -- | returns a set of attributes from a table.
 tableAttSet :: SqlTable -> Set Attribute
@@ -69,7 +69,7 @@ constRowTypeOfSqlTable :: FeatureExpr -> SqlTable -> RowType
 constRowTypeOfSqlTable f t = M.map (\v -> (f,v)) row''
   where 
     row   = head t 
-    row'  = M.mapKeys (\s -> Attribute Nothing s) row 
+    row'  = M.mapKeys (\s -> Attribute s) row 
     row'' = M.map typeOf row'
 
 -- | inserts an attribute value pair to a sqlrow.

@@ -37,4 +37,4 @@ constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( relName, (F.Lit T
 
 -- | contruct rowType based on a list of [(Attribute Name, SqlType)]
 constructRowType ::  Relation -> [(Attribute,SqlType)]  -> RowType
-constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> ( addRelToAtt attrName relName, (F.Lit True, t))) attrTypeList
+constructRowType relName attrTypeList  = M.fromList  $ map (\(attrName, t) -> (attrName, (F.Lit True, t))) attrTypeList

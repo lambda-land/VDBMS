@@ -6,14 +6,9 @@ module VDBMS.QueryLang.RelAlg.Basics.Atom (
 ) where
 
 import Data.Data (Data,Typeable)
--- import GHC.Generics (Generic)
--- import Data.SBV (Boolean(..))
 import Data.Convertible (safeConvert)
--- import qualified Data.Text as T (pack,Text)
--- import Control.Monad.Catch (MonadThrow)
--- import Control.Monad.Either (runEitherT)
 
-import VDBMS.VDB.Name
+import VDBMS.VDB.Name (attributeName, Attribute)
 import VDBMS.DBMS.Value.Value
 
 
@@ -35,10 +30,7 @@ prettyAtom :: Atom -> String
 prettyAtom (Val v)  =  case safeConvert v of 
   Right val -> val
   _ -> error "safeConvert resulted in error!!! showAtom"
-prettyAtom (Attr a) = getAttName a
-  -- case attributeQualifier a of 
-  -- Just r  -> T.concat[T.pack $ relationName r, ".", T.pack $ attributeName a]
-  -- Nothing -> T.pack $ attributeName a 
+prettyAtom (Attr a) = attributeName a
 
 instance Show Atom where
   show = prettyAtom
