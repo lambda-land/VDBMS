@@ -17,7 +17,7 @@ import Database.HDBC (SqlValue)
 -- | Atoms are the leaves of a condition.
 data Atom
    = Val  SqlValue
-   | Attr Attribute
+   | Attr Attribute -- remember to remove this after meeting!!
    | Attr' QualifiedAttribute
   deriving (Data,Eq,Typeable,Ord)
 
