@@ -8,7 +8,7 @@ module VDBMS.QueryLang.RelAlg.Basics.Atom (
 import Data.Data (Data,Typeable)
 import Data.Convertible (safeConvert)
 
-import VDBMS.VDB.Name (attributeName, Attribute)
+import VDBMS.VDB.Name (attributeName, Attribute, QualifiedAttribute)
 import VDBMS.DBMS.Value.Value
 
 
@@ -18,6 +18,7 @@ import Database.HDBC (SqlValue)
 data Atom
    = Val  SqlValue
    | Attr Attribute
+   | Attr' QualifiedAttribute
   deriving (Data,Eq,Typeable,Ord)
 
 -- data AtomError = UnsafeConversion Atom

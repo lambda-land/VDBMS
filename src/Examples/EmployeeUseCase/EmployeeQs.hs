@@ -41,15 +41,15 @@ trueAtt a = (F.Lit True, a)
 vq0, vq1, vq2, vq3 :: Algebra
 
 -- \pi_name empacct
-vq0 = Proj [trueAtt name]
+vq0 = Proj [trueAtt nameAtt]
            (TRef empacct)
 
 -- \pi_{name^v3, empno^v4} empacct
-vq1 = Proj [(empv3, name), (empv4, empno)]
+vq1 = Proj [(empv3, nameAtt), (empv4, empno)]
            (TRef empacct)
 
 -- \pi_name empv3<empacct, empacct \bowtie empbio>
-vq2 = Proj [trueAtt name] $
+vq2 = Proj [trueAtt nameAtt] $
       AChc empv3 (TRef empacct) $
                   SetOp Prod (TRef empacct) (TRef empbio)
 

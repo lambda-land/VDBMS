@@ -36,10 +36,10 @@ empbio            = Relation "v_empbio"
 -- Attributes
 -- 
 
-empno, name, hiredate, title, deptname, salary :: Attribute
+empno, nameAtt, hiredate, title, deptname, salary :: Attribute
 deptno, managerno, sex, birthdate, firstname, lastname :: Attribute
 empno     = Attribute "empno"
-name      = Attribute "name"
+nameAtt   = Attribute "name"
 hiredate  = Attribute "hiredate"
 title     = Attribute "title"
 deptname  = Attribute "deptname"
@@ -65,7 +65,7 @@ empSchema1 = ( empv1, constructRelMap [ ( engineerpersonnel,  engineerpersonnel_
 -- |  engineerpersonnel(empno, name, hiredate, title, deptname) 
 engineerpersonnel_v1 :: [(Attribute,SqlType)]
 engineerpersonnel_v1 = [ ( empno, TInt32), 
-                         ( name,  TString)
+                         ( nameAtt,  TString)
                        , ( hiredate, TUTCTime)
                        , ( title,  TString)
                        , ( deptname, TString)
@@ -74,7 +74,7 @@ engineerpersonnel_v1 = [ ( empno, TInt32),
 -- | otherpersonnel(empno, name, hiredate, title, deptname) 
 otherpersonnel_v1 :: [(Attribute,SqlType)]
 otherpersonnel_v1 =  [ ( empno,TInt32)
-                     , ( name, TString)
+                     , ( nameAtt, TString)
                      , ( hiredate, TUTCTime)
                      , ( title, TString)
                      , ( deptname, TString)
@@ -100,7 +100,7 @@ empSchema2 = (empv2, constructRelMap [ ( empacct, empacct_v2)
 -- |  empacct (empno, name, hiredate, title, deptname) 
 empacct_v2 :: [(Attribute,SqlType)]
 empacct_v2 =  [ ( empno,    TInt32)
-              , ( name,     TString)
+              , ( nameAtt,     TString)
               , ( hiredate, TUTCTime)
               , ( title,    TString)
               , ( deptname, TString)
@@ -120,7 +120,7 @@ empSchema3 = (empv3,  constructRelMap   [ (empacct,  empacct_v3)
 -- | empacct (empno, name, hiredate, title, deptno) 
 empacct_v3 :: [(Attribute,SqlType)]
 empacct_v3 =  [ ( empno,   TInt32)
-              , ( name,    TString)
+              , ( nameAtt,    TString)
               , ( hiredate,TUTCTime)
               , ( title,   TString)
               , ( deptno,  TInt32)
@@ -158,7 +158,7 @@ empbio_v4 :: [(Attribute,SqlType)]
 empbio_v4 =  [ ( empno,    TInt32)
              , (sex,      TString)
              , (birthdate,TUTCTime)
-             , ( name,     TString)
+             , ( nameAtt,     TString)
              ]
 -- 
 -- ** schema version 5

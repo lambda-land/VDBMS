@@ -3,7 +3,9 @@ module VDBMS.VDB.Name (
 
         Attribute(..),
         Relation(..),
-        PresCondAtt(..)
+        PresCondAtt(..),
+        Rename(..),
+        QualifiedAttribute(..)
 
 ) where
 
