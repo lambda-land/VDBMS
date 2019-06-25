@@ -34,6 +34,9 @@ data SqlRelation =
 data SqlBinOp = Union | UnionAll | Diff
 
 
+-- 
+-- haskelldb sql type:
+--
 -- data SqlSelect  = SqlSelect { 
 --                              options   :: [String],                -- ^ DISTINCT, ALL etc.
 --            attrs     :: [(SqlColumn,SqlExpr)],   -- ^ result
