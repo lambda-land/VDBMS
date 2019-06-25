@@ -16,6 +16,7 @@ import VDBMS.VDB.Name
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
 import VDBMS.QueryLang.RelAlg.Basics.Atom
+import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
 
 import Database.HDBC (SqlValue)
 
@@ -26,6 +27,7 @@ data RCondition
    | RNot  RCondition
    | ROr   RCondition RCondition
    | RAnd  RCondition RCondition
+   | RIn   Attribute RAlgebra
   deriving (Data,Eq,Typeable,Ord)
 
 -- | pretty prints pure relational conditions.
@@ -38,6 +40,7 @@ prettyRCondition c = top c
     top c = sub c
     sub (RLit b) = if b then " true " else " false "
     sub (RNot c) = " NOT " ++ sub c
+    sub (RIn a q) = attrbuteName a ++ " IN " ++ show q
     sub c = " ( " ++ top c ++ " ) "
 
 instance Show RCondition where
