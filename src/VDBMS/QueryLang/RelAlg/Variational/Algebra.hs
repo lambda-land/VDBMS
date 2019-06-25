@@ -17,10 +17,6 @@ import VDBMS.QueryLang.RelAlg.Basics.SetOp
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
 
 -- | Variational relational algebra.
---   Note that a query such as TRef R isn't acceptable
---   because a query must use projection to project
---   desirable attributes. This is important for the 
---   App1 translation rules.
 data Algebra
    = SetOp SetOp Algebra Algebra
    | Proj  [Opt Attribute] Algebra
@@ -29,6 +25,17 @@ data Algebra
    | TRef  Relation
    | Empty 
   deriving (Data,Eq,Show,Typeable,Ord)
+
+-- | More expressive variational relational algebra.
+data Algebra'
+   = SetOp' SetOp Algebra' Algebra' (Rename Algebra')
+   | Proj'  [Opt (Rename QualifiedAttribute)] Algebra' (Rename Algebra')
+   | Sel'   C.Condition Algebra' (Rename Algebra')
+   | AChc'  F.FeatureExpr Algebra' (Rename Algebra') Algebra' (Rename Algebra')
+   | TRef'  Relation (Rename Relation)
+   | Empty' 
+  deriving (Data,Eq,Show,Typeable,Ord)
+
 
 instance Variational Algebra where
 
