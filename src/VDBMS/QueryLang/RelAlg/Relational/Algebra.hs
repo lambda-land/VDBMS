@@ -28,11 +28,11 @@ data RAlgebra
 -- | More expressive relaitonal algebra.
 --   Ie, it has renaming of attributes and subqueries in addition to 
 --   qualified attributes.
--- data RAlgebra'
---    = RSetOp SetOp RAlgebra RAlgebra
---    | RProj  [Attribute] RAlgebra
---    | RSel   RCondition RAlgebra
---    | RTRef  Relation
---    | REmpty 
---   deriving (Data,Eq,Show,Typeable,Ord)
+data RAlgebra'
+   = RSetOp' SetOp RAlgebra' (Rename RAlgebra') RAlgebra' (Rename RAlgebra')
+   | RProj'  [Rename QualifiedAttribute] RAlgebra' (Rename RAlgebra')
+   | RSel'   RCondition RAlgebra' (Rename RAlgebra')
+   | RTRef'  Relation (Rename Relation)
+   | REmpty' 
+  deriving (Data,Eq,Show,Typeable,Ord)
 
