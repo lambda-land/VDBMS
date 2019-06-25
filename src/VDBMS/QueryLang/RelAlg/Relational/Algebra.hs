@@ -19,7 +19,7 @@ import VDBMS.QueryLang.RelAlg.Basics.SetOp
 data RAlgebra
    = RSetOp SetOp RAlgebra RAlgebra
    | RProj  [Attribute] RAlgebra
-   | RSel   RCondition RAlgebra
+   | RSel   (RCondition RAlgebra) RAlgebra
    | RTRef  Relation
    | REmpty 
   deriving (Data,Eq,Show,Typeable,Ord)
@@ -32,7 +32,7 @@ data RAlgebra
 data RAlgebra'
    = RSetOp' SetOp RAlgebra' (Rename RAlgebra') RAlgebra' (Rename RAlgebra')
    | RProj'  [Rename QualifiedAttribute] RAlgebra' (Rename RAlgebra')
-   | RSel'   RCondition RAlgebra' (Rename RAlgebra')
+   | RSel'   (RCondition RAlgebra') RAlgebra' (Rename RAlgebra')
    | RTRef'  Relation (Rename Relation)
    | REmpty' 
   deriving (Data,Eq,Show,Typeable,Ord)

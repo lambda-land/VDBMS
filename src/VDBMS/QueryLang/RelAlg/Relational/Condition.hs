@@ -16,22 +16,23 @@ import VDBMS.VDB.Name
 import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
 import VDBMS.QueryLang.RelAlg.Basics.Atom
-import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
+-- import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
 
 import Database.HDBC (SqlValue)
 
 -- | Variational conditions.
-data RCondition
+data RCondition a
    = RLit  Bool
    | RComp CompOp Atom Atom
-   | RNot  RCondition
-   | ROr   RCondition RCondition
-   | RAnd  RCondition RCondition
-   | RIn   Attribute RAlgebra
+   | RNot  (RCondition a)
+   | ROr   (RCondition a) (RCondition a)
+   | RAnd  (RCondition a) (RCondition a)
+   -- | RIn   Attribute RAlgebra
+   | RIn   Attribute a
   deriving (Data,Eq,Typeable,Ord)
 
 -- | pretty prints pure relational conditions.
-prettyRCondition :: RCondition -> String
+prettyRCondition :: Show a => RCondition a -> String
 prettyRCondition c = top c
   where
     top (RComp c l r) = show l ++ show c ++ show r
@@ -40,14 +41,14 @@ prettyRCondition c = top c
     top c = sub c
     sub (RLit b) = if b then " true " else " false "
     sub (RNot c) = " NOT " ++ sub c
-    sub (RIn a q) = attrbuteName a ++ " IN " ++ show q
+    sub (RIn a q) = attributeName a ++ " IN " ++ show q
     sub c = " ( " ++ top c ++ " ) "
 
-instance Show RCondition where
+instance Show a => Show (RCondition a) where
   show = prettyRCondition
 
 
-instance Boolean RCondition where
+instance Boolean (RCondition a) where
   true  = RLit True
   false = RLit False
   bnot  = RNot

@@ -17,20 +17,20 @@ import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
 import VDBMS.QueryLang.RelAlg.Basics.Atom
 import VDBMS.QueryLang.RelAlg.Relational.Condition
-import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
+import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
 import VDBMS.Variational.Opt
 
 import Database.HDBC (SqlValue)
 
 
 -- | Variational conditions.
-data Condition
+data Condition 
    = Lit  Bool
    | Comp CompOp Atom Atom
    | Not  Condition
    | Or   Condition Condition
    | And  Condition Condition
-   | In   Attribute Algebra
+   -- | In   Attribute Algebra
    | CChc F.FeatureExpr Condition Condition
   deriving (Data,Eq,Typeable,Ord)
 
@@ -45,7 +45,7 @@ prettyRelCondition c = top c
     top c = sub c
     sub (Lit b) = if b then " true " else " false "
     sub (Not c) = " NOT " ++ sub c
-    sub (In a q) = attributeName a ++ " IN " ++ show q
+    -- sub (In a q) = attributeName a ++ " IN " ++ show q
     sub c = " ( " ++ top c ++ " ) "
 
 instance Show Condition where
@@ -53,9 +53,9 @@ instance Show Condition where
 
 instance Variational Condition where
 
-  type NonVariational Condition = RCondition
+  type NonVariational Condition = RCondition RAlgebra
 
-  type Variant Condition = Opt RCondition
+  type Variant Condition = Opt (RCondition RAlgebra)
   
   configure c (Lit b)        = RLit b
   configure c (Comp o l r)   = RComp o l r
