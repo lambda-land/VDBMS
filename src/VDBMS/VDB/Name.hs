@@ -27,7 +27,7 @@ newtype Rename a = Rename {name :: Maybe String}
 data QualifiedAttribute = 
   QualifiedAttribute {
     attribute :: Attribute,
-    relation :: Maybe Relation
+    relation :: Maybe String -- ^ the name of the relation or assigned name to the subquery
   }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
