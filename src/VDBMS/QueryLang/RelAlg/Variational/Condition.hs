@@ -17,6 +17,7 @@ import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Variational
 import VDBMS.QueryLang.RelAlg.Basics.Atom
 import VDBMS.QueryLang.RelAlg.Relational.Condition
+import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 import VDBMS.Variational.Opt
 
 import Database.HDBC (SqlValue)
@@ -29,6 +30,7 @@ data Condition
    | Not  Condition
    | Or   Condition Condition
    | And  Condition Condition
+   | In   Attribute Algebra
    | CChc F.FeatureExpr Condition Condition
   deriving (Data,Eq,Typeable,Ord)
 
@@ -43,6 +45,7 @@ prettyRelCondition c = top c
     top c = sub c
     sub (Lit b) = if b then " true " else " false "
     sub (Not c) = " NOT " ++ sub c
+    sub (In a q) = attributeName a ++ " IN " ++ show q
     sub c = " ( " ++ top c ++ " ) "
 
 instance Show Condition where
