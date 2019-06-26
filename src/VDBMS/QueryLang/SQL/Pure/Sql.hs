@@ -34,6 +34,10 @@ data SqlRelation =
 data SqlBinOp = Union | UnionAll | Diff
 
 
+data SqlTempRes = 
+    SqlWith [Rename SqlSelect] SqlSelect
+  | SqlView (Rename SqlSelect)
+
 -- 
 -- haskelldb sql type:
 --

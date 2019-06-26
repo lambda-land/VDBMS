@@ -18,7 +18,12 @@ newtype Attribute = Attribute { attributeName :: String }
   deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)
 
 -- | A new name that could be used for attributes and subqueries.
-newtype Rename a = Rename {name :: Maybe String}
+data Rename a = 
+  Rename {
+    name :: Maybe String, 
+    thing :: a -- not sure if I need this but I think I do if I'm using it
+               -- for sql queries...
+  }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | A qualified attribute (i.e., its relation name can be
