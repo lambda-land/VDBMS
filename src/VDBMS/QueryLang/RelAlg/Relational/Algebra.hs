@@ -30,10 +30,10 @@ data RAlgebra
 --   qualified attributes.
 -- Discuss at meeting Jun 26.
 data RAlgebra'
-   = RSetOp' SetOp RAlgebra' (Rename RAlgebra') RAlgebra' (Rename RAlgebra')
-   | RProj'  [Rename QualifiedAttribute] RAlgebra' (Rename RAlgebra')
-   | RSel'   (RCondition RAlgebra') RAlgebra' (Rename RAlgebra')
-   | RTRef'  Relation (Rename Relation)
+   = RSetOp' SetOp (Rename RAlgebra') (Rename RAlgebra')
+   | RProj'  [Rename QualifiedAttribute] (Rename RAlgebra')
+   | RSel'   (RCondition RAlgebra') (Rename RAlgebra')
+   | RTRef'  (Rename Relation)
    | REmpty' 
   deriving (Data,Eq,Show,Typeable,Ord)
 

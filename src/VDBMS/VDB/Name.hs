@@ -5,7 +5,8 @@ module VDBMS.VDB.Name (
         Relation(..),
         PresCondAtt(..),
         Rename(..),
-        QualifiedAttribute(..)
+        QualifiedAttribute(..),
+        Attributes(..)
 
 ) where
 
@@ -17,22 +18,36 @@ import Data.String (IsString)
 newtype Attribute = Attribute { attributeName :: String }
   deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)
 
--- | A new name that could be used for attributes and subqueries.
-data Rename a = 
-  Rename {
-    name :: Maybe String, 
-    thing :: a -- not sure if I need this but I think I do if I'm using it
-               -- for sql queries...
-  }
-  deriving (Data,Eq,Ord,Read,Show,Typeable)
-
 -- | A qualified attribute (i.e., its relation name can be
 --   attached to it) with the possibility to rename to a new
 --   name.
 data QualifiedAttribute = 
-  QualifiedAttribute {
-    attribute :: Attribute,
-    relation :: Maybe String -- ^ the name of the relation or assigned name to the subquery
+    RelationQualifiedAttribute {
+      attr :: Attribute, -- ^ the attribute
+      rel :: Relation -- ^ the relation 
+    }
+  | SubqueryQualifiedAttribute {
+      attribute :: Attribute, -- ^ the attribute
+      subqueryName :: String -- ^ the name assigned to the subquery
+    }
+  deriving (Data,Eq,Ord,Read,Show,Typeable)
+
+-- | A single attribute.
+data SingleAttribute = SingleAttr Attribute
+                     | SingleQualifiedAttr QualifiedAttribute
+  deriving (Data,Eq,Ord,Read,Show,Typeable)
+
+-- | Attributes that can be projected in queries.
+data Attributes = AllAtt
+                | OneAtt SingleAttribute
+                | AttrList [SingleAttribute]
+  deriving (Data,Eq,Ord,Read,Show,Typeable)
+
+-- | A new name that could be used for attributes and subqueries.
+data Rename a = 
+  Rename {
+    name :: Maybe String, -- ^ the potentially assigned name
+    thing :: a -- ^ the thing
   }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
