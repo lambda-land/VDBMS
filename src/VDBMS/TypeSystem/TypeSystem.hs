@@ -7,10 +7,10 @@ module VDBMS.TypeSystem.TypeSystem (
 
 ) where 
 
-import VDBMS.QueryLang.RelAlg.Variational.Algebra 
+import qualified VDBMS.QueryLang.RelAlg.Variational.Algebra as A
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
+-- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Schema
 import VDBMS.Features.SAT
@@ -36,7 +36,7 @@ type TypeEnv' = TableSchema
 
 -- | Errors in type env.
 data TypeError = RelationInvalid Relation VariationalContext F.FeatureExpr
-  | VcondNotHold C.Condition VariationalContext TypeEnv'
+  | VcondNotHold A.Condition VariationalContext TypeEnv'
   | DoesntSubsumeTypeEnv TypeEnv' TypeEnv'
   | NotEquiveTypeEnv TypeEnv' TypeEnv' VariationalContext TypeEnv' TypeEnv'
   | AttributeNotInTypeEnv Attribute TypeEnv' (Set Attribute)
@@ -49,11 +49,11 @@ instance Exception TypeError
 -- * static semantics of variational conditions:
 --   based on inference rules in the PVLDB paper 
 --
-typeOfVcond :: C.Condition -> VariationalContext -> TypeEnv' -> Bool
-typeOfVcond (C.Lit True)     _ _ = True
-typeOfVcond (C.Lit False)    _ _ = True
-typeOfVcond (C.Comp _ l r)   ctx env@(envf,envr) = case (l, r) of 
-  (C.Attr a, C.Val v)  -> 
+typeOfVcond :: A.Condition -> VariationalContext -> TypeEnv' -> Bool
+typeOfVcond (A.Lit True)     _ _ = True
+typeOfVcond (A.Lit False)    _ _ = True
+typeOfVcond (A.Comp _ l r)   ctx env@(envf,envr) = case (l, r) of 
+  (A.Attr a, A.Val v)  -> 
     maybe False
           (\ (f',t') -> 
             tautology (F.imply ctx (F.And envf f')) && typeOf v == t') 
@@ -62,7 +62,7 @@ typeOfVcond (C.Comp _ l r)   ctx env@(envf,envr) = case (l, r) of
   --                           Just (f',t') -> tautology (F.imply ctx (F.And envf f')) &&
   --                             typeOf v == t'
   --                           _ -> False
-  (C.Attr a, C.Attr a') -> 
+  (A.Attr a, A.Attr a') -> 
     case (lookupAttFexpTypeInRowType a envr, lookupAttFexpTypeInRowType a' envr) of 
                             (Just (f',t'), Just (f'',t'')) | t' == t'' -> tautology (F.imply ctx (F.And envf f'))
                                                                         && tautology (F.imply ctx (F.And envf f''))
@@ -75,10 +75,10 @@ typeOfVcond (C.Comp _ l r)   ctx env@(envf,envr) = case (l, r) of
     --       $ (lookupAttFexpTypeInRowType a envr, lookupAttFexpTypeInRowType a' envr)
 
   _ -> False
-typeOfVcond (C.Not c)      ctx env = typeOfVcond c ctx env
-typeOfVcond (C.Or l r)     ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
-typeOfVcond (C.And l r)    ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
-typeOfVcond (C.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env 
+typeOfVcond (A.Not c)      ctx env = typeOfVcond c ctx env
+typeOfVcond (A.Or l r)     ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
+typeOfVcond (A.And l r)    ctx env = typeOfVcond l ctx env && typeOfVcond r ctx env
+typeOfVcond (A.CChc d l r) ctx env = typeOfVcond l (F.And ctx d) env 
   && typeOfVcond r (F.And ctx (F.Not d)) env 
 
 
@@ -96,9 +96,9 @@ verifyTypeEnv env
 -- static semantics that returns a table schema,
 -- i.e. it includes the fexp of the whole table!
 -- 
-typeOfVquery' :: MonadThrow m => Algebra -> VariationalContext 
+typeOfVquery' :: MonadThrow m => A.Algebra -> VariationalContext 
                               -> Schema -> m TypeEnv'
-typeOfVquery' (SetOp Union q q') ctx s = 
+typeOfVquery' (A.SetOp A.Union q q') ctx s = 
   do t  <- typeOfVquery' q ctx s
      t' <- typeOfVquery' q' ctx s
      let env  = appFexpTableSch ctx t
@@ -106,7 +106,7 @@ typeOfVquery' (SetOp Union q q') ctx s =
      if typeEq env env' 
      then return t
      else throwM $ NotEquiveTypeEnv env env' ctx t t'
-typeOfVquery' (SetOp Diff q q')  ctx s = 
+typeOfVquery' (A.SetOp A.Diff q q')  ctx s = 
   do t  <- typeOfVquery' q ctx s
      t' <- typeOfVquery' q' ctx s
      let env = appFexpTableSch ctx t
@@ -114,31 +114,31 @@ typeOfVquery' (SetOp Diff q q')  ctx s =
      if typeEq env env'
      then return t 
      else throwM $ NotEquiveTypeEnv env env' ctx t t' 
-typeOfVquery' (SetOp Prod q q')  ctx s = 
+typeOfVquery' (A.SetOp A.Prod q q')  ctx s = 
   do t  <- typeOfVquery' q ctx s
      t' <- typeOfVquery' q' ctx s
      return $ typeProduct t t'
-typeOfVquery' (Proj as q)        ctx s = 
+typeOfVquery' (A.Proj as q)        ctx s = 
   do t' <- typeOfVquery' q ctx s
      t  <-  typeProj as t'
      if typeSubsume t t'
      then return $ appFexpTableSch ctx t'
      else throwM $ DoesntSubsumeTypeEnv t t'
-typeOfVquery' (Sel c q)          ctx s = 
+typeOfVquery' (A.Sel c q)          ctx s = 
   do env <- typeOfVquery' q ctx s
      if typeOfVcond c ctx env 
      then return $ appFexpTableSch ctx env
      else throwM $ VcondNotHold c ctx env
-typeOfVquery' (AChc d q q')      ctx s = 
+typeOfVquery' (A.AChc d q q')      ctx s = 
   do t <- typeOfVquery' q (F.And ctx d) s
      t' <- typeOfVquery' q' (F.And ctx (F.Not d)) s
      return $ mkOpt (F.Or (getFexp t) (getFexp t')) $ rowTypeUnion (getObj t) (getObj t')
-typeOfVquery' (TRef r)           ctx s = 
+typeOfVquery' (A.TRef r)           ctx s = 
   do t <- lookupRowType r s
      if tautology (F.imply ctx $ getFexp t)
      then return $ appFexpTableSch ctx t
      else throwM $ RelationInvalid r ctx (getFexp t)
-typeOfVquery' Empty              ctx _ = 
+typeOfVquery' A.Empty              ctx _ = 
   return $ appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
 
 

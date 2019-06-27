@@ -3,8 +3,8 @@ module Examples.EmployeeUseCase.EmployeeQs where
 
 import Prelude hiding (Ordering(..))
 
-import VDBMS.QueryLang.RelAlg.Variational.Algebra
-import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
+import qualified VDBMS.QueryLang.RelAlg.Variational.Algebra as A
+-- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt 
@@ -38,25 +38,25 @@ newtype QueryT = QueryT String
 trueAtt :: Attribute -> Opt Attribute
 trueAtt a = (F.Lit True, a)
 
-vq0, vq1, vq2, vq3 :: Algebra
+vq0, vq1, vq2, vq3 :: A.Algebra
 
 -- \pi_name empacct
-vq0 = Proj [trueAtt nameAtt]
-           (TRef empacct)
+vq0 = A.Proj [trueAtt nameAtt]
+           (A.TRef empacct)
 
 -- \pi_{name^v3, empno^v4} empacct
-vq1 = Proj [(empv3, nameAtt), (empv4, empno)]
-           (TRef empacct)
+vq1 = A.Proj [(empv3, nameAtt), (empv4, empno)]
+           (A.TRef empacct)
 
 -- \pi_name empv3<empacct, empacct \bowtie empbio>
-vq2 = Proj [trueAtt nameAtt] $
-      AChc empv3 (TRef empacct) $
-                  SetOp Prod (TRef empacct) (TRef empbio)
+vq2 = A.Proj [trueAtt nameAtt] $
+      A.AChc empv3 (A.TRef empacct) $
+                  A.SetOp A.Prod (A.TRef empacct) (A.TRef empbio)
 
 -- \pi_title (\sigma_{v3<salary > 5000, salary > 10000>} job)
-vq3 = Proj [trueAtt title] $
-           Sel (C.CChc empv3 empCond' empCond'') $
-               TRef job
+vq3 = A.Proj [trueAtt title] $
+           A.Sel (A.CChc empv3 empCond' empCond'') $
+               A.TRef job
 
 -- 
 -- first set of quesries:
@@ -77,12 +77,12 @@ vq3 = Proj [trueAtt title] $
 -- write the query for these variants for a fair comparison against
 -- prima.
 -- classification: 3-0-2-1
-empVQ1 :: Algebra
-empVQ1 = Proj [trueAtt salary] $
-  Sel (C.And empCond
+empVQ1 :: A.Algebra
+empVQ1 = A.Proj [trueAtt salary] $
+  A.Sel (A.And empCond
              yearCond)
-  (Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
-    Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
+  (A.Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
+    A.Sel (A.Comp EQ (A.Attr title) (A.Attr title)) $ A.SetOp A.Prod (A.TRef empacct) (A.TRef job))
 
 empVQ1T :: QueryT
 empVQ1T = QueryT $ 
@@ -92,40 +92,40 @@ empVQ1T = QueryT $
   "WHERE empNo = 10004 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01"
 
 -- | the year 1991 condition
-yearCond :: C.Condition
-yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-                 (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))
+yearCond :: A.Condition
+yearCond = A.And (A.Comp GT (A.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (A.Attr hiredate))
+                 (A.Comp LT (A.Attr hiredate) (A.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))
 
 -- | employee id = 10004 condition
-empCond :: C.Condition
-empCond = C.Comp EQ (C.Attr empno) (C.Val $ SqlInteger 10004)
+empCond :: A.Condition
+empCond = A.Comp EQ (A.Attr empno) (A.Val $ SqlInteger 10004)
 
-empCond' :: C.Condition
-empCond' = C.Comp EQ (C.Attr salary) (C.Val $ SqlInteger 50000)
+empCond' :: A.Condition
+empCond' = A.Comp EQ (A.Attr salary) (A.Val $ SqlInteger 50000)
 
-empCond'' :: C.Condition
-empCond'' = C.Comp EQ (C.Attr salary) (C.Val $ SqlInteger 10000)
+empCond'' :: A.Condition
+empCond'' = A.Comp EQ (A.Attr salary) (A.Val $ SqlInteger 10000)
 
 
 -- more optimized based on relational alg opt rules. prj and sel place
 -- have been exchanged. check translations of them to see if they return
 -- the same query.
 -- classification: 3-0-2-1
-empVQ1' :: Algebra
-empVQ1' = Proj [trueAtt salary] $
-  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
-    Sel (C.And empCond
+empVQ1' :: A.Algebra
+empVQ1' = A.Proj [trueAtt salary] $
+  A.Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
+    A.Sel (A.And empCond
                yearCond) $
-    Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job)    
+    A.Sel (A.Comp EQ (A.Attr title) (A.Attr title)) $ A.SetOp A.Prod (A.TRef empacct) (A.TRef job)    
 
 -- more optimized based on sel_c sel_c' == sel_{c and c'}
 -- classification: 3-0-2-1
-empVQ1'' :: Algebra
-empVQ1'' = Proj [trueAtt salary] $
-  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
-    Sel (empCond
-         `C.And` yearCond
-         `C.And` (C.Comp EQ (C.Attr title) (C.Attr title))) $ SetOp Prod (TRef empacct) (TRef job)    
+empVQ1'' :: A.Algebra
+empVQ1'' = A.Proj [trueAtt salary] $
+  A.Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
+    A.Sel (empCond
+         `A.And` yearCond
+         `A.And` (A.Comp EQ (A.Attr title) (A.Attr title))) $ A.SetOp A.Prod (A.TRef empacct) (A.TRef job)    
 
 -- the naive query of empVQ1:
 --            v3 or v4 <prj_salary (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01)
@@ -133,17 +133,17 @@ empVQ1'' = Proj [trueAtt salary] $
 --                                            empacct join_(title=title) job),
 --                      prj_salary (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01) job)>
 -- classification: 3-1-2-1
-empVQ1naive :: Algebra
-empVQ1naive = AChc (F.Or empv3 empv4)
-        (Proj [trueAtt salary] $
-              Sel (C.And empCond
+empVQ1naive :: A.Algebra
+empVQ1naive = A.AChc (F.Or empv3 empv4)
+        (A.Proj [trueAtt salary] $
+              A.Sel (A.And empCond
                          yearCond) $
-                  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
-                       Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
-        (Proj [trueAtt salary] $
-              Sel (C.And empCond
+                  A.Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
+                       A.Sel (A.Comp EQ (A.Attr title) (A.Attr title)) $ A.SetOp A.Prod (A.TRef empacct) (A.TRef job))
+        (A.Proj [trueAtt salary] $
+              A.Sel (A.And empCond
                          yearCond)
-                  (TRef job))
+                  (A.TRef job))
 
 -- intent: return the managers (of department d001) on
 --         the year 1991.
@@ -153,12 +153,12 @@ empVQ1naive = AChc (F.Or empv3 empv4)
 -- note:
 -- the naive and manually optimized queries are basically the same.
 -- classification: 3-0-2-1
-empVQ2 :: Algebra
-empVQ2 = Proj [trueAtt managerno] $
-  Sel ((C.Comp EQ (C.Attr deptno) (C.Val $ SqlInt32 001))
-       `C.And` yearCond
-       `C.And` (C.Comp EQ (C.Attr empno) (C.Attr managerno))) $
-      SetOp Prod (TRef empacct) (TRef dept)
+empVQ2 :: A.Algebra
+empVQ2 = A.Proj [trueAtt managerno] $
+  A.Sel ((A.Comp EQ (A.Attr deptno) (A.Val $ SqlInt32 001))
+       `A.And` yearCond
+       `A.And` (A.Comp EQ (A.Attr empno) (A.Attr managerno))) $
+      A.SetOp A.Prod (A.TRef empacct) (A.TRef dept)
 
 empVQ2T :: QueryT
 empVQ2T = QueryT $
@@ -167,8 +167,8 @@ empVQ2T = QueryT $
   "WHERE deptno = 001 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01"
 
 -- classification: 5-3-2-1
-empVQ2naive :: Algebra
-empVQ2naive = AChc empv3 empVQ2 (AChc empv4 empVQ2 $ AChc empv5 empVQ2 Empty)
+empVQ2naive :: A.Algebra
+empVQ2naive = A.AChc empv3 empVQ2 (A.AChc empv4 empVQ2 $ A.AChc empv5 empVQ2 A.Empty)
 
 -- intent: find all managers that the employee 1004 worked with,
 --         on the year 1991. 
@@ -178,14 +178,14 @@ empVQ2naive = AChc empv3 empVQ2 (AChc empv4 empVQ2 $ AChc empv5 empVQ2 Empty)
 -- note:
 -- the naive and manually optimized queries are basically the same.
 -- classification: 3-0-2-1
-empVQ3 :: Algebra
-empVQ3 = Proj [trueAtt managerno] $
-  Sel (C.Comp EQ (C.Attr deptno) (C.Attr deptno)) $
-      SetOp Prod (TRef dept) $
-                 Proj [trueAtt deptno] $
-                      Sel ((C.Comp EQ (C.Attr deptno) (C.Val $ SqlInt32 001))
-                          `C.And` yearCond) $
-                          TRef empacct
+empVQ3 :: A.Algebra
+empVQ3 = A.Proj [trueAtt managerno] $
+  A.Sel (A.Comp EQ (A.Attr deptno) (A.Attr deptno)) $
+      A.SetOp A.Prod (A.TRef dept) $
+                 A.Proj [trueAtt deptno] $
+                      A.Sel ((A.Comp EQ (A.Attr deptno) (A.Val $ SqlInt32 001))
+                          `A.And` yearCond) $
+                          A.TRef empacct
 
 empVQ3T :: QueryT
 empVQ3T = QueryT $
@@ -198,8 +198,8 @@ empVQ3T = QueryT $
 
 -- ASK Eric: should I consider the first two variants? I think I should! YES!
 -- classification: 5-3-2-1
-empVQ3naive :: Algebra
-empVQ3naive = AChc empv3 empVQ3 (AChc empv4 empVQ3 $ AChc empv5 empVQ3 Empty)
+empVQ3naive :: A.Algebra
+empVQ3naive = A.AChc empv3 empVQ3 (A.AChc empv4 empVQ3 $ A.AChc empv5 empVQ3 A.Empty)
 
 -- intent: find all salary values of managers in all history,
 --         during the period of manager appointment. (the periods
@@ -213,24 +213,24 @@ empVQ3naive = AChc empv3 empVQ3 (AChc empv4 empVQ3 $ AChc empv5 empVQ3 Empty)
 -- i.e. ... join dept is only valid for v3, v4, and v5. 
 -- and ... join job is not valid for v5.
 -- classification: 3-0-3-2
-empVQ4 :: Algebra
-empVQ4 = Proj [trueAtt salary] $
-  (Sel (C.Comp EQ (C.Attr title) (C.Attr title))
-       (SetOp Prod (Sel (C.Comp EQ (C.Attr managerno) (C.Attr empno))
-                        (SetOp Prod (Sel yearCond
-                                         (TRef empacct))
-                                    (TRef dept)))
-                   (TRef job)))
+empVQ4 :: A.Algebra
+empVQ4 = A.Proj [trueAtt salary] $
+  (A.Sel (A.Comp EQ (A.Attr title) (A.Attr title))
+       (A.SetOp A.Prod (A.Sel (A.Comp EQ (A.Attr managerno) (A.Attr empno))
+                        (A.SetOp A.Prod (A.Sel yearCond
+                                         (A.TRef empacct))
+                                    (A.TRef dept)))
+                   (A.TRef job)))
 
 -- classification: 5-3-3-2
-empVQ4naive :: Algebra
-empVQ4naive = AChc (F.Or empv3 empv4)
+empVQ4naive :: A.Algebra
+empVQ4naive = A.AChc (F.Or empv3 empv4)
   empVQ4
-  (AChc empv5 
-        (Proj [trueAtt salary] $
-              Sel (C.Comp EQ (C.Attr managerno) (C.Attr empno)) $
-                  SetOp Prod (Sel yearCond (TRef empacct)) (TRef dept))
-        Empty)
+  (A.AChc empv5 
+        (A.Proj [trueAtt salary] $
+              A.Sel (A.Comp EQ (A.Attr managerno) (A.Attr empno)) $
+                  A.SetOp A.Prod (A.Sel yearCond (A.TRef empacct)) (A.TRef dept))
+        A.Empty)
 
 -- intent: find the historical managers of department where the
 --         employee 10004 worked, in all history. (the period 
@@ -241,12 +241,12 @@ empVQ4naive = AChc (F.Or empv3 empv4)
 --     sel_(1991-01-01<hiredate<1992-01-01)
 --         ((sel_(empno == 10004) empacct) join_(deptno = deptno) dept)
 -- classification: 3-0-2-1
-empVQ5 :: Algebra
-empVQ5 = Proj [trueAtt managerno] $
-  Sel (C.And yearCond 
-             (C.Comp EQ (C.Attr deptno) (C.Attr deptno))) $
-      SetOp Prod (Sel empCond (TRef empacct))
-                 (TRef dept)
+empVQ5 :: A.Algebra
+empVQ5 = A.Proj [trueAtt managerno] $
+  A.Sel (A.And yearCond 
+             (A.Comp EQ (A.Attr deptno) (A.Attr deptno))) $
+      A.SetOp A.Prod (A.Sel empCond (A.TRef empacct))
+                 (A.TRef dept)
 
 -- a less efficient vq in terms of relational algebra and sql.
 -- since we're joining first and then applying the selection of
@@ -256,21 +256,21 @@ empVQ5 = Proj [trueAtt managerno] $
 --     sel_(1991-01-01<hiredate<1992-01-01 and empno == 10004)
 --         (empacct join_(deptno = deptno) dept)
 -- classification: 3-0-2-1
-empVQ5' :: Algebra
-empVQ5' = Proj [trueAtt managerno] $
-  Sel (C.And yearCond $
-       C.And empCond 
-             (C.Comp EQ (C.Attr deptno) (C.Attr deptno))) $
-      SetOp Prod (TRef empacct)
-                 (TRef dept)
+empVQ5' :: A.Algebra
+empVQ5' = A.Proj [trueAtt managerno] $
+  A.Sel (A.And yearCond $
+       A.And empCond 
+             (A.Comp EQ (A.Attr deptno) (A.Attr deptno))) $
+      A.SetOp A.Prod (A.TRef empacct)
+                 (A.TRef dept)
 
 -- classification: 5-3-2-1
-empVQ5naive :: Algebra
-empVQ5naive = AChc empv3 empVQ5 $ AChc empv4 empVQ5 $ AChc empv5 empVQ5 Empty
+empVQ5naive :: A.Algebra
+empVQ5naive = A.AChc empv3 empVQ5 $ A.AChc empv4 empVQ5 $ A.AChc empv5 empVQ5 A.Empty
 
 -- classification: 5-1-2-1
-empVQ5naive' :: Algebra
-empVQ5naive' = AChc (F.disjFexp [empv3, empv4, empv5]) empVQ5 Empty
+empVQ5naive' :: A.Algebra
+empVQ5naive' = A.AChc (F.disjFexp [empv3, empv4, empv5]) empVQ5 A.Empty
 
 -- intent: find all salary values of managers in all history.
 --         (the periods of salary and manager appointment 
@@ -279,7 +279,7 @@ empVQ5naive' = AChc (F.disjFexp [empv3, empv4, empv5]) empVQ5 Empty
 -- query:
 -- classification:
 -- note: there's no way to get the period of manager appointment.
-empVQ6 :: Algebra
+empVQ6 :: A.Algebra
 empVQ6 = empVQ4
 
 -- intent: for all managers that the employee 10004 worked with,
@@ -293,26 +293,26 @@ empVQ6 = empVQ4
 -- prj_deptname
 --     empvq3 join_(managerno = managerno) dept
 -- classification: 3-0-2-2
-empVQ7 :: Algebra
-empVQ7 = Proj [trueAtt deptname] $
-  Sel (C.Comp EQ (C.Attr managerno) (C.Attr managerno)) $
-      SetOp Prod empVQ3 (TRef dept)
+empVQ7 :: A.Algebra
+empVQ7 = A.Proj [trueAtt deptname] $
+  A.Sel (A.Comp EQ (A.Attr managerno) (A.Attr managerno)) $
+      A.SetOp A.Prod empVQ3 (A.TRef dept)
 
 -- just wondering about!!
-empVQ7naiveHelper :: Algebra
-empVQ7naiveHelper = Proj [trueAtt deptname] $
-  Sel (C.Comp EQ (C.Attr managerno) (C.Attr managerno)) $
-      SetOp Prod empVQ3naive (TRef dept)
+empVQ7naiveHelper :: A.Algebra
+empVQ7naiveHelper = A.Proj [trueAtt deptname] $
+  A.Sel (A.Comp EQ (A.Attr managerno) (A.Attr managerno)) $
+      A.SetOp A.Prod empVQ3naive (A.TRef dept)
 
 -- classification: 5-3-2-2
-empVQ7naive :: Algebra
-empVQ7naive = AChc empv3 empVQ7 $ AChc empv4 empVQ7 $ AChc empv5 empVQ7 Empty
+empVQ7naive :: A.Algebra
+empVQ7naive = A.AChc empv3 empVQ7 $ A.AChc empv4 empVQ7 $ A.AChc empv5 empVQ7 A.Empty
 
 -- note: Just wondering what happens!!!
-empVQ7naive' :: Algebra
-empVQ7naive' = AChc empv3 empVQ7naiveHelper $ 
-                          AChc empv4 empVQ7naiveHelper $ 
-                                     AChc empv5 empVQ7naiveHelper Empty
+empVQ7naive' :: A.Algebra
+empVQ7naive' = A.AChc empv3 empVQ7naiveHelper $ 
+                          A.AChc empv4 empVQ7naiveHelper $ 
+                                     A.AChc empv5 empVQ7naiveHelper A.Empty
 
 
 -- intent: for all managers, find all managers in the department
@@ -322,7 +322,7 @@ empVQ7naive' = AChc empv3 empVQ7naiveHelper $
 --         answer using data valid o the year 1991.
 -- query:
 -- classification:
-empVQ8 :: Algebra
+empVQ8 :: A.Algebra
 empVQ8 = undefined
 
 -- 
@@ -333,14 +333,14 @@ empVQ8 = undefined
 --         1991-01-01 or after. 
 -- query:
 -- classification:
-empVQ9 :: Algebra
+empVQ9 :: A.Algebra
 empVQ9 = undefined
 
 -- intent: return the managers (of department d001) on
 --         1991-01-01 or after.
 -- query:
 -- classification:
-empVQ10 :: Algebra
+empVQ10 :: A.Algebra
 empVQ10 = undefined
 
 -- intent: find all managers that employee 10004 worked with,
@@ -348,7 +348,7 @@ empVQ10 = undefined
 --         on or after 1991-01-01.
 -- query:
 -- classification:
-empVQ11 :: Algebra
+empVQ11 :: A.Algebra
 empVQ11 = undefined
 
 -- intent: find all salary values of managers in all history.
@@ -357,7 +357,7 @@ empVQ11 = undefined
 --         1991-01-01.
 -- query:
 -- classification:
-empVQ12 :: Algebra
+empVQ12 :: A.Algebra
 empVQ12 = undefined
 
 -- intent: find the historical managers of department where
@@ -367,7 +367,7 @@ empVQ12 = undefined
 --         1991-01-01.
 -- query:
 -- classification:
-empVQ13 :: Algebra
+empVQ13 :: A.Algebra
 empVQ13 = undefined
 
 -- intent: find all salary values of managers in all history.
@@ -376,7 +376,7 @@ empVQ13 = undefined
 --         answer using data valid on or after the year 1991.
 -- query:
 -- classification:
-empVQ14 :: Algebra
+empVQ14 :: A.Algebra
 empVQ14 = undefined
 
 -- intent: for all managers that the employee 10004 worked with, 
@@ -388,7 +388,7 @@ empVQ14 = undefined
 --         anwer using data valid on or after the year 1991.
 -- query:
 -- classification:
-empVQ15 :: Algebra
+empVQ15 :: A.Algebra
 empVQ15 = undefined
 
 -- intent: for all managers, find all managers in the department 
@@ -397,7 +397,7 @@ empVQ15 = undefined
 --         answer using data valid on or after the year 1991.
 -- query:
 -- classification:
-empVQ16 :: Algebra
+empVQ16 :: A.Algebra
 empVQ16 = undefined
 
 -------------------------------------------
@@ -406,19 +406,19 @@ empVQ16 = undefined
 
 -- intent: for all employees get their salary
 -- query: 
-empVQ17 :: Algebra
+empVQ17 :: A.Algebra
 empVQ17 = undefined
 
 
 -- intent:
 -- query:
--- empVQ4 :: Algebra
+-- empVQ4 :: A.Algebra
 -- empVQ4 = undefined
 
 
 -- intent:
 -- query:
--- empVQ4 :: Algebra
+-- empVQ4 :: A.Algebra
 -- empVQ4 = undefined
 
 

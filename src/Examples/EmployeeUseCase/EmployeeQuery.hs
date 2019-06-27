@@ -1,8 +1,8 @@
  -- | Example Queries upon an employee data base
 module Examples.EmployeeUseCase.EmployeeQuery where
 
-import VDBMS.QueryLang.RelAlg.Variational.Algebra
-import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
+import qualified VDBMS.QueryLang.RelAlg.Variational.Algebra as A
+-- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.VDB.Name
 import VDBMS.Variational.Variational 
@@ -23,15 +23,15 @@ date2000 = SqlUTCTime $ UTCTime (fromGregorian 2000 1 1) 0
 --   SELECT empno, name, hiredate
 --   FROM   otherpersonnel
 
-empQ1_v1 :: Algebra 
-empQ1_v1 = SetOp Union 
-  (Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_engineerpersonnel"))
-  (Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_otherpersonnel"))
+empQ1_v1 :: A.Algebra 
+empQ1_v1 = A.SetOp A.Union 
+  (A.Proj (plainAttrs [ "empno", "name", "hiredate"]) $ A.TRef (Relation "v_engineerpersonnel"))
+  (A.Proj (plainAttrs [ "empno", "name", "hiredate"]) $ A.TRef (Relation "v_otherpersonnel"))
 
 -- | a query to find the titles of all jobs
 --   * SELECT title FROM job;
-empQ2_v1 :: Algebra
-empQ2_v1 = Proj [ plainAttr "title" ] $ TRef (Relation "v_job")
+empQ2_v1 :: A.Algebra
+empQ2_v1 = A.Proj [ plainAttr "title" ] $ A.TRef (Relation "v_job")
 
 
 -- 
@@ -42,8 +42,8 @@ empQ2_v1 = Proj [ plainAttr "title" ] $ TRef (Relation "v_job")
 
 --   SELECT empno, name, hiredate
 --   FROM   empacct
-empQ1_v2 :: Algebra
-empQ1_v2 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_empacct")
+empQ1_v2 :: A.Algebra
+empQ1_v2 = A.Proj (plainAttrs [ "empno", "name", "hiredate"]) $ A.TRef (Relation "v_empacct")
 
 -- 
 -- ** Query in schema verison 3
@@ -54,8 +54,8 @@ empQ1_v2 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_
 --   SELECT empno, name, hiredate
 --   FROM   empacct
 
-empQ1_v3 :: Algebra
-empQ1_v3 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_empacct")
+empQ1_v3 :: A.Algebra
+empQ1_v3 = A.Proj (plainAttrs [ "empno", "name", "hiredate"]) $ A.TRef (Relation "v_empacct")
 
 -- 
 -- ** Query in schema verison 4
@@ -66,9 +66,9 @@ empQ1_v3 = Proj (plainAttrs [ "empno", "name", "hiredate"]) $ TRef (Relation "v_
 --   SELECT empno, hiredate, name 
 --   FROM   empacct, empbio
 --   WHERE empacct.empno = empbio.empno  
-empQ1_v4 :: Algebra
-empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute "empno")) (C.Attr (Attribute "empno"))
-           in Proj (plainAttrs [ "empno", "name", "hiredate"]) $ Sel  cond1  $ SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
+empQ1_v4 :: A.Algebra
+empQ1_v4 = let cond1 = A.Comp EQ (A.Attr (Attribute "empno")) (A.Attr (Attribute "empno"))
+           in A.Proj (plainAttrs [ "empno", "name", "hiredate"]) $ A.Sel  cond1  $ A.SetOp A.Prod (A.TRef (Relation "v_empacct")) (A.TRef (Relation "v_empbio"))
 
                
 
@@ -80,17 +80,17 @@ empQ1_v4 = let cond1 = C.Comp EQ (C.Attr (Attribute "empno")) (C.Attr (Attribute
   -- SELECT empno, firstname, lastname, hiredate 
   -- FROM   empacct, empbio
   -- WHERE empacct.empno = empbio.empno 
-empQ1_v5 :: Algebra 
-empQ1_v5 = Proj (plainAttrs [ "empno", "firstname","lastname", "hiredate"]) $ Sel cond1 $ SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
-         where cond1 = C.Comp EQ (C.Attr (Attribute  "empno")) (C.Attr (Attribute "empno"))
+empQ1_v5 :: A.Algebra 
+empQ1_v5 = A.Proj (plainAttrs [ "empno", "firstname","lastname", "hiredate"]) $ A.Sel cond1 $ A.SetOp A.Prod (A.TRef (Relation "v_empacct")) (A.TRef (Relation "v_empbio"))
+         where cond1 = A.Comp EQ (A.Attr (Attribute  "empno")) (A.Attr (Attribute "empno"))
 
 
-empJoin :: Algebra
-empJoin = SetOp Prod (TRef (Relation "v_empacct")) (TRef (Relation "v_empbio"))
-  -- where cond1 = C.Comp EQ (C.Attr (Attribute (Just (Relation "v_empacct")) "empno")) (C.Attr (Attribute (Just (Relation "v_empbio")) "empno"))
+empJoin :: A.Algebra
+empJoin = A.SetOp A.Prod (A.TRef (Relation "v_empacct")) (A.TRef (Relation "v_empbio"))
+  -- where cond1 = A.Comp EQ (A.Attr (Attribute (Just (Relation "v_empacct")) "empno")) (A.Attr (Attribute (Just (Relation "v_empbio")) "empno"))
 
-empQ1_v4and5 :: Algebra
-empQ1_v4and5 = Proj [(F.Lit True, Attribute "empno"),
+empQ1_v4and5 :: A.Algebra
+empQ1_v4and5 = A.Proj [(F.Lit True, Attribute "empno"),
                      (F.And (F.Ref $ F.Feature "v4") (F.Not $ F.Ref $ F.Feature "v5"), Attribute "name"),
                      (F.And (F.Not $ F.Ref $ F.Feature "v4") (F.Ref $ F.Feature "v5"), Attribute "firstname"),
                      (F.And (F.Not $ F.Ref $ F.Feature "v4") (F.Ref $ F.Feature "v5"), Attribute "lastname"),

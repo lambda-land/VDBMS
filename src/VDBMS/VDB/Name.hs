@@ -40,8 +40,8 @@ data SingleAttribute = SingleAttr Attribute
 
 -- | Attributes that can be projected in queries.
 data Attributes = AllAtt
-                | OneAtt SingleAttribute
-                | AttrList [SingleAttribute]
+                | OneAtt (Rename SingleAttribute)
+                | AttrList [Rename SingleAttribute]
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | A new name that could be used for attributes and subqueries.

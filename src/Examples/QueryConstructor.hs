@@ -2,7 +2,7 @@
 module Examples.QueryConstructor where
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra
-import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
+-- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
