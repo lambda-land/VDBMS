@@ -114,10 +114,10 @@ typeOfVquery' (A.SetOp A.Diff q q')  ctx s =
      if typeEq env env'
      then return t 
      else throwM $ NotEquiveTypeEnv env env' ctx t t' 
-typeOfVquery' (A.SetOp A.Prod q q')  ctx s = 
-  do t  <- typeOfVquery' q ctx s
-     t' <- typeOfVquery' q' ctx s
-     return $ typeProduct t t'
+-- typeOfVquery' (A.Prod r r' rl)  ctx s = undefined
+  -- do t  <- typeOfVquery' q ctx s
+  --    t' <- typeOfVquery' q' ctx s
+  --    return $ typeProduct t t'
 typeOfVquery' (A.Proj as q)        ctx s = 
   do t' <- typeOfVquery' q ctx s
      t  <-  typeProj as t'

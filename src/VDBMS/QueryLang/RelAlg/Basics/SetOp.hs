@@ -9,6 +9,6 @@ import Data.Data (Data,Typeable)
 
 
 -- | Basic set operations.
-data SetOp = Union | Diff | Prod
+data SetOp = Union | Diff 
   deriving (Data,Eq,Show,Typeable, Ord)
 

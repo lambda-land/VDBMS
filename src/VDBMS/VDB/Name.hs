@@ -7,7 +7,8 @@ module VDBMS.VDB.Name (
         Rename(..),
         QualifiedAttr(..),
         Attributes(..),
-        SingleAttr(..)
+        SingleAttr(..),
+        renameMap
 
 ) where
 
@@ -51,6 +52,10 @@ data Rename a =
     thing :: a -- ^ the thing
   }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
+
+-- |
+renameMap :: (a -> b) -> Rename a -> Rename b
+renameMap f (Rename n t) = Rename n (f t)
 
 -- | A relation (i.e. table) name.
 newtype Relation = Relation { relationName :: String }
