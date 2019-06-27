@@ -1,12 +1,14 @@
 -- | Statically syntesizes the types of vqs.
-module VDBMS.TypeSystem.TypeSystem (
+module VDBMS.TypeSystem.TypeSystem where
+-- (
 
-        TypeEnv'
-        , VariationalContext
-        , typeOfVquery'
+--         TypeEnv'
+--         , VariationalContext
+--         , typeOfVquery'
 
-) where 
+-- ) where 
 
+{--
 import qualified VDBMS.QueryLang.RelAlg.Variational.Algebra as A
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
@@ -218,4 +220,4 @@ typeSubsume env env'
       envObj' = getObj env'
       envFexp' = getFexp env'
 
-                              
+--}                              
