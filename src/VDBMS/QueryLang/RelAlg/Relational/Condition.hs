@@ -20,14 +20,14 @@ import VDBMS.QueryLang.RelAlg.Basics.Atom
 
 import Database.HDBC (SqlValue)
 
--- | Variational conditions.
+-- | Relational/SQL conditions, depends on what language
+--   you pass it.
 data RCondition a
    = RLit  Bool
    | RComp CompOp Atom Atom
    | RNot  (RCondition a)
    | ROr   (RCondition a) (RCondition a)
    | RAnd  (RCondition a) (RCondition a)
-   -- | RIn   Attribute RAlgebra
    | RIn   Attribute a
   deriving (Data,Eq,Typeable,Ord)
 

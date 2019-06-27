@@ -6,7 +6,8 @@ module VDBMS.VDB.Name (
         PresCondAtt(..),
         Rename(..),
         QualifiedAttribute(..),
-        Attributes(..)
+        Attributes(..),
+        SingleAttribute(..)
 
 ) where
 
