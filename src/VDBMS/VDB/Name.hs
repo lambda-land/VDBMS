@@ -5,9 +5,9 @@ module VDBMS.VDB.Name (
         Relation(..),
         PresCondAtt(..),
         Rename(..),
-        QualifiedAttribute(..),
+        QualifiedAttr(..),
         Attributes(..),
-        SingleAttribute(..)
+        SingleAttr(..)
 
 ) where
 
@@ -22,26 +22,26 @@ newtype Attribute = Attribute { attributeName :: String }
 -- | A qualified attribute (i.e., its relation name can be
 --   attached to it) with the possibility to rename to a new
 --   name.
-data QualifiedAttribute = 
-    RelationQualifiedAttribute {
+data QualifiedAttr = 
+    RelationQualifiedAttr {
       attr :: Attribute, -- ^ the attribute
       rel :: Relation -- ^ the relation 
     }
-  | SubqueryQualifiedAttribute {
+  | SubqueryQualifiedAttr {
       attribute :: Attribute, -- ^ the attribute
       subqueryName :: String -- ^ the name assigned to the subquery
     }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | A single attribute.
-data SingleAttribute = SingleAttr Attribute
-                     | SingleQualifiedAttr QualifiedAttribute
+data SingleAttr = SingleAttr Attribute
+                | SingleQualifiedAttr QualifiedAttr
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | Attributes that can be projected in queries.
-data Attributes = AllAtt
-                | OneAtt (Rename SingleAttribute)
-                | AttrList [Rename SingleAttribute]
+data Attributes = AllAtts
+                | OneAtt (Rename SingleAttr)
+                | AttList [Rename SingleAttr]
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | A new name that could be used for attributes and subqueries.

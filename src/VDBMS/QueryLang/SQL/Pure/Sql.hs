@@ -17,7 +17,7 @@ data SqlSelect =
 
 data SqlAttrExprBasic = 
     SqlAttr Attribute -- ^ A
-  | SqlQualifiedAtt QualifiedAttribute -- ^ R.A
+  | SqlQualifiedAttr QualifiedAttr -- ^ R.A
   | SqlNullAtt -- ^ Null
   -- | SqlLitNullRenamed Attribute -- ^ Null as A
   | SqlConcatAtt Attribute [String] -- ^ concat (A, "blah", "blah")

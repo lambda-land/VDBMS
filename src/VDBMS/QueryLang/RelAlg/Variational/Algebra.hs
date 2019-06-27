@@ -65,6 +65,7 @@ instance Variational Condition where
   configure c (Not cond)     = RNot $ configure c cond
   configure c (Or l r)       = ROr (configure c l) (configure c r)
   configure c (And l r)      = RAnd (configure c l) (configure c r)
+  configure c (In a q)       = RIn a (configure c q)
   configure c (CChc f l r) 
     | F.evalFeatureExpr c f  = configure c l
     | otherwise              = configure c r
@@ -74,6 +75,7 @@ instance Variational Condition where
   linearize (Not c)        = mapSnd RNot $ linearize c
   linearize (Or c1 c2)     = combOpts F.And ROr (linearize c1) (linearize c2)
   linearize (And c1 c2)    = combOpts F.And RAnd (linearize c1) (linearize c2)
+  linearize (In a q)       = mapSnd (RIn a) (linearize q)
   linearize (CChc f c1 c2) = mapFst (F.And f) (linearize c1) ++
                              mapFst (F.And (F.Not f)) (linearize c2)
 
@@ -98,10 +100,16 @@ data Algebra
    | Empty 
   deriving (Data,Eq,Show,Typeable,Ord)
 
+-- | Optional attributes.
+data OptAttributes = AllAtts F.FeatureExpr
+                   | OptOneAtt (Rename (Opt SingleAttr))
+                   | OptAttList [Rename (Opt SingleAttr)]
+  deriving (Data,Eq,Ord,Show,Typeable)
+
 -- | More expressive variational relational algebra.
 data Algebra'
    = SetOp' SetOp (Rename Algebra') (Rename Algebra')
-   | Proj'  [Opt (Rename QualifiedAttribute)]  (Rename Algebra')
+   | Proj'  OptAttributes (Rename Algebra')
    | Sel'   Condition (Rename Algebra')
    | AChc'  F.FeatureExpr (Rename Algebra') Algebra' (Rename Algebra')
    | TRef'  (Rename Relation)
@@ -116,7 +124,7 @@ instance Variational Algebra where
   type Variant Algebra = Opt RAlgebra
 
   configure c (SetOp o l r)   = RSetOp o (configure c l) (configure c r)
-  configure c (Proj as q)     = RProj (configureOptList c as) (configure c q)
+  -- configure c (Proj as q)     = RProj (configureOptList c as) (configure c q)
   configure c (Sel cond q)    = RSel (configure c cond) (configure c q) 
   configure c (AChc f l r) 
     | F.evalFeatureExpr c f   = configure c l
