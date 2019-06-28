@@ -26,15 +26,20 @@ import VDBMS.QueryLang.RelAlg.Relational.Algebra
 -- * Variaitonal condition data type and instances.
 --
 
--- | Variational conditions.
+-- | Variational relational conditions.
 data Condition 
    = Lit  Bool
    | Comp CompOp Atom Atom
    | Not  Condition
    | Or   Condition Condition
    | And  Condition Condition
-   | In   Attribute Algebra
    | CChc F.FeatureExpr Condition Condition
+  deriving (Data,Eq,Typeable,Ord)
+
+-- | Variational conditions.
+data Cond
+   = Cond Condition
+   | In   Attribute Algebra
   deriving (Data,Eq,Typeable,Ord)
 
 -- | pretty prints pure relational conditions.
@@ -48,7 +53,6 @@ prettyRelCondition c = top c
     top c = sub c
     sub (Lit b) = if b then " true " else " false "
     sub (Not c) = " NOT " ++ sub c
-    sub (In a q) = attributeName a ++ " IN " ++ show q
     sub c = " ( " ++ top c ++ " ) "
 
 instance Show Condition where
@@ -56,16 +60,15 @@ instance Show Condition where
 
 instance Variational Condition where
 
-  type NonVariational Condition = RCondition RAlgebra
+  type NonVariational Condition = RCondition 
 
-  type Variant Condition = Opt (RCondition RAlgebra)
+  type Variant Condition = Opt RCondition
   
   configure c (Lit b)        = RLit b
   configure c (Comp o l r)   = RComp o l r
   configure c (Not cond)     = RNot $ configure c cond
   configure c (Or l r)       = ROr (configure c l) (configure c r)
   configure c (And l r)      = RAnd (configure c l) (configure c r)
-  configure c (In a q)       = RIn a (configure c q)
   configure c (CChc f l r) 
     | F.evalFeatureExpr c f  = configure c l
     | otherwise              = configure c r
@@ -75,7 +78,6 @@ instance Variational Condition where
   linearize (Not c)        = mapSnd RNot $ linearize c
   linearize (Or c1 c2)     = combOpts F.And ROr (linearize c1) (linearize c2)
   linearize (And c1 c2)    = combOpts F.And RAnd (linearize c1) (linearize c2)
-  linearize (In a q)       = mapSnd (RIn a) (linearize q)
   linearize (CChc f c1 c2) = mapFst (F.And f) (linearize c1) ++
                              mapFst (F.And (F.Not f)) (linearize c2)
 
@@ -85,6 +87,36 @@ instance Boolean Condition where
   bnot  = Not
   (&&&) = And
   (|||) = Or
+
+-- | pretty prints pure relational and IN conditions.
+prettyRelCond :: Cond -> String
+prettyRelCond (Cond (CChc _ _ _)) = error "cannot pretty print a choice of conditions!!"
+prettyRelCond c = top c
+  where
+    top (Cond r) = prettyRelCondition r
+    top c = sub c
+    sub (In a q) = attributeName a ++ " IN ( " ++ show q ++ " ) "
+    sub c = " ( " ++ top c ++ " ) "
+
+instance Show Cond where
+  show = prettyRelCond
+
+instance Variational Cond where
+
+  type NonVariational Cond = RCond RAlgebra
+
+  type Variant Cond = Opt (RCond RAlgebra)
+  
+  -- configure c (In a q)       = RIn a (configure c q)
+  
+  -- linearize (In a q)       = mapSnd (RIn a) (linearize q)
+
+instance Boolean Cond where
+  true  = Cond (Lit True)
+  false = Cond (Lit False)
+  -- bnot  = Cond . Not
+  -- (&&&) = Cond . And
+  -- (|||) = Cond . Or
 
 --
 -- * Variational relational algebra data type and instances.
@@ -101,17 +133,22 @@ instance Boolean Condition where
 --   deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | Optional attributes.
-data OptAttributes = AllAtts F.FeatureExpr
-                   | OptOneAtt (Rename (Opt SingleAttr))
+data OptAttributes = OptOneAtt (Rename (Opt SingleAttr))
                    | OptAttList [Rename (Opt SingleAttr)]
   deriving (Data,Eq,Ord,Show,Typeable)
 
+-- | Variational conditional relational joins.
+data Joins 
+   = JoinTwoTables Condition (Rename Relation) (Rename Relation)
+   | JoinMore      Condition Joins (Rename Relation)
+  deriving (Data,Eq,Show,Typeable,Ord)
 -- | More expressive variational relational algebra.
 data Algebra
    = SetOp SetOp Algebra Algebra
    | Proj  OptAttributes (Rename Algebra)
-   | Sel   Condition (Rename Algebra)
+   | Sel   Cond (Rename Algebra)
    | AChc  F.FeatureExpr Algebra Algebra
+   | Join  Joins
    | Prod  (Rename Relation) (Rename Relation) [Rename Relation]
    | TRef  (Rename Relation)
    | Empty 
@@ -132,8 +169,9 @@ instance Variational Algebra where
   -- configure c (AChc f l r) 
   --   | F.evalFeatureExpr c f   = configure c l
   --   | otherwise               = configure c r
-  configure c (TRef r)        = RTRef r
-  configure c Empty           = REmpty
+  -- configure c (Prod r l rs)   = 
+  -- configure c (TRef r)        = RTRef r
+  -- configure c Empty           = REmpty
 
   -- linearize (SetOp s q1 q2) = 
   --   combOpts F.And (RSetOp s) (renameMap linearize q1) (renameMap linearize q2)
@@ -141,6 +179,6 @@ instance Variational Algebra where
   -- linearize (Sel c q)       = combOpts F.And RSel (linearize c) (linearize q)
   -- linearize (AChc f q1 q2)  = mapFst (F.And f) (linearize q1) ++
   --                             mapFst (F.And (F.Not f)) (linearize q2)
-  linearize (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
-  linearize Empty           = pure $ mkOpt (F.Lit True) REmpty
+  -- linearize (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
+  -- linearize Empty           = pure $ mkOpt (F.Lit True) REmpty
 

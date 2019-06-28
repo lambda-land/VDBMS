@@ -24,6 +24,11 @@ import VDBMS.QueryLang.RelAlg.Basics.SetOp
 --    | REmpty 
 --   deriving (Data,Eq,Show,Typeable,Ord)
 
+-- | Conditional relational joins.
+data RJoins 
+   = RJoinTwoTable RCondition (Rename Relation) (Rename Relation)
+   | RjoinMore RCondition RJoins (Rename Relation)
+  deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | More expressive relaitonal algebra.
 --   Ie, it has renaming of attributes and subqueries in addition to 
@@ -31,7 +36,8 @@ import VDBMS.QueryLang.RelAlg.Basics.SetOp
 data RAlgebra
    = RSetOp SetOp (Rename RAlgebra) (Rename RAlgebra)
    | RProj  Attributes (Rename RAlgebra)
-   | RSel   (RCondition RAlgebra) (Rename RAlgebra)
+   | RSel   (RCond RAlgebra) (Rename RAlgebra)
+   | RJoin  RJoins
    | RProd  (Rename Relation) (Rename Relation) [Rename Relation]
    | RTRef  (Rename Relation)
    | REmpty

@@ -2,13 +2,13 @@
 module VDBMS.QueryLang.SQL.Pure.Sql where
 
 import VDBMS.VDB.Name 
-import VDBMS.QueryLang.RelAlg.Relational.Condition (RCondition)
+import VDBMS.QueryLang.RelAlg.Relational.Condition (RCond)
 
 data SqlSelect =  
     SqlSelect {
       attributes :: [SqlAttrExpr],
       tables :: [SqlRelation],
-      condition :: [RCondition SqlSelect] 
+      condition :: [RCond SqlSelect] 
     }
   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
   | SqlTRef Relation -- ^ return a table
@@ -29,7 +29,7 @@ data SqlAttrExpr =
 
 data SqlRelation = 
     Rename SqlSelect
-  | SqlInnerJoin SqlSelect SqlSelect (RCondition SqlSelect)
+  | SqlInnerJoin SqlSelect SqlSelect (RCond SqlSelect)
 
 data SqlBinOp = Union | UnionAll | Diff
 

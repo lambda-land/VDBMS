@@ -34,15 +34,6 @@ import VDBMS.Variational.Variational
 
 import Control.Arrow (first, second, (***))
 
-
--- | Optional type class. 
--- NOTE: we're not using it for now since we only have
---       opt in one place (attributes of queries).
--- class Variational a => Optional a where
-  
---   -- | Create an opt.
---   opt :: a -> a 
-
 --
 -- * Optional values
 --
