@@ -107,9 +107,11 @@ instance Variational Cond where
 
   type Variant Cond = Opt (RCond RAlgebra)
   
-  -- configure c (In a q)       = RIn a (configure c q)
+  configure c (Cond cond) = RCond $ configure c cond
+  configure c (In a q)    = RIn a (configure c q)
   
-  -- linearize (In a q)       = mapSnd (RIn a) (linearize q)
+  linearize (Cond c) = mapSnd RCond (linearize c)
+  linearize (In a q) = mapSnd (RIn a) (linearize q)
 
 instance Boolean Cond where
   true  = Cond (Lit True)
@@ -142,6 +144,7 @@ data Joins
    = JoinTwoTables Condition (Rename Relation) (Rename Relation)
    | JoinMore      Condition Joins (Rename Relation)
   deriving (Data,Eq,Show,Typeable,Ord)
+
 -- | More expressive variational relational algebra.
 data Algebra
    = SetOp SetOp Algebra Algebra
