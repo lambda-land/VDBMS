@@ -16,6 +16,7 @@ import VDBMS.QueryLang.RelAlg.Relational.Condition
 import VDBMS.DBMS.Value.Value
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+import VDBMS.Features.Config (Config)
 import VDBMS.Variational.Variational
 import VDBMS.Variational.Opt
 -- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
@@ -164,24 +165,44 @@ instance Variational Algebra where
 
   type Variant Algebra = Opt RAlgebra
 
-  -- configure c (SetOp o l r)   = 
-  --   RSetOp o (renameMap (configure c) l) (renameMap (configure c) r)
-  -- -- configure c (Proj as q)     = RProj (configureOptList c as) (configure c q)
-  -- configure c (Sel cond q)    = 
-  --   RSel (configure c cond) (renameMap (configure c) q) 
-  -- configure c (AChc f l r) 
-  --   | F.evalFeatureExpr c f   = configure c l
-  --   | otherwise               = configure c r
-  -- configure c (Prod r l rs)   = 
-  -- configure c (TRef r)        = RTRef r
-  -- configure c Empty           = REmpty
+  configure c (SetOp o l r)   = RSetOp o (configure c l) (configure c r)
+  configure c (Proj as q)     = undefined
+    -- RProj (configureOptList c as) (configure c q)
+  configure c (Sel cond q)    = 
+    RSel (configure c cond) (renameMap (configure c) q) 
+  configure c (AChc f l r) 
+    | F.evalFeatureExpr c f   = configure c l
+    | otherwise               = configure c r
+  configure c (Join js) = RJoin (configure' c js)
+    where
+      configure' :: Config Bool -> Joins -> RJoins
+      configure' c (JoinTwoTables cond l r) = 
+        RJoinTwoTable (configure c cond) l r
+      configure' c (JoinMore cond js r)     = 
+        RJoinMore (configure c cond) (configure' c js) r
+  configure c (Prod r l rs)   = RProd r l rs
+  configure c (TRef r)        = RTRef r
+  configure c Empty           = REmpty
 
-  -- linearize (SetOp s q1 q2) = 
-  --   combOpts F.And (RSetOp s) (renameMap linearize q1) (renameMap linearize q2)
-  -- linearize (Proj as q)     = combOpts F.And RProj (groupOpts as) (linearize q)
-  -- linearize (Sel c q)       = combOpts F.And RSel (linearize c) (linearize q)
-  -- linearize (AChc f q1 q2)  = mapFst (F.And f) (linearize q1) ++
-  --                             mapFst (F.And (F.Not f)) (linearize q2)
-  -- linearize (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
-  -- linearize Empty           = pure $ mkOpt (F.Lit True) REmpty
+  linearize (SetOp s q1 q2) = 
+    combOpts F.And (RSetOp s) (linearize q1) (linearize q2)
+  linearize (Proj as q)     = undefined
+    -- combOpts F.And RProj (groupOpts as) (linearize q)
+  linearize (Sel c q)       = 
+    combOpts F.And RSel (linearize c) (linearizeRename q) 
+    where
+      linearizeRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
+      linearizeRename r = mapSnd (Rename (name r)) $ linearize (thing r)
+  linearize (AChc f q1 q2)  = mapFst (F.And f) (linearize q1) ++
+                              mapFst (F.And (F.Not f)) (linearize q2)
+  linearize (Join js)       = mapSnd RJoin $ linearize' js
+    where
+      linearize' :: Joins -> [Opt RJoins]
+      linearize' (JoinTwoTables c l r) = 
+        mapSnd (\cond -> RJoinTwoTable cond l r) (linearize c)
+      linearize' (JoinMore c js r)     = 
+        combOpts F.And (\c' js' -> RJoinMore c' js' r) (linearize c) (linearize' js)
+  linearize (Prod r l rs)   = pure $ mkOpt (F.Lit True) (RProd r l rs)
+  linearize (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
+  linearize Empty           = pure $ mkOpt (F.Lit True) REmpty
 

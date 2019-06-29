@@ -23,15 +23,15 @@ newtype Attribute = Attribute { attributeName :: String }
 -- | A qualified attribute (i.e., its relation name can be
 --   attached to it) with the possibility to rename to a new
 --   name.
-data QualifiedAttr = 
-    RelationQualifiedAttr {
+data QualifiedAttr 
+   = RelationQualifiedAttr {
       attr :: Attribute, -- ^ the attribute
       rel :: Relation -- ^ the relation 
-    }
-  | SubqueryQualifiedAttr {
+     }
+   | SubqueryQualifiedAttr {
       attribute :: Attribute, -- ^ the attribute
       subqueryName :: String -- ^ the name assigned to the subquery
-    }
+     }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | A single attribute.
@@ -52,7 +52,7 @@ data Rename a =
   }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
--- |
+-- | maps a function to objects with renaming.
 renameMap :: (a -> b) -> Rename a -> Rename b
 renameMap f (Rename n t) = Rename n (f t)
 
