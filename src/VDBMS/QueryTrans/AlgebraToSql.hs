@@ -23,5 +23,15 @@ import VDBMS.VDB.Schema.Schema
 
 -- import Database.HDBC (SqlValue(..))
 
+-- | Translates type-correct relational algebra queries to sql queries.
+--   Since the queries are type-checked before we don't need to pass the
+--   schema and make sure that attributes and relations are in line with 
+--   the schema.
 transAlgebra2Sql :: RAlgebra -> Schema -> SqlSelect
-transAlgebra2Sql = undefined
+transAlgebra2Sql (RSetOp o l r) s = undefined
+transAlgebra2Sql (RProj as q)   s = undefined
+transAlgebra2Sql (RSel c q)     s = undefined
+transAlgebra2Sql (RJoin js)     s = undefined
+transAlgebra2Sql (RProd l r rs) s = undefined
+transAlgebra2Sql (RTRef r)      s = undefined
+transAlgebra2Sql REmpty         s = undefined
