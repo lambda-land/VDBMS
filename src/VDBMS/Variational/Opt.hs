@@ -26,7 +26,7 @@ import Data.List (groupBy)
 import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.SAT (equivalent,satisfiable)
-import VDBMS.Variational.Variational
+-- import VDBMS.Variational.Variational
 -- import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
 -- import VDBMS.Features.FeatureExpr.Core (evalFeatureExpr)
 -- import VDBMS.Features.FeatureExpr.Ops (selectFeatureExpr)

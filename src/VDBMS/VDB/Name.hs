@@ -52,7 +52,7 @@ data Rename a =
   }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
--- | maps a function to objects with renaming.
+-- | Maps a function to objects with renaming.
 renameMap :: (a -> b) -> Rename a -> Rename b
 renameMap f (Rename n t) = Rename n (f t)
 

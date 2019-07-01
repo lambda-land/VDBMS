@@ -10,6 +10,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
 
 import Data.Data (Data,Typeable)
 import Data.SBV (Boolean(..))
+import Data.Maybe (catMaybes)
 
 import VDBMS.QueryLang.RelAlg.Basics.Atom
 import VDBMS.QueryLang.RelAlg.Relational.Condition
@@ -135,9 +136,11 @@ instance Boolean Cond where
 --    | Empty 
 --   deriving (Data,Eq,Show,Typeable,Ord)
 
+type RenameableOptAttr = Rename (Opt SingleAttr)
+
 -- | Optional attributes.
-data OptAttributes = OptOneAtt (Rename (Opt SingleAttr))
-                   | OptAttList [Rename (Opt SingleAttr)]
+data OptAttributes = OptOneAtt RenameableOptAttr
+                   | OptAttList [RenameableOptAttr]
   deriving (Data,Eq,Ord,Show,Typeable)
 
 -- | Variational conditional relational joins.
@@ -166,8 +169,19 @@ instance Variational Algebra where
   type Variant Algebra = Opt RAlgebra
 
   configure c (SetOp o l r)   = RSetOp o (configure c l) (configure c r)
-  configure c (Proj as q)     = undefined
-    -- RProj (configureOptList c as) (configure c q)
+  configure c (Proj as q)     =
+    maybe REmpty (flip RProj (renameMap (configure c) q)) confedAtts
+      where
+        configureAtt :: Config Bool -> OptAttributes -> Maybe Attributes
+        configureAtt c (OptOneAtt n)   = fmap OneAtt $ checkAtts c n 
+        configureAtt c (OptAttList ns) = Just $ AttList $ catMaybes $ map (checkAtts c) ns
+        checkAtts :: Config Bool -> RenameableOptAttr -> Maybe (Rename SingleAttr)
+        checkAtts c n 
+          | F.evalFeatureExpr c (getFexp (thing n)) 
+            = Just $ Rename (name n) (getObj (thing n))
+          | otherwise 
+            = Nothing
+        confedAtts = configureAtt c as
   configure c (Sel cond q)    = 
     RSel (configure c cond) (renameMap (configure c) q) 
   configure c (AChc f l r) 
@@ -184,10 +198,20 @@ instance Variational Algebra where
   configure c (TRef r)        = RTRef r
   configure c Empty           = REmpty
 
+  -- Note that linearization doesn't consider schema at all. it just
+  -- linearizes a query. So it doesn't group queries based on the 
+  -- presence condition of attributes or relations.
   linearize (SetOp s q1 q2) = 
     combOpts F.And (RSetOp s) (linearize q1) (linearize q2)
-  linearize (Proj as q)     = undefined
-    -- combOpts F.And RProj (groupOpts as) (linearize q)
+  linearize (Proj as q)     = 
+    combOpts F.And RProj (linearizeAtts as) (linearizeRename q)
+      where
+        linearizeAtts :: OptAttributes -> [Opt Attributes]
+        linearizeAtts (OptOneAtt n)   = 
+          pure $ mkOpt (getFexp (thing n)) $ OneAtt (Rename (name n) (getObj (thing n)))
+        linearizeAtts (OptAttList ns) = undefined
+        linearizeRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
+        linearizeRename r = mapSnd (Rename (name r)) $ linearize (thing r)
   linearize (Sel c q)       = 
     combOpts F.And RSel (linearize c) (linearizeRename q) 
     where
@@ -205,4 +229,5 @@ instance Variational Algebra where
   linearize (Prod r l rs)   = pure $ mkOpt (F.Lit True) (RProd r l rs)
   linearize (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
   linearize Empty           = pure $ mkOpt (F.Lit True) REmpty
+
 

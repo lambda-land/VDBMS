@@ -7,6 +7,8 @@ module VDBMS.Variational.Variational (
 
 import VDBMS.Features.Config 
 import VDBMS.Features.FeatureExpr.FeatureExpr
+import VDBMS.VDB.Name (Rename(..))
+-- import VDBMS.Variational.Opt (mapSnd)
 -- import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
 -- import VDBMS.Features.FeatureExpr.Core (evalFeatureExpr)
 -- import VDBMS.Features.FeatureExpr.Ops (selectFeatureExpr)
@@ -37,6 +39,13 @@ class Variational a where
   -- | Linearizes a variational thing by generating a list
   --   of non-variational things with fexp attached to them.
   linearize :: a -> [Variant a]
+
+  -- | Maps a function to variants. 
+  -- mapVariant :: (a -> b) -> Variant a -> Variant b
+
+  -- | Linearized rename variaitonal. INCORRECT!
+  -- linearizeRename :: Rename a -> [Variant (Rename a)]
+  -- linearizeRename r = mapVariant () (Rename (name r)) $ linearize (thing r)
 
   -- | Map a function of non-variational things to
   --   variaitonal things. Basically lifts a non-variational
