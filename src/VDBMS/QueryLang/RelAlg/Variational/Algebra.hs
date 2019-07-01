@@ -209,7 +209,10 @@ instance Variational Algebra where
         linearizeAtts :: OptAttributes -> [Opt Attributes]
         linearizeAtts (OptOneAtt n)   = 
           pure $ mkOpt (getFexp (thing n)) $ OneAtt (Rename (name n) (getObj (thing n)))
-        linearizeAtts (OptAttList ns) = undefined
+        linearizeAtts (OptAttList ns) = 
+          mapSnd AttList $ groupOpts $ map 
+            (\n -> mkOpt (getFexp (thing n)) (Rename (name n) (getObj (thing n))))
+            ns
         linearizeRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
         linearizeRename r = mapSnd (Rename (name r)) $ linearize (thing r)
   linearize (Sel c q)       = 
