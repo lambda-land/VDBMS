@@ -25,7 +25,8 @@ transAlgebra2Sql (RSetOp o l r)
     where
       algBin2SqlBin Union = SqlUnion
       algBin2SqlBin Diff  = SqlDiff
-transAlgebra2Sql (RProj as q)   = undefined
+transAlgebra2Sql (RProj as q)   
+  = undefined
 transAlgebra2Sql (RSel c q)     
   = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) (name q)
     where 
@@ -55,5 +56,9 @@ algCond2SqlCond :: RCond RAlgebra -> RCond SqlSelect
 algCond2SqlCond (RCond c) = RCond c
 algCond2SqlCond (RIn a q) = RIn a (transAlgebra2Sql q)
 
-
+-- | Translates algebra attributes to sql attributes.
+--   Helper for transAlgebra2Sql.
+attAlg2Sql :: Attributes -> SqlAttrExpr
+attAlg2Sql (OneAtt a) = undefined
+attAlg2Sql (AttList as) = undefined
 
