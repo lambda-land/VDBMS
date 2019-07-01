@@ -27,11 +27,11 @@ import VDBMS.VDB.Schema.Schema
 --   Since the queries are type-checked before we don't need to pass the
 --   schema and make sure that attributes and relations are in line with 
 --   the schema.
-transAlgebra2Sql :: RAlgebra -> Schema -> SqlSelect
-transAlgebra2Sql (RSetOp o l r) s = undefined
-transAlgebra2Sql (RProj as q)   s = undefined
-transAlgebra2Sql (RSel c q)     s = undefined
-transAlgebra2Sql (RJoin js)     s = undefined
-transAlgebra2Sql (RProd l r rs) s = undefined
-transAlgebra2Sql (RTRef r)      s = undefined
-transAlgebra2Sql REmpty         s = undefined
+transAlgebra2Sql :: RAlgebra -> SqlSelect
+transAlgebra2Sql (RSetOp o l r) = undefined
+transAlgebra2Sql (RProj as q)   = undefined
+transAlgebra2Sql (RSel c q)     = undefined
+transAlgebra2Sql (RJoin js)     = undefined
+transAlgebra2Sql (RProd l r rs) = undefined
+transAlgebra2Sql (RTRef r)      = undefined
+transAlgebra2Sql REmpty         = undefined
