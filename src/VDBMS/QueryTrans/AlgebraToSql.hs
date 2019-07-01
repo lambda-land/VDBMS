@@ -13,6 +13,8 @@ import VDBMS.QueryLang.RelAlg.Basics.SetOp
 import VDBMS.VDB.Schema.Schema
 -- import VDBMS.Features.SAT 
 
+import Data.List ((\\))
+
 -- | Translates type-correct relational algebra queries to sql queries.
 --   Notes:
 --   Since the queries are type-checked before we don't need to pass the
@@ -26,7 +28,10 @@ transAlgebra2Sql (RSetOp o l r)
       algBin2SqlBin Union = SqlUnion
       algBin2SqlBin Diff  = SqlDiff
 transAlgebra2Sql (RProj as q)   
-  = undefined
+  = SqlSelect (map SqlAttr as ++ atts) (tables sql) (condition sql) (name q)
+    where 
+      sql = transAlgebra2Sql (thing q)
+      atts = attributes sql \\ [SqlAllAtt]
 transAlgebra2Sql (RSel c q)     
   = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) (name q)
     where 
@@ -55,10 +60,3 @@ constructJoinRels (RJoinMore js r c) = SqlMoreInnerJoin (constructJoinRels js) r
 algCond2SqlCond :: RCond RAlgebra -> RCond SqlSelect
 algCond2SqlCond (RCond c) = RCond c
 algCond2SqlCond (RIn a q) = RIn a (transAlgebra2Sql q)
-
--- | Translates algebra attributes to sql attributes.
---   Helper for transAlgebra2Sql.
--- attAlg2Sql :: Attributes -> SqlAttrExpr
--- attAlg2Sql (OneAtt a) = undefined
--- attAlg2Sql (AttList as) = undefined
-

@@ -19,6 +19,7 @@ data SqlSelect =
 
 -- | Sql null attribute.
 data SqlNullAtt = SqlNullAtt
+  deriving (Eq)
 
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
@@ -26,6 +27,7 @@ data SqlAttrExpr =
   | SqlAttr (Rename SingleAttr) -- ^ A, A as A, R.A, R.A as A
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
   | SqlConcatAtt (Rename Attribute) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
+  deriving (Eq)
 
 -- | Sql From expressions.
 --   Note that right now since we're only using inner joins that's 
