@@ -2,14 +2,15 @@
 module VDBMS.QueryLang.SQL.Pure.Sql where
 
 import VDBMS.VDB.Name 
-import VDBMS.QueryLang.RelAlg.Relational.Condition (RCond)
+import VDBMS.QueryLang.RelAlg.Relational.Condition (RCond,RCondition)
 
 -- | Sql select statements.
 data SqlSelect =  
     SqlSelect {
       attributes :: [SqlAttrExpr],
       tables :: [SqlRelation],
-      condition :: [RCond SqlSelect] 
+      condition :: [RCond SqlSelect],
+      sqlName :: Maybe String 
     }
   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
   | SqlTRef Relation -- ^ return a table
@@ -37,11 +38,11 @@ data SqlAttrExpr =
 --   [Rename SqlTRef R, Rename SqlTRef T]
 data SqlRelation = 
     SqlRelation (Rename SqlSelect)
-  | SqlTwoTableInnerJoin (Rename Relation) (Rename Relation) (RCond SqlSelect)
-  | SqlMoreInnerJoin     SqlRelation         (Rename Relation)   (RCond SqlSelect)
+  | SqlTwoTableInnerJoin (Rename Relation) (Rename Relation) RCondition
+  | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
 
 -- | Sql set operations.
-data SqlBinOp = Union | UnionAll | Diff
+data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
 
 -- | Sql temparory storing intermediate results.
 --   Note: you can only use WITH statements in a single sql query.
