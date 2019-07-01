@@ -26,10 +26,10 @@ newtype Attribute = Attribute { attributeName :: String }
 data QualifiedAttr 
    = RelationQualifiedAttr {
       attr :: Attribute, -- ^ the attribute
-      rel :: Relation -- ^ the relation 
+      rel  :: Relation -- ^ the relation 
      }
    | SubqueryQualifiedAttr {
-      attribute :: Attribute, -- ^ the attribute
+      attribute    :: Attribute, -- ^ the attribute
       subqueryName :: String -- ^ the name assigned to the subquery
      }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
@@ -45,7 +45,7 @@ type Attributes = [Rename SingleAttr]
 -- | A new name that could be used for attributes and subqueries.
 data Rename a = 
   Rename {
-    name :: Maybe String, -- ^ the potentially assigned name
+    name  :: Maybe String, -- ^ the potentially assigned name
     thing :: a -- ^ the thing
   }
   deriving (Data,Eq,Ord,Read,Show,Typeable)

@@ -17,19 +17,20 @@ data SqlSelect =
   | SqlEmpty -- ^ empty query
   -- deriving Show
 
--- | Basic Sql attribute projection expressions.
-data SqlAttrExprBasic = 
-    SqlAttr Attribute -- ^ A
-  | SqlQualifiedAttr QualifiedAttr -- ^ R.A
-  | SqlNullAtt -- ^ Null
-  -- | SqlLitNullRenamed Attribute -- ^ Null as A
-  | SqlConcatAtt Attribute [String] -- ^ concat (A, "blah", "blah")
+data SqlNullAtt = SqlNullAtt
+
+-- | Sql attribute projection expressions.
+data SqlAttrExpr = 
+    SqlAllAtt -- ^ *
+  | SqlAttr (Rename SingleAttr) -- ^ A, A as A, R.A, R.A as A
+  | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
+  | SqlConcatAtt (Rename Attribute) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
 
 -- | Sql attribute project expression with renaming.
-data SqlAttrExpr =
-    SqlAllAtt -- ^ *
-  | SqlAttrExpr SqlAttrExprBasic
-  | SqlAttrExprRenamed SqlAttrExprBasic Attribute -- ^ ... as A
+-- data SqlAttrExpr =
+--     SqlAllAtt -- ^ *
+--   | SqlAttrExpr SqlAttrExprBasic
+--   | SqlAttrExprRenamed SqlAttrExprBasic Attribute -- ^ ... as A
 
 -- | Sql From expressions.
 --   Note that right now since we're only using inner joins that's 
