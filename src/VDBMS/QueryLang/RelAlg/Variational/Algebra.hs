@@ -145,8 +145,8 @@ data OptAttributes = OptOneAtt RenameableOptAttr
 
 -- | Variational conditional relational joins.
 data Joins 
-   = JoinTwoTables Condition (Rename Relation) (Rename Relation)
-   | JoinMore      Condition Joins (Rename Relation)
+   = JoinTwoTables (Rename Relation) (Rename Relation) Condition
+   | JoinMore      Joins             (Rename Relation) Condition
   deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | More expressive variational relational algebra.
@@ -190,10 +190,10 @@ instance Variational Algebra where
   configure c (Join js) = RJoin (configure' c js)
     where
       configure' :: Config Bool -> Joins -> RJoins
-      configure' c (JoinTwoTables cond l r) = 
-        RJoinTwoTable (configure c cond) l r
-      configure' c (JoinMore cond js r)     = 
-        RJoinMore (configure c cond) (configure' c js) r
+      configure' c (JoinTwoTables l r cond) = 
+        RJoinTwoTable l r (configure c cond)
+      configure' c (JoinMore js r cond)     = 
+        RJoinMore (configure' c js) r (configure c cond)
   configure c (Prod r l rs)   = RProd r l rs
   configure c (TRef r)        = RTRef r
   configure c Empty           = REmpty
@@ -225,10 +225,10 @@ instance Variational Algebra where
   linearize (Join js)       = mapSnd RJoin $ linearize' js
     where
       linearize' :: Joins -> [Opt RJoins]
-      linearize' (JoinTwoTables c l r) = 
-        mapSnd (\cond -> RJoinTwoTable cond l r) (linearize c)
-      linearize' (JoinMore c js r)     = 
-        combOpts F.And (\c' js' -> RJoinMore c' js' r) (linearize c) (linearize' js)
+      linearize' (JoinTwoTables l r c) = 
+        mapSnd (\cond -> RJoinTwoTable l r cond) (linearize c)
+      linearize' (JoinMore js r c)     = 
+        combOpts F.And (\c' js' -> RJoinMore js' r c') (linearize c) (linearize' js)
   linearize (Prod r l rs)   = pure $ mkOpt (F.Lit True) (RProd r l rs)
   linearize (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
   linearize Empty           = pure $ mkOpt (F.Lit True) REmpty

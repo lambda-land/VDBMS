@@ -27,8 +27,8 @@ import VDBMS.QueryLang.RelAlg.Basics.SetOp
 
 -- | Conditional relational joins.
 data RJoins 
-   = RJoinTwoTable RCondition (Rename Relation) (Rename Relation)
-   | RJoinMore RCondition RJoins (Rename Relation)
+   = RJoinTwoTable (Rename Relation) (Rename Relation) RCondition 
+   | RJoinMore     RJoins            (Rename Relation) RCondition 
   deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | More expressive relaitonal algebra.
