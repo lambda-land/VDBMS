@@ -36,7 +36,7 @@ data SqlAttrExpr =
 --   Also note that if you want to cross product you'll have:
 --   [Rename SqlTRef R, Rename SqlTRef T]
 data SqlRelation = 
-    Rename SqlSelect
+    SqlRelation (Rename SqlSelect)
   | SqlTwoTableInnerJoin (Rename Relation) (Rename Relation) (RCond SqlSelect)
   | SqlMoreInnerJoin     SqlRelation         (Rename Relation)   (RCond SqlSelect)
 
