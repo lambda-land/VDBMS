@@ -40,9 +40,7 @@ data SingleAttr = SingleAttr Attribute
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | Attributes that can be projected in queries.
-data Attributes = OneAtt (Rename SingleAttr)
-                | AttList [Rename SingleAttr]
-  deriving (Data,Eq,Ord,Read,Show,Typeable)
+type Attributes = [Rename SingleAttr]
 
 -- | A new name that could be used for attributes and subqueries.
 data Rename a = 

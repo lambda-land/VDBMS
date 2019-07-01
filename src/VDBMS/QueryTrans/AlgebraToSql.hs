@@ -58,7 +58,7 @@ algCond2SqlCond (RIn a q) = RIn a (transAlgebra2Sql q)
 
 -- | Translates algebra attributes to sql attributes.
 --   Helper for transAlgebra2Sql.
-attAlg2Sql :: Attributes -> SqlAttrExpr
-attAlg2Sql (OneAtt a) = undefined
-attAlg2Sql (AttList as) = undefined
+-- attAlg2Sql :: Attributes -> SqlAttrExpr
+-- attAlg2Sql (OneAtt a) = undefined
+-- attAlg2Sql (AttList as) = undefined
 

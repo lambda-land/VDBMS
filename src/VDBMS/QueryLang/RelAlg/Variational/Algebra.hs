@@ -136,12 +136,13 @@ instance Boolean Cond where
 --    | Empty 
 --   deriving (Data,Eq,Show,Typeable,Ord)
 
-type RenameableOptAttr = Rename (Opt SingleAttr)
+-- type RenameableOptAttr = Rename (Opt SingleAttr)
 
 -- | Optional attributes.
-data OptAttributes = OptOneAtt RenameableOptAttr
-                   | OptAttList [RenameableOptAttr]
-  deriving (Data,Eq,Ord,Show,Typeable)
+type OptAttributes = [Opt (Rename SingleAttr)]
+-- data OptAttributes = OptOneAtt RenameableOptAttr
+--                    | OptAttList [RenameableOptAttr]
+--   deriving (Data,Eq,Ord,Show,Typeable)
 
 -- | Variational conditional relational joins.
 data Joins 
@@ -169,19 +170,11 @@ instance Variational Algebra where
   type Variant Algebra = Opt RAlgebra
 
   configure c (SetOp o l r)   = RSetOp o (configure c l) (configure c r)
-  configure c (Proj as q)     =
-    maybe REmpty (flip RProj (renameMap (configure c) q)) confedAtts
+  configure c (Proj as q)     
+    | confedAtts == [] = REmpty
+    | otherwise        = RProj confedAtts (renameMap (configure c) q)
       where
-        configureAtt :: Config Bool -> OptAttributes -> Maybe Attributes
-        configureAtt c (OptOneAtt n)   = fmap OneAtt $ checkAtts c n 
-        configureAtt c (OptAttList ns) = Just $ AttList $ catMaybes $ map (checkAtts c) ns
-        checkAtts :: Config Bool -> RenameableOptAttr -> Maybe (Rename SingleAttr)
-        checkAtts c n 
-          | F.evalFeatureExpr c (getFexp (thing n)) 
-            = Just $ Rename (name n) (getObj (thing n))
-          | otherwise 
-            = Nothing
-        confedAtts = configureAtt c as
+        confedAtts = configureOptList c as 
   configure c (Sel cond q)    = 
     RSel (configure c cond) (renameMap (configure c) q) 
   configure c (AChc f l r) 
@@ -203,16 +196,8 @@ instance Variational Algebra where
   -- presence condition of attributes or relations.
   linearize (SetOp s q1 q2) = 
     combOpts F.And (RSetOp s) (linearize q1) (linearize q2)
-  linearize (Proj as q)     = 
-    combOpts F.And RProj (linearizeAtts as) (linearizeRename q)
+  linearize (Proj as q)     = combOpts F.And RProj (groupOpts as) (linearizeRename q)
       where
-        linearizeAtts :: OptAttributes -> [Opt Attributes]
-        linearizeAtts (OptOneAtt n)   = 
-          pure $ mkOpt (getFexp (thing n)) $ OneAtt (Rename (name n) (getObj (thing n)))
-        linearizeAtts (OptAttList ns) = 
-          mapSnd AttList $ groupOpts $ map 
-            (\n -> mkOpt (getFexp (thing n)) (Rename (name n) (getObj (thing n))))
-            ns
         linearizeRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
         linearizeRename r = mapSnd (Rename (name r)) $ linearize (thing r)
   linearize (Sel c q)       = 
