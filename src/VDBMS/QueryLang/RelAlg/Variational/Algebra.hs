@@ -118,9 +118,9 @@ instance Variational Cond where
 instance Boolean Cond where
   true  = Cond (Lit True)
   false = Cond (Lit False)
-  -- bnot  = Cond . Not
-  -- (&&&) = Cond . And
-  -- (|||) = Cond . Or
+  bnot  (Cond b) = Cond (Not b)
+  (&&&) (Cond l) (Cond r) = Cond (And l r)
+  (|||) (Cond l) (Cond r) = Cond (Or l r)
 
 --
 -- * Variational relational algebra data type and instances.
