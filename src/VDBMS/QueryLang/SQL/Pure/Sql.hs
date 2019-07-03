@@ -49,3 +49,8 @@ data SqlTempRes =
     SqlWith [Rename SqlSelect] SqlSelect
   | SqlView (Rename SqlSelect)
 
+-- | Opitmized SQL queries. 
+data SqlOptimized = 
+    SqlTemp SqlTempRes
+  | SqlNoTemp SqlSelect
+
