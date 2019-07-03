@@ -47,10 +47,10 @@ data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
 --         But you can use views in multiple sql queries.
 data SqlTempRes = 
     SqlWith [Rename SqlSelect] SqlSelect
-  | SqlView (Rename SqlSelect)
+  -- | SqlView (Rename SqlSelect)
 
 -- | Opitmized SQL queries. 
-data SqlOptimized = 
-    SqlTemp SqlTempRes
-  | SqlNoTemp SqlSelect
+-- data SqlOptimized = 
+--     SqlTemp SqlTempRes
+--   | SqlNoTemp SqlSelect
 
