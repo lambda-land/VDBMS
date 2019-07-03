@@ -77,6 +77,6 @@ instance Show a => Show (RCond a) where
 instance Boolean (RCond a) where
   true  = RCond (RLit True)
   false = RCond (RLit False)
-  -- bnot  b = RCond (bnot b)
-  -- (&&&) = RCond . RAnd
-  -- (|||) = RCond . ROr
+  bnot  (RCond b) = RCond (RNot b)
+  (&&&) (RCond l) (RCond r) = RCond (RAnd l r)
+  (|||) (RCond l) (RCond r) = RCond (ROr l r)
