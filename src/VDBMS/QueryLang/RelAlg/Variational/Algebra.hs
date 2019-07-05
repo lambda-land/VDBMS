@@ -184,7 +184,7 @@ configureAlgebra c (Join js) = RJoin (configure' c js)
     configure' c (JoinMore js r cond)     = 
       RJoinMore (configure' c js) r (configure c cond)
 configureAlgebra c (Prod r l rs)   = RProd r l rs
-configureAlgebra c (TRef r)        = RTRef r -- WRONG!
+configureAlgebra c (TRef r)        = RTRef r 
 configureAlgebra c Empty           = REmpty
 
 -- | Linearizes an algebra.
