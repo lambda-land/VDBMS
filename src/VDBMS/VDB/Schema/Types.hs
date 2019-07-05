@@ -72,13 +72,6 @@ instance Variational Schema where
 
   linearize = linearizeSchema
 
--- | Type of a relation in a relational database.
--- type RTableSchema = Map Attribute SqlType
-
--- -- | A relational schema is a mapping from relations to table schemas.
--- type RSchema = Map Relation (RTableSchema)
-
-
 -- | The feature model associated with a schema.
 featureModel :: Schema -> FeatureExpr
 featureModel = getFexp
