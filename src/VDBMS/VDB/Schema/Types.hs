@@ -13,7 +13,7 @@ module VDBMS.VDB.Schema.Types (
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
-import Data.Map.Strict (Map, mapMaybe)
+import Data.Map.Strict 
 
 import Control.Monad.Catch 
 
@@ -69,8 +69,20 @@ linearizeSchema = undefined
 
 -- | Linearizes a rowtype.
 --   Helper for linearizeTableSch.
+--   Assumption: the schema has been preprocessed and so it doesn't
+--               have attributes/relations with false as their 
+--               presence condition.
 linearizeAttrs :: RowType -> [Opt RTableSchema]
-linearizeAttrs = undefined
+linearizeAttrs r = undefined
+  where
+    rList = fmap 
+      (\(a,ot) -> updateOptObj (a, getObj ot) ot) 
+      $ toList r -- ^ [opt (att,sqltype)]
+    rGrouped = groupOpts rList -- ^ [opt [(att,sqltype)]]
+    rNotGrouped = mapFstSnd Not (\_ -> []) rGrouped 
+    rMap = union (fromList rGrouped) (fromList rNotGrouped)
+
+
 
 -- | Conjuncts the fexp of variational table schema 
 --   with the feature expression assigned to a relational table schema
@@ -78,7 +90,7 @@ linearizeAttrs = undefined
 --   the new fexp. If not, it doesn't return it.
 --   Helper for linearizeSchema.
 linearizeTableSch :: TableSchema -> [Opt RTableSchema]
-linearizeTableSch = undefined
+linearizeTableSch t = undefined
 
 
 instance Variational Schema where
@@ -101,7 +113,7 @@ schemaStrct = getObj
 -- | Errors querying schema.
 data SchemaError = MissingRelation Relation
                  | MissingAttribute Attribute
-                 -- | InvalidConfig (Config Bool) FeatureExpr
+                 -- | InvalidConfig (Config Bool) FeatureExpr --Problem: cannot show,eq config
                  | InvalidConfig FeatureExpr
   deriving (Data,Eq,Generic,Ord,Read,Show,Typeable)
 

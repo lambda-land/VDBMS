@@ -73,6 +73,17 @@ extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
     destType   = "FeatureExpr"
     msg        = "types went wrong: should be SqlByteString sth"
 
+-- | Less than equal for feature expressions.
+leFexp :: FeatureExpr -> FeatureExpr -> Bool
+leFexp (Lit False) r           = True
+leFexp (Lit True)  (Lit False) = False
+leFexp (Lit b)     r           = True
+leFexp l           (Lit b)     = False
+leFexp (Ref v)     r           = True
+leFexp l           (Ref v)     = False
+leFexp (And l r)   (And l' r') = leFexp l l' && leFexp r r'
+leFexp lf          (And l r)   = False
+leFexp (Or l r)    (Or l' r')  = leFexp l l' && leFexp r r'
 
 
 instance Boolean FeatureExpr where
@@ -87,6 +98,12 @@ instance SAT FeatureExpr where
 
 instance Show FeatureExpr where
   show = prettyFeatureExpr
+
+instance Eq FeatureExpr where
+  l == r = equivalent l r
+
+instance Ord FeatureExpr where
+ (<=) = leFexp
 
 -- safeConvert :: Convertible a b => a -> ConvertResult b
 instance Convertible FeatureExpr SqlValue where
