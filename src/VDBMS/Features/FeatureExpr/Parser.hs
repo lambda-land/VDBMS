@@ -19,9 +19,9 @@ import VDBMS.Features.FeatureExpr.Types
 
 
 
--- -- feature expression parser
+-- | Feature expression parser type.
 type Parser = Parsec Void B.ByteString
--- -- type Parser' = ParsecT Void B.ByteString (Either )
+
 
 spaceConsumer :: Parser ()
 spaceConsumer = L.space space1 empty empty

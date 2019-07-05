@@ -40,24 +40,6 @@ prettyFeatureExpr = top
     sub (Not e)   = "NOT " ++ sub e
     sub e         = "(" ++ top e ++ ")"
 
--- | not very pretty pretty print of a feature expression.
---   wrote it for the parser but don't need but i'm going to keep it!
--- prettyFeatureExpr' :: FeatureExpr -> String
--- prettyFeatureExpr' = top
---   where
---     -- top (And l r) = sub l ++ "∧" ++ sub r
---     -- top (Or  l r) = sub l ++ "∨" ++ sub r
---     top (And l r) = " AND " ++ sub l ++ sub r
---     top (Or  l r) = " OR " ++ sub l ++ sub r
---     top e         = sub e
---     -- sub (Lit b)   = if b then "#T" else "#F"
---     sub (Lit b)   = if b then " TRUE " else " FAlSE "
-
---     sub (Ref f)   = featureName f
---     -- sub (Not e)   = "¬" ++ sub e
---     sub (Not e)   = " NOT " ++ sub e
---     sub e         = " ( " ++ top e ++ " ) "
-
 -- | Generate a symbolic predicate for a feature expression.
 symbolicFeatureExpr :: FeatureExpr -> Predicate
 symbolicFeatureExpr e = do
@@ -72,29 +54,8 @@ symbolicFeatureExpr e = do
 -- type ConvertResult a = Either ConvertError a
 sqlFeatureExp :: FeatureExpr -> ConvertResult SqlValue 
 sqlFeatureExp = return . SqlByteString . BC.pack . prettyFeatureExpr
--- sqlFeatureExp (Lit b)   = return . SqlByteString $ bool2ByteString b
--- sqlFeatureExp (Ref x)   = return . SqlByteString $ feature2ByteString x
--- sqlFeatureExp (Not f)   = case sqlFeatureExp f of
---   Right (SqlByteString fsql) -> return . SqlByteString $ B.concat ["Not (", fsql, ")"]
---   _ -> Left $ ConvertError source sourceType destType msg
---     where 
---       source     = show f
---       sourceType = "FeatureExpr"
---       destType   = "SqlValue"
---       msg        = "types went wrong: is not of type FeatureExp in sqlFeatureExp"
--- sqlFeatureExp (And l r) = case (sqlFeatureExp r, sqlFeatureExp l) of
---   (Right (SqlByteString rsql), Right (SqlByteString lsql)) -> return . SqlByteString $ B.concat ["And (", rsql, " ) ", "( ", lsql, " )"]
--- sqlFeatureExp (Or l r)  = undefined
 
--- extractFeatureExp :: SqlValue -> Either ConvertError FeatureExpr
--- extractFeatureExp (SqlByteString s) = undefined
--- extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
---    where 
---     source     = "some SqlValue"
---     sourceType = "SqlValue"
---     destType   = "FeatureExpr"
---      msg        = "types went wrong: should be SqlByteString sth"
-
+-- | extracts/reads a feature expr from a sqlvalue
 extractFeatureExp :: SqlValue -> Either ConvertError FeatureExpr
 extractFeatureExp (SqlByteString s) = 
   case runParser fexpParser "" s of

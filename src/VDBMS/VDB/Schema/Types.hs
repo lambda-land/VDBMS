@@ -13,9 +13,9 @@ module VDBMS.VDB.Schema.Types (
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
-import Data.Map.Strict (Map)
+import Data.Map.Strict (Map, mapMaybe)
 
-import Control.Monad.Catch (Exception)
+import Control.Monad.Catch 
 
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
@@ -37,15 +37,34 @@ type TableSchema = Opt RowType
 type Schema = Opt (Map Relation (TableSchema))
 
 -- | Configures a variational schema to a relational one.
-configSchema :: Config Bool -> Schema -> RSchema
-configSchema = undefined
+configSchema :: MonadThrow m => Config Bool -> Schema -> m RSchema
+configSchema c s 
+  | evalFeatureExpr c fm = 
+    return $ mapMaybe (configTableSchema c) (schemaStrct s)
+  | otherwise = throwM $ InvalidConfig fm
+    where
+      fm = featureModel s
+
+-- | Configures a variational table schema to the relational one.
+configTableSchema :: MonadThrow m => Config Bool -> TableSchema -> m RTableSchema
+configTableSchema c t 
+  | evalFeatureExpr c tablePresCond 
+    = return $ mapMaybe (configAttribute c) table
+  | otherwise = throwM $ InvalidConfig tablePresCond
+    where 
+      tablePresCond = getFexp t
+      table = getObj t
+      configAttribute c ot 
+        | evalFeatureExpr c (getFexp ot) = Just $ getObj ot
+        | otherwise = Nothing
+
 
 -- | Linearizes a variational schema.
 linearizeSchema :: Schema -> [Opt RSchema]
 linearizeSchema = undefined
 
 instance Variational Schema where
-  type NonVariational Schema = RSchema 
+  type NonVariational Schema = Maybe RSchema 
 
   type Variant Schema = Opt RSchema
 
@@ -71,6 +90,8 @@ schemaStrct = getObj
 -- | Errors querying schema.
 data SchemaError = MissingRelation Relation
                  | MissingAttribute Attribute
+                 -- | InvalidConfig (Config Bool) FeatureExpr
+                 | InvalidConfig FeatureExpr
   deriving (Data,Eq,Generic,Ord,Read,Show,Typeable)
 
 instance Exception SchemaError
