@@ -60,8 +60,26 @@ configTableSchema c t
 
 
 -- | Linearizes a variational schema.
+--   Conjuncts schema's feature expression with the generated opt
+--   of linearizing table schema, if satisfiable it includes the relation
+--   in the relational schema if not it doesn't include it. Also, the new
+--   fexp is the conjuncted one.
 linearizeSchema :: Schema -> [Opt RSchema]
 linearizeSchema = undefined
+
+-- | Linearizes a rowtype.
+--   Helper for linearizeTableSch.
+linearizeAttrs :: RowType -> [Opt RTableSchema]
+linearizeAttrs = undefined
+
+-- | Conjuncts the fexp of variational table schema 
+--   with the feature expression assigned to a relational table schema
+--   and if its satisfiable it returns the relational table schema with
+--   the new fexp. If not, it doesn't return it.
+--   Helper for linearizeSchema.
+linearizeTableSch :: TableSchema -> [Opt RTableSchema]
+linearizeTableSch = undefined
+
 
 instance Variational Schema where
   type NonVariational Schema = Maybe RSchema 
