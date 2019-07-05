@@ -21,25 +21,44 @@ import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
 import VDBMS.DBMS.Value.Value
 import VDBMS.Features.FeatureExpr.FeatureExpr
+import VDBMS.VDB.Schema.Relational.Types
+import VDBMS.Variational.Variational
+import VDBMS.Features.Config (Config)
 
 -- | Type of a relation in the database.
--- type RowType = [Opt (Attribute, Type)]
 type RowType = Map Attribute (Opt SqlType)
+
+-- | Schema of a table in a variational database.
 type TableSchema = Opt RowType
-
--- | Attributes must be unique in a table. The pair (Int, Attribute)
---   is for keeping the order of attributes in a relation.
--- type UniqeAttribute = (Int, Attribute)
-
-
--- | Type of a relation in the database. 
---type RelationSchema = Map UniqeAttribute (Opt Type)
-
 
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to
 --   the feature model, which defines the set of valid configurations.
 type Schema = Opt (Map Relation (TableSchema))
+
+-- | Configures a variational schema to a relational one.
+configSchema :: Config Bool -> Schema -> RSchema
+configSchema = undefined
+
+-- | Linearizes a variational schema.
+linearizeSchema :: Schema -> [Opt RSchema]
+linearizeSchema = undefined
+
+instance Variational Schema where
+  type NonVariational Schema = RSchema 
+
+  type Variant Schema = Opt RSchema
+
+  configure = configSchema
+
+  linearize = linearizeSchema
+
+-- | Type of a relation in a relational database.
+-- type RTableSchema = Map Attribute SqlType
+
+-- -- | A relational schema is a mapping from relations to table schemas.
+-- type RSchema = Map Relation (RTableSchema)
+
 
 -- | The feature model associated with a schema.
 featureModel :: Schema -> FeatureExpr
@@ -55,3 +74,4 @@ data SchemaError = MissingRelation Relation
   deriving (Data,Eq,Generic,Ord,Read,Show,Typeable)
 
 instance Exception SchemaError
+
