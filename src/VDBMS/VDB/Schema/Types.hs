@@ -80,7 +80,8 @@ linearizeAttrs r = undefined
       $ toList r -- ^ [opt (att,sqltype)]
     rGrouped = groupOpts rList -- ^ [opt [(att,sqltype)]]
     rNotGrouped = mapFstSnd Not (\_ -> []) rGrouped 
-    rMap = union (fromList rGrouped) (fromList rNotGrouped)
+    rMap = delete (Lit False) $ delete (Not $ Lit True) -- highly relies on eq of fexp!!
+      $ union (fromList rGrouped) (fromList rNotGrouped)
 
 
 
