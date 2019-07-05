@@ -47,7 +47,6 @@ prettyRCondition c = top c
     top c = sub c
     sub (RLit b) = if b then " true " else " false "
     sub (RNot c) = " NOT " ++ sub c
-    -- sub (RIn a q) = attributeName a ++ " IN " ++ show q
     sub c = " ( " ++ top c ++ " ) "
 
 instance Show RCondition where

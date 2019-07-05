@@ -82,6 +82,7 @@ linearizeAttrs r = undefined
     rNotGrouped = mapFstSnd Not (\_ -> []) rGrouped 
     rMap = delete (Lit False) $ delete (Not $ Lit True) -- highly relies on eq of fexp!!
       $ union (fromList rGrouped) (fromList rNotGrouped)
+    
 
 
 
