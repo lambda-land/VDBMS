@@ -80,6 +80,8 @@ linearizeSchema s = undefined
 --   Assumption: the schema has been preprocessed and so it doesn't
 --               have attributes/relations with false as their 
 --               presence condition.
+--   Note: we're not dropping the same lists of attributes for now.
+--         Such a filtering will happen at the end of linearizing a schema.
 linearizeAttrs :: RowType -> [Opt RTableSchema]
 linearizeAttrs r = mapSnd fromList resListWithoutRepatitiveFexp
   where
