@@ -26,7 +26,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Variational.Variational
 import VDBMS.Features.Config (Config)
-import VDBMS.Features.SAT (satisfiable)
+import VDBMS.Features.SAT (satisfiable, tautology)
 
 -- | Type of a relation in the database.
 type RowType = Map Attribute (Opt SqlType)
@@ -69,7 +69,7 @@ configTableSchema c t
 --   fexp is the conjuncted one.
 linearizeSchema :: Schema -> [Opt RSchema]
 linearizeSchema s = undefined
-	-- map () linearizedRels
+-- map () linearizedRels
   where
     schStruct = schemaStrct s
     schFexp = featureModel s
@@ -81,7 +81,7 @@ linearizeSchema s = undefined
 --               have attributes/relations with false as their 
 --               presence condition.
 linearizeAttrs :: RowType -> [Opt RTableSchema]
-linearizeAttrs r = undefined
+linearizeAttrs r = mapSnd fromList resListWithoutRepatitiveFexp
   where
     rList = fmap 
       (\(a,ot) -> updateOptObj (a, getObj ot) ot) 
@@ -89,7 +89,12 @@ linearizeAttrs r = undefined
     rGrouped = groupOpts rList -- ^ [opt [(att,sqltype)]]
     rNotGrouped = mapFstSnd Not (\_ -> []) rGrouped 
     rMap = delete (Lit False) $ delete (Not $ Lit True) -- highly relies on eq of fexp!!
-      $ union (fromList rGrouped) (fromList rNotGrouped)
+      $ union (fromList rGrouped) (fromList rNotGrouped) -- Map Fexp (Att,Sqltype)
+    resList = [ (f, as') 
+                | (f, as) <- toList rMap, 
+                  (f', as')<- toList rMap, 
+                  tautology (imply f f')]
+    resListWithoutRepatitiveFexp = mapSnd concat $ groupOpts resList
     -- compFexps = adjustWithKey implies rMap
     -- implies :: FeatureExpr -> FeatureExpr
     -- implies = undefined
