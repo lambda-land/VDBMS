@@ -13,7 +13,7 @@ module VDBMS.VDB.Schema.Types (
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
-import Data.Map.Strict 
+import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe)
 
 import Control.Monad.Catch 
 
@@ -24,6 +24,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Variational.Variational
 import VDBMS.Features.Config (Config)
+import VDBMS.Features.SAT (satisfiable)
 
 -- | Type of a relation in the database.
 type RowType = Map Attribute (Opt SqlType)
@@ -82,7 +83,9 @@ linearizeAttrs r = undefined
     rNotGrouped = mapFstSnd Not (\_ -> []) rGrouped 
     rMap = delete (Lit False) $ delete (Not $ Lit True) -- highly relies on eq of fexp!!
       $ union (fromList rGrouped) (fromList rNotGrouped)
-    
+    -- compFexps = adjustWithKey implies rMap
+    -- implies :: FeatureExpr -> FeatureExpr
+    -- implies = undefined
 
 
 
@@ -92,7 +95,11 @@ linearizeAttrs r = undefined
 --   the new fexp. If not, it doesn't return it.
 --   Helper for linearizeSchema.
 linearizeTableSch :: TableSchema -> [Opt RTableSchema]
-linearizeTableSch t = undefined
+linearizeTableSch t = filter (satisfiable . getFexp) $ mapFst (And tableFexp) linearizedTable
+  where 
+    rowtype = getObj t
+    tableFexp = getFexp t
+    linearizedTable = linearizeAttrs rowtype
 
 
 instance Variational Schema where
