@@ -69,11 +69,13 @@ configTableSchema c t
 --   fexp is the conjuncted one.
 linearizeSchema :: Schema -> [Opt RSchema]
 linearizeSchema s = undefined
--- map () linearizedRels
   where
     schStruct = schemaStrct s
     schFexp = featureModel s
-    linearizedRels = map linearizeTableSch schStruct
+    linearizedRels = map (filter (satisfiable . getFexp)) $
+      map (mapFst (shrinkFeatureExpr . And schFexp)) $ 
+      map linearizeTableSch schStruct
+
 
 -- | Linearizes a rowtype.
 --   Helper for linearizeTableSch.
@@ -98,7 +100,9 @@ linearizeAttrs r = disjunctSameAtts
                   tautology (imply (getFexp fas) (getFexp fas'))]
     resMap = mapSnd fromList resList
     -- note that fromList drops repetitive attributes in a list!
-    disjunctSameAtts = [ applyFuncFexp (shrinkFeatureExpr . Or (getFexp optMapAtts')) optMapAtts
+    disjunctSameAtts = [ applyFuncFexp 
+                         (shrinkFeatureExpr . Or (getFexp optMapAtts')) 
+                         optMapAtts
                          | optMapAtts <- resMap, 
                            optMapAtts' <- resMap, 
                            getObj optMapAtts == getObj optMapAtts']
