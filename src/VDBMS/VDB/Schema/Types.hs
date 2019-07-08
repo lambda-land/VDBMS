@@ -98,10 +98,9 @@ linearizeAttrs r = disjunctSameAtts
                   tautology (imply (getFexp fas) (getFexp fas'))]
     resMap = mapSnd fromList resList
     -- note that fromList drops repetitive attributes in a list!
-    disjunctSameAtts = [ applyFuncFexp (shrinkFeatureExpr . (Or (getFexp optMapAtts'))) optMapAtts
+    disjunctSameAtts = [ applyFuncFexp (shrinkFeatureExpr . Or (getFexp optMapAtts')) optMapAtts
                          | optMapAtts <- resMap, 
                            optMapAtts' <- resMap, 
-                           -- getFexp optMapAtts \= getFexp optMapAtts',
                            getObj optMapAtts == getObj optMapAtts']
 
 -- | Conjuncts the fexp of variational table schema 
