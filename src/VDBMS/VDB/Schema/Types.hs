@@ -10,10 +10,12 @@ module VDBMS.VDB.Schema.Types (
 
 ) where
 
+import Prelude hiding (map)
+
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
-import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe)
+import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe, map)
 
 import Control.Monad.Catch 
 
@@ -35,7 +37,7 @@ type TableSchema = Opt RowType
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to
 --   the feature model, which defines the set of valid configurations.
-type Schema = Opt (Map Relation (TableSchema))
+type Schema = Opt (Map Relation TableSchema)
 
 -- | Configures a variational schema to a relational one.
 configSchema :: MonadThrow m => Config Bool -> Schema -> m RSchema
@@ -66,7 +68,12 @@ configTableSchema c t
 --   in the relational schema if not it doesn't include it. Also, the new
 --   fexp is the conjuncted one.
 linearizeSchema :: Schema -> [Opt RSchema]
-linearizeSchema = undefined
+linearizeSchema s = undefined
+	-- map () linearizedRels
+  where
+    schStruct = schemaStrct s
+    schFexp = featureModel s
+    linearizedRels = map linearizeTableSch schStruct
 
 -- | Linearizes a rowtype.
 --   Helper for linearizeTableSch.
@@ -95,7 +102,7 @@ linearizeAttrs r = undefined
 --   the new fexp. If not, it doesn't return it.
 --   Helper for linearizeSchema.
 linearizeTableSch :: TableSchema -> [Opt RTableSchema]
-linearizeTableSch t = filter (satisfiable . getFexp) $ mapFst (And tableFexp) linearizedTable
+linearizeTableSch t = mapFst shrinkFeatureExpr $ filter (satisfiable . getFexp) $ mapFst (And tableFexp) linearizedTable
   where 
     rowtype = getObj t
     tableFexp = getFexp t
