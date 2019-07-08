@@ -16,7 +16,8 @@ module VDBMS.Variational.Opt (
         configureOptList,
         configureOptListRetOpt,
         groupOpts,
-        validifyOpts
+        validifyOpts,
+        applyFuncObj
 
 ) where
 
@@ -57,6 +58,10 @@ mkOpt = (,)
 -- | updates obj.
 updateOptObj :: b -> Opt a -> Opt b
 updateOptObj o (f,_) = mkOpt f o 
+
+-- | Applies a function to the object of Opt.
+applyFuncObj :: (a -> b) -> Opt a -> Opt b
+applyFuncObj f (fexp, a) = (fexp , f a)
 
 -- | updates fexp.
 updateFexp :: FeatureExpr -> Opt a -> Opt a 

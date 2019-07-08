@@ -83,7 +83,7 @@ linearizeSchema s = undefined
 --   Note: we're not dropping the same lists of attributes for now.
 --         Such a filtering will happen at the end of linearizing a schema.
 linearizeAttrs :: RowType -> [Opt RTableSchema]
-linearizeAttrs r = mapSnd fromList resListWithoutRepatitiveFexp
+linearizeAttrs r = mapSnd fromList resList
   where
     rList = fmap 
       (\(a,ot) -> updateOptObj (a, getObj ot) ot) 
@@ -92,16 +92,13 @@ linearizeAttrs r = mapSnd fromList resListWithoutRepatitiveFexp
     rNotGrouped = mapFstSnd Not (\_ -> []) rGrouped 
     rMap = delete (Lit False) $ delete (Not $ Lit True) -- highly relies on eq of fexp!!
       $ union (fromList rGrouped) (fromList rNotGrouped) -- Map Fexp (Att,Sqltype)
-    resList = [ (f, as') 
-                | (f, as) <- toList rMap, 
-                  (f', as')<- toList rMap, 
-                  tautology (imply f f')]
-    resListWithoutRepatitiveFexp = mapSnd concat $ groupOpts resList
-    -- compFexps = adjustWithKey implies rMap
-    -- implies :: FeatureExpr -> FeatureExpr
-    -- implies = undefined
-
-
+    resList = [ applyFuncObj (getObj fas' ++) fas
+                | fas  <- toList rMap, 
+                  fas' <- toList rMap, 
+                  tautology (imply (getFexp fas) (getFexp fas'))]
+    resMap = mapSnd fromList resList
+    -- note that fromList drops repetitive attributes in a list!
+    -- disjunctSameAtts = [ | (<- resMap]
 
 -- | Conjuncts the fexp of variational table schema 
 --   with the feature expression assigned to a relational table schema
@@ -111,8 +108,8 @@ linearizeAttrs r = mapSnd fromList resListWithoutRepatitiveFexp
 linearizeTableSch :: TableSchema -> [Opt RTableSchema]
 linearizeTableSch t = mapFst shrinkFeatureExpr $ filter (satisfiable . getFexp) $ mapFst (And tableFexp) linearizedTable
   where 
-    rowtype = getObj t
-    tableFexp = getFexp t
+    rowtype         = getObj t
+    tableFexp       = getFexp t
     linearizedTable = linearizeAttrs rowtype
 
 
