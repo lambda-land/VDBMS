@@ -83,7 +83,7 @@ linearizeSchema s = undefined
 --   Note: we're not dropping the same lists of attributes for now.
 --         Such a filtering will happen at the end of linearizing a schema.
 linearizeAttrs :: RowType -> [Opt RTableSchema]
-linearizeAttrs r = mapSnd fromList resList
+linearizeAttrs r = disjunctSameAtts
   where
     rList = fmap 
       (\(a,ot) -> updateOptObj (a, getObj ot) ot) 
@@ -98,7 +98,11 @@ linearizeAttrs r = mapSnd fromList resList
                   tautology (imply (getFexp fas) (getFexp fas'))]
     resMap = mapSnd fromList resList
     -- note that fromList drops repetitive attributes in a list!
-    -- disjunctSameAtts = [ | (<- resMap]
+    disjunctSameAtts = [ applyFuncFexp (shrinkFeatureExpr . (Or (getFexp optMapAtts'))) optMapAtts
+                         | optMapAtts <- resMap, 
+                           optMapAtts' <- resMap, 
+                           -- getFexp optMapAtts \= getFexp optMapAtts',
+                           getObj optMapAtts == getObj optMapAtts']
 
 -- | Conjuncts the fexp of variational table schema 
 --   with the feature expression assigned to a relational table schema
