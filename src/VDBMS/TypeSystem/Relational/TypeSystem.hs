@@ -44,6 +44,7 @@ data RTypeError = RRelationInvalid Relation
   | RDoesntSubsumeTypeEnv RTypeEnv RTypeEnv
   | NotEquiveTypeEnv RTypeEnv RTypeEnv 
   | RAttributeNotInTypeEnv Attribute RTypeEnv (Set Attribute)
+  | RNotDisjointRels [Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception RTypeError  
@@ -59,14 +60,29 @@ typeOfQuery (RSetOp o l r)    s = undefined
 typeOfQuery (RProj as rq)     s = undefined
 typeOfQuery (RSel c rq)       s = undefined
 typeOfQuery (RJoin js)        s = undefined
-typeOfQuery (RProd rl rr rrs) s = undefined
+typeOfQuery (RProd rl rr rrs) s = 
+  do r <- lookupRelation (thing rl) s
+     l <- lookupRelation (thing rr) s
+     rs <- mapM (flip lookupRelation s . thing) rrs
+     if disjointTypeEnvs r l rs 
+     then return $ SM.unions $ r : l : rs
+     else throwM $ RNotDisjointRels $ fmap thing (rl : rr : rrs)
 typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
 typeOfQuery REmpty            _ = return M.empty
 
 
--- | Checks if two type envs are disjoint or not.
-disjointTypeEnvs :: RTypeEnv -> RTypeEnv -> Bool
-disjointTypeEnvs l r = Set.disjoint (SM.keysSet l) (SM.keysSet r)
+-- | Checks if a non-empty list of type envs are disjoint or not.
+--   Note that since we're adding type envs to the list we know 
+--   for a fact that it isn't empty.
+disjointTypeEnvs :: RTypeEnv -> RTypeEnv -> [RTypeEnv] -> Bool
+disjointTypeEnvs l r ts 
+  | SM.keysSet l `Set.disjoint` SM.keysSet r = disjointAll $ l : r : ts
+  | otherwise = False
+    where
+      disjointAll (x : xs) = all (Set.disjoint (SM.keysSet x)) (fmap SM.keysSet xs) 
+                             && disjointAll xs
+      disjointAll [x]      = True
+      disjointAll []       = True
 
 
 
