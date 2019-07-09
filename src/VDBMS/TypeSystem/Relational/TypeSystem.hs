@@ -1,4 +1,4 @@
--- | Statically syntesizes the types of vqs.
+-- | Statically syntesizes the types of relational queries.
 module VDBMS.TypeSystem.Relational.TypeSystem 
 (
 
@@ -20,9 +20,9 @@ module VDBMS.TypeSystem.Relational.TypeSystem
 
 -- import Prelude hiding (EQ,LT , GT)
 import qualified Data.Map as M 
--- import qualified Data.Map.Strict as SM
+import qualified Data.Map.Strict as SM
 -- import qualified Data.Map.Merge.Strict as StrictM
--- import qualified Data.Set as Set 
+import qualified Data.Set as Set 
 import Data.Set (Set)
 
 import Data.Data (Data, Typeable)
@@ -64,7 +64,9 @@ typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
 typeOfQuery REmpty            _ = return M.empty
 
 
-
+-- | Checks if two type envs are disjoint or not.
+disjointTypeEnvs :: RTypeEnv -> RTypeEnv -> Bool
+disjointTypeEnvs l r = Set.disjoint (SM.keysSet l) (SM.keysSet r)
 
 
 

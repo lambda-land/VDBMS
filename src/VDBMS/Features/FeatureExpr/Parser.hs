@@ -10,7 +10,8 @@ import qualified Data.ByteString as B
 import Data.Void (Void)
 
 import Text.Megaparsec
-import Text.Megaparsec.Expr
+-- import Text.Megaparsec.Expr
+import Control.Monad.Combinators.Expr
 import qualified Text.Megaparsec.Byte.Lexer as L
 import Text.Megaparsec.Byte 
 

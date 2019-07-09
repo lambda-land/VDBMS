@@ -3,7 +3,7 @@ version:       0.1.0.0
 synopsis:      A variational database management system
 homepage:      http://github.com/lambda-land/VDBMS
 license:       BSD3
-author:        OSU DB-PL
+author:        Parisa Ataei
 maintainer:    walkiner@oregonstate.edu
 category:      Language
 
@@ -21,7 +21,7 @@ description:         Please see the README on Github at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
-- containers >= 0.5 && <1
+- containers >= 0.6 && <1
 - mtl 
 # - mtl >=1.1 && <3
 - sbv
@@ -46,6 +46,7 @@ dependencies:
 - haskelldb >= 2.2.5 
 - pretty
 - exceptions
+- parser-combinators
 # - lens
 # - syb #scrap your boilerplate
 #- template-haskell
