@@ -47,19 +47,14 @@ data RTypeError = RRelationInvalid Relation
   | RNotDisjointRels [Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
-instance Exception RTypeError  
-
--- | static semantics of relational conditions
-typeOfCond :: RCondition -> RTypeEnv -> Bool
-typeOfCond = undefined
-
+instance Exception RTypeError 
 
 -- | static semantics that returns a relational table schema.
 typeOfQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
 typeOfQuery (RSetOp o l r)    s = undefined
 typeOfQuery (RProj as rq)     s = undefined
 typeOfQuery (RSel c rq)       s = undefined
-typeOfQuery (RJoin js)        s = undefined
+typeOfQuery (RJoin js)        s = typeOfJoins js s
 typeOfQuery (RProd rl rr rrs) s = 
   do r <- lookupRelation (thing rl) s
      l <- lookupRelation (thing rr) s
@@ -70,6 +65,13 @@ typeOfQuery (RProd rl rr rrs) s =
 typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
 typeOfQuery REmpty            _ = return M.empty
 
+-- | static semantics of relational conditions
+typeOfCond :: RCondition -> RTypeEnv -> Bool
+typeOfCond = undefined
+
+typeOfJoins :: MonadThrow m => RJoins -> RSchema -> m RTypeEnv
+typeOfJoins (RJoinTwoTable rl rr c) = undefined
+typeOfJoins (RJoinMore js rr c) = undefined
 
 -- | Checks if a non-empty list of type envs are disjoint or not.
 --   Note that since we're adding type envs to the list we know 
