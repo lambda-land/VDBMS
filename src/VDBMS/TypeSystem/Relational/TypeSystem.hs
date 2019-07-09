@@ -19,7 +19,7 @@ module VDBMS.TypeSystem.Relational.TypeSystem
 -- import VDBMS.Features.Config
 
 -- import Prelude hiding (EQ,LT , GT)
--- import qualified Data.Map as M 
+import qualified Data.Map as M 
 -- import qualified Data.Map.Strict as SM
 -- import qualified Data.Map.Merge.Strict as StrictM
 -- import qualified Data.Set as Set 
@@ -31,6 +31,7 @@ import GHC.Generics (Generic)
 import Control.Monad.Catch 
 
 import VDBMS.VDB.Schema.Relational.Types
+import VDBMS.VDB.Schema.Relational.Lookups
 import VDBMS.QueryLang.RelAlg.Relational.Condition
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
 import VDBMS.VDB.Name
@@ -54,4 +55,18 @@ typeOfCond = undefined
 
 -- | static semantics that returns a relational table schema.
 typeOfQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
-typeOfQuery = undefined
+typeOfQuery (RSetOp o l r)    s = undefined
+typeOfQuery (RProj as rq)     s = undefined
+typeOfQuery (RSel c rq)       s = undefined
+typeOfQuery (RJoin js)        s = undefined
+typeOfQuery (RProd rl rr rrs) s = undefined
+typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
+typeOfQuery REmpty            _ = return M.empty
+
+
+
+
+
+
+
+
