@@ -75,6 +75,7 @@ linearizeSchema s = undefined
     linearizedRels = map (filter (satisfiable . getFexp)) $
       map (mapFst (shrinkFeatureExpr . And schFexp)) $ 
       map linearizeTableSch schStruct
+    resList = undefined
 
 
 -- | Linearizes a rowtype.
