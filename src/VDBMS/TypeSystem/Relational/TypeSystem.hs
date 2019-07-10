@@ -40,9 +40,9 @@ type RTypeEnv = RTableSchema
 
 -- | Type enviornment errors.
 data RTypeError = -- RRelationInvalid Relation
-    RVcondNotHold RCondition RTypeEnv
-  | RMismatchTypes RTypeEnv RTypeEnv
-  | NotEquiveTypeEnv RTypeEnv RTypeEnv 
+    RCondNotHold RCondition RTypeEnv
+  -- | RMismatchTypes RTypeEnv RTypeEnv
+  | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
   | RAttributeNotInTypeEnv Attributes RTypeEnv
   | RNotDisjointRels [Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
@@ -56,13 +56,15 @@ typeOfQuery (RSetOp o l r)    s =
      typer <- typeOfQuery r s
      if typel == typer
      then return typel
-     else throwM $ RMismatchTypes typel typer
+     else throwM $ RNotEquiveTypeEnv typel typer
 typeOfQuery (RProj as rq)     s =
   do tq <- typeOfQuery (thing rq) s
      if attsSubTypeEnv as tq
      then return $ SM.restrictKeys tq $ attsSet as
      else throwM $ RAttributeNotInTypeEnv as tq
-typeOfQuery (RSel c rq)       s = undefined
+typeOfQuery (RSel c rq)       s = 
+  do tq <- typeOfQuery (thing rq) s
+     typeOfRCond c tq 
 typeOfQuery (RJoin js)        s = typeOfJoins js s
 typeOfQuery (RProd rl rr rrs) s = 
   do r <- lookupRelation (thing rl) s
@@ -75,8 +77,8 @@ typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
 typeOfQuery REmpty            _ = return M.empty
 
 -- | static semantics of relational conditions
-typeOfCond :: RCondition -> RTypeEnv -> Bool
-typeOfCond = undefined
+typeOfRCond :: MonadThrow m => RCond RAlgebra -> RTypeEnv -> m RTypeEnv
+typeOfRCond = undefined
 
 -- | 
 typeOfJoins :: MonadThrow m => RJoins -> RSchema -> m RTypeEnv
