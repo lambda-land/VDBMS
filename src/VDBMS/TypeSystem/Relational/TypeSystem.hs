@@ -39,11 +39,11 @@ import VDBMS.VDB.Name
 type RTypeEnv = RTableSchema
 
 -- | Type enviornment errors.
-data RTypeError = RRelationInvalid Relation
-  | RVcondNotHold RCondition RTypeEnv
+data RTypeError = -- RRelationInvalid Relation
+    RVcondNotHold RCondition RTypeEnv
   | RMismatchTypes RTypeEnv RTypeEnv
   | NotEquiveTypeEnv RTypeEnv RTypeEnv 
-  | RAttributeNotInTypeEnv Attribute RTypeEnv (Set Attribute)
+  | RAttributeNotInTypeEnv Attributes RTypeEnv
   | RNotDisjointRels [Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -57,7 +57,11 @@ typeOfQuery (RSetOp o l r)    s =
      if typel == typer
      then return typel
      else throwM $ RMismatchTypes typel typer
-typeOfQuery (RProj as rq)     s = undefined
+typeOfQuery (RProj as rq)     s =
+  do tq <- typeOfQuery (thing rq) s
+     if attsSubTypeEnv as tq
+     then return $ SM.restrictKeys tq $ attsSet as
+     else throwM $ RAttributeNotInTypeEnv as tq
 typeOfQuery (RSel c rq)       s = undefined
 typeOfQuery (RJoin js)        s = typeOfJoins js s
 typeOfQuery (RProd rl rr rrs) s = 
@@ -74,9 +78,24 @@ typeOfQuery REmpty            _ = return M.empty
 typeOfCond :: RCondition -> RTypeEnv -> Bool
 typeOfCond = undefined
 
+-- | 
 typeOfJoins :: MonadThrow m => RJoins -> RSchema -> m RTypeEnv
 typeOfJoins (RJoinTwoTable rl rr c) = undefined
 typeOfJoins (RJoinMore js rr c) = undefined
+
+-- | 
+attsSubTypeEnv :: Attributes -> RTypeEnv -> Bool
+attsSubTypeEnv as t = attsSet as `Set.isSubsetOf` SM.keysSet t
+
+-- |
+attsSet :: Attributes -> Set Attribute
+attsSet = Set.fromList . fmap (getAtt . thing) 
+  where
+    getAtt :: SingleAttr -> Attribute
+    getAtt (SingleAttr a) = a 
+    getAtt (SingleQualifiedAttr (RelationQualifiedAttr a _)) = a 
+    getAtt (SingleQualifiedAttr (SubqueryQualifiedAttr a _)) = a
+
 
 -- | Checks if a non-empty list of type envs are disjoint or not.
 --   Note that since we're adding type envs to the list we know 
