@@ -87,14 +87,6 @@ typeOfJoins (RJoinMore js rr c) = undefined
 attsSubTypeEnv :: Attributes -> RTypeEnv -> Bool
 attsSubTypeEnv as t = attsSet as `Set.isSubsetOf` SM.keysSet t
 
--- |
-attsSet :: Attributes -> Set Attribute
-attsSet = Set.fromList . fmap (getAtt . thing) 
-  where
-    getAtt :: SingleAttr -> Attribute
-    getAtt (SingleAttr a) = a 
-    getAtt (SingleQualifiedAttr (RelationQualifiedAttr a _)) = a 
-    getAtt (SingleQualifiedAttr (SubqueryQualifiedAttr a _)) = a
 
 
 -- | Checks if a non-empty list of type envs are disjoint or not.

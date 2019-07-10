@@ -8,13 +8,16 @@ module VDBMS.VDB.Name (
         QualifiedAttr(..),
         Attributes(..),
         SingleAttr(..),
-        renameMap
+        renameMap,
+        attsSet
 
 ) where
 
 import Data.Data (Data,Typeable)
 import Data.String (IsString)
 
+import Data.Set (Set)
+import qualified Data.Set as Set (fromList)
 
 -- | An attribute (i.e. column) name.
 newtype Attribute = Attribute { attributeName :: String }
@@ -41,6 +44,15 @@ data SingleAttr = SingleAttr Attribute
 
 -- | Attributes that can be projected in queries.
 type Attributes = [Rename SingleAttr]
+
+-- | Gets a set of attributes.
+attsSet :: Attributes -> Set Attribute
+attsSet = Set.fromList . fmap (getAtt . thing) 
+  where
+    getAtt :: SingleAttr -> Attribute
+    getAtt (SingleAttr a) = a 
+    getAtt (SingleQualifiedAttr (RelationQualifiedAttr a _)) = a 
+    getAtt (SingleQualifiedAttr (SubqueryQualifiedAttr a _)) = a
 
 -- | A new name that could be used for attributes and subqueries.
 data Rename a = 
