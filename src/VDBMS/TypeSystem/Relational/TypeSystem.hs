@@ -7,17 +7,6 @@ module VDBMS.TypeSystem.Relational.TypeSystem
 
 ) where 
 
-
--- import qualified VDBMS.QueryLang.RelAlg.Variational.Algebra as A
--- import VDBMS.VDB.Name
--- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
--- -- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
--- import VDBMS.Variational.Opt
--- import VDBMS.VDB.Schema.Schema
--- import VDBMS.Features.SAT
--- import VDBMS.DBMS.Value.Value
--- import VDBMS.Features.Config
-
 -- import Prelude hiding (EQ,LT , GT)
 import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM
@@ -36,6 +25,7 @@ import VDBMS.QueryLang.RelAlg.Relational.Condition
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
 import VDBMS.VDB.Name
 
+-- | Relatioanl type enviornment.
 type RTypeEnv = RTableSchema
 
 -- | Type enviornment errors.
@@ -43,7 +33,8 @@ data RTypeError = -- RRelationInvalid Relation
     RCondNotHold RCondition RTypeEnv
   -- | RMismatchTypes RTypeEnv RTypeEnv
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
-  | RAttributeNotInTypeEnv Attributes RTypeEnv
+  | RAttributesNotInTypeEnv Attributes RTypeEnv
+  | RAttributeNotInTypeEnv Attribute RTypeEnv
   | RNotDisjointRels [Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -61,10 +52,10 @@ typeOfQuery (RProj as rq)     s =
   do tq <- typeOfQuery (thing rq) s
      if attsSubTypeEnv as tq
      then return $ SM.restrictKeys tq $ attsSet as
-     else throwM $ RAttributeNotInTypeEnv as tq
+     else throwM $ RAttributesNotInTypeEnv as tq
 typeOfQuery (RSel c rq)       s = 
   do tq <- typeOfQuery (thing rq) s
-     typeOfRCond c tq 
+     typeOfRCond c tq s 
 typeOfQuery (RJoin js)        s = typeOfJoins js s
 typeOfQuery (RProd rl rr rrs) s = 
   do r <- lookupRelation (thing rl) s
@@ -77,8 +68,25 @@ typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
 typeOfQuery REmpty            _ = return M.empty
 
 -- | static semantics of relational conditions
-typeOfRCond :: MonadThrow m => RCond RAlgebra -> RTypeEnv -> m RTypeEnv
-typeOfRCond = undefined
+typeOfRCond :: MonadThrow m => RCond RAlgebra -> RTypeEnv -> RSchema -> m RTypeEnv
+typeOfRCond (RCond c) t s = typeOfRCondition c t s
+typeOfRCond (RIn a q) t s = 
+  do t' <- typeOfQuery q s
+     if attInTypeEnv a t' 
+     then return t 
+     else throwM $ RAttributeNotInTypeEnv a t'
+
+-- |
+typeOfRCondition :: MonadThrow m => RCondition -> RTypeEnv -> RSchema -> m RTypeEnv
+typeOfRCondition (RLit b) t s = undefined
+typeOfRCondition (RComp c l r) t s = undefined
+typeOfRCondition (RNot c) t s = undefined
+typeOfRCondition (ROr l r) t s = undefined
+typeOfRCondition (RAnd l r) t s = undefined
+
+-- | Checks if the type env includes an attribute.
+attInTypeEnv :: Attribute -> RTypeEnv -> Bool
+attInTypeEnv a t = a `Set.member` SM.keysSet t
 
 -- | 
 typeOfJoins :: MonadThrow m => RJoins -> RSchema -> m RTypeEnv
@@ -88,8 +96,6 @@ typeOfJoins (RJoinMore js rr c) = undefined
 -- | 
 attsSubTypeEnv :: Attributes -> RTypeEnv -> Bool
 attsSubTypeEnv as t = attsSet as `Set.isSubsetOf` SM.keysSet t
-
-
 
 -- | Checks if a non-empty list of type envs are disjoint or not.
 --   Note that since we're adding type envs to the list we know 
