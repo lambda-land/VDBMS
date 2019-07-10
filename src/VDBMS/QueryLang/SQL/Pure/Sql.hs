@@ -2,14 +2,15 @@
 module VDBMS.QueryLang.SQL.Pure.Sql where
 
 import VDBMS.VDB.Name 
-import VDBMS.QueryLang.RelAlg.Relational.Condition (RCond,RCondition)
+-- import VDBMS.QueryLang.RelAlg.Relational.Condition (RCondition)
+import VDBMS.QueryLang.SQL.Condition (SqlCond,RCondition)
 
 -- | Sql select statements.
 data SqlSelect =  
     SqlSelect {
       attributes :: [SqlAttrExpr],
       tables :: [SqlRelation],
-      condition :: [RCond SqlSelect],
+      condition :: [SqlCond SqlSelect],
       sqlName :: Maybe String 
     }
   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all

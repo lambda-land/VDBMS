@@ -21,7 +21,7 @@ import Control.Monad.Catch
 
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.VDB.Schema.Relational.Lookups
-import VDBMS.QueryLang.RelAlg.Relational.Condition
+import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
 import VDBMS.VDB.Name
 
@@ -55,7 +55,7 @@ typeOfQuery (RProj as rq)     s =
      else throwM $ RAttributesNotInTypeEnv as tq
 typeOfQuery (RSel c rq)       s = 
   do tq <- typeOfQuery (thing rq) s
-     typeOfRCond c tq s 
+     typeOfSqlCond c tq s 
 typeOfQuery (RJoin js)        s = typeOfJoins js s
 typeOfQuery (RProd rl rr rrs) s = 
   do r <- lookupRelation (thing rl) s
@@ -68,21 +68,24 @@ typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
 typeOfQuery REmpty            _ = return M.empty
 
 -- | static semantics of relational conditions
-typeOfRCond :: MonadThrow m => RCond RAlgebra -> RTypeEnv -> RSchema -> m RTypeEnv
-typeOfRCond (RCond c) t s = typeOfRCondition c t s
-typeOfRCond (RIn a q) t s = 
+typeOfSqlCond :: MonadThrow m => SqlCond RAlgebra -> RTypeEnv -> RSchema -> m RTypeEnv
+typeOfSqlCond (SqlCond c) t s = typeOfRCondition c t s
+typeOfSqlCond (SqlIn a q) t s = 
   do t' <- typeOfQuery q s
      if attInTypeEnv a t' 
      then return t 
      else throwM $ RAttributeNotInTypeEnv a t'
+typeOfSqlCond (SqlNot c) t s = undefined 
+typeOfSqlCond (SqlOr l r) t s = undefined
+typeOfSqlCond (SqlAnd l r) t s = undefined
 
 -- |
 typeOfRCondition :: MonadThrow m => RCondition -> RTypeEnv -> RSchema -> m RTypeEnv
-typeOfRCondition (RLit b) t s = undefined
+typeOfRCondition (RLit b)      t s = return t 
 typeOfRCondition (RComp c l r) t s = undefined
-typeOfRCondition (RNot c) t s = undefined
-typeOfRCondition (ROr l r) t s = undefined
-typeOfRCondition (RAnd l r) t s = undefined
+typeOfRCondition (RNot c)      t s = undefined
+typeOfRCondition (ROr l r)     t s = undefined
+typeOfRCondition (RAnd l r)    t s = undefined
 
 -- | Checks if the type env includes an attribute.
 attInTypeEnv :: Attribute -> RTypeEnv -> Bool

@@ -13,7 +13,7 @@ import VDBMS.VDB.Name
 import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
 import VDBMS.Variational.Variational
 import VDBMS.Variational.Opt
-import VDBMS.QueryLang.RelAlg.Relational.Condition
+import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Basics.SetOp
 
 -- | Relational algebra.
@@ -37,7 +37,7 @@ data RJoins
 data RAlgebra
    = RSetOp SetOp RAlgebra RAlgebra
    | RProj  Attributes (Rename RAlgebra)
-   | RSel   (RCond RAlgebra) (Rename RAlgebra)
+   | RSel   (SqlCond RAlgebra) (Rename RAlgebra)
    | RJoin  RJoins
    | RProd  (Rename Relation) (Rename Relation) [Rename Relation]
    | RTRef  (Rename Relation)

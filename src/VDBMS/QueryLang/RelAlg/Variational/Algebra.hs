@@ -13,7 +13,7 @@ import Data.SBV (Boolean(..))
 import Data.Maybe (catMaybes)
 
 import VDBMS.QueryLang.RelAlg.Basics.Atom
-import VDBMS.QueryLang.RelAlg.Relational.Condition
+import VDBMS.QueryLang.SQL.Condition
 import VDBMS.DBMS.Value.Value
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
@@ -36,12 +36,6 @@ data Condition
    | Or   Condition Condition
    | And  Condition Condition
    | CChc F.FeatureExpr Condition Condition
-  deriving (Data,Eq,Typeable,Ord)
-
--- | Variational conditions.
-data Cond
-   = Cond Condition
-   | In   Attribute Algebra
   deriving (Data,Eq,Typeable,Ord)
 
 -- | pretty prints pure relational conditions.
@@ -104,37 +98,75 @@ instance Boolean Condition where
   (&&&) = And
   (|||) = Or
 
+-- | Variational Sql conditions.
+data VsqlCond
+   = VsqlCond Condition
+   | VsqlIn   Attribute Algebra
+   | VsqlNot  VsqlCond
+   | VsqlOr   VsqlCond VsqlCond
+   | VsqlAnd  VsqlCond VsqlCond
+   | VsqlCChc F.FeatureExpr VsqlCond VsqlCond
+  deriving (Data,Eq,Typeable,Ord)
+
 -- | pretty prints pure relational and IN conditions.
-prettyRelCond :: Cond -> String
-prettyRelCond (Cond (CChc _ _ _)) = error "cannot pretty print a choice of conditions!!"
-prettyRelCond c = top c
+prettySqlCond :: VsqlCond -> String
+prettySqlCond (VsqlCond (CChc _ _ _)) = error "cannot pretty print a choice of relational conditions!!"
+prettySqlCond (VsqlCChc _ _ _) = error "cannot pretty print a choice of SQL conditions!!"
+prettySqlCond c = top c
   where
-    top (Cond r) = prettyRelCondition r
+    top (VsqlCond r) = prettyRelCondition r
+    top (VsqlOr l r) = sub l ++ " OR " ++ sub r 
+    top (VsqlAnd l r) = sub l ++ " AND " ++ sub r
     top c = sub c
-    sub (In a q) = attributeName a ++ " IN ( " ++ show q ++ " ) "
+    sub (VsqlIn a q) = attributeName a ++ " IN ( " ++ show q ++ " ) "
+    sub (VsqlNot c) = " NOT " ++ sub c
     sub c = " ( " ++ top c ++ " ) "
 
-instance Show Cond where
-  show = prettyRelCond
+-- | Configure Variational SQL conditions.
+configureVsqlCond :: Config Bool -> VsqlCond -> SqlCond RAlgebra
+configureVsqlCond c (VsqlCond cond) = SqlCond $ configure c cond
+configureVsqlCond c (VsqlIn a q)    = SqlIn a (configure c q)
+configureVsqlCond c (VsqlNot cond)  = SqlNot (configureVsqlCond c cond)
+configureVsqlCond c (VsqlOr l r)    = 
+  SqlOr (configureVsqlCond c l) (configureVsqlCond c r)
+configureVsqlCond c (VsqlAnd l r)   = 
+  SqlAnd (configureVsqlCond c l) (configureVsqlCond c r)
+configureVsqlCond c (VsqlCChc f l r) 
+  | F.evalFeatureExpr c f = configureVsqlCond c l 
+  | otherwise             = configureVsqlCond c r
 
-instance Variational Cond where
+-- | Linearizes variational SQL conditions.
+linearizeVsqlCond :: VsqlCond -> [Opt (SqlCond RAlgebra)]
+linearizeVsqlCond (VsqlCond c)     = mapSnd SqlCond (linearize c)
+linearizeVsqlCond (VsqlIn a q)     = mapSnd (SqlIn a) (linearize q)
+linearizeVsqlCond (VsqlNot c)      = mapSnd SqlNot (linearizeVsqlCond c)
+linearizeVsqlCond (VsqlOr l r)     = 
+  combOpts F.And SqlOr (linearizeVsqlCond l) (linearizeVsqlCond r) 
+linearizeVsqlCond (VsqlAnd l r)    = 
+  combOpts F.And SqlAnd (linearizeVsqlCond l) (linearizeVsqlCond r)
+linearizeVsqlCond (VsqlCChc f l r) = 
+  mapFst (F.And f) (linearizeVsqlCond l) ++
+  mapFst (F.And (F.Not f)) (linearizeVsqlCond r)
 
-  type NonVariational Cond = RCond RAlgebra
+instance Show VsqlCond where
+  show = prettySqlCond
 
-  type Variant Cond = Opt (RCond RAlgebra)
+instance Variational VsqlCond where
+
+  type NonVariational VsqlCond = SqlCond RAlgebra
+
+  type Variant VsqlCond = Opt (SqlCond RAlgebra)
   
-  configure c (Cond cond) = RCond $ configure c cond
-  configure c (In a q)    = RIn a (configure c q)
+  configure = configureVsqlCond
   
-  linearize (Cond c) = mapSnd RCond (linearize c)
-  linearize (In a q) = mapSnd (RIn a) (linearize q)
+  linearize = linearizeVsqlCond
 
-instance Boolean Cond where
-  true  = Cond (Lit True)
-  false = Cond (Lit False)
-  bnot  (Cond b) = Cond (Not b)
-  (&&&) (Cond l) (Cond r) = Cond (And l r)
-  (|||) (Cond l) (Cond r) = Cond (Or l r)
+instance Boolean VsqlCond where
+  true  = VsqlCond (Lit True)
+  false = VsqlCond (Lit False)
+  bnot  = VsqlNot
+  (&&&) = VsqlAnd
+  (|||) = VsqlOr
 
 
 -- | Optional attributes.
@@ -150,7 +182,7 @@ data Joins
 data Algebra
    = SetOp SetOp Algebra Algebra
    | Proj  OptAttributes (Rename Algebra)
-   | Sel   Cond (Rename Algebra)
+   | Sel   VsqlCond (Rename Algebra)
    | AChc  F.FeatureExpr Algebra Algebra
    | Join  Joins
    | Prod  (Rename Relation) (Rename Relation) [Rename Relation]

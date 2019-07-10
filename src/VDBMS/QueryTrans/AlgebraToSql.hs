@@ -8,10 +8,9 @@ module VDBMS.QueryTrans.AlgebraToSql (
 import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.VDB.Name 
-import VDBMS.QueryLang.RelAlg.Relational.Condition 
+import VDBMS.QueryLang.SQL.Condition 
 import VDBMS.QueryLang.RelAlg.Basics.SetOp
 import VDBMS.VDB.Schema.Schema
--- import VDBMS.Features.SAT 
 
 import Data.List ((\\))
 
@@ -57,6 +56,9 @@ constructJoinRels (RJoinMore js r c) = SqlMoreInnerJoin (constructJoinRels js) r
 
 -- | Translates algebra conditions to sql conditions.
 --   Helper for transAlgebra2Sql.
-algCond2SqlCond :: RCond RAlgebra -> RCond SqlSelect
-algCond2SqlCond (RCond c) = RCond c
-algCond2SqlCond (RIn a q) = RIn a (transAlgebra2Sql q)
+algCond2SqlCond :: SqlCond RAlgebra -> SqlCond SqlSelect
+algCond2SqlCond (SqlCond c)  = SqlCond c
+algCond2SqlCond (SqlIn a q)  = SqlIn a (transAlgebra2Sql q)
+algCond2SqlCond (SqlNot c)   = SqlNot $ algCond2SqlCond c
+algCond2SqlCond (SqlOr l r)  = SqlOr (algCond2SqlCond l) (algCond2SqlCond r)
+algCond2SqlCond (SqlAnd l r) = SqlAnd (algCond2SqlCond l) (algCond2SqlCond r)
