@@ -41,7 +41,7 @@ type RTypeEnv = RTableSchema
 -- | Type enviornment errors.
 data RTypeError = RRelationInvalid Relation
   | RVcondNotHold RCondition RTypeEnv
-  | RDoesntSubsumeTypeEnv RTypeEnv RTypeEnv
+  | RMismatchTypes RTypeEnv RTypeEnv
   | NotEquiveTypeEnv RTypeEnv RTypeEnv 
   | RAttributeNotInTypeEnv Attribute RTypeEnv (Set Attribute)
   | RNotDisjointRels [Relation]
@@ -51,7 +51,12 @@ instance Exception RTypeError
 
 -- | static semantics that returns a relational table schema.
 typeOfQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
-typeOfQuery (RSetOp o l r)    s = undefined
+typeOfQuery (RSetOp o l r)    s =
+  do typel <- typeOfQuery l s
+     typer <- typeOfQuery r s
+     if typel == typer
+     then return typel
+     else throwM $ RMismatchTypes typel typer
 typeOfQuery (RProj as rq)     s = undefined
 typeOfQuery (RSel c rq)       s = undefined
 typeOfQuery (RJoin js)        s = typeOfJoins js s
