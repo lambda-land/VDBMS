@@ -109,13 +109,13 @@ attInTypeEnv a t
   | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
 
 -- | Checks if the type env includes a qualified attribute.
-qualifiedAttInTypeEnv :: MonadThrow m => QualifiedAttr -> RTypeEnv -> m RTypeEnv
-qualifiedAttInTypeEnv (RelationQualifiedAttr a _) t 
-  | a `Set.member` SM.keysSet t = return t
-  | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
-qualifiedAttInTypeEnv (SubqueryQualifiedAttr a _) t 
-  | a `Set.member` SM.keysSet t = return t
-  | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
+-- qualifiedAttInTypeEnv :: MonadThrow m => QualifiedAttr -> RTypeEnv -> m RTypeEnv
+-- qualifiedAttInTypeEnv a t 
+--   | a `Set.member` SM.keysSet t = return t
+--   | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
+-- qualifiedAttInTypeEnv (SubqueryQualifiedAttr a _) t 
+--   | a `Set.member` SM.keysSet t = return t
+--   | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
 
 
 -- | 

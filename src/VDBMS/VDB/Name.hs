@@ -7,9 +7,10 @@ module VDBMS.VDB.Name (
         Rename(..),
         QualifiedAttr(..),
         Attributes(..),
-        SingleAttr(..),
+        -- SingleAttr(..),
         renameMap,
-        attsSet
+        attsSet,
+        getAtt
 
 ) where
 
@@ -29,30 +30,30 @@ newtype Attribute = Attribute { attributeName :: String }
 data QualifiedAttr 
    = RelationQualifiedAttr {
       attr :: Attribute, -- ^ the attribute
-      rel  :: Relation -- ^ the relation 
+      rel  :: Maybe Relation -- ^ the relation 
      }
    | SubqueryQualifiedAttr {
       attribute    :: Attribute, -- ^ the attribute
-      subqueryName :: String -- ^ the name assigned to the subquery
+      subqueryName :: Maybe String -- ^ the name assigned to the subquery
      }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | A single attribute.
-data SingleAttr = SingleAttr Attribute
-                | SingleQualifiedAttr QualifiedAttr
-  deriving (Data,Eq,Ord,Read,Show,Typeable)
+-- data SingleAttr = SingleAttr Attribute
+--                 | SingleQualifiedAttr QualifiedAttr
+--   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | Attributes that can be projected in queries.
-type Attributes = [Rename SingleAttr]
+type Attributes = [Rename QualifiedAttr]
 
 -- | Gets a set of attributes.
 attsSet :: Attributes -> Set Attribute
 attsSet = Set.fromList . fmap (getAtt . thing) 
-  where
-    getAtt :: SingleAttr -> Attribute
-    getAtt (SingleAttr a) = a 
-    getAtt (SingleQualifiedAttr (RelationQualifiedAttr a _)) = a 
-    getAtt (SingleQualifiedAttr (SubqueryQualifiedAttr a _)) = a
+
+-- | Gets the attribute out of qualified attribute.
+getAtt :: QualifiedAttr -> Attribute
+getAtt (RelationQualifiedAttr a _) = a 
+getAtt (SubqueryQualifiedAttr a _) = a
 
 -- | A new name that could be used for attributes and subqueries.
 data Rename a = 
