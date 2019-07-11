@@ -1,7 +1,8 @@
 -- | Relational database schema look up operations.
 module VDBMS.VDB.Schema.Relational.Lookups (
 
-        lookupRelation
+        lookupRelation,
+        lookupAttrType
 
 ) where
 
@@ -12,9 +13,13 @@ import Control.Monad.Catch
 
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.VDB.Name
+import VDBMS.DBMS.Value.Type (SqlType)
 
 lookupRelation :: MonadThrow m => Relation -> RSchema -> m RTableSchema
 lookupRelation r s = maybe (throwM $ RMissingRelation r) return $ M.lookup r s
+
+lookupAttrType :: MonadThrow m => Attribute -> RTableSchema -> m SqlType
+lookupAttrType a t = maybe (throwM $ RMissingAttribute a) return $ M.lookup a t
 
 -- | get the attribute fexp from a rowtype
 -- lookupAttFexpInRowType :: MonadThrow m => Attribute -> RowType -> m FeatureExpr

@@ -24,13 +24,14 @@ import VDBMS.VDB.Schema.Relational.Lookups
 import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
 import VDBMS.VDB.Name
+import VDBMS.DBMS.Value.Core (typeOf)
 
 -- | Relatioanl type enviornment.
 type RTypeEnv = RTableSchema
 
 -- | Type enviornment errors.
 data RTypeError = -- RRelationInvalid Relation
-    RCondNotHold RCondition RTypeEnv
+    RCompInvalid Atom Atom RTypeEnv
   -- | RMismatchTypes RTypeEnv RTypeEnv
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
   | RAttributesNotInTypeEnv Attributes RTypeEnv
@@ -96,11 +97,14 @@ typeOfRCondition (RAnd l r)    t =
 
 -- | Checks if the type env is consistent with a comparison condition.
 typeOfComp :: MonadThrow m => Atom -> Atom -> RTypeEnv -> m RTypeEnv
-typeOfComp = undefined
--- typeOfComp (Val l) (Val r) t = undefined
--- typeOfComp (Val l) (Attr r) t = undefined
--- typeOfComp (Attr l) (Val r) t = undefined
--- typeOfComp (V)
+typeOfComp a@(Val l)  a'@(Val r)  t 
+  | typeOf l == typeOf r = return t 
+  | otherwise = throwM $ RCompInvalid a a' t 
+typeOfComp a@(Val l)  a'@(Attr r) t = undefined
+  -- do attInTypeEnv (getAtt r) t 
+  --    if typeOf l == 
+typeOfComp a@(Attr l) a'@(Val r)  t = undefined
+typeOfComp a@(Attr l) a'@(Attr r) t = undefined
 
 -- | Checks if the type env includes an attribute.
 attInTypeEnv :: MonadThrow m => Attribute -> RTypeEnv -> m RTypeEnv

@@ -8,7 +8,7 @@ module VDBMS.QueryLang.RelAlg.Basics.Atom (
 import Data.Data (Data,Typeable)
 import Data.Convertible (safeConvert)
 
-import VDBMS.VDB.Name (attributeName, Attribute, QualifiedAttr)
+import VDBMS.VDB.Name (attributeName, Attribute, QualifiedAttr, getAtt)
 import VDBMS.DBMS.Value.Value
 
 
@@ -17,8 +17,7 @@ import Database.HDBC (SqlValue)
 -- | Atoms are the leaves of a condition.
 data Atom
    = Val  SqlValue
-   | Attr Attribute -- remember to remove this after meeting!!
-   | Attr' QualifiedAttr
+   | Attr QualifiedAttr
   deriving (Data,Eq,Typeable,Ord)
 
 -- data AtomError = UnsafeConversion Atom
@@ -31,7 +30,7 @@ prettyAtom :: Atom -> String
 prettyAtom (Val v)  =  case safeConvert v of 
   Right val -> val
   _ -> error "safeConvert resulted in error!!! showAtom"
-prettyAtom (Attr a) = attributeName a
+prettyAtom (Attr a) = attributeName $ getAtt a
 
 instance Show Atom where
   show = prettyAtom

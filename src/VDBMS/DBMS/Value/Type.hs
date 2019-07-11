@@ -1,7 +1,8 @@
 -- | Primitive types.
 module VDBMS.DBMS.Value.Type (
 
-        SqlType(..)
+        SqlType(..),
+        SqlValue(..)
 
 ) where
 
