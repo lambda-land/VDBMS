@@ -35,6 +35,7 @@ data RTypeError = -- RRelationInvalid Relation
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
   | RAttributesNotInTypeEnv Attributes RTypeEnv
   | RAttributeNotInTypeEnv Attribute RTypeEnv
+  -- | RQualifiedAttNotInTypeEnv QualifiedAttr RTypeEnv
   | RNotDisjointRels [Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -69,27 +70,53 @@ typeOfQuery REmpty            _ = return M.empty
 
 -- | static semantics of relational conditions
 typeOfSqlCond :: MonadThrow m => SqlCond RAlgebra -> RTypeEnv -> RSchema -> m RTypeEnv
-typeOfSqlCond (SqlCond c) t s = typeOfRCondition c t s
-typeOfSqlCond (SqlIn a q) t s = 
+typeOfSqlCond (SqlCond c)  t s = typeOfRCondition c t
+typeOfSqlCond (SqlIn a q)  t s = 
   do t' <- typeOfQuery q s
-     if attInTypeEnv a t' 
-     then return t 
-     else throwM $ RAttributeNotInTypeEnv a t'
-typeOfSqlCond (SqlNot c) t s = undefined 
-typeOfSqlCond (SqlOr l r) t s = undefined
-typeOfSqlCond (SqlAnd l r) t s = undefined
+     attInTypeEnv a t' 
+typeOfSqlCond (SqlNot c)   t s = typeOfSqlCond c t s 
+typeOfSqlCond (SqlOr l r)  t s = 
+  do typeOfSqlCond l t s
+     typeOfSqlCond r t s
+typeOfSqlCond (SqlAnd l r) t s = 
+  do typeOfSqlCond l t s
+     typeOfSqlCond r t s
 
 -- |
-typeOfRCondition :: MonadThrow m => RCondition -> RTypeEnv -> RSchema -> m RTypeEnv
-typeOfRCondition (RLit b)      t s = return t 
-typeOfRCondition (RComp c l r) t s = undefined
-typeOfRCondition (RNot c)      t s = undefined
-typeOfRCondition (ROr l r)     t s = undefined
-typeOfRCondition (RAnd l r)    t s = undefined
+typeOfRCondition :: MonadThrow m => RCondition -> RTypeEnv -> m RTypeEnv
+typeOfRCondition (RLit b)      t = return t 
+typeOfRCondition (RComp _ l r) t = typeOfComp l r t 
+typeOfRCondition (RNot c)      t = typeOfRCondition c t
+typeOfRCondition (ROr l r)     t = 
+  do typeOfRCondition l t
+     typeOfRCondition r t
+typeOfRCondition (RAnd l r)    t = 
+  do typeOfRCondition l t
+     typeOfRCondition r t
+
+-- | Checks if the type env is consistent with a comparison condition.
+typeOfComp :: MonadThrow m => Atom -> Atom -> RTypeEnv -> m RTypeEnv
+typeOfComp = undefined
+-- typeOfComp (Val l) (Val r) t = undefined
+-- typeOfComp (Val l) (Attr r) t = undefined
+-- typeOfComp (Attr l) (Val r) t = undefined
+-- typeOfComp (V)
 
 -- | Checks if the type env includes an attribute.
-attInTypeEnv :: Attribute -> RTypeEnv -> Bool
-attInTypeEnv a t = a `Set.member` SM.keysSet t
+attInTypeEnv :: MonadThrow m => Attribute -> RTypeEnv -> m RTypeEnv
+attInTypeEnv a t 
+  | a `Set.member` SM.keysSet t = return t 
+  | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
+
+-- | Checks if the type env includes a qualified attribute.
+qualifiedAttInTypeEnv :: MonadThrow m => QualifiedAttr -> RTypeEnv -> m RTypeEnv
+qualifiedAttInTypeEnv (RelationQualifiedAttr a _) t 
+  | a `Set.member` SM.keysSet t = return t
+  | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
+qualifiedAttInTypeEnv (SubqueryQualifiedAttr a _) t 
+  | a `Set.member` SM.keysSet t = return t
+  | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
+
 
 -- | 
 typeOfJoins :: MonadThrow m => RJoins -> RSchema -> m RTypeEnv
