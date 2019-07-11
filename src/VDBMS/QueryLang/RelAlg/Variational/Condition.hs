@@ -1,7 +1,6 @@
 -- | Variational relational condition.
 module VDBMS.QueryLang.RelAlg.Variational.Condition (
 
-        SetOp(..),
         Condition(..),
         Atom(..)
 
@@ -9,19 +8,14 @@ module VDBMS.QueryLang.RelAlg.Variational.Condition (
 
 import Data.Data (Data,Typeable)
 import Data.SBV (Boolean(..))
-import Data.Maybe (catMaybes)
 
 import VDBMS.QueryLang.RelAlg.Basics.Atom
 import VDBMS.QueryLang.SQL.Condition
 import VDBMS.DBMS.Value.Value
-import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.Features.Config (Config)
 import VDBMS.Variational.Variational
 import VDBMS.Variational.Opt
--- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
-import VDBMS.QueryLang.RelAlg.Basics.SetOp
-import VDBMS.QueryLang.RelAlg.Relational.Algebra
 
 -- | Variational relational conditions.
 data Condition 
