@@ -127,20 +127,16 @@ attInTypeEnv a t
   | a `Set.member` SM.keysSet t = return t 
   | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
 
--- | Checks if the type env includes a qualified attribute.
--- qualifiedAttInTypeEnv :: MonadThrow m => QualifiedAttr -> RTypeEnv -> m RTypeEnv
--- qualifiedAttInTypeEnv a t 
---   | a `Set.member` SM.keysSet t = return t
---   | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
--- qualifiedAttInTypeEnv (SubqueryQualifiedAttr a _) t 
---   | a `Set.member` SM.keysSet t = return t
---   | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
-
-
 -- | 
 typeOfJoins :: MonadThrow m => RJoins -> RSchema -> m RTypeEnv
-typeOfJoins (RJoinTwoTable rl rr c) = undefined
-typeOfJoins (RJoinMore js rr c) = undefined
+typeOfJoins (RJoinTwoTable rl rr c) s = 
+  do lt <- typeOfQuery (RTRef rl) s
+     rt <- typeOfQuery (RTRef rr) s
+     typeOfRCondition c (SM.union lt rt)
+typeOfJoins (RJoinMore js rr c)     s = 
+  do jt <- typeOfJoins js s 
+     rt <- typeOfQuery (RTRef rr) s
+     typeOfRCondition c (SM.union jt rt)
 
 -- | 
 attsSubTypeEnv :: Attributes -> RTypeEnv -> Bool
