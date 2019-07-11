@@ -100,11 +100,26 @@ typeOfComp :: MonadThrow m => Atom -> Atom -> RTypeEnv -> m RTypeEnv
 typeOfComp a@(Val l)  a'@(Val r)  t 
   | typeOf l == typeOf r = return t 
   | otherwise = throwM $ RCompInvalid a a' t 
-typeOfComp a@(Val l)  a'@(Attr r) t = undefined
-  -- do attInTypeEnv (getAtt r) t 
-  --    if typeOf l == 
-typeOfComp a@(Attr l) a'@(Val r)  t = undefined
-typeOfComp a@(Attr l) a'@(Attr r) t = undefined
+typeOfComp a@(Val l)  a'@(Attr r) t = 
+  do attInTypeEnv (getAtt r) t 
+     at <- lookupAttrType (getAtt r) t
+     if typeOf l == at 
+     then return t 
+     else throwM $ RCompInvalid a a' t
+typeOfComp a@(Attr l) a'@(Val r)  t = 
+  do attInTypeEnv (getAtt l) t 
+     at <- lookupAttrType (getAtt l) t
+     if typeOf r == at 
+     then return t 
+     else throwM $ RCompInvalid a a' t
+typeOfComp a@(Attr l) a'@(Attr r) t = 
+  do attInTypeEnv (getAtt l) t 
+     attInTypeEnv (getAtt r) t 
+     at  <- lookupAttrType (getAtt l) t
+     at' <-  lookupAttrType (getAtt r) t
+     if at == at'
+     then return t 
+     else throwM $ RCompInvalid a a' t
 
 -- | Checks if the type env includes an attribute.
 attInTypeEnv :: MonadThrow m => Attribute -> RTypeEnv -> m RTypeEnv
