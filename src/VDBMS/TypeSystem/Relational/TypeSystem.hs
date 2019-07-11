@@ -7,10 +7,8 @@ module VDBMS.TypeSystem.Relational.TypeSystem
 
 ) where 
 
--- import Prelude hiding (EQ,LT , GT)
 import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM
--- import qualified Data.Map.Merge.Strict as StrictM
 import qualified Data.Set as Set 
 import Data.Set (Set)
 
@@ -30,13 +28,11 @@ import VDBMS.DBMS.Value.Core (typeOf)
 type RTypeEnv = RTableSchema
 
 -- | Type enviornment errors.
-data RTypeError = -- RRelationInvalid Relation
+data RTypeError = 
     RCompInvalid Atom Atom RTypeEnv
-  -- | RMismatchTypes RTypeEnv RTypeEnv
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
   | RAttributesNotInTypeEnv Attributes RTypeEnv
   | RAttributeNotInTypeEnv Attribute RTypeEnv
-  -- | RQualifiedAttNotInTypeEnv QualifiedAttr RTypeEnv
   | RNotDisjointRels [Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -69,7 +65,7 @@ typeOfQuery (RProd rl rr rrs) s =
 typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
 typeOfQuery REmpty            _ = return M.empty
 
--- | static semantics of relational conditions
+-- | Static semantics of relational conditions.
 typeOfSqlCond :: MonadThrow m => SqlCond RAlgebra -> RTypeEnv -> RSchema -> m RTypeEnv
 typeOfSqlCond (SqlCond c)  t s = typeOfRCondition c t
 typeOfSqlCond (SqlIn a q)  t s = 
@@ -83,7 +79,7 @@ typeOfSqlCond (SqlAnd l r) t s =
   do typeOfSqlCond l t s
      typeOfSqlCond r t s
 
--- |
+-- | Checks if the condition is compatible with type env.
 typeOfRCondition :: MonadThrow m => RCondition -> RTypeEnv -> m RTypeEnv
 typeOfRCondition (RLit b)      t = return t 
 typeOfRCondition (RComp _ l r) t = typeOfComp l r t 
@@ -127,7 +123,8 @@ attInTypeEnv a t
   | a `Set.member` SM.keysSet t = return t 
   | otherwise                   = throwM $ RAttributeNotInTypeEnv a t
 
--- | 
+-- | Type of joins. Note that for now joins are only among relations
+--   and not queries.
 typeOfJoins :: MonadThrow m => RJoins -> RSchema -> m RTypeEnv
 typeOfJoins (RJoinTwoTable rl rr c) s = 
   do lt <- typeOfQuery (RTRef rl) s
@@ -138,7 +135,7 @@ typeOfJoins (RJoinMore js rr c)     s =
      rt <- typeOfQuery (RTRef rr) s
      typeOfRCondition c (SM.union jt rt)
 
--- | 
+-- | Attributes are all included in the type env.
 attsSubTypeEnv :: Attributes -> RTypeEnv -> Bool
 attsSubTypeEnv as t = attsSet as `Set.isSubsetOf` SM.keysSet t
 
