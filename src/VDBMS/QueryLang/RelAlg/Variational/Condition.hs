@@ -1,8 +1,7 @@
 -- | Variational relational condition.
 module VDBMS.QueryLang.RelAlg.Variational.Condition (
 
-        Condition(..),
-        Atom(..)
+        Condition(..)
 
 ) where
 
