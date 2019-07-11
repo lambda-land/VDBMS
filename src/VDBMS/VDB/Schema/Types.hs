@@ -114,7 +114,9 @@ linearizeAttrs r = disjunctSameAtts
 --   the new fexp. If not, it doesn't return it.
 --   Helper for linearizeSchema.
 linearizeTableSch :: TableSchema -> [Opt RTableSchema]
-linearizeTableSch t = mapFst shrinkFeatureExpr $ filter (satisfiable . getFexp) $ mapFst (And tableFexp) linearizedTable
+linearizeTableSch t = mapFst shrinkFeatureExpr 
+                           $ filter (satisfiable . getFexp) 
+                                  $ mapFst (And tableFexp) linearizedTable
   where 
     rowtype         = getObj t
     tableFexp       = getFexp t

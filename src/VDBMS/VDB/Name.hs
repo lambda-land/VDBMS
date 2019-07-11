@@ -5,12 +5,11 @@ module VDBMS.VDB.Name (
         Relation(..),
         PresCondAtt(..),
         Rename(..),
-        QualifiedAttr(..),
+        Qualifier(..),
+        Attr(..),
         Attributes(..),
-        -- SingleAttr(..),
         renameMap,
-        attsSet,
-        getAtt
+        attsSet
 
 ) where
 
@@ -24,36 +23,31 @@ import qualified Data.Set as Set (fromList)
 newtype Attribute = Attribute { attributeName :: String }
   deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)
 
--- | A qualified attribute (i.e., its relation name can be
+-- | Qualifiers for attributes.
+data Qualifier 
+  = RelQualifier {
+      relQualifier :: Relation
+    }
+  | SubqueryQualifier {
+      subqueryQualifier :: String
+    }
+ deriving (Data,Eq,Ord,Read,Show,Typeable)
+
+-- | A qualified/unqualified attribute (i.e., its relation name can be
 --   attached to it) with the possibility to rename to a new
 --   name.
-data QualifiedAttr 
-   = RelationQualifiedAttr {
-      attr :: Attribute, -- ^ the attribute
-      rel  :: Maybe Relation -- ^ the relation 
-     }
-   | SubqueryQualifiedAttr {
-      attribute    :: Attribute, -- ^ the attribute
-      subqueryName :: Maybe String -- ^ the name assigned to the subquery
-     }
+data Attr = Attr {
+  attribute :: Attribute,
+  qualifier :: Maybe Qualifier
+}
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
--- | A single attribute.
--- data SingleAttr = SingleAttr Attribute
---                 | SingleQualifiedAttr QualifiedAttr
---   deriving (Data,Eq,Ord,Read,Show,Typeable)
-
 -- | Attributes that can be projected in queries.
-type Attributes = [Rename QualifiedAttr]
+type Attributes = [Rename Attr]
 
 -- | Gets a set of attributes.
 attsSet :: Attributes -> Set Attribute
-attsSet = Set.fromList . fmap (getAtt . thing) 
-
--- | Gets the attribute out of qualified attribute.
-getAtt :: QualifiedAttr -> Attribute
-getAtt (RelationQualifiedAttr a _) = a 
-getAtt (SubqueryQualifiedAttr a _) = a
+attsSet = Set.fromList . fmap (attribute . thing) 
 
 -- | A new name that could be used for attributes and subqueries.
 data Rename a = 

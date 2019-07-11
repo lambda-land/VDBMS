@@ -2,7 +2,6 @@
 module VDBMS.QueryLang.SQL.Pure.Sql where
 
 import VDBMS.VDB.Name 
--- import VDBMS.QueryLang.RelAlg.Relational.Condition (RCondition)
 import VDBMS.QueryLang.SQL.Condition (SqlCond,RCondition)
 
 -- | Sql select statements.
@@ -25,7 +24,7 @@ data SqlNullAtt = SqlNullAtt
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
     SqlAllAtt -- ^ *
-  | SqlAttr (Rename QualifiedAttr) -- ^ A, A as A, R.A, R.A as A
+  | SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
   | SqlConcatAtt (Rename Attribute) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   deriving (Eq)

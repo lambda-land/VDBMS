@@ -96,23 +96,23 @@ typeOfComp :: MonadThrow m => Atom -> Atom -> RTypeEnv -> m RTypeEnv
 typeOfComp a@(Val l)  a'@(Val r)  t 
   | typeOf l == typeOf r = return t 
   | otherwise = throwM $ RCompInvalid a a' t 
-typeOfComp a@(Val l)  a'@(Attr r) t = 
-  do attInTypeEnv (getAtt r) t 
-     at <- lookupAttrType (getAtt r) t
+typeOfComp a@(Val l)  a'@(Att r) t = 
+  do attInTypeEnv (attribute r) t 
+     at <- lookupAttrType (attribute r) t
      if typeOf l == at 
      then return t 
      else throwM $ RCompInvalid a a' t
-typeOfComp a@(Attr l) a'@(Val r)  t = 
-  do attInTypeEnv (getAtt l) t 
-     at <- lookupAttrType (getAtt l) t
+typeOfComp a@(Att l) a'@(Val r)  t = 
+  do attInTypeEnv (attribute l) t 
+     at <- lookupAttrType (attribute l) t
      if typeOf r == at 
      then return t 
      else throwM $ RCompInvalid a a' t
-typeOfComp a@(Attr l) a'@(Attr r) t = 
-  do attInTypeEnv (getAtt l) t 
-     attInTypeEnv (getAtt r) t 
-     at  <- lookupAttrType (getAtt l) t
-     at' <-  lookupAttrType (getAtt r) t
+typeOfComp a@(Att l) a'@(Att r) t = 
+  do attInTypeEnv (attribute l) t 
+     attInTypeEnv (attribute r) t 
+     at  <- lookupAttrType (attribute l) t
+     at' <-  lookupAttrType (attribute r) t
      if at == at'
      then return t 
      else throwM $ RCompInvalid a a' t

@@ -96,7 +96,7 @@ instance Boolean VsqlCond where
 
 
 -- | Optional attributes.
-type OptAttributes = [Opt (Rename QualifiedAttr)]
+type OptAttributes = [Opt (Rename Attr)]
 
 -- | Variational conditional relational joins.
 data Joins 
