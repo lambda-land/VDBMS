@@ -15,7 +15,7 @@ import Prelude hiding (map)
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
-import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe, map)
+import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe, map, empty)
 
 import Control.Monad.Catch 
 
@@ -27,6 +27,7 @@ import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Variational.Variational
 import VDBMS.Features.Config (Config)
 import VDBMS.Features.SAT (satisfiable, tautology)
+import VDBMS.Features.ConfFexp (validConfsOfFexp)
 
 -- | Type of a relation in the database.
 type RowType = Map Attribute (Opt SqlType)
@@ -38,6 +39,17 @@ type TableSchema = Opt RowType
 --   each row type are optionally included. The top-level 'Opt' corresponds to
 --   the feature model, which defines the set of valid configurations.
 type Schema = Opt (Map Relation TableSchema)
+
+-- | Configures a variational schema and returns an empty 
+--   map if the configuration isn't valid.
+configSchema_ :: Config Bool -> Schema -> RSchema
+configSchema_ c s 
+  | evalFeatureExpr c fm = 
+    mapMaybe (configTableSchema c) (schemaStrct s)
+  | otherwise = empty
+    where
+      fm = featureModel s
+
 
 -- | Configures a variational schema to a relational one.
 configSchema :: MonadThrow m => Config Bool -> Schema -> m RSchema
@@ -62,31 +74,31 @@ configTableSchema c t
         | otherwise = Nothing
 
 
--- | Linearizes a variational schema.
+-- | Optionalizes a variational schema.
 --   Conjuncts schema's feature expression with the generated opt
---   of linearizing table schema, if satisfiable it includes the relation
+--   of optionalizing table schema, if satisfiable it includes the relation
 --   in the relational schema if not it doesn't include it. Also, the new
 --   fexp is the conjuncted one.
-linearizeSchema :: Schema -> [Opt RSchema]
-linearizeSchema s = undefined
+optSchema :: Schema -> [Opt RSchema]
+optSchema s = undefined
   where
     schStruct = schemaStrct s
     schFexp = featureModel s
-    linearizedRels = map (filter (satisfiable . getFexp)) $
+    optedRels = map (filter (satisfiable . getFexp)) $
       map (mapFst (shrinkFeatureExpr . And schFexp)) $ 
-      map linearizeTableSch schStruct
+      map optTableSch schStruct
     resList = undefined
 
 
--- | Linearizes a rowtype.
---   Helper for linearizeTableSch.
+-- | Optionalizes a rowtype.
+--   Helper for optTableSch.
 --   Assumption: the schema has been preprocessed and so it doesn't
 --               have attributes/relations with false as their 
 --               presence condition.
 --   Note: we're not dropping the same lists of attributes for now.
---         Such a filtering will happen at the end of linearizing a schema.
-linearizeAttrs :: RowType -> [Opt RTableSchema]
-linearizeAttrs r = disjunctSameAtts
+--         Such a filtering will happen at the end of optionalizing a schema.
+optAttrs :: RowType -> [Opt RTableSchema]
+optAttrs r = disjunctSameAtts
   where
     rList = fmap 
       (\(a,ot) -> updateOptObj (a, getObj ot) ot) 
@@ -112,25 +124,26 @@ linearizeAttrs r = disjunctSameAtts
 --   with the feature expression assigned to a relational table schema
 --   and if its satisfiable it returns the relational table schema with
 --   the new fexp. If not, it doesn't return it.
---   Helper for linearizeSchema.
-linearizeTableSch :: TableSchema -> [Opt RTableSchema]
-linearizeTableSch t = mapFst shrinkFeatureExpr 
+--   Helper for optSchema.
+optTableSch :: TableSchema -> [Opt RTableSchema]
+optTableSch t = mapFst shrinkFeatureExpr 
                            $ filter (satisfiable . getFexp) 
-                                  $ mapFst (And tableFexp) linearizedTable
+                                  $ mapFst (And tableFexp) optedTable
   where 
     rowtype         = getObj t
     tableFexp       = getFexp t
-    linearizedTable = linearizeAttrs rowtype
+    optedTable = optAttrs rowtype
 
 
 instance Variational Schema where
-  type NonVariational Schema = Maybe RSchema 
 
-  -- type Variant Schema = Opt RSchema
+  type NonVariational Schema = RSchema 
 
-  configure = configSchema
+  configure = configSchema_
 
-  -- linearize = linearizeSchema
+  optionalize_ s = optionalize (validConfsOfFexp (featureModel s)) s
+
+  linearize = undefined
 
 -- | The feature model associated with a schema.
 featureModel :: Schema -> FeatureExpr
