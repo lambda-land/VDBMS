@@ -62,17 +62,17 @@ configureVsqlCond c (VsqlCChc f l r)
   | otherwise             = configureVsqlCond c r
 
 -- | Linearizes variational SQL conditions.
-linearizeVsqlCond :: VsqlCond -> [Opt (SqlCond RAlgebra)]
-linearizeVsqlCond (VsqlCond c)     = mapSnd SqlCond (linearize c)
-linearizeVsqlCond (VsqlIn a q)     = mapSnd (SqlIn a) (linearize q)
-linearizeVsqlCond (VsqlNot c)      = mapSnd SqlNot (linearizeVsqlCond c)
-linearizeVsqlCond (VsqlOr l r)     = 
-  combOpts F.And SqlOr (linearizeVsqlCond l) (linearizeVsqlCond r) 
-linearizeVsqlCond (VsqlAnd l r)    = 
-  combOpts F.And SqlAnd (linearizeVsqlCond l) (linearizeVsqlCond r)
-linearizeVsqlCond (VsqlCChc f l r) = 
-  mapFst (F.And f) (linearizeVsqlCond l) ++
-  mapFst (F.And (F.Not f)) (linearizeVsqlCond r)
+-- linearizeVsqlCond :: VsqlCond -> [Opt (SqlCond RAlgebra)]
+-- linearizeVsqlCond (VsqlCond c)     = mapSnd SqlCond (linearize c)
+-- linearizeVsqlCond (VsqlIn a q)     = mapSnd (SqlIn a) (linearize q)
+-- linearizeVsqlCond (VsqlNot c)      = mapSnd SqlNot (linearizeVsqlCond c)
+-- linearizeVsqlCond (VsqlOr l r)     = 
+--   combOpts F.And SqlOr (linearizeVsqlCond l) (linearizeVsqlCond r) 
+-- linearizeVsqlCond (VsqlAnd l r)    = 
+--   combOpts F.And SqlAnd (linearizeVsqlCond l) (linearizeVsqlCond r)
+-- linearizeVsqlCond (VsqlCChc f l r) = 
+--   mapFst (F.And f) (linearizeVsqlCond l) ++
+--   mapFst (F.And (F.Not f)) (linearizeVsqlCond r)
 
 instance Show VsqlCond where
   show = prettySqlCond
@@ -85,7 +85,7 @@ instance Variational VsqlCond where
   
   configure = configureVsqlCond
   
-  linearize = linearizeVsqlCond
+  -- linearize = linearizeVsqlCond
 
 instance Boolean VsqlCond where
   true  = VsqlCond (Lit True)
@@ -118,8 +118,8 @@ data Algebra
 
 -- | Linearizes a rename algebra.
 --   Helper for linearizeAlgebra.
-linearizeRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
-linearizeRename r = mapSnd (Rename (name r)) $ linearize (thing r)
+-- linearizeRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
+-- linearizeRename r = mapSnd (Rename (name r)) $ linearize (thing r)
 
 -- | Configures an algebra.
 configureAlgebra :: Config Bool -> Algebra -> RAlgebra
@@ -149,24 +149,24 @@ configureAlgebra c Empty           = REmpty
 --   Note that linearization doesn't consider schema at all. it just
 --   linearizes a query. So it doesn't group queries based on the 
 --   presence condition of attributes or relations.
-linearizeAlgebra :: Algebra -> [Opt RAlgebra]
-linearizeAlgebra (SetOp s q1 q2) = 
-  combOpts F.And (RSetOp s) (linearizeAlgebra q1) (linearizeAlgebra q2)
-linearizeAlgebra (Proj as q)     = combOpts F.And RProj (groupOpts as) (linearizeRename q)
-linearizeAlgebra (Sel c q)       = 
-  combOpts F.And RSel (linearize c) (linearizeRename q) 
-linearizeAlgebra (AChc f q1 q2)  = mapFst (F.And f) (linearizeAlgebra q1) ++
-                                   mapFst (F.And (F.Not f)) (linearizeAlgebra q2)
-linearizeAlgebra (Join js)       = mapSnd RJoin $ linearize' js
-  where
-    linearize' :: Joins -> [Opt RJoins]
-    linearize' (JoinTwoTables l r c) = 
-      mapSnd (\cond -> RJoinTwoTable l r cond) (linearize c)
-    linearize' (JoinMore js r c)     = 
-      combOpts F.And (\c' js' -> RJoinMore js' r c') (linearize c) (linearize' js)
-linearizeAlgebra (Prod r l rs)   = pure $ mkOpt (F.Lit True) (RProd r l rs)
-linearizeAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
-linearizeAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
+-- linearizeAlgebra :: Algebra -> [Opt RAlgebra]
+-- linearizeAlgebra (SetOp s q1 q2) = 
+--   combOpts F.And (RSetOp s) (linearizeAlgebra q1) (linearizeAlgebra q2)
+-- linearizeAlgebra (Proj as q)     = combOpts F.And RProj (groupOpts as) (linearizeRename q)
+-- linearizeAlgebra (Sel c q)       = 
+--   combOpts F.And RSel (linearize c) (linearizeRename q) 
+-- linearizeAlgebra (AChc f q1 q2)  = mapFst (F.And f) (linearizeAlgebra q1) ++
+--                                    mapFst (F.And (F.Not f)) (linearizeAlgebra q2)
+-- linearizeAlgebra (Join js)       = mapSnd RJoin $ linearize' js
+--   where
+--     linearize' :: Joins -> [Opt RJoins]
+--     linearize' (JoinTwoTables l r c) = 
+--       mapSnd (\cond -> RJoinTwoTable l r cond) (linearize c)
+--     linearize' (JoinMore js r c)     = 
+--       combOpts F.And (\c' js' -> RJoinMore js' r c') (linearize c) (linearize' js)
+-- linearizeAlgebra (Prod r l rs)   = pure $ mkOpt (F.Lit True) (RProd r l rs)
+-- linearizeAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
+-- linearizeAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
 
 
 instance Variational Algebra where
@@ -177,7 +177,7 @@ instance Variational Algebra where
 
   configure = configureAlgebra
 
-  linearize = linearizeAlgebra
+  -- linearize = linearizeAlgebra
 
   
   

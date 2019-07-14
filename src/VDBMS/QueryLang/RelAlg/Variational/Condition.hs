@@ -76,7 +76,7 @@ instance Variational Condition where
   
   configure = configureCondition
 
-  linearize = linearizeCondition
+  -- linearize = linearizeCondition
 
 
 instance Boolean Condition where

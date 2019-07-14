@@ -63,7 +63,7 @@ class Variational a where
 
   -- | Linearizes a variational thing to a comprehensive 
   --   non-variational thing, if possible.
-  linearize :: a -> [VariantGroup a]
+  linearize :: a -> NonVariational a
 
   -- | Maps a function to variants. 
   -- mapVariant :: (a -> b) -> Variant a -> Variant b
