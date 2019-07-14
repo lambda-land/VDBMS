@@ -2,6 +2,8 @@
 module VDBMS.Variational.Variational (
         
         Variational(..)
+        , Variant(..)
+        , VariantGroup(..)
 
 ) where
 
