@@ -61,18 +61,18 @@ configureVsqlCond c (VsqlCChc f l r)
   | F.evalFeatureExpr c f = configureVsqlCond c l 
   | otherwise             = configureVsqlCond c r
 
--- | Linearizes variational SQL conditions.
--- linearizeVsqlCond :: VsqlCond -> [Opt (SqlCond RAlgebra)]
--- linearizeVsqlCond (VsqlCond c)     = mapSnd SqlCond (linearize c)
--- linearizeVsqlCond (VsqlIn a q)     = mapSnd (SqlIn a) (linearize q)
--- linearizeVsqlCond (VsqlNot c)      = mapSnd SqlNot (linearizeVsqlCond c)
--- linearizeVsqlCond (VsqlOr l r)     = 
---   combOpts F.And SqlOr (linearizeVsqlCond l) (linearizeVsqlCond r) 
--- linearizeVsqlCond (VsqlAnd l r)    = 
---   combOpts F.And SqlAnd (linearizeVsqlCond l) (linearizeVsqlCond r)
--- linearizeVsqlCond (VsqlCChc f l r) = 
---   mapFst (F.And f) (linearizeVsqlCond l) ++
---   mapFst (F.And (F.Not f)) (linearizeVsqlCond r)
+-- | Optionalizes variational SQL conditions.
+optVsqlCond :: VsqlCond -> [VariantGroup VsqlCond]
+optVsqlCond (VsqlCond c)     = mapSnd SqlCond (optionalize_ c)
+optVsqlCond (VsqlIn a q)     = mapSnd (SqlIn a) (optionalize_ q)
+optVsqlCond (VsqlNot c)      = mapSnd SqlNot (optVsqlCond c)
+optVsqlCond (VsqlOr l r)     = 
+  combOpts F.And SqlOr (optVsqlCond l) (optVsqlCond r) 
+optVsqlCond (VsqlAnd l r)    = 
+  combOpts F.And SqlAnd (optVsqlCond l) (optVsqlCond r)
+optVsqlCond (VsqlCChc f l r) = 
+  mapFst (F.And f) (optVsqlCond l) ++
+  mapFst (F.And (F.Not f)) (optVsqlCond r)
 
 instance Show VsqlCond where
   show = prettySqlCond
@@ -80,12 +80,12 @@ instance Show VsqlCond where
 instance Variational VsqlCond where
 
   type NonVariational VsqlCond = SqlCond RAlgebra
-
-  -- type Variant VsqlCond = Opt (SqlCond RAlgebra)
   
   configure = configureVsqlCond
   
-  -- linearize = linearizeVsqlCond
+  optionalize_ = optVsqlCond
+
+  linearize = undefined
 
 instance Boolean VsqlCond where
   true  = VsqlCond (Lit True)
@@ -116,10 +116,10 @@ data Algebra
    | Empty 
   deriving (Data,Eq,Show,Typeable,Ord)
 
--- | Linearizes a rename algebra.
---   Helper for linearizeAlgebra.
--- linearizeRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
--- linearizeRename r = mapSnd (Rename (name r)) $ linearize (thing r)
+-- | Optionalizes a rename algebra.
+--   Helper for optAlgebra.
+optRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
+optRename r = mapSnd (Rename (name r)) $ optionalize_ (thing r)
 
 -- | Configures an algebra.
 configureAlgebra :: Config Bool -> Algebra -> RAlgebra
@@ -145,39 +145,39 @@ configureAlgebra c (Prod r l rs)   = RProd r l rs
 configureAlgebra c (TRef r)        = RTRef r 
 configureAlgebra c Empty           = REmpty
 
--- | Linearizes an algebra.
---   Note that linearization doesn't consider schema at all. it just
---   linearizes a query. So it doesn't group queries based on the 
+-- | Optionalizes an algebra.
+--   Note that optionalization doesn't consider schema at all. it just
+--   optionalizes a query. So it doesn't group queries based on the 
 --   presence condition of attributes or relations.
--- linearizeAlgebra :: Algebra -> [Opt RAlgebra]
--- linearizeAlgebra (SetOp s q1 q2) = 
---   combOpts F.And (RSetOp s) (linearizeAlgebra q1) (linearizeAlgebra q2)
--- linearizeAlgebra (Proj as q)     = combOpts F.And RProj (groupOpts as) (linearizeRename q)
--- linearizeAlgebra (Sel c q)       = 
---   combOpts F.And RSel (linearize c) (linearizeRename q) 
--- linearizeAlgebra (AChc f q1 q2)  = mapFst (F.And f) (linearizeAlgebra q1) ++
---                                    mapFst (F.And (F.Not f)) (linearizeAlgebra q2)
--- linearizeAlgebra (Join js)       = mapSnd RJoin $ linearize' js
---   where
---     linearize' :: Joins -> [Opt RJoins]
---     linearize' (JoinTwoTables l r c) = 
---       mapSnd (\cond -> RJoinTwoTable l r cond) (linearize c)
---     linearize' (JoinMore js r c)     = 
---       combOpts F.And (\c' js' -> RJoinMore js' r c') (linearize c) (linearize' js)
--- linearizeAlgebra (Prod r l rs)   = pure $ mkOpt (F.Lit True) (RProd r l rs)
--- linearizeAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
--- linearizeAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
+optAlgebra :: Algebra -> [VariantGroup Algebra]
+optAlgebra (SetOp s q1 q2) = 
+  combOpts F.And (RSetOp s) (optAlgebra q1) (optAlgebra q2)
+optAlgebra (Proj as q)     = combOpts F.And RProj (groupOpts as) (optRename q)
+optAlgebra (Sel c q)       = 
+  combOpts F.And RSel (optionalize_ c) (optRename q) 
+optAlgebra (AChc f q1 q2)  = mapFst (F.And f) (optAlgebra q1) ++
+                             mapFst (F.And (F.Not f)) (optAlgebra q2)
+optAlgebra (Join js)       = mapSnd RJoin $ opt' js
+  where
+    opt' :: Joins -> [Opt RJoins]
+    opt' (JoinTwoTables l r c) = 
+      mapSnd (\cond -> RJoinTwoTable l r cond) (optionalize_ c)
+    opt' (JoinMore js r c)     = 
+      combOpts F.And (\c' js' -> RJoinMore js' r c') (optionalize_ c) (opt' js)
+optAlgebra (Prod r l rs)   = pure $ mkOpt (F.Lit True) (RProd r l rs)
+optAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
+optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
 
 
 instance Variational Algebra where
 
   type NonVariational Algebra = RAlgebra
 
-  -- type Variant Algebra = Opt RAlgebra
-
   configure = configureAlgebra
 
-  -- linearize = linearizeAlgebra
+  optionalize_ = optAlgebra
+
+  linearize = undefined
 
   
   
