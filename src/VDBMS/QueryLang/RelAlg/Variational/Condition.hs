@@ -72,7 +72,7 @@ instance Variational Condition where
 
   type NonVariational Condition = RCondition 
 
-  type Variant Condition = Opt RCondition
+  -- type Variant Condition = Opt RCondition
   
   configure = configureCondition
 

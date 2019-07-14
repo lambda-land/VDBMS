@@ -8,11 +8,19 @@ module VDBMS.Variational.Variational (
 import VDBMS.Features.Config 
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name (Rename(..))
--- import VDBMS.Variational.Opt (mapSnd)
--- import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
--- import VDBMS.Features.FeatureExpr.Core (evalFeatureExpr)
--- import VDBMS.Features.FeatureExpr.Ops (selectFeatureExpr)
--- import VDBMS.Features.Feature
+import VDBMS.Variational.Opt
+import VDBMS.Features.ConfFexp (confs2fexp)
+
+import Control.Arrow (first)
+import Data.List (groupBy)
+
+-- | The pair of a configuration attached to its
+--   configured thing of a variational thing.
+type Variant a = ((Config Bool), (NonVariational a))
+
+-- | A group of variant things where their configurations
+--   have been joined and constructed a feature expression.
+type VariantGroup a = Opt (NonVariational a)
 
 -- | A type class for variational things.
 class Variational a where
@@ -20,32 +28,45 @@ class Variational a where
   -- | The nonvariational correspondent of a.
   type NonVariational a :: *
 
-  -- | A configured thing with its configuration
-  --   attached to it.
-  -- type Configured a :: *
-
-  -- | The variant of a variational thing, i.e., 
-  --   the non-variational thing tagged with a fexp.
-  type Variant a :: *
-
   -- | Fully configure a variational thing and return the
   --   non-variational correspondent of it.
   configure :: Config Bool -> a -> NonVariational a
 
   -- | configures a variaitonal thing for all valid configurations
-  --   possible and generates a list of configured things.
-  -- configr :: a ->  [Configured a]
+  --   possible and generates a map of configurations and their 
+  --   nonvariational thing.
+  vsem :: [Config Bool] -> a -> [Variant a]
+  vsem cs a = map (\c -> (c, configure c a)) cs 
 
-  -- | Linearizes a variational thing by generating a list
-  --   of non-variational things with fexp attached to them.
-  linearize :: a -> [Variant a]
+  -- | A more efficient vsem.
+  vsem_ :: Eq (NonVariational a) 
+        => [Config Bool] -> a -> [([Config Bool], NonVariational a)]
+  vsem_ cs a = map pushdown $ groupBy (\o o' -> snd o == snd o') $ vsem cs a
+    where
+      -- pushdown :: [(Config Bool, NonVariational a)]
+      --          -> ([Config Bool], NonVariational a)
+      pushdown xs = foldr (\(c,_) (cs,x) -> (c:cs,x)) 
+                          ([fst $ head xs], snd $ head xs) 
+                          (tail xs)
+
+  -- | Groups the configurations of a vsem into a feature 
+  --   expression and attaches it to the non-variational 
+  --   thing.
+  optionalize :: Eq (NonVariational a)
+              => [Config Bool] -> a -> [VariantGroup a]
+  optionalize cs a = fmap (first confs2fexp) $ vsem_ cs a 
+
+  -- | Optionalizes a variational thing in a more efficient manner.
+  --   By generating a list of non-variational things with fexp 
+  --   attached to them.
+  optionalize_ :: a -> [VariantGroup a]
+
+  -- | Linearizes a variational thing to a comprehensive 
+  --   non-variational thing, if possible.
+  linearize :: a -> [VariantGroup a]
 
   -- | Maps a function to variants. 
   -- mapVariant :: (a -> b) -> Variant a -> Variant b
-
-  -- | Linearized rename variaitonal. INCORRECT!
-  -- linearizeRename :: Rename a -> [Variant (Rename a)]
-  -- linearizeRename r = mapVariant () (Rename (name r)) $ linearize (thing r)
 
   -- | Map a function of non-variational things to
   --   variaitonal things. Basically lifts a non-variational

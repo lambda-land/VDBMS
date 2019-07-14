@@ -81,7 +81,7 @@ instance Variational VsqlCond where
 
   type NonVariational VsqlCond = SqlCond RAlgebra
 
-  type Variant VsqlCond = Opt (SqlCond RAlgebra)
+  -- type Variant VsqlCond = Opt (SqlCond RAlgebra)
   
   configure = configureVsqlCond
   
@@ -173,7 +173,7 @@ instance Variational Algebra where
 
   type NonVariational Algebra = RAlgebra
 
-  type Variant Algebra = Opt RAlgebra
+  -- type Variant Algebra = Opt RAlgebra
 
   configure = configureAlgebra
 

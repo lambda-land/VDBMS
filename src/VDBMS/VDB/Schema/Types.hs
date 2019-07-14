@@ -126,11 +126,11 @@ linearizeTableSch t = mapFst shrinkFeatureExpr
 instance Variational Schema where
   type NonVariational Schema = Maybe RSchema 
 
-  type Variant Schema = Opt RSchema
+  -- type Variant Schema = Opt RSchema
 
   configure = configSchema
 
-  linearize = linearizeSchema
+  -- linearize = linearizeSchema
 
 -- | The feature model associated with a schema.
 featureModel :: Schema -> FeatureExpr
