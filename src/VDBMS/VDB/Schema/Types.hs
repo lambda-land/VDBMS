@@ -26,7 +26,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Variational.Variational
 import VDBMS.Features.Config (Config)
-import VDBMS.Features.SAT (satisfiable, tautology)
+import VDBMS.Features.SAT (satisfiable)
 import VDBMS.Features.ConfFexp (validConfsOfFexp)
 
 -- | Type of a relation in the database.
@@ -110,7 +110,8 @@ optAttrs r = disjunctSameAtts
     resList = [ applyFuncObj (getObj fas' ++) fas
                 | fas  <- toList rMap, 
                   fas' <- toList rMap, 
-                  tautology (imply (getFexp fas) (getFexp fas'))]
+                  filterFexps (getFexp fas) (getFexp fas')]
+                  -- tautology (imply (getFexp fas) (getFexp fas'))]
     resMap = mapSnd fromList resList
     -- note that fromList drops repetitive attributes in a list!
     disjunctSameAtts = [ applyFuncFexp 

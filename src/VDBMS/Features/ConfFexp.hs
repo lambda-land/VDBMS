@@ -5,9 +5,7 @@ import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.Types (FeatureExpr)
 import VDBMS.Features.FeatureExpr.Core (features)
 
------------------------- CONFIG 2 FEXP AND REVERSE ------------
------------------------- TODO: FILL OUT AFTER SIGMOD DEADLINE!!!
--- make this a tye class!
+-- @Eric: can this be a type class? if we were to extend variability representation?
 
 -- | generates a feature expression for the given configuration.
 conf2fexp :: Config Bool -> FeatureExpr

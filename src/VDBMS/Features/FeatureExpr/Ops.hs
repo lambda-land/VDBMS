@@ -14,7 +14,7 @@ import VDBMS.Features.FeatureExpr.Core (imply)
 import VDBMS.Features.FeatureExpr.Instances
 import VDBMS.Features.SAT
 
--- | determines if f is more general than f'.
+-- | Determines if f is more general than f'.
 filterFexps :: FeatureExpr -> FeatureExpr -> Bool
 filterFexps f f' = tautology $ imply f f' 
 
