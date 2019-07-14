@@ -64,8 +64,10 @@ class Variational a where
   optionalize_ :: a -> [VariantGroup a]
 
   -- | Linearizes a variational thing to a comprehensive 
-  --   non-variational thing, if possible.
-  linearize :: a -> NonVariational a
+  --   non-variational thing, if possible. I don't think 
+  --   this should be a method of this class since it highly
+  --   depeneds on what the variational thing is.
+  -- linearize :: a -> NonVariational a
 
   -- | Maps a function to variants. 
   -- mapVariant :: (a -> b) -> Variant a -> Variant b

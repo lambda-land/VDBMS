@@ -85,7 +85,7 @@ instance Variational VsqlCond where
   
   optionalize_ = optVsqlCond
 
-  linearize = undefined
+  -- linearize = undefined
 
 instance Boolean VsqlCond where
   true  = VsqlCond (Lit True)
@@ -177,7 +177,7 @@ instance Variational Algebra where
 
   optionalize_ = optAlgebra
 
-  linearize = undefined
+  -- linearize = undefined
 
   
   

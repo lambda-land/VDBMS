@@ -76,7 +76,7 @@ instance Variational Condition where
 
   optionalize_ = optCondition
 
-  linearize = undefined
+  -- linearize = undefined
 
 
 instance Boolean Condition where

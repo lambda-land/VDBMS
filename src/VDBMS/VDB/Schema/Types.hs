@@ -144,7 +144,7 @@ instance Variational Schema where
 
   optionalize_ s = optionalize (validConfsOfFexp (featureModel s)) s
 
-  linearize = undefined
+  -- linearize = undefined
 
 -- | The feature model associated with a schema.
 featureModel :: Schema -> FeatureExpr
