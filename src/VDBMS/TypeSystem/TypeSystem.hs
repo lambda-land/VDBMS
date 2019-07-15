@@ -14,7 +14,7 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- -- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Schema
-import VDBMS.Features.SAT (equivalent)
+import VDBMS.Features.SAT (equivalent, tautology)
 -- import VDBMS.DBMS.Value.Value
 -- import VDBMS.Features.Config
 
@@ -22,8 +22,8 @@ import VDBMS.Features.SAT (equivalent)
 import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM
 -- import qualified Data.Map.Merge.Strict as StrictM
--- import qualified Data.Set as Set 
--- import Data.Set (Set)
+import qualified Data.Set as Set 
+import Data.Set (Set)
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -93,21 +93,22 @@ typeOptAtts ((p,a):pas) env = undefined
 
 -- | env is subsumed by env'.
 typeSubsume :: MonadThrow m => TypeEnv -> TypeEnv -> m Bool
-typeSubsume env env' = undefined
-  -- | Set.null (Set.difference at at') && 
-  --   (tautology $ F.imply (getFexp env) (getFexp env')) = M.foldr (&&) True res
-  -- | otherwise = False
-  --   where 
-  --     res = M.intersectionWith implies envObj filteredt'
-  --     -- implies :: (FeatureExpr,Type) -> (FeatureExpr,Type) -> FeatureExpr
-  --     implies (f,_) (f',_) = tautology (F.imply f f')
-  --     filteredt' = typeEnvPrj (M.map (\(f,t) -> (F.And f envFexp,t)) envObj) (M.map (\(f,t) -> (F.And f envFexp',t)) envObj')
-  --     at  = getAttTypeFromRowType envObj
-  --     at' = getAttTypeFromRowType envObj'
-  --     envObj = getObj env
-  --     envFexp = getFexp env
-  --     envObj' = getObj env'
-  --     envFexp' = getFexp env'
+typeSubsume env env' 
+  | Set.null (Set.difference at at') && 
+    (tautology $ F.imply (getFexp env) (getFexp env')) 
+      = return $ M.foldr (&&) True res
+  | otherwise = throwM $ NotSubsumeTypeEnv env env'
+    where 
+      res = M.intersectionWith implies envObj filteredt'
+      -- implies :: (FeatureExpr,Type) -> (FeatureExpr,Type) -> FeatureExpr
+      implies (f,_) (f',_) = tautology (F.imply f f')
+      filteredt' = typeEnvPrj (M.map (\(f,t) -> (F.And f envFexp,t)) envObj) (M.map (\(f,t) -> (F.And f envFexp',t)) envObj')
+      at  = getAttTypeFromRowType envObj
+      at' = getAttTypeFromRowType envObj'
+      envObj = getObj env
+      envFexp = getFexp env
+      envObj' = getObj env'
+      envFexp' = getFexp env'
 
 -- | projecting a row type onto another row type,
 --   i.e. getting the attributes that exists in the first one from the 
