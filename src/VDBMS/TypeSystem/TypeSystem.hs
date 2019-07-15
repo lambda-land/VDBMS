@@ -76,9 +76,14 @@ typeOfVquery Empty            ctx s =
 
 -- |
 typeVsqlCond :: MonadThrow m 
-             => VsqlCond -> VariationalContext -> TypeEnv 
+             => VsqlCond -> VariationalContext -> Schema -> TypeEnv 
              -> m TypeEnv
-typeVsqlCond = undefined
+typeVsqlCond (VsqlCond c)     ctx s t = undefined
+typeVsqlCond (VsqlIn a q)     ctx s t = undefined
+typeVsqlCond (VsqlNot c)      ctx s t = undefined
+typeVsqlCond (VsqlOr l r)     ctx s t = undefined
+typeVsqlCond (VsqlAnd l r)    ctx s t = undefined
+typeVsqlCond (VsqlCChc f l r) ctx s t = undefined
 
 -- |
 typeCondition :: MonadThrow m 
