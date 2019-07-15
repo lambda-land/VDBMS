@@ -58,7 +58,10 @@ typeOfVquery :: MonadThrow m
              -> m TypeEnv
 typeOfVquery (SetOp o l r)    ctx s = typeSetOp l r ctx s
 typeOfVquery (Proj oas rq)    ctx s = typeProj oas rq ctx s
-typeOfVquery (Sel c rq)       ctx s = undefined
+typeOfVquery (Sel c rq)       ctx s = 
+  do t <- typeOfVquery (thing rq) ctx s
+     typeVsqlCond c ctx s t 
+     return t
 typeOfVquery (AChc f l r)     ctx s = 
   do tl <- typeOfVquery l (F.And ctx f) s
      tr <- typeOfVquery r (F.And ctx (F.Not f)) s
@@ -74,27 +77,39 @@ typeOfVquery (TRef rr)        ctx s =
 typeOfVquery Empty            ctx s = 
   appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
 
--- |
+-- | Statically type checks variational sql condiitons.
 typeVsqlCond :: MonadThrow m 
              => VsqlCond -> VariationalContext -> Schema -> TypeEnv 
-             -> m TypeEnv
-typeVsqlCond (VsqlCond c)     ctx s t = undefined
+             -> m ()
+typeVsqlCond (VsqlCond c)     ctx s t = typeCondition c ctx t 
 typeVsqlCond (VsqlIn a q)     ctx s t = undefined
-typeVsqlCond (VsqlNot c)      ctx s t = undefined
-typeVsqlCond (VsqlOr l r)     ctx s t = undefined
-typeVsqlCond (VsqlAnd l r)    ctx s t = undefined
-typeVsqlCond (VsqlCChc f l r) ctx s t = undefined
+typeVsqlCond (VsqlNot c)      ctx s t = typeVsqlCond c ctx s t 
+typeVsqlCond (VsqlOr l r)     ctx s t = 
+  do typeVsqlCond l ctx s t
+     typeVsqlCond r ctx s t 
+typeVsqlCond (VsqlAnd l r)    ctx s t = 
+  do typeVsqlCond l ctx s t
+     typeVsqlCond r ctx s t 
+typeVsqlCond (VsqlCChc f l r) ctx s t = 
+  do typeVsqlCond l (F.And ctx f) s t
+     typeVsqlCond r (F.And ctx (F.Not f)) s t
 
--- |
+-- | Statically type checks variational relational conditions.
 typeCondition :: MonadThrow m 
               => Condition -> VariationalContext -> TypeEnv
-              -> m TypeEnv
-typeCondition (Lit b)      ctx t = undefined
+              -> m ()
+typeCondition (Lit b)      ctx t = return ()
 typeCondition (Comp o l r) ctx t = undefined
-typeCondition (Not c)      ctx t = undefined
-typeCondition (Or l r)     ctx t = undefined
-typeCondition (And l r)    ctx t = undefined
-typeCondition (CChc f l r) ctx t = undefined
+typeCondition (Not c)      ctx t = typeCondition c ctx t 
+typeCondition (Or l r)     ctx t = 
+  do typeCondition l ctx t
+     typeCondition r ctx t
+typeCondition (And l r)    ctx t = 
+  do typeCondition l ctx t
+     typeCondition r ctx t
+typeCondition (CChc f l r) ctx t = 
+  do typeCondition l (F.And ctx f) t
+     typeCondition r (F.And ctx (F.Not f)) t
 
 -- | Determines the type of a projection query.
 typeProj :: MonadThrow m 
