@@ -33,6 +33,7 @@ data RTypeError =
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
   | RAttributesNotInTypeEnv Attributes RTypeEnv
   | RAttributeNotInTypeEnv Attribute RTypeEnv
+  | REmptyAttrList RAlgebra
   | RNotDisjointRels [Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -48,9 +49,11 @@ typeOfQuery (RSetOp o l r)    s =
      else throwM $ RNotEquiveTypeEnv typel typer
 typeOfQuery (RProj as rq)     s =
   do tq <- typeOfQuery (thing rq) s
-     if attsSubTypeEnv as tq
-     then return $ SM.restrictKeys tq $ attsSet as
-     else throwM $ RAttributesNotInTypeEnv as tq
+     if null as 
+     then throwM $ REmptyAttrList (thing rq)
+     else if attsSubTypeEnv as tq
+          then return $ SM.restrictKeys tq $ attsSet as
+          else throwM $ RAttributesNotInTypeEnv as tq
 typeOfQuery (RSel c rq)       s = 
   do tq <- typeOfQuery (thing rq) s
      typeOfSqlCond c tq s 
