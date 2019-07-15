@@ -3,12 +3,12 @@ module VDBMS.TypeSystem.TypeSystem (
 
         TypeEnv
         , VariationalContext
-        -- , typeOfVquery
+        , typeOfVquery
 
 ) where 
 
 
--- import qualified VDBMS.QueryLang.RelAlg.Variational.Algebra as A
+import VDBMS.QueryLang.RelAlg.Variational.Algebra 
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 -- -- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
@@ -47,4 +47,26 @@ data TypeError
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
+
+-- 
+-- Static semantics of a vquery that returns a table schema,
+-- i.e. it includes the fexp of the whole table.
+-- 
+typeOfVquery :: MonadThrow m 
+             => Algebra -> VariationalContext -> Schema 
+             -> m TypeEnv
+typeOfVquery (SetOp o l r)    s = undefined
+typeOfVquery (Proj oas rq)    s = undefined
+typeOfVquery (Sel c rq)       s = undefined
+typeOfVquery (AChc f l r)     s = undefined
+typeOfVquery (Join js)        s = undefined
+typeOfVquery (Prod rl rr rrs) s = undefined
+typeOfVquery (TRef rr)        s = undefined
+typeOfVquery Empty            s = undefined
+
+-- | 
+
+-- |
+
+-- |
 
