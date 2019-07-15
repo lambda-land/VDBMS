@@ -59,7 +59,11 @@ typeOfVquery :: MonadThrow m
 typeOfVquery (SetOp o l r)    ctx s = typeSetOp l r ctx s
 typeOfVquery (Proj oas rq)    ctx s = typeProj oas rq ctx s
 typeOfVquery (Sel c rq)       ctx s = undefined
-typeOfVquery (AChc f l r)     ctx s = undefined
+typeOfVquery (AChc f l r)     ctx s = 
+  do tl <- typeOfVquery l (F.And ctx f) s
+     tr <- typeOfVquery r (F.And ctx (F.Not f)) s
+     return $ mkOpt (F.Or (getFexp tl) (getFexp tr)) 
+                  $ rowTypeUnion (getObj tl) (getObj tr)
 typeOfVquery (Join js)        ctx s = undefined
 typeOfVquery (Prod rl rr rrs) ctx s = undefined
 typeOfVquery (TRef rr)        ctx s = 
