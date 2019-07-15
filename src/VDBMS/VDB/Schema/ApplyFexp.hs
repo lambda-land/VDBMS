@@ -14,14 +14,16 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Variational.Opt
 import VDBMS.Features.SAT (satisfiable)
 
+import Control.Monad.Catch (throwM, MonadThrow)
 
 -- | applying a feature expression to table schema and 
 --   and dropping the attributes that shouldn't be present anymore.
 --   i.e. their pres cond is unsatisfiable.
-appFexpTableSch :: FeatureExpr -> TableSchema -> TableSchema
+appFexpTableSch :: MonadThrow m => FeatureExpr -> TableSchema -> m TableSchema
 appFexpTableSch f t
-    | satisfiable f' = mkOpt f' $ appFexpRowType f t
-    | otherwise = error $ "applying the fexp " ++ show f ++ "to table schema results in an invalid table schema!!"
+    | satisfiable f' = return $ mkOpt f' $ appFexpRowType f t
+    | otherwise = throwM $ InconsistentFexpWithTableSch f t
+    	-- error $ "applying the fexp " ++ show f ++ "to table schema results in an invalid table schema!!"
   where 
     f' = shrinkFeatureExpr (And f $ getFexp t)
 

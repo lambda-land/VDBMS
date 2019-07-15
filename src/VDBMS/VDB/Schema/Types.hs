@@ -157,7 +157,8 @@ data SchemaError = MissingRelation Relation
                  | MissingAttribute Attribute
                  -- | InvalidConfig (Config Bool) FeatureExpr --Problem: cannot show,eq config
                  | InvalidConfig FeatureExpr
-  deriving (Data,Eq,Generic,Ord,Read,Show,Typeable)
+                 | InconsistentFexpWithTableSch FeatureExpr TableSchema
+  deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception SchemaError
 
