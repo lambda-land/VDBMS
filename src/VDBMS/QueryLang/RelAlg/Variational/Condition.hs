@@ -76,8 +76,6 @@ instance Variational Condition where
 
   optionalize_ = optCondition
 
-  -- linearize = undefined
-
 
 instance Boolean Condition where
   true  = Lit True
