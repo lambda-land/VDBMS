@@ -74,7 +74,6 @@ typeProj oas rq ctx s =
      if null oas 
      then throwM $ EmptyListOfAttr (thing rq)
      else do t <- typeOptAtts oas t'
-             -- b <- typeSubsume t t'
              appFexpTableSch ctx t 
 
 -- | Projects a list of optional attributes from a type env.
@@ -98,45 +97,6 @@ typeOptAtts (ora:oras) env =
                        (M.union (M.singleton newA (F.And fa fa', at)) (getObj t))
                        env
      else throwM $ NotSubsume ora env
---   | elem a as = 
---     do (f,at) <- lookupAttFexpTypeInRowType a $ getObj env
---        t <- typeOptAtts pas env
---        return $ mkOpt (getFexp env) $ M.union (M.singleton a (F.And p f,at)) $ getObj t
---   | otherwise = throwM $ AttributeNotInTypeEnv a env oas
---     where 
---       as = fmap thing $ getTableSchAtts env 
---       a  = thing ra 
--- typeOptAtts [] env = return $ mkOpt (getFexp env) M.empty
-
--- | env is subsumed by env'.
--- typeSubsume :: MonadThrow m => TypeEnv -> TypeEnv -> m Bool
--- typeSubsume env env' 
---   | Set.null (Set.difference at at') 
---     && (tautology $ F.imply (getFexp env) (getFexp env')) 
---     && finalRes
---       = return $ True
---   | otherwise = throwM $ NotSubsumeTypeEnv env env'
---     where 
---       res = M.intersectionWith implies envObj filteredt'
---       finalRes = M.foldr (&&) True res
---       -- implies :: (FeatureExpr,Type) -> (FeatureExpr,Type) -> FeatureExpr
---       implies (f,_) (f',_) = tautology (F.imply f f')
---       filteredt' = typeEnvPrj (M.map (\(f,t) -> (F.And f envFexp,t)) envObj) (M.map (\(f,t) -> (F.And f envFexp',t)) envObj')
---       at  = getAttTypeFromRowType envObj
---       at' = getAttTypeFromRowType envObj'
---       envObj = getObj env
---       envFexp = getFexp env
---       envObj' = getObj env'
---       envFexp' = getFexp env'
-
--- | projecting a row type onto another row type,
---   i.e. getting the attributes that exists in the first one from the 
---   second one. it'll check that all attributes in t exists in t'
---   in the typesubsume function. So we're not checking it here again!
--- typeEnvPrj :: RowType -> RowType -> RowType
--- typeEnvPrj t t' = M.restrictKeys t as 
---   where
---     as = M.keysSet $ M.intersection t t'
 
 -- | Determines the type a set operation query.
 typeSetOp :: MonadThrow m 
