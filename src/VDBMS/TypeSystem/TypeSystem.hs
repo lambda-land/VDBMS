@@ -38,10 +38,10 @@ type TypeEnv = TableSchema
 
 -- | Errors in type env.
 data TypeError 
-  = RelationInvalid Relation VariationalContext F.FeatureExpr
+  = InvalidRelRef Relation VariationalContext F.FeatureExpr
   -- | VcondNotHold A.Condition VariationalContext TypeEnv'
-  | NotSubsume (Opt (Rename Attr)) TypeEnv
-  | EmptyListOfAttr Algebra 
+  | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
+  | EmptyAttrList Algebra 
   -- | AttributeNotInTypeEnv Attribute OptAttributes TypeEnv 
   | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
   -- | EnvFexpUnsat F.FeatureExpr TypeEnv'
@@ -62,8 +62,13 @@ typeOfVquery (Sel c rq)       ctx s = undefined
 typeOfVquery (AChc f l r)     ctx s = undefined
 typeOfVquery (Join js)        ctx s = undefined
 typeOfVquery (Prod rl rr rrs) ctx s = undefined
-typeOfVquery (TRef rr)        ctx s = undefined
-typeOfVquery Empty            ctx s = undefined
+typeOfVquery (TRef rr)        ctx s = 
+  do t <- lookupTableSch (thing rr) s
+     if F.tautImplyFexps ctx (getFexp t)
+     then appFexpTableSch ctx t 
+     else throwM $ InvalidRelRef (thing rr) ctx (getFexp t)
+typeOfVquery Empty            ctx s = 
+  appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
 
 -- | Determines the type of a projection query.
 typeProj :: MonadThrow m 
@@ -72,7 +77,7 @@ typeProj :: MonadThrow m
 typeProj oas rq ctx s =
   do t' <- typeOfVquery (thing rq) ctx s 
      if null oas 
-     then throwM $ EmptyListOfAttr (thing rq)
+     then throwM $ EmptyAttrList (thing rq)
      else do t <- typeOptAtts oas t'
              appFexpTableSch ctx t 
 
@@ -96,7 +101,7 @@ typeOptAtts (ora:oras) env =
              return $ updateOptObj 
                        (M.union (M.singleton newA (F.And fa fa', at)) (getObj t))
                        env
-     else throwM $ NotSubsume ora env
+     else throwM $ AttrNotSubsume ora env
 
 -- | Determines the type a set operation query.
 typeSetOp :: MonadThrow m 

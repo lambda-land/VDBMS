@@ -3,7 +3,7 @@ module VDBMS.VDB.Schema.Lookups (
 
         lookupAttFexpInRowType,
         lookupAttFexpTypeInRowType,
-        lookupRowType,
+        lookupTableSch,
         lookupRelationFexp,
         lookupRel,
         lookupRelAttsList,
@@ -56,16 +56,16 @@ lookupAttFexpTypeInRowType a r =
 
 -- | Get the schema of a relation in the database, where 
 -- 	the relation schema is stored as a row type.
-lookupRowType :: MonadThrow m => Relation -> Schema -> m TableSchema
-lookupRowType r (_,m) = maybe (throwM $ MissingRelation r) return $ M.lookup r m
+lookupTableSch :: MonadThrow m => Relation -> Schema -> m TableSchema
+lookupTableSch r (_,m) = maybe (throwM $ MissingRelation r) return $ M.lookup r m
 
 -- | Get the feature expression of a relation in a database.
 lookupRelationFexp :: MonadThrow m => Relation -> Schema -> m FeatureExpr
-lookupRelationFexp r s = lookupRowType r s >>= return . fst
+lookupRelationFexp r s = lookupTableSch r s >>= return . fst
 
 -- | Get the row type of a relation in a database.
 lookupRel :: MonadThrow m => Relation -> Schema -> m RowType
-lookupRel r s = lookupRowType r s >>= return . snd
+lookupRel r s = lookupTableSch r s >>= return . snd
 
 -- | get the attributes of a relation in a database.
 lookupRelAttsList :: MonadThrow m => Relation -> Schema -> m [Attribute]
