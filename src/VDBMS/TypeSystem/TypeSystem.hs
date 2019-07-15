@@ -11,7 +11,7 @@ module VDBMS.TypeSystem.TypeSystem (
 import VDBMS.QueryLang.RelAlg.Variational.Algebra 
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
--- -- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
+import VDBMS.QueryLang.RelAlg.Variational.Condition 
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Schema
 import VDBMS.Features.SAT (equivalent, tautology)
@@ -74,6 +74,23 @@ typeOfVquery (TRef rr)        ctx s =
 typeOfVquery Empty            ctx s = 
   appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
 
+-- |
+typeVsqlCond :: MonadThrow m 
+             => VsqlCond -> VariationalContext -> TypeEnv 
+             -> m TypeEnv
+typeVsqlCond = undefined
+
+-- |
+typeCondition :: MonadThrow m 
+              => Condition -> VariationalContext -> TypeEnv
+              -> m TypeEnv
+typeCondition (Lit b)      ctx t = undefined
+typeCondition (Comp o l r) ctx t = undefined
+typeCondition (Not c)      ctx t = undefined
+typeCondition (Or l r)     ctx t = undefined
+typeCondition (And l r)    ctx t = undefined
+typeCondition (CChc f l r) ctx t = undefined
+
 -- | Determines the type of a projection query.
 typeProj :: MonadThrow m 
          => OptAttributes -> Rename Algebra -> VariationalContext -> Schema
@@ -131,5 +148,5 @@ typeEq envl envr = equivalent (getFexp envl) (getFexp envr)
                      (getObj envr) 
 
 
--- |
+
 
