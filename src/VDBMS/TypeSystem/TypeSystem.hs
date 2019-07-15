@@ -94,12 +94,14 @@ typeOptAtts ((p,a):pas) env = undefined
 -- | env is subsumed by env'.
 typeSubsume :: MonadThrow m => TypeEnv -> TypeEnv -> m Bool
 typeSubsume env env' 
-  | Set.null (Set.difference at at') && 
-    (tautology $ F.imply (getFexp env) (getFexp env')) 
-      = return $ M.foldr (&&) True res
+  | Set.null (Set.difference at at') 
+    && (tautology $ F.imply (getFexp env) (getFexp env')) 
+    && finalRes
+      = return $ True
   | otherwise = throwM $ NotSubsumeTypeEnv env env'
     where 
       res = M.intersectionWith implies envObj filteredt'
+      finalRes = M.foldr (&&) True res
       -- implies :: (FeatureExpr,Type) -> (FeatureExpr,Type) -> FeatureExpr
       implies (f,_) (f',_) = tautology (F.imply f f')
       filteredt' = typeEnvPrj (M.map (\(f,t) -> (F.And f envFexp,t)) envObj) (M.map (\(f,t) -> (F.And f envFexp',t)) envObj')
