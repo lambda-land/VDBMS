@@ -41,7 +41,7 @@ satFexpRow f p r
     fp    = case M.lookup (presCondAttName p) r of 
               Just fexp -> sqlval2fexp fexp 
               _         -> Lit False
-    check = filterFexps f fp
+    check = tautImplyFexps f fp
 
 -- | filters out unsat tuples for a list of sqlvtables.
 satFexpVtables :: PresCondAtt -> [SqlVtable] -> [SqlVtable]

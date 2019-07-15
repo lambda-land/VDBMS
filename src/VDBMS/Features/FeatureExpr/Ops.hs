@@ -1,7 +1,7 @@
 -- | Feature expression ops that rely on the SAT solver.
 module VDBMS.Features.FeatureExpr.Ops (
 
-        filterFexps,
+        tautImplyFexps,
         selectFeatureExpr,
         shrinkFeatureExpr
 
@@ -15,8 +15,8 @@ import VDBMS.Features.FeatureExpr.Instances
 import VDBMS.Features.SAT
 
 -- | Determines if f is more general than f'.
-filterFexps :: FeatureExpr -> FeatureExpr -> Bool
-filterFexps f f' = tautology $ imply f f' 
+tautImplyFexps :: FeatureExpr -> FeatureExpr -> Bool
+tautImplyFexps f f' = tautology $ imply f f' 
 
 
 -- | Select a feature within a feature expressions, potentially simplifying it.

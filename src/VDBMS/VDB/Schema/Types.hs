@@ -110,7 +110,7 @@ optAttrs r = disjunctSameAtts
     resList = [ applyFuncObj (getObj fas' ++) fas
                 | fas  <- toList rMap, 
                   fas' <- toList rMap, 
-                  filterFexps (getFexp fas) (getFexp fas')]
+                  tautImplyFexps (getFexp fas) (getFexp fas')]
                   -- tautology (imply (getFexp fas) (getFexp fas'))]
     resMap = mapSnd fromList resList
     -- note that fromList drops repetitive attributes in a list!
