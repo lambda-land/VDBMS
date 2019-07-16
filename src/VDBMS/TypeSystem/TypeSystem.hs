@@ -4,7 +4,6 @@ module VDBMS.TypeSystem.TypeSystem (
         TypeEnv
         , VariationalContext
         , typeOfQuery
-        , typeRel
 
 ) where 
 
@@ -15,7 +14,7 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.QueryLang.RelAlg.Variational.Condition 
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Schema
-import VDBMS.Features.SAT (equivalent, tautology)
+import VDBMS.Features.SAT (equivalent, tautology, satisfiable)
 import VDBMS.DBMS.Value.Value
 -- import VDBMS.Features.Config
 
@@ -44,6 +43,7 @@ data TypeError
   | EmptyAttrList Algebra 
   | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
   | CompInvalid Atom Atom TypeEnv
+  | IncompatibleTypes [TypeEnv]
   -- | EnvFexpUnsat F.FeatureExpr TypeEnv'
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -100,7 +100,8 @@ typeProd l r rs ctx s =
 disjointTypeEnvs :: MonadThrow m 
                  => TypeEnv -> TypeEnv -> [TypeEnv] -> VariationalContext
                  -> m TypeEnv
-disjointTypeEnvs = undefined
+disjointTypeEnvs l r ts ctx = undefined
+  -- do 
 
 -- | Statically type checks a relation reference.
 typeRel :: MonadThrow m 
@@ -117,6 +118,7 @@ typeJoin :: MonadThrow m
 typeJoin (JoinTwoTables rl rr c) ctx s = 
   do tl <- typeRel (thing rl) ctx s
      tr <- typeRel (thing rr) ctx s
+     compatibleTypes $ pure tl ++ pure tr
      let t = mkOpt (F.And (getFexp tl) (getFexp tr)) 
                    (SM.union (getObj tl) (getObj tr))
      typeCondition c ctx t
@@ -124,10 +126,20 @@ typeJoin (JoinTwoTables rl rr c) ctx s =
 typeJoin (JoinMore js rr c)      ctx s = 
   do tj <- typeJoin js ctx s
      tr <- typeRel (thing rr) ctx s
+     compatibleTypes $ pure tj ++ pure tr
      let t = mkOpt (F.And (getFexp tj) (getFexp tr))
                    (SM.union (getObj tj) (getObj tr))
      typeCondition c ctx t 
      return t 
+
+-- | Checks if two type envs are compatible with each other or not.
+--   It assumes that the ctx has been applied to both of them already.
+compatibleTypes :: MonadThrow m 
+                => [TypeEnv] 
+                -> m ()
+compatibleTypes ts
+  | satisfiable (foldr F.And (F.Lit True) (fmap getFexp ts)) = return ()
+  | otherwise = throwM $ IncompatibleTypes ts
 
 -- | Statically type checks variational sql condiitons.
 typeVsqlCond :: MonadThrow m 
