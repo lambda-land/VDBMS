@@ -1,5 +1,5 @@
 -- | Statically syntesizes the types of vqs.
-module VDBMS.TypeSystem.TypeSystem (
+module VDBMS.TypeSystem.Variational.TypeSystem (
 
         TypeEnv
         , VariationalContext
