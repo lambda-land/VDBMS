@@ -44,6 +44,7 @@ data TypeError
   | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
   | CompInvalid Atom Atom TypeEnv
   | IncompatibleTypes [TypeEnv]
+  | NotDisjointTypes [TypeEnv]
   -- | EnvFexpUnsat F.FeatureExpr TypeEnv'
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -95,7 +96,7 @@ typeProd l r rs ctx s =
      tr <- typeRel r ctx s 
      ts <- mapM (flip (flip typeRel ctx) s) rs 
      compatibleTypes $ pure tl ++ pure tr ++ ts
-     disjointTypes tl tr ts ctx
+     disjointTypes tl tr ts 
      return $ prodTypes $ pure tl ++ pure tr ++ ts
 
 -- | Accumulates types for cross product.
@@ -107,10 +108,18 @@ prodTypes ts = mkOpt f r
 
 -- | Checks whether a list of type envs are disjoint or not.
 disjointTypes :: MonadThrow m 
-                 => TypeEnv -> TypeEnv -> [TypeEnv] -> VariationalContext
+                 => TypeEnv -> TypeEnv -> [TypeEnv] 
                  -> m ()
-disjointTypes l r ts ctx = undefined
-  -- do 
+disjointTypes l r ts 
+  | SM.keysSet (getObj l) `Set.disjoint` SM.keysSet (getObj r)
+    && disjointAll (l : r : ts) = return ()
+  | otherwise = throwM $ NotDisjointTypes (l : r : ts)
+    where
+      disjointAll (x : xs) = all (Set.disjoint (SM.keysSet (getObj x)))
+                                 (fmap (SM.keysSet . getObj) xs)
+                             && disjointAll xs
+      disjointAll [x]      = True
+      disjointAll []       = True
 
 -- | Statically type checks a relation reference.
 typeRel :: MonadThrow m 
