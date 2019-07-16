@@ -78,23 +78,36 @@ typeOfVquery (AChc f l r)     ctx s =
                   $ rowTypeUnion (getObj tl) (getObj tr)
 typeOfVquery (Join js)        ctx s = typeJoin js ctx s
 typeOfVquery (Prod rl rr rrs) ctx s = undefined
-typeOfVquery (TRef rr)        ctx s = 
-  do t <- lookupTableSch (thing rr) s
-     -- if F.tautImplyFexps ctx (getFexp t)
-     appFexpTableSch ctx t 
-     -- else throwM $ InvalidRelRef (thing rr) ctx (getFexp t)
+typeOfVquery (TRef rr)        ctx s = typeRel (thing rr) ctx s
 typeOfVquery Empty            ctx s = 
   appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
+
+-- | Statically type checks a relation reference.
+typeRel :: MonadThrow m 
+        => Relation -> VariationalContext -> Schema
+        -> m TypeEnv
+typeRel r ctx s = 
+  do t <- lookupTableSch r s
+     appFexpTableSch ctx t
 
 -- | Statically type checks joins.
 typeJoin :: MonadThrow m
          => Joins -> VariationalContext -> Schema 
          -> m TypeEnv
-typeJoin (JoinTwoTables rl rr c) ctx s = undefined
-  -- do tl <- lookupTableSch (thing rl) s
-  --    tr <- lookupTableSch (thing rr) s
--- 
-typeJoin (JoinMore js rr c)      ctx s = undefined
+typeJoin (JoinTwoTables rl rr c) ctx s = 
+  do tl <- typeRel (thing rl) ctx s
+     tr <- typeRel (thing rr) ctx s
+     let t = mkOpt (F.And (getFexp tl) (getFexp tr)) 
+                   (SM.union (getObj tl) (getObj tr))
+     typeCondition c ctx t
+     return t
+typeJoin (JoinMore js rr c)      ctx s = 
+  do tj <- typeJoin js ctx s
+     tr <- typeRel (thing rr) ctx s
+     let t = mkOpt (F.And (getFexp tj) (getFexp tr))
+                   (SM.union (getObj tj) (getObj tr))
+     typeCondition c ctx t 
+     return t 
 
 -- | Statically type checks variational sql condiitons.
 typeVsqlCond :: MonadThrow m 
