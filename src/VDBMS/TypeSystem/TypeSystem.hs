@@ -94,13 +94,22 @@ typeProd l r rs ctx s =
   do tl <- typeRel l ctx s 
      tr <- typeRel r ctx s 
      ts <- mapM (flip (flip typeRel ctx) s) rs 
-     disjointTypeEnvs tl tr ts ctx
+     compatibleTypes $ pure tl ++ pure tr ++ ts
+     disjointTypes tl tr ts ctx
+     return $ prodTypes $ pure tl ++ pure tr ++ ts
+
+-- | Accumulates types for cross product.
+prodTypes :: [TypeEnv] -> TypeEnv
+prodTypes ts = mkOpt f r
+  where 
+    f = foldr F.And (F.Lit True) $ fmap getFexp ts
+    r = SM.unions $ fmap getObj ts
 
 -- | Checks whether a list of type envs are disjoint or not.
-disjointTypeEnvs :: MonadThrow m 
+disjointTypes :: MonadThrow m 
                  => TypeEnv -> TypeEnv -> [TypeEnv] -> VariationalContext
-                 -> m TypeEnv
-disjointTypeEnvs l r ts ctx = undefined
+                 -> m ()
+disjointTypes l r ts ctx = undefined
   -- do 
 
 -- | Statically type checks a relation reference.
