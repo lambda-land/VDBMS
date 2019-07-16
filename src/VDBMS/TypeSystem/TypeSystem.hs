@@ -45,7 +45,7 @@ data TypeError
   | CompInvalid Atom Atom TypeEnv
   | IncompatibleTypes [TypeEnv]
   | NotDisjointTypes [TypeEnv]
-  -- | EnvFexpUnsat F.FeatureExpr TypeEnv'
+  | EnvFexpUnsat F.FeatureExpr TypeEnv
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
@@ -53,12 +53,10 @@ instance Exception TypeError
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
 --   with table pres cond.
--- SHRINK!!!
 verifyTypeEnv :: MonadThrow m => TypeEnv -> m TypeEnv
-verifyTypeEnv env = undefined
-  -- | satisfiable (getFexp env) = return $ propagateFexpToTsch env
-  -- | otherwise = throwM $ EnvFexpUnsat (getFexp env) env
-
+verifyTypeEnv t
+  | satisfiable (getFexp t) = return $ propagateFexpToTsch t
+  | otherwise = throwM $ EnvFexpUnsat (getFexp t) t
 
 -- 
 -- Static semantics of a vquery that returns a table schema,
