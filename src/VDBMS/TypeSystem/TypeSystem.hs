@@ -15,7 +15,7 @@ import VDBMS.QueryLang.RelAlg.Variational.Condition
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Schema
 import VDBMS.Features.SAT (equivalent, tautology)
--- import VDBMS.DBMS.Value.Value
+import VDBMS.DBMS.Value.Value
 -- import VDBMS.Features.Config
 
 -- import Prelude hiding (EQ,LT , GT)
@@ -44,6 +44,7 @@ data TypeError
   | EmptyAttrList Algebra 
   -- | AttributeNotInTypeEnv Attribute OptAttributes TypeEnv 
   | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
+  | CompInvalid Atom Atom TypeEnv
   -- | EnvFexpUnsat F.FeatureExpr TypeEnv'
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -61,7 +62,7 @@ typeOfVquery (Proj oas rq)    ctx s = typeProj oas rq ctx s
 typeOfVquery (Sel c rq)       ctx s = 
   do t <- typeOfVquery (thing rq) ctx s
      typeVsqlCond c ctx s t 
-     return t
+     appFexpTableSch ctx t
 typeOfVquery (AChc f l r)     ctx s = 
   do tl <- typeOfVquery l (F.And ctx f) s
      tr <- typeOfVquery r (F.And ctx (F.Not f)) s
@@ -84,7 +85,8 @@ typeVsqlCond :: MonadThrow m
 typeVsqlCond (VsqlCond c)     ctx s t = typeCondition c ctx t 
 typeVsqlCond (VsqlIn a q)     ctx s t = 
   do t <- typeOfVquery q ctx s 
-     attConsistentEnv a ctx t
+     lookupAttFexpTypeInRowType (attribute a) (getObj t)
+     return ()
 typeVsqlCond (VsqlNot c)      ctx s t = typeVsqlCond c ctx s t 
 typeVsqlCond (VsqlOr l r)     ctx s t = 
   do typeVsqlCond l ctx s t
@@ -101,7 +103,7 @@ typeCondition :: MonadThrow m
               => Condition -> VariationalContext -> TypeEnv
               -> m ()
 typeCondition (Lit b)      ctx t = return ()
--- typeCondition (Comp o l r) ctx t = typeComp l r ctx t 
+typeCondition (Comp o l r) ctx t = typeComp l r t 
 typeCondition (Not c)      ctx t = typeCondition c ctx t 
 typeCondition (Or l r)     ctx t = 
   do typeCondition l ctx t
@@ -114,35 +116,32 @@ typeCondition (CChc f l r) ctx t =
      typeCondition r (F.And ctx (F.Not f)) t
 
 -- | Checks if an attribute is consistent with a type env in a given context.
-attConsistentEnv :: MonadThrow m 
-                 => Attr -> VariationalContext -> TypeEnv 
-                 -> m ()
-attConsistentEnv a ctx t = undefined
+-- attConsistentEnv :: MonadThrow m 
+--                  => Attr -> VariationalContext -> TypeEnv 
+--                  -> m ()
+-- attConsistentEnv a ctx t = undefined
 
--- typeComp :: MonadThrow m => Atom -> Atom -> TypeEnv -> m ()
--- typeComp a@(Val l)  a'@(Val r)  t 
---   | typeOf l == typeOf r = return t 
---   | otherwise = throwM $ RCompInvalid a a' t 
--- typeComp a@(Val l)  a'@(Att r) t = 
---   do attInTypeEnv (attribute r) t 
---      at <- lookupAttrType (attribute r) t
---      if typeOf l == at 
---      then return t 
---      else throwM $ RCompInvalid a a' t
--- typeComp a@(Att l) a'@(Val r)  t = 
---   do attInTypeEnv (attribute l) t 
---      at <- lookupAttrType (attribute l) t
---      if typeOf r == at 
---      then return t 
---      else throwM $ RCompInvalid a a' t
--- typeComp a@(Att l) a'@(Att r) t = 
---   do attInTypeEnv (attribute l) t 
---      attInTypeEnv (attribute r) t 
---      at  <- lookupAttrType (attribute l) t
---      at' <-  lookupAttrType (attribute r) t
---      if at == at'
---      then return t 
---      else throwM $ RCompInvalid a a' t
+-- | Type checks a comparison.
+typeComp :: MonadThrow m => Atom -> Atom -> TypeEnv -> m ()
+typeComp a@(Val l)  a'@(Val r)  t 
+  | typeOf l == typeOf r = return ()
+  | otherwise = throwM $ CompInvalid a a' t 
+typeComp a@(Val l)  a'@(Att r) t = 
+  do (_,at) <- lookupAttFexpTypeInRowType (attribute r) (getObj t)
+     if typeOf l == at 
+     then return () 
+     else throwM $ CompInvalid a a' t
+typeComp a@(Att l) a'@(Val r)  t = 
+  do (_,at) <- lookupAttFexpTypeInRowType (attribute l) (getObj t)
+     if typeOf r == at 
+     then return () 
+     else throwM $ CompInvalid a a' t
+typeComp a@(Att l) a'@(Att r) t = 
+  do (_,lt) <- lookupAttFexpTypeInRowType (attribute l) (getObj t)
+     (_,rt) <- lookupAttFexpTypeInRowType (attribute r) (getObj t)
+     if lt == rt
+     then return ()
+     else throwM $ CompInvalid a a' t
 
 
 -- | Determines the type of a projection query.
