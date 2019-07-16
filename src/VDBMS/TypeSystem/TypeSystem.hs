@@ -84,7 +84,7 @@ typeVsqlCond :: MonadThrow m
 typeVsqlCond (VsqlCond c)     ctx s t = typeCondition c ctx t 
 typeVsqlCond (VsqlIn a q)     ctx s t = 
   do t <- typeOfVquery q ctx s 
-     return () --undefined!!!!!!!
+     attConsistentEnv a ctx t
 typeVsqlCond (VsqlNot c)      ctx s t = typeVsqlCond c ctx s t 
 typeVsqlCond (VsqlOr l r)     ctx s t = 
   do typeVsqlCond l ctx s t
@@ -101,7 +101,7 @@ typeCondition :: MonadThrow m
               => Condition -> VariationalContext -> TypeEnv
               -> m ()
 typeCondition (Lit b)      ctx t = return ()
-typeCondition (Comp o l r) ctx t = undefined
+-- typeCondition (Comp o l r) ctx t = typeComp l r ctx t 
 typeCondition (Not c)      ctx t = typeCondition c ctx t 
 typeCondition (Or l r)     ctx t = 
   do typeCondition l ctx t
@@ -113,9 +113,37 @@ typeCondition (CChc f l r) ctx t =
   do typeCondition l (F.And ctx f) t
      typeCondition r (F.And ctx (F.Not f)) t
 
--- |
--- attConsistentEnv :: MonadThrow m 
---                  => Attribute -> 
+-- | Checks if an attribute is consistent with a type env in a given context.
+attConsistentEnv :: MonadThrow m 
+                 => Attr -> VariationalContext -> TypeEnv 
+                 -> m ()
+attConsistentEnv a ctx t = undefined
+
+-- typeComp :: MonadThrow m => Atom -> Atom -> TypeEnv -> m ()
+-- typeComp a@(Val l)  a'@(Val r)  t 
+--   | typeOf l == typeOf r = return t 
+--   | otherwise = throwM $ RCompInvalid a a' t 
+-- typeComp a@(Val l)  a'@(Att r) t = 
+--   do attInTypeEnv (attribute r) t 
+--      at <- lookupAttrType (attribute r) t
+--      if typeOf l == at 
+--      then return t 
+--      else throwM $ RCompInvalid a a' t
+-- typeComp a@(Att l) a'@(Val r)  t = 
+--   do attInTypeEnv (attribute l) t 
+--      at <- lookupAttrType (attribute l) t
+--      if typeOf r == at 
+--      then return t 
+--      else throwM $ RCompInvalid a a' t
+-- typeComp a@(Att l) a'@(Att r) t = 
+--   do attInTypeEnv (attribute l) t 
+--      attInTypeEnv (attribute r) t 
+--      at  <- lookupAttrType (attribute l) t
+--      at' <-  lookupAttrType (attribute r) t
+--      if at == at'
+--      then return t 
+--      else throwM $ RCompInvalid a a' t
+
 
 -- | Determines the type of a projection query.
 typeProj :: MonadThrow m 
