@@ -23,7 +23,7 @@ import qualified Data.Set as S
 import VDBMS.VDB.Name
 import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.Features.SAT 
 

@@ -1,5 +1,5 @@
 -- | Variational database schema core operations.
-module VDBMS.VDB.Schema.Core (
+module VDBMS.VDB.Schema.Variational.Core (
 
         relArity,
         getRowTypeAtts,
@@ -21,9 +21,9 @@ import qualified Data.Set as Set
 import qualified Data.Map.Merge.Strict as StrictM
 import Data.List 
 
-import VDBMS.VDB.Schema.Types
-import VDBMS.VDB.Schema.Lookups
-import VDBMS.VDB.Schema.ApplyFexp
+import VDBMS.VDB.Schema.Variational.Types
+import VDBMS.VDB.Schema.Variational.Lookups
+import VDBMS.VDB.Schema.Variational.ApplyFexp
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt

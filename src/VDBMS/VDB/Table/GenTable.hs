@@ -10,7 +10,7 @@ module VDBMS.VDB.Table.GenTable (
 import VDBMS.VDB.Table.Core
 import VDBMS.VDB.Name (PresCondAtt)
 import VDBMS.Variational.Opt
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.SqlVtable
 import VDBMS.DBMS.Table.SqlVariantTable
 import VDBMS.DBMS.Table.SqlVtableApplyFexpOps

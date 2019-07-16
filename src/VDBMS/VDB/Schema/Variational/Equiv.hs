@@ -1,12 +1,12 @@
 -- | Variational database schema equivalency check.
-module VDBMS.VDB.Schema.Equiv (
+module VDBMS.VDB.Schema.Variational.Equiv (
 
         equivConfigOnSchema
 
 ) where
 
-import VDBMS.VDB.Schema.Types
-import VDBMS.VDB.Schema.Core
+import VDBMS.VDB.Schema.Variational.Types
+import VDBMS.VDB.Schema.Variational.Core
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.Config (Config, equivConfig)
 

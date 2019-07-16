@@ -1,5 +1,5 @@
 -- | Variational database schema look up operations.
-module VDBMS.VDB.Schema.Lookups (
+module VDBMS.VDB.Schema.Variational.Lookups (
 
         lookupAttFexpInRowType,
         lookupAttFexpTypeInRowType,
@@ -17,7 +17,7 @@ import qualified Data.Map.Strict as M
 
 import Control.Monad.Catch
 
-import VDBMS.VDB.Schema.Types
+import VDBMS.VDB.Schema.Variational.Types
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt

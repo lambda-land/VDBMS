@@ -13,7 +13,7 @@ import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.QueryLang.RelAlg.Variational.Condition 
 import VDBMS.Variational.Opt
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Features.SAT (equivalent, tautology, satisfiable)
 import VDBMS.DBMS.Value.Value
 -- import VDBMS.Features.Config

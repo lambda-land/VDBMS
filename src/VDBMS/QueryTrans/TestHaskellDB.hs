@@ -7,7 +7,7 @@ import Database.HaskellDB.HDBRec
 
 import Data.Set (toList)
 
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 import qualified VDBMS.VDB.Name as N
 
 

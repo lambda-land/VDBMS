@@ -9,7 +9,7 @@ module VDBMS.VDB.Table.Core (
 
 ) where 
 
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.Table 
 
 -- | the result of a vq is a variational table.

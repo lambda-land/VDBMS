@@ -3,7 +3,7 @@ module VDBMS.VDB.Database.Database where
 
 import VDBMS.Features.Config
 import VDBMS.Features.ConfFexp
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Table.Table
 import VDBMS.VDB.Name (PresCondAtt)
 

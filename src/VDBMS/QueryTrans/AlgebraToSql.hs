@@ -10,7 +10,7 @@ import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.VDB.Name 
 import VDBMS.QueryLang.SQL.Condition 
 import VDBMS.QueryLang.RelAlg.Basics.SetOp
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 
 import Data.List ((\\))
 

@@ -14,7 +14,7 @@ import qualified Data.Map.Strict as M
 import VDBMS.Variational.Opt 
 import VDBMS.VDB.Name
 import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.DBMS.Table.SqlVtable
 import VDBMS.DBMS.Table.Table

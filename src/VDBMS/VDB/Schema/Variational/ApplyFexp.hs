@@ -1,5 +1,5 @@
 -- | Variational database schema apply feature expression operations.
-module VDBMS.VDB.Schema.ApplyFexp (
+module VDBMS.VDB.Schema.Variational.ApplyFexp (
 
         appFexpTableSch,
         appFexpRowType
@@ -9,7 +9,7 @@ module VDBMS.VDB.Schema.ApplyFexp (
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
-import VDBMS.VDB.Schema.Types
+import VDBMS.VDB.Schema.Variational.Types
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Variational.Opt
 import VDBMS.Features.SAT (satisfiable)

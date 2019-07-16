@@ -1,5 +1,5 @@
 -- | Variational database schema types.
-module VDBMS.VDB.Schema.Types (
+module VDBMS.VDB.Schema.Variational.Types (
 
         RowType(..),
         TableSchema(..),

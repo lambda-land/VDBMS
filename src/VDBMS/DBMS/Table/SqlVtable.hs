@@ -20,7 +20,7 @@ import Data.List (deleteBy,groupBy)
 import VDBMS.Variational.Opt 
 import VDBMS.VDB.Name
 import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.VDB.Schema.Schema
+import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.Features.SAT 
 import VDBMS.DBMS.Table.Table
