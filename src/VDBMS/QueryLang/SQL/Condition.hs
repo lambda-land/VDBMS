@@ -10,7 +10,7 @@ module VDBMS.QueryLang.SQL.Condition (
 import Data.Data (Data,Typeable)
 import Data.SBV (Boolean(..))
 
-import VDBMS.VDB.Name (Attribute(..))
+import VDBMS.VDB.Name (Attr(..), Attribute(..))
 import VDBMS.QueryLang.RelAlg.Basics.Atom
 import VDBMS.QueryLang.RelAlg.Relational.Condition
 
@@ -18,7 +18,7 @@ import VDBMS.QueryLang.RelAlg.Relational.Condition
 --   you pass it.
 data SqlCond a
    = SqlCond RCondition
-   | SqlIn   Attribute a
+   | SqlIn   Attr a
    | SqlNot  (SqlCond a)
    | SqlOr   (SqlCond a) (SqlCond a)
    | SqlAnd  (SqlCond a) (SqlCond a)
@@ -32,7 +32,7 @@ prettySqlCond c = top c
     top (SqlOr l r) = sub l ++ " OR " ++ sub r 
     top (SqlAnd l r) = sub l ++ " AND " ++ sub r
     top c = sub c
-    sub (SqlIn a q) = attributeName a ++ " IN ( " ++ show q ++ " ) "
+    sub (SqlIn a q) = attributeName (attribute a) ++ " IN ( " ++ show q ++ " ) "
     sub (SqlNot c) = " NOT " ++ sub c
     sub c = " ( " ++ top c ++ " ) "
 

@@ -82,7 +82,9 @@ typeVsqlCond :: MonadThrow m
              => VsqlCond -> VariationalContext -> Schema -> TypeEnv 
              -> m ()
 typeVsqlCond (VsqlCond c)     ctx s t = typeCondition c ctx t 
-typeVsqlCond (VsqlIn a q)     ctx s t = undefined
+typeVsqlCond (VsqlIn a q)     ctx s t = 
+  do t <- typeOfVquery q ctx s 
+     return () --undefined!!!!!!!
 typeVsqlCond (VsqlNot c)      ctx s t = typeVsqlCond c ctx s t 
 typeVsqlCond (VsqlOr l r)     ctx s t = 
   do typeVsqlCond l ctx s t
@@ -110,6 +112,10 @@ typeCondition (And l r)    ctx t =
 typeCondition (CChc f l r) ctx t = 
   do typeCondition l (F.And ctx f) t
      typeCondition r (F.And ctx (F.Not f)) t
+
+-- |
+-- attConsistentEnv :: MonadThrow m 
+--                  => Attribute -> 
 
 -- | Determines the type of a projection query.
 typeProj :: MonadThrow m 

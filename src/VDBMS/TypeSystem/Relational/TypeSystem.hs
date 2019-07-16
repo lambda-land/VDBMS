@@ -73,7 +73,7 @@ typeOfSqlCond :: MonadThrow m => SqlCond RAlgebra -> RTypeEnv -> RSchema -> m RT
 typeOfSqlCond (SqlCond c)  t s = typeOfRCondition c t
 typeOfSqlCond (SqlIn a q)  t s = 
   do t' <- typeOfQuery q s
-     attInTypeEnv a t' 
+     attInTypeEnv (attribute a) t' 
 typeOfSqlCond (SqlNot c)   t s = typeOfSqlCond c t s 
 typeOfSqlCond (SqlOr l r)  t s = 
   do typeOfSqlCond l t s

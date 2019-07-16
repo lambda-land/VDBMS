@@ -29,7 +29,7 @@ import VDBMS.QueryLang.RelAlg.Relational.Algebra
 -- | Variational Sql conditions.
 data VsqlCond
    = VsqlCond Condition
-   | VsqlIn   Attribute Algebra
+   | VsqlIn   Attr Algebra
    | VsqlNot  VsqlCond
    | VsqlOr   VsqlCond VsqlCond
    | VsqlAnd  VsqlCond VsqlCond
@@ -46,7 +46,7 @@ prettySqlCond c = top c
     top (VsqlOr l r) = sub l ++ " OR " ++ sub r 
     top (VsqlAnd l r) = sub l ++ " AND " ++ sub r
     top c = sub c
-    sub (VsqlIn a q) = attributeName a ++ " IN ( " ++ show q ++ " ) "
+    sub (VsqlIn a q) = attributeName (attribute a) ++ " IN ( " ++ show q ++ " ) "
     sub (VsqlNot c) = " NOT " ++ sub c
     sub c = " ( " ++ top c ++ " ) "
 
