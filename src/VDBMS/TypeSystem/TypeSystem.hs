@@ -3,7 +3,8 @@ module VDBMS.TypeSystem.TypeSystem (
 
         TypeEnv
         , VariationalContext
-        , typeOfVquery
+        , typeOfQuery
+        , typeRel
 
 ) where 
 
@@ -62,25 +63,44 @@ verifyTypeEnv env = undefined
 -- Static semantics of a vquery that returns a table schema,
 -- i.e. it includes the fexp of the whole table.
 -- 
-typeOfVquery :: MonadThrow m 
+typeOfQuery :: MonadThrow m 
              => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
-typeOfVquery (SetOp o l r)    ctx s = typeSetOp l r ctx s
-typeOfVquery (Proj oas rq)    ctx s = typeProj oas rq ctx s
-typeOfVquery (Sel c rq)       ctx s = 
-  do t <- typeOfVquery (thing rq) ctx s
+typeOfQuery (SetOp o l r)    ctx s = typeSetOp l r ctx s
+typeOfQuery (Proj oas rq)    ctx s = typeProj oas rq ctx s
+typeOfQuery (Sel c rq)       ctx s = 
+  do t <- typeOfQuery (thing rq) ctx s
      typeVsqlCond c ctx s t 
      appFexpTableSch ctx t
-typeOfVquery (AChc f l r)     ctx s = 
-  do tl <- typeOfVquery l (F.And ctx f) s
-     tr <- typeOfVquery r (F.And ctx (F.Not f)) s
+typeOfQuery (AChc f l r)     ctx s = 
+  do tl <- typeOfQuery l (F.And ctx f) s
+     tr <- typeOfQuery r (F.And ctx (F.Not f)) s
      return $ mkOpt (F.Or (getFexp tl) (getFexp tr)) 
                   $ rowTypeUnion (getObj tl) (getObj tr)
-typeOfVquery (Join js)        ctx s = typeJoin js ctx s
-typeOfVquery (Prod rl rr rrs) ctx s = undefined
-typeOfVquery (TRef rr)        ctx s = typeRel (thing rr) ctx s
-typeOfVquery Empty            ctx s = 
+typeOfQuery (Join js)        ctx s = typeJoin js ctx s
+typeOfQuery (Prod rl rr rrs) ctx s = 
+  typeProd (thing rl) (thing rr) (fmap thing rrs) ctx s
+typeOfQuery (TRef rr)        ctx s = typeRel (thing rr) ctx s
+typeOfQuery Empty            ctx s = 
   appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
+
+-- | Statically type chekcs a cross product query.
+--   Note that it make sures that the two types are
+--   disjoint.
+typeProd :: MonadThrow m 
+         => Relation -> Relation -> [Relation] -> VariationalContext -> Schema
+         -> m TypeEnv
+typeProd l r rs ctx s = 
+  do tl <- typeRel l ctx s 
+     tr <- typeRel r ctx s 
+     ts <- mapM (flip (flip typeRel ctx) s) rs 
+     disjointTypeEnvs tl tr ts ctx
+
+-- | Checks whether a list of type envs are disjoint or not.
+disjointTypeEnvs :: MonadThrow m 
+                 => TypeEnv -> TypeEnv -> [TypeEnv] -> VariationalContext
+                 -> m TypeEnv
+disjointTypeEnvs = undefined
 
 -- | Statically type checks a relation reference.
 typeRel :: MonadThrow m 
@@ -115,7 +135,7 @@ typeVsqlCond :: MonadThrow m
              -> m ()
 typeVsqlCond (VsqlCond c)     ctx s t = typeCondition c ctx t 
 typeVsqlCond (VsqlIn a q)     ctx s t = 
-  do t <- typeOfVquery q ctx s 
+  do t <- typeOfQuery q ctx s 
      lookupAttFexpTypeInRowType (attribute a) (getObj t)
      return ()
 typeVsqlCond (VsqlNot c)      ctx s t = typeVsqlCond c ctx s t 
@@ -173,7 +193,7 @@ typeProj :: MonadThrow m
          => OptAttributes -> Rename Algebra -> VariationalContext -> Schema
          -> m TypeEnv
 typeProj oas rq ctx s =
-  do t' <- typeOfVquery (thing rq) ctx s 
+  do t' <- typeOfQuery (thing rq) ctx s 
      if null oas 
      then throwM $ EmptyAttrList (thing rq)
      else do t <- typeOptAtts oas t'
@@ -206,8 +226,8 @@ typeSetOp :: MonadThrow m
           => Algebra -> Algebra -> VariationalContext -> Schema 
           -> m TypeEnv
 typeSetOp l r ctx s = 
-  do tl <- typeOfVquery l ctx s
-     tr <- typeOfVquery r ctx s 
+  do tl <- typeOfQuery l ctx s
+     tr <- typeOfQuery r ctx s 
      envl <- appFexpTableSch ctx tl 
      envr <- appFexpTableSch ctx tr
      if typeEq envl envr

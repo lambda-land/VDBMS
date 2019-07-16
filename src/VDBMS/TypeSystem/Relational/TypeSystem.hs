@@ -3,7 +3,7 @@ module VDBMS.TypeSystem.Relational.TypeSystem
 (
 
         RTypeEnv
-        , typeOfQuery
+        , typeOfRQuery
 
 ) where 
 
@@ -40,39 +40,39 @@ data RTypeError =
 instance Exception RTypeError 
 
 -- | static semantics that returns a relational table schema.
-typeOfQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
-typeOfQuery (RSetOp o l r)    s =
-  do typel <- typeOfQuery l s
-     typer <- typeOfQuery r s
+typeOfRQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
+typeOfRQuery (RSetOp o l r)    s =
+  do typel <- typeOfRQuery l s
+     typer <- typeOfRQuery r s
      if typel == typer
      then return typel
      else throwM $ RNotEquiveTypeEnv typel typer
-typeOfQuery (RProj as rq)     s =
-  do tq <- typeOfQuery (thing rq) s
+typeOfRQuery (RProj as rq)     s =
+  do tq <- typeOfRQuery (thing rq) s
      if null as 
      then throwM $ REmptyAttrList (thing rq)
      else if attsSubTypeEnv as tq
           then return $ SM.restrictKeys tq $ attsSet as
           else throwM $ RAttributesNotInTypeEnv as tq
-typeOfQuery (RSel c rq)       s = 
-  do tq <- typeOfQuery (thing rq) s
+typeOfRQuery (RSel c rq)       s = 
+  do tq <- typeOfRQuery (thing rq) s
      typeOfSqlCond c tq s 
-typeOfQuery (RJoin js)        s = typeOfJoins js s
-typeOfQuery (RProd rl rr rrs) s = 
+typeOfRQuery (RJoin js)        s = typeOfJoins js s
+typeOfRQuery (RProd rl rr rrs) s = 
   do r <- lookupRelation (thing rl) s
      l <- lookupRelation (thing rr) s
      rs <- mapM (flip lookupRelation s . thing) rrs
      if disjointTypeEnvs r l rs 
      then return $ SM.unions $ r : l : rs
      else throwM $ RNotDisjointRels $ fmap thing (rl : rr : rrs)
-typeOfQuery (RTRef rr)        s = lookupRelation (thing rr) s
-typeOfQuery REmpty            _ = return M.empty
+typeOfRQuery (RTRef rr)        s = lookupRelation (thing rr) s
+typeOfRQuery REmpty            _ = return M.empty
 
 -- | Static semantics of relational conditions.
 typeOfSqlCond :: MonadThrow m => SqlCond RAlgebra -> RTypeEnv -> RSchema -> m RTypeEnv
 typeOfSqlCond (SqlCond c)  t s = typeOfRCondition c t
 typeOfSqlCond (SqlIn a q)  t s = 
-  do t' <- typeOfQuery q s
+  do t' <- typeOfRQuery q s
      attInTypeEnv (attribute a) t' 
 typeOfSqlCond (SqlNot c)   t s = typeOfSqlCond c t s 
 typeOfSqlCond (SqlOr l r)  t s = 
@@ -130,12 +130,12 @@ attInTypeEnv a t
 --   and not queries.
 typeOfJoins :: MonadThrow m => RJoins -> RSchema -> m RTypeEnv
 typeOfJoins (RJoinTwoTable rl rr c) s = 
-  do lt <- typeOfQuery (RTRef rl) s
-     rt <- typeOfQuery (RTRef rr) s
+  do lt <- typeOfRQuery (RTRef rl) s
+     rt <- typeOfRQuery (RTRef rr) s
      typeOfRCondition c (SM.union lt rt)
 typeOfJoins (RJoinMore js rr c)     s = 
   do jt <- typeOfJoins js s 
-     rt <- typeOfQuery (RTRef rr) s
+     rt <- typeOfRQuery (RTRef rr) s
      typeOfRCondition c (SM.union jt rt)
 
 -- | Attributes are all included in the type env.
