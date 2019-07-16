@@ -4,6 +4,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         Algebra(..)
         , OptAttributes(..)
         , VsqlCond(..)
+        , Joins(..)
         
 
 ) where

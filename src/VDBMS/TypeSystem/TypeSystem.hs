@@ -36,19 +36,27 @@ type VariationalContext = F.FeatureExpr
 -- | Variational type env.
 type TypeEnv = TableSchema
 
--- | Errors in type env.
+-- | Possible typing errors.
 data TypeError 
   = InvalidRelRef Relation VariationalContext F.FeatureExpr
-  -- | VcondNotHold A.Condition VariationalContext TypeEnv'
   | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
   | EmptyAttrList Algebra 
-  -- | AttributeNotInTypeEnv Attribute OptAttributes TypeEnv 
   | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
   | CompInvalid Atom Atom TypeEnv
   -- | EnvFexpUnsat F.FeatureExpr TypeEnv'
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
+
+-- | verifies and similifies the final type env return by the type system, i.e.,
+--   checks the satisfiability of all attributes' pres conds conjoined
+--   with table pres cond.
+-- SHRINK!!!
+verifyTypeEnv :: MonadThrow m => TypeEnv -> m TypeEnv
+verifyTypeEnv env = undefined
+  -- | satisfiable (getFexp env) = return $ propagateFexpToTsch env
+  -- | otherwise = throwM $ EnvFexpUnsat (getFexp env) env
+
 
 -- 
 -- Static semantics of a vquery that returns a table schema,
@@ -68,15 +76,25 @@ typeOfVquery (AChc f l r)     ctx s =
      tr <- typeOfVquery r (F.And ctx (F.Not f)) s
      return $ mkOpt (F.Or (getFexp tl) (getFexp tr)) 
                   $ rowTypeUnion (getObj tl) (getObj tr)
-typeOfVquery (Join js)        ctx s = undefined
+typeOfVquery (Join js)        ctx s = typeJoin js ctx s
 typeOfVquery (Prod rl rr rrs) ctx s = undefined
 typeOfVquery (TRef rr)        ctx s = 
   do t <- lookupTableSch (thing rr) s
-     if F.tautImplyFexps ctx (getFexp t)
-     then appFexpTableSch ctx t 
-     else throwM $ InvalidRelRef (thing rr) ctx (getFexp t)
+     -- if F.tautImplyFexps ctx (getFexp t)
+     appFexpTableSch ctx t 
+     -- else throwM $ InvalidRelRef (thing rr) ctx (getFexp t)
 typeOfVquery Empty            ctx s = 
   appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
+
+-- | Statically type checks joins.
+typeJoin :: MonadThrow m
+         => Joins -> VariationalContext -> Schema 
+         -> m TypeEnv
+typeJoin (JoinTwoTables rl rr c) ctx s = undefined
+  -- do tl <- lookupTableSch (thing rl) s
+  --    tr <- lookupTableSch (thing rr) s
+-- 
+typeJoin (JoinMore js rr c)      ctx s = undefined
 
 -- | Statically type checks variational sql condiitons.
 typeVsqlCond :: MonadThrow m 
@@ -115,12 +133,6 @@ typeCondition (CChc f l r) ctx t =
   do typeCondition l (F.And ctx f) t
      typeCondition r (F.And ctx (F.Not f)) t
 
--- | Checks if an attribute is consistent with a type env in a given context.
--- attConsistentEnv :: MonadThrow m 
---                  => Attr -> VariationalContext -> TypeEnv 
---                  -> m ()
--- attConsistentEnv a ctx t = undefined
-
 -- | Type checks a comparison.
 typeComp :: MonadThrow m => Atom -> Atom -> TypeEnv -> m ()
 typeComp a@(Val l)  a'@(Val r)  t 
@@ -142,7 +154,6 @@ typeComp a@(Att l) a'@(Att r) t =
      if lt == rt
      then return ()
      else throwM $ CompInvalid a a' t
-
 
 -- | Determines the type of a projection query.
 typeProj :: MonadThrow m 
