@@ -26,10 +26,11 @@ import VDBMS.DBMS.Value.Value (typeOf,SqlType)
 
 -- | Attribute information for relational type env.
 data RAttrInfo 
-  = RAttrInfo {
-      rAttrType :: SqlType
-    , rAttrQuals :: [Qualifier]
-    }
+  = RAttrInfo [(Qualifier,SqlType)]
+  -- {
+  --     rAttrType :: SqlType
+  --   , rAttrQuals :: [Qualifier]
+  --   }
  deriving (Data,Ord,Eq,Show,Typeable)
 
 -- | Relatioanl type enviornment.
@@ -116,7 +117,25 @@ typeJoins = undefined
 typeRProd :: MonadThrow m 
           => [Rename Relation] -> RSchema
           -> m RTypeEnv
-typeRProd = undefined
+typeRProd rrs s = 
+  do ts <- mapM (flip typeRRel s) rrs
+     t <- prodRTypes ts
+     return $ t
+
+-- | Gets a list of relational type env and product them.
+--   i.e., for repeated attributes accumulates the qualifiers.
+--   Note that it's ok if the same attributes with different 
+--   qualifiers have different types. 
+--   You need to make sure that types are disjoint, i.e., you 
+--   can't have: t.A and t.A but you can have t.A and r.A.
+--   uniqueRelAlias takes care of this.
+prodRTypes :: MonadThrow m => [RTypeEnv] -> m RTypeEnv
+prodRTypes = undefined
+
+-- | Checks that table/alias are unique. The relation names or
+--   their aliases must be unique.
+uniqueRelAlias :: MonadThrow m => [RTypeEnv] -> m ()
+uniqueRelAlias = undefined
 
 -- | Returns the type of a rename relation.
 typeRRel :: MonadThrow m 
@@ -131,14 +150,14 @@ typeRRel rr s =
 --   name for the sql type, otherwise it attaches the relation name itself
 --   to the sqltype.
 sqlType2RAttrInfo :: Rename Relation -> SqlType -> RAttrInfo
-sqlType2RAttrInfo rel at = 
-  RAttrInfo at 
-          $ maybe (pure $ RelQualifier (Relation relName))
-                  (\n -> pure $ RelQualifier (Relation n)) 
-                  newName
-  where 
-    relName = relationName $ thing rel 
-    newName = name rel 
+sqlType2RAttrInfo rel at = undefined
+  -- RAttrInfo at 
+  --         $ maybe (pure $ RelQualifier (Relation relName))
+  --                 (\n -> pure $ RelQualifier (Relation n)) 
+  --                 newName
+  -- where 
+  --   relName = relationName $ thing rel 
+  --   newName = name rel 
   
 
 
