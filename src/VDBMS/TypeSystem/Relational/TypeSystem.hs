@@ -22,7 +22,17 @@ import VDBMS.VDB.Schema.Relational.Lookups
 import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
 import VDBMS.VDB.Name
-import VDBMS.DBMS.Value.Core (typeOf)
+import VDBMS.DBMS.Value.Value (typeOf,SqlType)
+
+
+
+-- | Attribute information for relational type env.
+data RAttrInfo 
+  = RAttrInfo {
+      rtype :: SqlType
+    , rquals :: [Qualifier]
+    }
+ deriving (Eq,Show,Typeable)
 
 -- | Relatioanl type enviornment.
 type RTypeEnv = RTableSchema
