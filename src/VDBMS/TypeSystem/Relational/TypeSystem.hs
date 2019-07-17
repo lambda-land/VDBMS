@@ -122,10 +122,23 @@ typeRProd = undefined
 typeRRel :: MonadThrow m 
           => Rename Relation -> RSchema
           -> m RTypeEnv
-typeRRel = undefined
+typeRRel rr s = 
+  do r <- lookupRelation (thing rr) s
+     return $ SM.map (sqlType2RAttrInfo rr) r 
 
-
-
-
+-- | Generates a relational attr info from a rename relation and sql type.
+--   If a name alias exists for the relation it considers it as the new 
+--   name for the sql type, otherwise it attaches the relation name itself
+--   to the sqltype.
+sqlType2RAttrInfo :: Rename Relation -> SqlType -> RAttrInfo
+sqlType2RAttrInfo rel at = 
+  RAttrInfo at 
+          $ maybe (pure $ RelQualifier (Relation relName))
+                  (\n -> pure $ RelQualifier (Relation n)) 
+                  newName
+  where 
+    relName = relationName $ thing rel 
+    newName = name rel 
+  
 
 
