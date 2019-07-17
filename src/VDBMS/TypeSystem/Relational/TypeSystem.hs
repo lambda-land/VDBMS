@@ -153,14 +153,14 @@ typeRRel rr s =
 --   name for the sql type, otherwise it attaches the relation name itself
 --   to the sqltype.
 sqlType2RAttrInfo :: Rename Relation -> SqlType -> RAttrInformation
-sqlType2RAttrInfo rel at = undefined
-  -- RAttrInfo at 
-  --         $ maybe (pure $ RelQualifier (Relation relName))
-  --                 (\n -> pure $ RelQualifier (Relation n)) 
-  --                 newName
-  -- where 
-  --   relName = relationName $ thing rel 
-  --   newName = name rel 
+sqlType2RAttrInfo rel at = pure $ 
+  RAttrInfo at 
+          $ maybe (RelQualifier (Relation relName))
+                  (\n -> RelQualifier (Relation n)) 
+                  newName
+  where 
+    relName = relationName $ thing rel 
+    newName = name rel 
   
 
 
