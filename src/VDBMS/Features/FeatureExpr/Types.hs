@@ -17,5 +17,5 @@ data FeatureExpr
    | Not FeatureExpr
    | And FeatureExpr FeatureExpr
    | Or  FeatureExpr FeatureExpr
-  deriving (Data,Typeable,Read)
--- DANGER!!! due to Read!!
+  deriving (Data,Typeable)
+

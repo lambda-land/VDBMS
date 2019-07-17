@@ -26,6 +26,6 @@ type RSchema = Map Relation (RTableSchema)
 -- | Errors querying schema.
 data RSchemaError = RMissingRelation Relation
                   | RMissingAttribute Attribute
-  deriving (Data,Eq,Generic,Ord,Read,Show,Typeable)
+  deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception RSchemaError
