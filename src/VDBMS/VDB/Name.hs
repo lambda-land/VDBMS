@@ -5,6 +5,7 @@ module VDBMS.VDB.Name (
         Relation(..),
         PresCondAtt(..),
         Rename(..),
+        Alias(..),
         Qualifier(..),
         Attr(..),
         Attributes(..),
@@ -49,10 +50,13 @@ type Attributes = [Rename Attr]
 attsSet :: Attributes -> Set Attribute
 attsSet = Set.fromList . fmap (attribute . thing) 
 
+-- | Possible names used for aliasing.
+type Alias = Maybe String
+
 -- | A new name that could be used for attributes and subqueries.
 data Rename a = 
   Rename {
-    name  :: Maybe String, -- ^ the potentially assigned name
+    name  :: Alias, -- ^ the potentially assigned name
     thing :: a -- ^ the thing
   }
   deriving (Data,Eq,Ord,Read,Show,Typeable)

@@ -52,33 +52,96 @@ instance Exception RTypeError
 
 -- | static semantics that returns a relational table schema.
 typeOfRQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
-typeOfRQuery = undefined
--- typeOfRQuery (RSetOp o l r)    s =
---   do typel <- typeOfRQuery l s
---      typer <- typeOfRQuery r s
---      if typel == typer
---      then return typel
---      else throwM $ RNotEquiveTypeEnv typel typer
--- typeOfRQuery (RProj as rq)     s =
---   do tq <- typeOfRQuery (thing rq) s
---      if null as 
---      then throwM $ REmptyAttrList (thing rq)
---      else if attsSubTypeEnv as tq
---           then return $ SM.restrictKeys tq $ attsSet as
---           else throwM $ RAttributesNotInTypeEnv as tq
--- typeOfRQuery (RSel c rq)       s = 
---   do tq <- typeOfRQuery (thing rq) s
---      typeOfSqlCond c tq s 
--- typeOfRQuery (RJoin js)        s = typeOfJoins js s
--- typeOfRQuery (RProd rl rr rrs) s = 
---   do r <- lookupRelation (thing rl) s
---      l <- lookupRelation (thing rr) s
---      rs <- mapM (flip lookupRelation s . thing) rrs
---      if disjointTypeEnvs r l rs 
---      then return $ SM.unions $ r : l : rs
---      else throwM $ RNotDisjointRels $ fmap thing (rl : rr : rrs)
--- typeOfRQuery (RTRef rr)        s = lookupRelation (thing rr) s
--- typeOfRQuery REmpty            _ = return M.empty
+typeOfRQuery (RSetOp o l r)    s = 
+  do tl <- typeOfRQuery l s
+     tr <- typeOfRQuery r s
+     typeRSetOp tl tr 
+  --    if typel == typer
+  --    then return typel
+  --    else throwM $ RNotEquiveTypeEnv typel typer
+typeOfRQuery (RProj as rq)     s = typeRProj as rq s 
+  -- do tq <- typeOfRQuery (thing rq) s
+  --    if null as 
+  --    then throwM $ REmptyAttrList (thing rq)
+  --    else if attsSubTypeEnv as tq
+  --         then return $ SM.restrictKeys tq $ attsSet as
+  --         else throwM $ RAttributesNotInTypeEnv as tq
+typeOfRQuery (RSel c rq)       s = 
+  do t <- typeOfRQuery (thing rq) s
+     let t' = addNameToREnv t (name rq)
+     typeSqlCond c t' s
+     return t'
+  -- do tq <- typeOfRQuery (thing rq) s
+  --    typeOfSqlCond c tq s 
+typeOfRQuery (RJoin js)        s = typeJoins js s 
+  -- typeOfJoins js s
+typeOfRQuery (RProd rl rr rrs) s = typeRProd (rl : rr : rrs) s
+  -- do r <- lookupRelation (thing rl) s
+  --    l <- lookupRelation (thing rr) s
+  --    rs <- mapM (flip lookupRelation s . thing) rrs
+  --    if disjointTypeEnvs r l rs 
+  --    then return $ SM.unions $ r : l : rs
+  --    else throwM $ RNotDisjointRels $ fmap thing (rl : rr : rrs)
+typeOfRQuery (RTRef rr)        s = typeRRel rr s 
+  -- lookupRelation (thing rr) s
+typeOfRQuery REmpty            _ = return M.empty
+
+-- | Determines the type of set operations.
+typeRSetOp :: MonadThrow m 
+           => RTypeEnv -> RTypeEnv 
+           -> m RTypeEnv
+typeRSetOp = undefined
+
+-- | Determines the type of a relational projection.
+typeRProj :: MonadThrow m 
+          => Attributes -> Rename RAlgebra -> RSchema
+          -> m RTypeEnv
+typeRProj = undefined
+
+-- | Checks if the sql condition is consistent with 
+--   the relational type env and schema.
+typeSqlCond :: MonadThrow m 
+            => SqlCond RAlgebra -> RTypeEnv -> RSchema
+            -> m ()
+typeSqlCond = undefined
+
+-- | Checks if the relational condition is consistent 
+--   with the relational type env.
+typeRCondition :: MonadThrow m
+               => RCondition -> RTypeEnv
+               -> m ()
+typeRCondition = undefined
+
+-- | Checks if the comparison is consistent with 
+--   relational type env.
+typeComp :: MonadThrow m
+         => Atom -> Atom -> RTypeEnv
+         -> m ()
+typeComp = undefined
+
+-- | Adjusts a relational type env with a new name.
+--   Ie. it adds the name, if possible, to all 
+--   attributes qualifiers.
+addNameToREnv :: RTypeEnv -> Alias -> RTypeEnv
+addNameToREnv = undefined
+
+-- | Gives the type of rename joins.
+typeJoins :: MonadThrow m 
+          => RJoins -> RSchema
+          -> m RTypeEnv
+typeJoins = undefined
+
+-- | Gives the type of cross producting multiple rename relations.
+typeRProd :: MonadThrow m 
+          => [Rename Relation] -> RSchema
+          -> m RTypeEnv
+typeRProd = undefined
+
+-- | Returns the type of a rename relation.
+typeRRel :: MonadThrow m 
+          => Rename Relation -> RSchema
+          -> m RTypeEnv
+typeRRel = undefined
 
 -- -- | Static semantics of relational conditions.
 -- typeOfSqlCond :: MonadThrow m => SqlCond RAlgebra -> RTypeEnv -> RSchema -> m RTypeEnv
