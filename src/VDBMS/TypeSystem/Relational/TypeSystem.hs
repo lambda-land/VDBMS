@@ -26,18 +26,21 @@ import VDBMS.DBMS.Value.Value (typeOf,SqlType)
 
 -- | Attribute information for relational type env.
 data RAttrInfo 
-  = RAttrInfo [(Qualifier,SqlType)]
-  -- {
-  --     rAttrType :: SqlType
-  --   , rAttrQuals :: [Qualifier]
-  --   }
+  = RAttrInfo {
+      rAttrType :: SqlType
+    , rAttrQuals :: Qualifier
+    }
  deriving (Data,Ord,Eq,Show,Typeable)
+
+-- | Comprehensive attribute information required for 
+--   relational type env.
+type RAttrInformation = [RAttrInfo]
 
 -- | Relatioanl type enviornment.
 -- type RTypeEnv = RTableSchema
 
 -- | Relational type env.
-type RTypeEnv = M.Map Attribute RAttrInfo
+type RTypeEnv = M.Map Attribute RAttrInformation
 
 -- | Type enviornment errors.
 data RTypeError = 
@@ -149,7 +152,7 @@ typeRRel rr s =
 --   If a name alias exists for the relation it considers it as the new 
 --   name for the sql type, otherwise it attaches the relation name itself
 --   to the sqltype.
-sqlType2RAttrInfo :: Rename Relation -> SqlType -> RAttrInfo
+sqlType2RAttrInfo :: Rename Relation -> SqlType -> RAttrInformation
 sqlType2RAttrInfo rel at = undefined
   -- RAttrInfo at 
   --         $ maybe (pure $ RelQualifier (Relation relName))

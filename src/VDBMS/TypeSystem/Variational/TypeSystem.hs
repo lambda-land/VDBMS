@@ -38,15 +38,19 @@ data AttrInfo
   = AttrInfo {
       attrFexp :: F.FeatureExpr
     , attrType :: SqlType
-    , attrQuals :: [Qualifier]
+    , attrQuals :: Qualifier
     }
  deriving (Data,Ord,Eq,Show,Typeable)
+
+-- | Comprehensive attribute information required for a variaitnoal
+--   type env.
+type AttrInformation = [AttrInfo]
 
 -- | Variational type env.
 -- type TypeEnv = TableSchema
 
 -- | Variational type env.
-type TypeEnv = M.Map Attribute AttrInfo
+type TypeEnv = M.Map Attribute AttrInformation
 
 -- | Possible typing errors.
 data TypeError 
