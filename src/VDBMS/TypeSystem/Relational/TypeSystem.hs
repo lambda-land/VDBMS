@@ -29,8 +29,8 @@ import VDBMS.DBMS.Value.Value (typeOf,SqlType)
 -- | Attribute information for relational type env.
 data RAttrInfo 
   = RAttrInfo {
-      rtype :: SqlType
-    , rquals :: [Qualifier]
+      rAttrType :: SqlType
+    , rAttrQuals :: [Qualifier]
     }
  deriving (Eq,Show,Typeable)
 

@@ -33,6 +33,15 @@ import Control.Monad.Catch
 -- | Variational context that the query is living in at the moment.
 type VariationalContext = F.FeatureExpr
 
+-- | Variational attribute information for type env.
+data AttrInfo 
+  = AttrInfo {
+      attrFexp :: F.FeatureExpr
+    , attrType :: SqlType
+    , attrQuals :: [Qualifier]
+    }
+ deriving (Eq,Show,Typeable)
+
 -- | Variational type env.
 type TypeEnv = TableSchema
 
