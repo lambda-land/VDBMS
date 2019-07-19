@@ -37,9 +37,6 @@ data RAttrInfo
 --   relational type env.
 type RAttrInformation = [RAttrInfo]
 
--- | Relatioanl type enviornment.
--- type RTypeEnv = RTableSchema
-
 -- | Relational type env.
 type RTypeEnv = SM.Map Attribute RAttrInformation
 
@@ -50,7 +47,6 @@ data RTypeError =
   | RAttributesNotInTypeEnv Attributes RTypeEnv
   | RAttributeNotInTypeEnv Attribute RTypeEnv
   | REmptyAttrList RAlgebra
-  -- | RNotDisjointRels [Relation]
   | RNotUniqueRelAlias [Rename Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -65,8 +61,9 @@ typeOfRQuery (RSetOp o l r)    s =
      return tl
 typeOfRQuery (RProj as rq)     s = typeRProj as rq s 
 typeOfRQuery (RSel c rq)       s = 
-  do t <- typeOfRQuery (thing rq) s
-     let t' = addNameToREnv t (name rq)
+  do derivedQueryOK rq 
+     t <- typeOfRQuery (thing rq) s
+     let t' = updateNameSpaceREnv t (name rq)
      typeSqlCond c t' s
      return t'
 typeOfRQuery (RJoin js)        s = typeJoins js s 
@@ -88,6 +85,18 @@ typeRProj :: MonadThrow m
           -> m RTypeEnv
 typeRProj = undefined
 
+-- | checks if an attribute is consistent with the type env.
+attConsistentType :: MonadThrow m 
+                  => Attr -> RTypeEnv
+                  -> m ()
+attConsistentType = undefined
+
+-- | Checks if the derived query (subquery) is well-typed based on sql.
+derivedQueryOK :: MonadThrow m 
+               => Rename RAlgebra 
+               -> m ()
+derivedQueryOK = undefined
+
 -- | checks if the list of attributes to be projected is 
 --   ambiguous or not.
 ambiguousAtts :: MonadThrow m => Attributes -> m ()
@@ -98,14 +107,29 @@ ambiguousAtts = undefined
 typeSqlCond :: MonadThrow m 
             => SqlCond RAlgebra -> RTypeEnv -> RSchema
             -> m ()
-typeSqlCond = undefined
+typeSqlCond (SqlCond c)  t s = typeRCondition c t
+typeSqlCond (SqlIn a q)  t s = typeOfRQuery q s >>= onlyAttrInType a
+typeSqlCond (SqlNot c)   t s = typeSqlCond c t s 
+typeSqlCond (SqlOr l r)  t s = typeSqlCond l t s >> typeSqlCond r t s
+typeSqlCond (SqlAnd l r) t s = typeSqlCond l t s >> typeSqlCond r t s
+ 
+-- | Checks if the attribute is the only attribute of a type env.
+--   Helper for the In queries.
+onlyAttrInType :: MonadThrow m 
+               => Attr -> RTypeEnv
+               -> m ()
+onlyAttrInType = undefined
 
 -- | Checks if the relational condition is consistent 
 --   with the relational type env.
 typeRCondition :: MonadThrow m
                => RCondition -> RTypeEnv
                -> m ()
-typeRCondition = undefined
+typeRCondition (RLit b)      t = return () 
+typeRCondition (RComp _ l r) t = typeComp l r t 
+typeRCondition (RNot c)      t = typeRCondition c t
+typeRCondition (ROr l r)     t = typeRCondition l t >> typeRCondition r t
+typeRCondition (RAnd l r)    t = typeRCondition l t >> typeRCondition r t
 
 -- | Checks if the comparison is consistent with 
 --   relational type env.
@@ -117,8 +141,8 @@ typeComp = undefined
 -- | Adjusts a relational type env with a new name.
 --   Ie. it adds the name, if possible, to all 
 --   attributes qualifiers.
-addNameToREnv :: RTypeEnv -> Alias -> RTypeEnv
-addNameToREnv = undefined
+updateNameSpaceREnv :: RTypeEnv -> Alias -> RTypeEnv
+updateNameSpaceREnv = undefined
 
 -- | Gives the type of rename joins.
 typeJoins :: MonadThrow m 
