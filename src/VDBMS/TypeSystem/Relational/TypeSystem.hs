@@ -61,7 +61,8 @@ typeOfRQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
 typeOfRQuery (RSetOp o l r)    s = 
   do tl <- typeOfRQuery l s
      tr <- typeOfRQuery r s
-     typeRSetOp tl tr 
+     sameType tl tr 
+     return tl
 typeOfRQuery (RProj as rq)     s = typeRProj as rq s 
 typeOfRQuery (RSel c rq)       s = 
   do t <- typeOfRQuery (thing rq) s
@@ -74,10 +75,12 @@ typeOfRQuery (RTRef rr)        s = typeRRel rr s
 typeOfRQuery REmpty            _ = return M.empty
 
 -- | Determines the type of set operations.
-typeRSetOp :: MonadThrow m 
+sameType :: MonadThrow m 
            => RTypeEnv -> RTypeEnv 
-           -> m RTypeEnv
-typeRSetOp = undefined
+           -> m ()
+sameType tl tr 
+  | SM.keysSet tl == SM.keysSet tr = return ()
+  | otherwise = throwM $ RNotEquiveTypeEnv tl tr
 
 -- | Determines the type of a relational projection.
 typeRProj :: MonadThrow m 
