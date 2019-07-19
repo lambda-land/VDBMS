@@ -136,7 +136,41 @@ typeRCondition (RAnd l r)    t = typeRCondition l t >> typeRCondition r t
 typeComp :: MonadThrow m
          => Atom -> Atom -> RTypeEnv
          -> m ()
-typeComp = undefined
+typeComp a@(Val l)  a'@(Val r)  t 
+  | typeOf l == typeOf r = return ()
+  | otherwise = throwM $ RCompInvalid a a' t 
+typeComp a@(Val l)  a'@(Att r) t = 
+  do attrInType r t 
+     at <- lookupAttrTypeInEnv r t
+     if typeOf l == at 
+     then return ()
+     else throwM $ RCompInvalid a a' t
+typeComp a@(Att l) a'@(Val r)  t = 
+  do attrInType l t 
+     at <- lookupAttrTypeInEnv l t
+     if typeOf r == at 
+     then return ()
+     else throwM $ RCompInvalid a a' t
+typeComp a@(Att l) a'@(Att r) t = 
+  do attrInType l t 
+     attrInType r t 
+     at  <- lookupAttrTypeInEnv l t
+     at' <-  lookupAttrTypeInEnv r t
+     if at == at'
+     then return ()
+     else throwM $ RCompInvalid a a' t
+
+-- | Checks if an attribute (possibly with its qualifier) exists in a type env.
+attrInType :: MonadThrow m 
+           => Attr -> RTypeEnv
+           -> m ()
+attrInType = undefined
+
+-- | looks up the type of an attribute in the env.
+lookupAttrTypeInEnv :: MonadThrow m
+                    => Attr -> RTypeEnv
+                    -> m SqlType
+lookupAttrTypeInEnv = undefined
 
 -- | Adjusts a relational type env with a new name.
 --   Ie. it adds the name, if possible, to all 
