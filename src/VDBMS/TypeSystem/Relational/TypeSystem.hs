@@ -40,7 +40,7 @@ type RAttrInformation = [RAttrInfo]
 -- type RTypeEnv = RTableSchema
 
 -- | Relational type env.
-type RTypeEnv = M.Map Attribute RAttrInformation
+type RTypeEnv = SM.Map Attribute RAttrInformation
 
 -- | Type enviornment errors.
 data RTypeError = 
@@ -133,7 +133,13 @@ typeRProd rrs s =
 --   can't have: t.A and t.A but you can have t.A and r.A.
 --   uniqueRelAlias takes care of this.
 prodRTypes :: MonadThrow m => [RTypeEnv] -> m RTypeEnv
-prodRTypes = undefined
+prodRTypes ts = return $ SM.unionsWith combRTypes ts
+
+-- | Combines two relational attribute information.
+-- combRTypes :: MonadThrow m 
+--            => RAttrInformation -> RAttrInformation
+--            -> m RAttrInformation
+combRTypes = undefined
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
