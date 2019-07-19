@@ -139,16 +139,11 @@ typeRProd rrs s =
 --   qualifiers have different types. 
 --   You need to make sure that types are disjoint, i.e., you 
 --   can't have: t.A and t.A but you can have t.A and r.A.
---   uniqueRelAlias takes care of this.
+--   uniqueRelAlias in typeRProd is taking care of this.
+--   So while combining lists of attr info for a given attr
+--   we don't need to check this anymore.
 prodRTypes :: MonadThrow m => [RTypeEnv] -> m RTypeEnv
-prodRTypes ts = undefined
--- return $ SM.unionsWith combRTypes ts
-
--- | Combines two relational attribute information.
-combRTypes :: MonadThrow m 
-           => RAttrInformation -> RAttrInformation
-           -> m RAttrInformation
-combRTypes = undefined
+prodRTypes ts = return $ SM.unionsWith (++) ts
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
