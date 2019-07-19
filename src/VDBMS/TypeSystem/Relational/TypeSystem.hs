@@ -29,7 +29,7 @@ import VDBMS.DBMS.Value.Value (typeOf,SqlType)
 data RAttrInfo 
   = RAttrInfo {
       rAttrType :: SqlType
-    , rAttrQuals :: Qualifier
+    , rAttrQual :: Qualifier
     }
  deriving (Data,Ord,Eq,Show,Typeable)
 
@@ -44,10 +44,11 @@ type RTypeEnv = SM.Map Attribute RAttrInformation
 data RTypeError = 
     RCompInvalid Atom Atom RTypeEnv
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
-  | RAttributesNotInTypeEnv Attributes RTypeEnv
-  | RAttributeNotInTypeEnv Attribute RTypeEnv
+  | RAttrQualNotInTypeEnv Attr RAttrInformation
+  | RAttrNotInTypeEnv Attribute RTypeEnv
   | REmptyAttrList RAlgebra
   | RNotUniqueRelAlias [Rename Relation]
+  | RInOpMustContainOneClm RTypeEnv
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception RTypeError 
@@ -85,12 +86,6 @@ typeRProj :: MonadThrow m
           -> m RTypeEnv
 typeRProj = undefined
 
--- | checks if an attribute is consistent with the type env.
-attConsistentType :: MonadThrow m 
-                  => Attr -> RTypeEnv
-                  -> m ()
-attConsistentType = undefined
-
 -- | Checks if the derived query (subquery) is well-typed based on sql.
 derivedQueryOK :: MonadThrow m 
                => Rename RAlgebra 
@@ -108,7 +103,7 @@ typeSqlCond :: MonadThrow m
             => SqlCond RAlgebra -> RTypeEnv -> RSchema
             -> m ()
 typeSqlCond (SqlCond c)  t s = typeRCondition c t
-typeSqlCond (SqlIn a q)  t s = typeOfRQuery q s >>= onlyAttrInType a
+typeSqlCond (SqlIn a q)  t s = typeOfRQuery q s >>= onlyAttrInType a t
 typeSqlCond (SqlNot c)   t s = typeSqlCond c t s 
 typeSqlCond (SqlOr l r)  t s = typeSqlCond l t s >> typeSqlCond r t s
 typeSqlCond (SqlAnd l r) t s = typeSqlCond l t s >> typeSqlCond r t s
@@ -116,9 +111,13 @@ typeSqlCond (SqlAnd l r) t s = typeSqlCond l t s >> typeSqlCond r t s
 -- | Checks if the attribute is the only attribute of a type env.
 --   Helper for the In queries.
 onlyAttrInType :: MonadThrow m 
-               => Attr -> RTypeEnv
+               => Attr -> RTypeEnv -> RTypeEnv
                -> m ()
-onlyAttrInType = undefined
+onlyAttrInType a tenv tq = 
+  do attrInType a tenv
+     if Set.null $ attribute a `Set.delete` SM.keysSet tq 
+     then return ()
+     else throwM $ RInOpMustContainOneClm tq
 
 -- | Checks if the relational condition is consistent 
 --   with the relational type env.
@@ -164,8 +163,20 @@ typeComp a@(Att l) a'@(Att r) t =
 attrInType :: MonadThrow m 
            => Attr -> RTypeEnv
            -> m ()
-attrInType = undefined
+attrInType a t = 
+  maybe (throwM $ RAttrNotInTypeEnv (attribute a) t)
+        (qualMatch a)
+        (attribute a `SM.lookup` t)
+    where
+      qualMatch :: MonadThrow m => Attr -> RAttrInformation -> m ()
+      qualMatch a is = maybe 
+        (return ()) 
+        (\qual -> if qual `elem` fmap rAttrQual is 
+                  then return () 
+                  else throwM $ RAttrQualNotInTypeEnv a is) 
+        (qualifier a)
 
+-- maybe :: b -> (a -> b) -> Maybe a -> b
 -- | looks up the type of an attribute in the env.
 lookupAttrTypeInEnv :: MonadThrow m
                     => Attr -> RTypeEnv
@@ -237,7 +248,6 @@ uniqueRelAlias rrs
       relNames  = fmap relName rrs
       relName r = maybe (thing r) Relation (name r)
 
--- maybe :: b -> (a -> b) -> Maybe a -> b
 -- | Returns the type of a rename relation.
 typeRRel :: MonadThrow m 
           => Rename Relation -> RSchema
