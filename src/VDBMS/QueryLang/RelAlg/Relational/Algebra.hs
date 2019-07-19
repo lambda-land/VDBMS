@@ -16,15 +16,6 @@ import VDBMS.Variational.Opt
 import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Basics.SetOp
 
--- | Relational algebra.
--- data RAlgebra
---    = RSetOp SetOp RAlgebra RAlgebra
---    | RProj  [Attribute] RAlgebra
---    | RSel   (RCondition RAlgebra) RAlgebra
---    | RTRef  Relation
---    | REmpty 
---   deriving (Data,Eq,Show,Typeable,Ord)
-
 -- | Conditional relational joins.
 data RJoins 
    = RJoinTwoTable (Rename Relation) (Rename Relation) RCondition 
