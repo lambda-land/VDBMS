@@ -97,6 +97,11 @@ derivedQueryOK = undefined
 ambiguousAtts :: MonadThrow m => Attributes -> m ()
 ambiguousAtts = undefined
 
+-- | checks if an attribute used in conditions etc is ambiguous or not
+--   wrt the type env.
+ambiguousAttr :: MonadThrow m => Attr -> RTypeEnv -> m ()
+ambiguousAttr a t = undefined
+
 -- | Checks if the sql condition is consistent with 
 --   the relational type env and schema.
 typeSqlCond :: MonadThrow m 
@@ -139,22 +144,18 @@ typeComp a@(Val l)  a'@(Val r)  t
   | typeOf l == typeOf r = return ()
   | otherwise = throwM $ RCompInvalid a a' t 
 typeComp a@(Val l)  a'@(Att r) t = 
-  do attrInType r t 
-     at <- lookupAttrTypeInEnv r t
+  do at <- lookupAttrTypeInEnv r t
      if typeOf l == at 
      then return ()
      else throwM $ RCompInvalid a a' t
 typeComp a@(Att l) a'@(Val r)  t = 
-  do attrInType l t 
-     at <- lookupAttrTypeInEnv l t
+  do at <- lookupAttrTypeInEnv l t
      if typeOf r == at 
      then return ()
      else throwM $ RCompInvalid a a' t
 typeComp a@(Att l) a'@(Att r) t = 
-  do attrInType l t 
-     attrInType r t 
-     at  <- lookupAttrTypeInEnv l t
-     at' <-  lookupAttrTypeInEnv r t
+  do at  <- lookupAttrTypeInEnv l t
+     at' <- lookupAttrTypeInEnv r t
      if at == at'
      then return ()
      else throwM $ RCompInvalid a a' t
@@ -181,7 +182,20 @@ attrInType a t =
 lookupAttrTypeInEnv :: MonadThrow m
                     => Attr -> RTypeEnv
                     -> m SqlType
-lookupAttrTypeInEnv = undefined
+lookupAttrTypeInEnv a t = undefined
+  -- maybe (throwM $ RAttrNotInTypeEnv (attribute a) t)
+  --       (getAttrTypeOut a)
+  --       (attribute a `SM.lookup` t)
+  --   where
+  --     getAttrTypeOut :: MonadThrow m => Attr -> RAttrInformation -> m SqlType
+  --     getAttrTypeOut a is = maybe
+  --       (fmap rAttrType is) 
+  --       (\qual -> if qual `elem` fmap rAttrQual is 
+  --                 then return $ pure 
+  --                 $ lookup qual $ zip (fmap rAttrQual is) (fmap rAttrType is)
+  --                 else throwM $ RAttrQualNotInTypeEnv a is) 
+  --       (qualifier a)
+     
 
 -- | Adjusts a relational type env with a new name.
 --   Ie. it adds the name, if possible, to all 
