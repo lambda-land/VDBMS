@@ -50,7 +50,7 @@ data RTypeError =
   | RAttributesNotInTypeEnv Attributes RTypeEnv
   | RAttributeNotInTypeEnv Attribute RTypeEnv
   | REmptyAttrList RAlgebra
-  | RNotDisjointRels [Relation]
+  -- | RNotDisjointRels [Relation]
   | RNotUniqueRelAlias [Rename Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
@@ -121,7 +121,25 @@ addNameToREnv = undefined
 typeJoins :: MonadThrow m 
           => RJoins -> RSchema
           -> m RTypeEnv
-typeJoins = undefined
+typeJoins j@(RJoinTwoTable rl rr c) s = 
+  do uniqueRelAlias $ relJoins j
+     tl <- typeRRel rl s 
+     tr <- typeRRel rr s 
+     t <- prodRTypes (pure tl ++ pure tr)
+     typeRCondition c t
+     return t
+typeJoins j@(RJoinMore js rr c)     s = 
+  do uniqueRelAlias $ relJoins j
+     ts <- typeJoins js s
+     tr <- typeRRel rr s
+     t <- prodRTypes $ pure ts ++ pure tr
+     typeRCondition c t
+     return t
+
+-- | Gets the relations/aliases from the joins.
+relJoins :: RJoins -> [Rename Relation]
+relJoins (RJoinTwoTable rl rr c) = pure rl ++ pure rr 
+relJoins (RJoinMore js rr c)     = relJoins js ++ pure rr
 
 -- | Gives the type of cross producting multiple rename relations.
 typeRProd :: MonadThrow m 
@@ -143,7 +161,10 @@ typeRProd rrs s =
 --   So while combining lists of attr info for a given attr
 --   we don't need to check this anymore.
 prodRTypes :: MonadThrow m => [RTypeEnv] -> m RTypeEnv
-prodRTypes ts = return $ SM.unionsWith (++) ts
+prodRTypes ts = return $ SM.unionsWith combAttInfos ts
+
+-- | combinees attr informations. 
+combAttInfos = (++) 
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
