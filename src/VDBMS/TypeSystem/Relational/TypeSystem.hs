@@ -11,6 +11,7 @@ import qualified Data.Map as M
 import qualified Data.Map.Strict as SM
 import qualified Data.Set as Set 
 import Data.Set (Set)
+import Data.List (nub)
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -50,6 +51,7 @@ data RTypeError =
   | RAttributeNotInTypeEnv Attribute RTypeEnv
   | REmptyAttrList RAlgebra
   | RNotDisjointRels [Relation]
+  | RNotUniqueRelAlias [Rename Relation]
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception RTypeError 
@@ -82,6 +84,11 @@ typeRProj :: MonadThrow m
           => Attributes -> Rename RAlgebra -> RSchema
           -> m RTypeEnv
 typeRProj = undefined
+
+-- | checks if the list of attributes to be projected is 
+--   ambiguous or not.
+ambiguousAtts :: MonadThrow m => Attributes -> m ()
+ambiguousAtts = undefined
 
 -- | Checks if the sql condition is consistent with 
 --   the relational type env and schema.
@@ -121,7 +128,8 @@ typeRProd :: MonadThrow m
           => [Rename Relation] -> RSchema
           -> m RTypeEnv
 typeRProd rrs s = 
-  do ts <- mapM (flip typeRRel s) rrs
+  do uniqueRelAlias rrs 
+     ts <- mapM (flip typeRRel s) rrs
      t <- prodRTypes ts
      return $ t
 
@@ -133,19 +141,26 @@ typeRProd rrs s =
 --   can't have: t.A and t.A but you can have t.A and r.A.
 --   uniqueRelAlias takes care of this.
 prodRTypes :: MonadThrow m => [RTypeEnv] -> m RTypeEnv
-prodRTypes ts = return $ SM.unionsWith combRTypes ts
+prodRTypes ts = undefined
+-- return $ SM.unionsWith combRTypes ts
 
 -- | Combines two relational attribute information.
--- combRTypes :: MonadThrow m 
---            => RAttrInformation -> RAttrInformation
---            -> m RAttrInformation
+combRTypes :: MonadThrow m 
+           => RAttrInformation -> RAttrInformation
+           -> m RAttrInformation
 combRTypes = undefined
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
-uniqueRelAlias :: MonadThrow m => [RTypeEnv] -> m ()
-uniqueRelAlias = undefined
+uniqueRelAlias :: MonadThrow m => [Rename Relation] -> m ()
+uniqueRelAlias rrs 
+  | nub relNames == relNames = return ()
+  | otherwise                = throwM $ RNotUniqueRelAlias rrs
+    where
+      relNames  = fmap relName rrs
+      relName r = maybe (thing r) Relation (name r)
 
+-- maybe :: b -> (a -> b) -> Maybe a -> b
 -- | Returns the type of a rename relation.
 typeRRel :: MonadThrow m 
           => Rename Relation -> RSchema
