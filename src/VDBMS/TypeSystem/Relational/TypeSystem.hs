@@ -44,9 +44,11 @@ type RTypeEnv = SM.Map Attribute RAttrInformation
 data RTypeError = 
     RCompInvalid Atom Atom RTypeEnv
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
-  | RAttrQualNotInTypeEnv Attr RAttrInformation
+  | RQualNoInInfo Qualifier RAttrInformation
+  | RAttrQualNotInTypeEnv Attr RTypeEnv
   | RAttrNotInTypeEnv Attribute RTypeEnv
   | REmptyAttrList RAlgebra
+  | RAmbiguousAttr Attr RTypeEnv
   | RNotUniqueRelAlias [Rename Relation]
   | RInOpMustContainOneClm RTypeEnv
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
@@ -94,13 +96,62 @@ derivedQueryOK = undefined
 
 -- | checks if the list of attributes to be projected is 
 --   ambiguous or not.
-ambiguousAtts :: MonadThrow m => Attributes -> m ()
+ambiguousAtts :: MonadThrow m => Attributes -> RTypeEnv -> m ()
 ambiguousAtts = undefined
 
 -- | checks if an attribute used in conditions etc is ambiguous or not
 --   wrt the type env.
-ambiguousAttr :: MonadThrow m => Attr -> RTypeEnv -> m ()
-ambiguousAttr a t = undefined
+nonAmbiguousAttr :: MonadThrow m => Attr -> RTypeEnv -> m RAttrInfo
+nonAmbiguousAttr a t = 
+  do i <- lookupAttr (attribute a) t 
+     qs <- lookupAttrQuals (attribute a) t
+     if length qs > 1 
+     then maybe (throwM $ RAmbiguousAttr a t) (lookupAttrInfo i) (qualifier a)
+     else return $ head i
+
+-- | looks up attr info for a qualifier.
+lookupAttrInfo  ::  MonadThrow m
+                => RAttrInformation -> Qualifier
+                -> m RAttrInfo
+lookupAttrInfo i q = 
+  maybe 
+    (throwM $ RQualNoInInfo q i)
+    (\t -> return $ RAttrInfo t q)
+    (lookup q $ zip (fmap rAttrQual i) (fmap rAttrType i))
+
+-- | Returns all qualifiers for an attribute in a type.
+lookupAttrQuals :: MonadThrow m => Attribute -> RTypeEnv -> m [Qualifier]
+lookupAttrQuals a t = 
+  do i <- lookupAttr a t 
+     return $ fmap rAttrQual i
+
+-- | Looks up attribute information from the type.
+lookupAttr :: MonadThrow m => Attribute -> RTypeEnv -> m RAttrInformation
+lookupAttr a t = 
+  maybe 
+  (throwM $ RAttrNotInTypeEnv a t)
+  (\i -> return i)
+  (SM.lookup a t)
+
+-- | Checks if an attribute (possibly with its qualifier) exists in a type env.
+attrInType :: MonadThrow m 
+           => Attr -> RTypeEnv
+           -> m ()
+attrInType a t = 
+  do qs <- lookupAttrQuals (attribute a) t
+     maybe (return ()) 
+           (\q -> if q `elem` qs 
+                  then return () 
+                  else throwM $ RAttrQualNotInTypeEnv a t)
+           (qualifier a) 
+
+-- | looks up the type of an attribute in the env.
+lookupAttrTypeInEnv :: MonadThrow m
+                    => Attr -> RTypeEnv
+                    -> m SqlType
+lookupAttrTypeInEnv a t = 
+  do i <- nonAmbiguousAttr a t
+     return $ rAttrType i
 
 -- | Checks if the sql condition is consistent with 
 --   the relational type env and schema.
@@ -159,43 +210,6 @@ typeComp a@(Att l) a'@(Att r) t =
      if at == at'
      then return ()
      else throwM $ RCompInvalid a a' t
-
--- | Checks if an attribute (possibly with its qualifier) exists in a type env.
-attrInType :: MonadThrow m 
-           => Attr -> RTypeEnv
-           -> m ()
-attrInType a t = 
-  maybe (throwM $ RAttrNotInTypeEnv (attribute a) t)
-        (qualMatch a)
-        (attribute a `SM.lookup` t)
-    where
-      qualMatch :: MonadThrow m => Attr -> RAttrInformation -> m ()
-      qualMatch a is = maybe 
-        (return ()) 
-        (\qual -> if qual `elem` fmap rAttrQual is 
-                  then return () 
-                  else throwM $ RAttrQualNotInTypeEnv a is) 
-        (qualifier a)
-
--- maybe :: b -> (a -> b) -> Maybe a -> b
--- | looks up the type of an attribute in the env.
-lookupAttrTypeInEnv :: MonadThrow m
-                    => Attr -> RTypeEnv
-                    -> m SqlType
-lookupAttrTypeInEnv a t = undefined
-  -- maybe (throwM $ RAttrNotInTypeEnv (attribute a) t)
-  --       (getAttrTypeOut a)
-  --       (attribute a `SM.lookup` t)
-  --   where
-  --     getAttrTypeOut :: MonadThrow m => Attr -> RAttrInformation -> m SqlType
-  --     getAttrTypeOut a is = maybe
-  --       (fmap rAttrType is) 
-  --       (\qual -> if qual `elem` fmap rAttrQual is 
-  --                 then return $ pure 
-  --                 $ lookup qual $ zip (fmap rAttrQual is) (fmap rAttrType is)
-  --                 else throwM $ RAttrQualNotInTypeEnv a is) 
-  --       (qualifier a)
-     
 
 -- | Adjusts a relational type env with a new name.
 --   Ie. it adds the name, if possible, to all 
