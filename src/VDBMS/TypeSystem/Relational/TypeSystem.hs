@@ -64,9 +64,8 @@ typeOfRQuery (RSetOp o l r)    s =
      return tl
 typeOfRQuery (RProj as rq)     s = typeRProj as rq s 
 typeOfRQuery (RSel c rq)       s = 
-  do derivedQueryOK rq 
-     t <- typeOfRQuery (thing rq) s
-     let t' = updateNameSpaceREnv t (name rq)
+  do t <- typeOfRQuery (thing rq) s
+     t' <- updateType (name rq) t
      typeSqlCond c t' s
      return t'
 typeOfRQuery (RJoin js)        s = typeJoins js s 
@@ -86,18 +85,37 @@ sameType tl tr
 typeRProj :: MonadThrow m 
           => Attributes -> Rename RAlgebra -> RSchema
           -> m RTypeEnv
-typeRProj = undefined
+typeRProj as rq s = 
+  do t <- typeOfRQuery (thing rq) s
+     t' <- updateType (name rq) t 
+     t'' <- projAtts (fmap thing as) t
+     updateAttrs as t
+
+-- | Adjusts a relational type env with a new name.
+--   Ie. it adds the name, if possible, to all 
+--   attributes qualifiers.
+updateType :: MonadThrow m => Alias -> RTypeEnv -> m RTypeEnv
+updateType t = undefined
+
+-- | Projects a list of attributes from the type.
+projAtts :: MonadThrow m => [Attr] -> RTypeEnv -> m RTypeEnv
+projAtts = undefined
+
+-- | Update the attribute names to their new name if available.
+updateAttrs :: MonadThrow m => Attributes -> RTypeEnv -> m RTypeEnv
+updateAttrs = undefined
 
 -- | Checks if the derived query (subquery) is well-typed based on sql.
-derivedQueryOK :: MonadThrow m 
-               => Rename RAlgebra 
-               -> m ()
-derivedQueryOK = undefined
+--  TODO: combine it with updateType
+-- derivedQueryOK :: MonadThrow m 
+--                => Rename RAlgebra 
+--                -> m ()
+-- derivedQueryOK = undefined
 
 -- | checks if the list of attributes to be projected is 
 --   ambiguous or not.
-ambiguousAtts :: MonadThrow m => Attributes -> RTypeEnv -> m ()
-ambiguousAtts = undefined
+-- ambiguousAtts :: MonadThrow m => Attributes -> RTypeEnv -> m ()
+-- ambiguousAtts = undefined
 
 -- | checks if an attribute used in conditions etc is ambiguous or not
 --   wrt the type env.
@@ -210,12 +228,6 @@ typeComp a@(Att l) a'@(Att r) t =
      if at == at'
      then return ()
      else throwM $ RCompInvalid a a' t
-
--- | Adjusts a relational type env with a new name.
---   Ie. it adds the name, if possible, to all 
---   attributes qualifiers.
-updateNameSpaceREnv :: RTypeEnv -> Alias -> RTypeEnv
-updateNameSpaceREnv = undefined
 
 -- | Gives the type of rename joins.
 typeJoins :: MonadThrow m 
