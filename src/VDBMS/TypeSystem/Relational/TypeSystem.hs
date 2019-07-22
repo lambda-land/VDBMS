@@ -62,9 +62,10 @@ typeOfRQuery (RSetOp o l r)    s =
      tr <- typeOfRQuery r s
      sameType tl tr 
      return tl
-typeOfRQuery (RProj as rq)     s = typeRProj as rq s 
-typeOfRQuery (RSel c rq)       s = 
-  do t <- typeOfRQuery (thing rq) s
+typeOfRQuery q@(RProj as rq)     s = validSubQ q (thing rq) >> typeRProj as rq s 
+typeOfRQuery q@(RSel c rq)       s = 
+  do validSubQ q (thing rq)
+     t  <- typeOfRQuery (thing rq) s
      t' <- updateType (name rq) t
      typeSqlCond c t' s
      return t'
@@ -86,20 +87,30 @@ typeRProj :: MonadThrow m
           => Attributes -> Rename RAlgebra -> RSchema
           -> m RTypeEnv
 typeRProj as rq s = 
-  do t <- typeOfRQuery (thing rq) s
-     t' <- updateType (name rq) t 
+  do t   <- typeOfRQuery (thing rq) s
+     t'  <- updateType (name rq) t 
      t'' <- projAtts (fmap thing as) t
      updateAttrs as t
+
+-- | Checks if a subquery is valid in a given query. 
+--   Note: first query is the original query, the second one is
+--   is the subquery.
+validSubQ :: MonadThrow m => RAlgebra -> RAlgebra -> m ()
+validSubQ q subq = undefined
 
 -- | Adjusts a relational type env with a new name.
 --   Ie. it adds the name, if possible, to all 
 --   attributes qualifiers.
 updateType :: MonadThrow m => Alias -> RTypeEnv -> m RTypeEnv
-updateType t = undefined
+updateType a t = undefined
+  -- | 
+
+-- maybe :: b -> (a -> b) -> Maybe a -> b
 
 -- | Projects a list of attributes from the type.
 projAtts :: MonadThrow m => [Attr] -> RTypeEnv -> m RTypeEnv
-projAtts = undefined
+projAtts as t = undefined
+  -- do 
 
 -- | Update the attribute names to their new name if available.
 updateAttrs :: MonadThrow m => Attributes -> RTypeEnv -> m RTypeEnv
