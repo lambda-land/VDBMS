@@ -38,7 +38,7 @@ data RAttrInfo
 type RAttrInformation = [RAttrInfo]
 
 -- | Relational type env.
-type RTypeEnv = SM.Map Attribute RAttrInformation
+type RTypeEnv = M.Map Attribute RAttrInformation
 
 -- | Type enviornment errors.
 data RTypeError = 
