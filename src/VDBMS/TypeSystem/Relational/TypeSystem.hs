@@ -90,7 +90,6 @@ typeRProj :: MonadThrow m
 typeRProj as rq s = 
   do t   <- typeOfRQuery (thing rq) s
      let t'  = updateType (name rq) t 
-     -- t'' <- projAtts (fmap thing as) t
      updateAttrs as t'
 
 -- | Checks if a subquery is valid within a selection or projection.
@@ -110,13 +109,6 @@ updateType a t = maybe t (\n -> SM.map (appName n) t) a
     appName :: String -> RAttrInformation -> RAttrInformation
     appName n = fmap (updateQual (SubqueryQualifier n))
     updateQual q (RAttrInfo at aq) = RAttrInfo at q
-
--- | Projects a list of attributes from the type.
--- projAtts :: MonadThrow m => [Attr] -> RTypeEnv -> m RTypeEnv
--- projAtts as t = 
---   do mapM_ (flip attrInType t) as
---      ts <- mapM (flip projAtt t) as 
---      return $ SM.unionsWith (++) ts 
 
 -- | Projects one attribute from a type.
 projAtt :: MonadThrow m => Attr -> RTypeEnv -> m RTypeEnv
