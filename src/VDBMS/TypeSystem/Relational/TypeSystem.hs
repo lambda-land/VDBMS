@@ -113,20 +113,16 @@ updateType a t = maybe t (\n -> SM.map (appName n) t) a
 
 -- | Projects a list of attributes from the type.
 projAtts :: MonadThrow m => [Attr] -> RTypeEnv -> m RTypeEnv
-projAtts as t = undefined
-  -- do mapM_ (flip attrInType t) as
-  --    is <- mapM (flip nonAmbiguousAttr t) as
-  --    let t' = SM.restrictKeys t (Set.fromList $ fmap attribute as)
-  --        t'' = SM.mapWithKey dropOtherQuals t'
-  --    return t''
+projAtts as t = 
+  do mapM_ (flip attrInType t) as
+     ts <- mapM (flip projAtt t) as 
+     return $ SM.unionsWith (++) ts 
 
--- | drops other qualifiers from an attribute information based on the given
---   attr.
-dropOtherQuals :: Attr -> RAttrInformation -> RAttrInformation
-dropOtherQuals a is = 
-  maybe (pure $ head is) 
-        (\q -> filter (\i -> rAttrQual i == q) is) 
-        (qualifier a)
+-- | Projects one attribute from a type.
+projAtt :: MonadThrow m => Attr -> RTypeEnv -> m RTypeEnv
+projAtt a t = 
+  do i <- nonAmbiguousAttr a t
+     return $ SM.singleton (attribute a) (pure i)
 
 -- | Update the attribute names to their new name if available.
 updateAttrs :: MonadThrow m => Attributes -> RTypeEnv -> m RTypeEnv
