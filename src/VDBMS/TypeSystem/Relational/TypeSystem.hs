@@ -110,30 +110,27 @@ updateType a t = maybe t (\n -> SM.map (appName n) t) a
     appName :: String -> RAttrInformation -> RAttrInformation
     appName n = fmap (updateQual (SubqueryQualifier n))
     updateQual q (RAttrInfo at aq) = RAttrInfo at q
-  -- | 
-
--- maybe :: b -> (a -> b) -> Maybe a -> b
 
 -- | Projects a list of attributes from the type.
 projAtts :: MonadThrow m => [Attr] -> RTypeEnv -> m RTypeEnv
 projAtts as t = undefined
-  -- do 
+  -- do mapM_ (flip attrInType t) as
+  --    is <- mapM (flip nonAmbiguousAttr t) as
+  --    let t' = SM.restrictKeys t (Set.fromList $ fmap attribute as)
+  --        t'' = SM.mapWithKey dropOtherQuals t'
+  --    return t''
+
+-- | drops other qualifiers from an attribute information based on the given
+--   attr.
+dropOtherQuals :: Attr -> RAttrInformation -> RAttrInformation
+dropOtherQuals a is = 
+  maybe (pure $ head is) 
+        (\q -> filter (\i -> rAttrQual i == q) is) 
+        (qualifier a)
 
 -- | Update the attribute names to their new name if available.
 updateAttrs :: MonadThrow m => Attributes -> RTypeEnv -> m RTypeEnv
-updateAttrs = undefined
-
--- | Checks if the derived query (subquery) is well-typed based on sql.
---  TODO: combine it with updateType
--- derivedQueryOK :: MonadThrow m 
---                => Rename RAlgebra 
---                -> m ()
--- derivedQueryOK = undefined
-
--- | checks if the list of attributes to be projected is 
---   ambiguous or not.
--- ambiguousAtts :: MonadThrow m => Attributes -> RTypeEnv -> m ()
--- ambiguousAtts = undefined
+updateAttrs a t = undefined
 
 -- | checks if an attribute used in conditions etc is ambiguous or not
 --   wrt the type env.
