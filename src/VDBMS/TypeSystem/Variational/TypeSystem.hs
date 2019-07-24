@@ -38,7 +38,7 @@ data AttrInfo
   = AttrInfo {
       attrFexp :: F.FeatureExpr
     , attrType :: SqlType
-    , attrQuals :: Qualifier
+    , attrQual :: Qualifier
     }
  deriving (Data,Ord,Eq,Show,Typeable)
 
@@ -81,24 +81,14 @@ verifyTypeEnv t = undefined
 typeOfQuery :: MonadThrow m 
              => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
-typeOfQuery = undefined
--- typeOfQuery (SetOp o l r)    ctx s = typeSetOp l r ctx s
--- typeOfQuery (Proj oas rq)    ctx s = typeProj oas rq ctx s
--- typeOfQuery (Sel c rq)       ctx s = 
---   do t <- typeOfQuery (thing rq) ctx s
---      typeVsqlCond c ctx s t 
---      appFexpTableSch ctx t
--- typeOfQuery (AChc f l r)     ctx s = 
---   do tl <- typeOfQuery l (F.And ctx f) s
---      tr <- typeOfQuery r (F.And ctx (F.Not f)) s
---      return $ mkOpt (F.Or (getFexp tl) (getFexp tr)) 
---                   $ rowTypeUnion (getObj tl) (getObj tr)
--- typeOfQuery (Join js)        ctx s = typeJoin js ctx s
--- typeOfQuery (Prod rl rr rrs) ctx s = 
---   typeProd (thing rl) (thing rr) (fmap thing rrs) ctx s
--- typeOfQuery (TRef rr)        ctx s = typeRel (thing rr) ctx s
--- typeOfQuery Empty            ctx s = 
---   appFexpTableSch ctx $ mkOpt (F.Lit True) M.empty
+typeOfQuery (SetOp o l r)    ctx s = undefined
+typeOfQuery (Proj oas rq)    ctx s = undefined
+typeOfQuery (Sel c rq)       ctx s = undefined
+typeOfQuery (AChc f l r)     ctx s = undefined
+typeOfQuery (Join js)        ctx s = undefined
+typeOfQuery (Prod rl rr rrs) ctx s = undefined
+typeOfQuery (TRef rr)        ctx s = undefined
+typeOfQuery Empty            ctx s = undefined
 
 -- -- | Statically type chekcs a cross product query.
 -- --   Note that it make sures that the two types are
