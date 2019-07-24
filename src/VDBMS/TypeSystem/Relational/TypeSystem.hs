@@ -67,7 +67,7 @@ typeOfRQuery q@(RProj as rq)     s = validSubQ rq >> typeRProj as rq s
 typeOfRQuery q@(RSel c rq)       s = 
   do validSubQ rq
      t  <- typeOfRQuery (thing rq) s
-     t' <- updateType (name rq) t
+     let t' = updateType (name rq) t
      typeSqlCond c t' s
      return t'
 typeOfRQuery (RJoin js)        s = typeJoins js s 
@@ -89,7 +89,7 @@ typeRProj :: MonadThrow m
           -> m RTypeEnv
 typeRProj as rq s = 
   do t   <- typeOfRQuery (thing rq) s
-     t'  <- updateType (name rq) t 
+     let t'  = updateType (name rq) t 
      t'' <- projAtts (fmap thing as) t
      updateAttrs as t
 
@@ -104,8 +104,12 @@ validSubQ _ = return ()
 -- | Adjusts a relational type env with a new name.
 --   Ie. it adds the name, if possible, to all 
 --   attributes qualifiers.
-updateType :: MonadThrow m => Alias -> RTypeEnv -> m RTypeEnv
-updateType a t = undefined
+updateType :: Alias -> RTypeEnv -> RTypeEnv
+updateType a t = maybe t (\n -> SM.map (appName n) t) a
+  where
+    appName :: String -> RAttrInformation -> RAttrInformation
+    appName n = fmap (updateQual (SubqueryQualifier n))
+    updateQual q (RAttrInfo at aq) = RAttrInfo at q
   -- | 
 
 -- maybe :: b -> (a -> b) -> Maybe a -> b
