@@ -90,8 +90,8 @@ typeRProj :: MonadThrow m
 typeRProj as rq s = 
   do t   <- typeOfRQuery (thing rq) s
      let t'  = updateType (name rq) t 
-     t'' <- projAtts (fmap thing as) t
-     updateAttrs as t
+     -- t'' <- projAtts (fmap thing as) t
+     updateAttrs as t'
 
 -- | Checks if a subquery is valid within a selection or projection.
 --   Assumption: optimization has already been done. so we don't have 
@@ -112,11 +112,11 @@ updateType a t = maybe t (\n -> SM.map (appName n) t) a
     updateQual q (RAttrInfo at aq) = RAttrInfo at q
 
 -- | Projects a list of attributes from the type.
-projAtts :: MonadThrow m => [Attr] -> RTypeEnv -> m RTypeEnv
-projAtts as t = 
-  do mapM_ (flip attrInType t) as
-     ts <- mapM (flip projAtt t) as 
-     return $ SM.unionsWith (++) ts 
+-- projAtts :: MonadThrow m => [Attr] -> RTypeEnv -> m RTypeEnv
+-- projAtts as t = 
+--   do mapM_ (flip attrInType t) as
+--      ts <- mapM (flip projAtt t) as 
+--      return $ SM.unionsWith (++) ts 
 
 -- | Projects one attribute from a type.
 projAtt :: MonadThrow m => Attr -> RTypeEnv -> m RTypeEnv
@@ -126,7 +126,15 @@ projAtt a t =
 
 -- | Update the attribute names to their new name if available.
 updateAttrs :: MonadThrow m => Attributes -> RTypeEnv -> m RTypeEnv
-updateAttrs a t = undefined
+updateAttrs as t = 
+  do ts <- mapM (flip updateAtt t) as
+     return $ SM.unionsWith (++) ts
+
+-- | Gives a type env of only the given attribute.
+updateAtt :: MonadThrow m => Rename Attr -> RTypeEnv -> m RTypeEnv
+updateAtt ra t =
+  do tOfa <- projAtt (thing ra) t 
+     return $ maybe tOfa (\n -> SM.mapKeys (\_ -> Attribute n) tOfa) (name ra)
 
 -- | checks if an attribute used in conditions etc is ambiguous or not
 --   wrt the type env.
