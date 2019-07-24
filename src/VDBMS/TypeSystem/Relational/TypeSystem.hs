@@ -44,13 +44,14 @@ type RTypeEnv = SM.Map Attribute RAttrInformation
 data RTypeError = 
     RCompInvalid Atom Atom RTypeEnv
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
-  | RQualNoInInfo Qualifier RAttrInformation
+  | RQualNotInInfo Qualifier RAttrInformation
   | RAttrQualNotInTypeEnv Attr RTypeEnv
   | RAttrNotInTypeEnv Attribute RTypeEnv
   | REmptyAttrList RAlgebra
   | RAmbiguousAttr Attr RTypeEnv
   | RNotUniqueRelAlias [Rename Relation]
   | RInOpMustContainOneClm RTypeEnv
+  | RMissingAlias (Rename RAlgebra)
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception RTypeError 
@@ -62,9 +63,9 @@ typeOfRQuery (RSetOp o l r)    s =
      tr <- typeOfRQuery r s
      sameType tl tr 
      return tl
-typeOfRQuery q@(RProj as rq)     s = validSubQ q (thing rq) >> typeRProj as rq s 
+typeOfRQuery q@(RProj as rq)     s = validSubQ rq >> typeRProj as rq s 
 typeOfRQuery q@(RSel c rq)       s = 
-  do validSubQ q (thing rq)
+  do validSubQ rq
      t  <- typeOfRQuery (thing rq) s
      t' <- updateType (name rq) t
      typeSqlCond c t' s
@@ -92,11 +93,13 @@ typeRProj as rq s =
      t'' <- projAtts (fmap thing as) t
      updateAttrs as t
 
--- | Checks if a subquery is valid in a given query. 
---   Note: first query is the original query, the second one is
---   is the subquery.
-validSubQ :: MonadThrow m => RAlgebra -> RAlgebra -> m ()
-validSubQ q subq = undefined
+-- | Checks if a subquery is valid within a selection or projection.
+--   Assumption: optimization has already been done. so we don't have 
+--   an unncessary combination of selections and projections in a query.
+validSubQ :: MonadThrow m => Rename RAlgebra -> m ()
+validSubQ rq@(Rename a (RSetOp _ _ _)) = 
+  maybe (throwM $ RMissingAlias rq) (\_ -> return ()) a 
+validSubQ _ = return ()
 
 -- | Adjusts a relational type env with a new name.
 --   Ie. it adds the name, if possible, to all 
@@ -144,7 +147,7 @@ lookupAttrInfo  ::  MonadThrow m
                 -> m RAttrInfo
 lookupAttrInfo i q = 
   maybe 
-    (throwM $ RQualNoInInfo q i)
+    (throwM $ RQualNotInInfo q i)
     (\t -> return $ RAttrInfo t q)
     (lookup q $ zip (fmap rAttrQual i) (fmap rAttrType i))
 
