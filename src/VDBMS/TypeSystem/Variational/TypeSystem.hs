@@ -148,7 +148,25 @@ unionChoiceType = undefined
 typeJoin :: MonadThrow m 
          => Joins -> VariationalContext -> Schema
          -> m TypeEnv
-typeJoin = undefined
+typeJoin j@(JoinTwoTables rl rr c) ctx s = 
+  do uniqueRelAlias $ relJoins j
+     tl <- typeRel rl ctx s 
+     tr <- typeRel rr ctx s 
+     t <- prodTypes (pure tl ++ pure tr)
+     typeCondition c ctx t 
+     return t 
+typeJoin j@(JoinMore js rr c)      ctx s = 
+  do uniqueRelAlias $ relJoins j
+     ts <- typeJoin js ctx s 
+     tr <- typeRel rr ctx s 
+     t <- prodTypes $ pure ts ++ pure tr 
+     typeCondition c ctx t 
+     return t
+
+-- | Gets relation names/aliases from joins.
+relJoins :: Joins -> [Rename Relation]
+relJoins (JoinTwoTables rl rr c) = pure rl ++ pure rr
+relJoins (JoinMore js rr c)      = relJoins js ++ pure rr 
 
 -- | Gives the type of cross producting multiple rename relations.
 typeProd :: MonadThrow m 
@@ -165,7 +183,8 @@ prodTypes ts
   | satisfiable f = return prodTypeMaps
   | otherwise = throwM $ UnsatFexpsInProduct f
   where
-    f = foldr F.And (F.Lit True) (map getFexp ts)
+    -- f = foldr F.And (F.Lit True) (map getFexp ts)
+    f = foldr (F.And . getFexp) (F.Lit True) ts
     prodTypeMaps = mkOpt f (SM.unionsWith (++) (map getObj ts))
 
 -- | Checks that table/alias are unique. The relation names or
