@@ -157,7 +157,20 @@ typeProd = undefined
 typeRel :: MonadThrow m 
         => Rename Relation -> VariationalContext -> Schema
         -> m TypeEnv
-typeRel = undefined
+typeRel rr ctx s = 
+  do tsch <- lookupTableSch (thing rr) s 
+     let t = tableSch2TypeEnv rr tsch 
+     appCtxtToEnv ctx t
+
+-- | Generates a type env from a table schema.
+tableSch2TypeEnv :: Rename Relation -> TableSchema -> TypeEnv 
+tableSch2TypeEnv rr tsch = 
+  updateOptObj (SM.map (optSqlType2AttInfo rr) (getObj tsch)) tsch 
+  where 
+    optSqlType2AttInfo rr ot = pure $ AttrInfo (getFexp ot) (getObj ot) 
+      $ maybe (RelQualifier (thing rr))
+              (\n -> RelQualifier (Relation n)) 
+              (name rr)
 
 -- | Applies a variational ctxt to a type. 
 --   Don't forget the empty env!!
