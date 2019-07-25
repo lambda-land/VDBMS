@@ -54,7 +54,8 @@ type TypeEnv = Opt (M.Map Attribute AttrInformation)
 
 -- | Possible typing errors.
 data TypeError 
-  = InvalidRelRef Relation VariationalContext F.FeatureExpr
+  = IncosistentCtxtWithEnv VariationalContext TypeEnv
+  | InvalidRelRef Relation VariationalContext F.FeatureExpr
   | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
   | EmptyAttrList Algebra 
   | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
@@ -92,7 +93,7 @@ typeOfQuery (Join js)        ctx s = typeJoin js ctx s
 typeOfQuery (Prod rl rr rrs) ctx s = typeProd (rl : rr : rrs) ctx s
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
 typeOfQuery Empty            ctx s = 
-  return $ appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
+  appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
 
 -- | Determines the type a set operation query.
 typeSetOp :: MonadThrow m 
@@ -160,8 +161,14 @@ typeRel = undefined
 
 -- | Applies a variational ctxt to a type. 
 --   Don't forget the empty env!!
-appCtxtToEnv :: VariationalContext -> TypeEnv -> TypeEnv
-appCtxtToEnv ctx t = undefined
+appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
+appCtxtToEnv ctx t 
+    | satisfiable f = return $ mkOpt f $ appCtxtToMap f (getObj t)
+    | otherwise = throwM $ IncosistentCtxtWithEnv ctx t
+  where 
+    f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
+    appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
+    appCtxtToAttInfo fexp is = filter (\i -> satisfiable (F.And fexp (attrFexp i))) is
 
 
 
