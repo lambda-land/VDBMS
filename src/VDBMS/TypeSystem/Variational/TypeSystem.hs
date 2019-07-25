@@ -91,7 +91,7 @@ typeOfQuery (Sel c rq)       ctx s = typeSel c rq ctx s
 typeOfQuery (AChc f l r)     ctx s = 
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
-     return $ unionChoiceType tl tr
+     return $ typeUnion tl tr
 typeOfQuery (Join js)        ctx s = typeJoin js ctx s
 typeOfQuery (Prod rl rr rrs) ctx s = typeProd (rl : rr : rrs) ctx s
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
@@ -128,21 +128,45 @@ typeSel = undefined
 typeVsqlCond :: MonadThrow m 
              => VsqlCond -> VariationalContext -> Schema -> TypeEnv 
              -> m ()
-typeVsqlCond = undefined
+typeVsqlCond (VsqlCond c)     ctx s t = appCtxtToEnv ctx t 
+  >>= typeCondition c ctx 
+typeVsqlCond (VsqlIn a q)     ctx s t = undefined
+  -- do t <- typeOfQuery q ctx s 
+  --    lookupAttFexpTypeInRowType (attribute a) (getObj t)
+  --    return ()
+typeVsqlCond (VsqlNot c)      ctx s t = typeVsqlCond c ctx s t 
+typeVsqlCond (VsqlOr l r)     ctx s t = typeVsqlCond l ctx s t 
+  >> typeVsqlCond r ctx s t 
+typeVsqlCond (VsqlAnd l r)    ctx s t = typeVsqlCond l ctx s t
+  >> typeVsqlCond r ctx s t 
+typeVsqlCond (VsqlCChc f l r) ctx s t = typeVsqlCond l (F.And ctx f) s t
+  >> typeVsqlCond r (F.And ctx (F.Not f)) s t
+
 
 -- | Type checks variational relational conditions.
 typeCondition :: MonadThrow m 
               => Condition -> VariationalContext -> TypeEnv
               -> m ()
-typeCondition = undefined
+typeCondition (Lit b)      ctx t = return ()
+typeCondition (Comp o l r) ctx t = typeComp l r t
+typeCondition (Not c)      ctx t = typeCondition c ctx t
+typeCondition (Or l r)     ctx t = typeCondition l ctx t >> typeCondition r ctx t
+typeCondition (And l r)    ctx t = typeCondition l ctx t >> typeCondition r ctx t
+typeCondition (CChc f l r) ctx t = 
+  (appCtxtToEnv (F.And ctx f) t >>= typeCondition l (F.And ctx f))
+  >> (appCtxtToEnv (F.And ctx (F.Not f)) t >>= typeCondition r (F.And ctx (F.Not f)))
 
 -- | Type checks a comparison.
-typeComp :: MonadThrow m => Atom -> Atom -> TypeEnv -> m ()
+typeComp :: MonadThrow m 
+         => Atom -> Atom -> TypeEnv 
+         -> m ()
 typeComp = undefined
 
 -- | Unions two type envs for a choice query.
-unionChoiceType ::  TypeEnv -> TypeEnv -> TypeEnv
-unionChoiceType = undefined
+typeUnion ::  TypeEnv -> TypeEnv -> TypeEnv
+typeUnion t t' = 
+  mkOpt (F.Or (getFexp t) (getFexp t'))
+        (SM.unionWith (++) (getObj t) (getObj t'))
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
@@ -180,7 +204,7 @@ typeProd rrs ctx s =
 -- | Products a list of types.
 prodTypes :: MonadThrow m => [TypeEnv] -> m TypeEnv
 prodTypes ts 
-  | satisfiable f = return prodTypeMaps
+  | satisfiable f = appCtxtToEnv f prodTypeMaps
   | otherwise = throwM $ UnsatFexpsInProduct f
   where
     -- f = foldr F.And (F.Lit True) (map getFexp ts)
