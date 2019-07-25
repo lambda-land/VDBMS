@@ -61,7 +61,7 @@ typeOfRQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
 typeOfRQuery (RSetOp o l r)    s = 
   do tl <- typeOfRQuery l s
      tr <- typeOfRQuery r s
-     sameType tl tr 
+     sameRType tl tr 
      return tl
 typeOfRQuery q@(RProj as rq)     s = validSubQ rq >> typeRProj as rq s 
 typeOfRQuery q@(RSel c rq)       s = 
@@ -75,11 +75,11 @@ typeOfRQuery (RProd rl rr rrs) s = typeRProd (rl : rr : rrs) s
 typeOfRQuery (RTRef rr)        s = typeRRel rr s 
 typeOfRQuery REmpty            _ = return M.empty
 
--- | Determines the type of set operations.
-sameType :: MonadThrow m 
+-- | Checks if two type are the same.
+sameRType :: MonadThrow m 
            => RTypeEnv -> RTypeEnv 
            -> m ()
-sameType tl tr 
+sameRType tl tr 
   | SM.keysSet tl == SM.keysSet tr = return ()
   | otherwise = throwM $ RNotEquiveTypeEnv tl tr
 
