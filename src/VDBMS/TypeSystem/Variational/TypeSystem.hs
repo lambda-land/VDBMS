@@ -55,16 +55,17 @@ type TypeEnv = Opt (M.Map Attribute AttrInformation)
 
 -- | Possible typing errors.
 data TypeError 
-  = IncosistentCtxtWithEnv VariationalContext TypeEnv
+  = CtxUnsatOverEnv VariationalContext TypeEnv
   | NotUniqueRelAlias [Rename Relation]
-  | InvalidRelRef Relation VariationalContext F.FeatureExpr
-  | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
-  | EmptyAttrList Algebra 
-  | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
-  | CompInvalid Atom Atom TypeEnv
-  | IncompatibleTypes [TypeEnv]
-  | NotDisjointTypes [TypeEnv]
-  | EnvFexpUnsat F.FeatureExpr TypeEnv
+  | UnsatFexpsInProduct F.FeatureExpr 
+  -- | InvalidRelRef Relation VariationalContext F.FeatureExpr
+  -- | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
+  -- | EmptyAttrList Algebra 
+  -- | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
+  -- | CompInvalid Atom Atom TypeEnv
+  -- | IncompatibleTypes [TypeEnv]
+  -- | NotDisjointTypes [TypeEnv]
+  -- | EnvFexpUnsat F.FeatureExpr TypeEnv
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
@@ -160,7 +161,12 @@ typeProd rrs ctx s =
 
 -- | Products a list of types.
 prodTypes :: MonadThrow m => [TypeEnv] -> m TypeEnv
-prodTypes ts = undefined
+prodTypes ts 
+  | satisfiable f = return prodTypeMaps
+  | otherwise = throwM $ UnsatFexpsInProduct f
+  where
+    f = foldr F.And (F.Lit True) (map getFexp ts)
+    prodTypeMaps = mkOpt f (SM.unionsWith (++) (map getObj ts))
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
@@ -197,7 +203,7 @@ tableSch2TypeEnv rr tsch =
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
 appCtxtToEnv ctx t 
     | satisfiable f = return $ mkOpt f $ appCtxtToMap f (getObj t)
-    | otherwise = throwM $ IncosistentCtxtWithEnv ctx t
+    | otherwise = throwM $ CtxUnsatOverEnv ctx t
   where 
     f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
     appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
