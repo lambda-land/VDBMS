@@ -24,6 +24,7 @@ import qualified Data.Map.Strict as SM
 -- import qualified Data.Map.Merge.Strict as StrictM
 import qualified Data.Set as Set 
 import Data.Set (Set)
+import Data.List (nub)
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -55,6 +56,7 @@ type TypeEnv = Opt (M.Map Attribute AttrInformation)
 -- | Possible typing errors.
 data TypeError 
   = IncosistentCtxtWithEnv VariationalContext TypeEnv
+  | NotUniqueRelAlias [Rename Relation]
   | InvalidRelRef Relation VariationalContext F.FeatureExpr
   | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
   | EmptyAttrList Algebra 
@@ -151,7 +153,25 @@ typeJoin = undefined
 typeProd :: MonadThrow m 
          => [Rename Relation] -> VariationalContext -> Schema
          -> m TypeEnv
-typeProd = undefined
+typeProd rrs ctx s = 
+  do uniqueRelAlias rrs 
+     ts <- mapM (flip (flip typeRel ctx) s) rrs
+     prodTypes ts
+
+-- | Products a list of types.
+prodTypes :: MonadThrow m => [TypeEnv] -> m TypeEnv
+prodTypes ts = undefined
+
+-- | Checks that table/alias are unique. The relation names or
+--   their aliases must be unique.
+uniqueRelAlias :: MonadThrow m => [Rename Relation] -> m ()
+uniqueRelAlias rrs 
+  | nub relNames == relNames = return ()
+  | otherwise                = throwM $ NotUniqueRelAlias rrs
+    where
+      relNames  = fmap relName rrs
+      relName r = maybe (thing r) Relation (name r)
+
 
 -- | Returns the type of a rename relation.
 typeRel :: MonadThrow m 

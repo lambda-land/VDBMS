@@ -248,14 +248,14 @@ typeJoins j@(RJoinTwoTable rl rr c) s =
   do uniqueRelAlias $ relJoins j
      tl <- typeRRel rl s 
      tr <- typeRRel rr s 
-     t <- prodRTypes (pure tl ++ pure tr)
+     let t = prodRTypes (pure tl ++ pure tr)
      typeRCondition c t
      return t
 typeJoins j@(RJoinMore js rr c)     s = 
   do uniqueRelAlias $ relJoins j
      ts <- typeJoins js s
      tr <- typeRRel rr s
-     t <- prodRTypes $ pure ts ++ pure tr
+     let t = prodRTypes $ pure ts ++ pure tr
      typeRCondition c t
      return t
 
@@ -271,7 +271,7 @@ typeRProd :: MonadThrow m
 typeRProd rrs s = 
   do uniqueRelAlias rrs 
      ts <- mapM (flip typeRRel s) rrs
-     t <- prodRTypes ts
+     let t = prodRTypes ts
      return $ t
 
 -- | Gets a list of relational type env and product them.
@@ -283,8 +283,8 @@ typeRProd rrs s =
 --   uniqueRelAlias in typeRProd is taking care of this.
 --   So while combining lists of attr info for a given attr
 --   we don't need to check this anymore.
-prodRTypes :: MonadThrow m => [RTypeEnv] -> m RTypeEnv
-prodRTypes ts = return $ SM.unionsWith combAttInfos ts
+prodRTypes :: [RTypeEnv] -> RTypeEnv
+prodRTypes ts = SM.unionsWith combAttInfos ts
 
 -- | combinees attr informations. 
 combAttInfos = (++) 
