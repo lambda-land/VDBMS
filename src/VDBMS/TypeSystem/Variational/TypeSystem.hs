@@ -81,11 +81,7 @@ verifyTypeEnv t = undefined
 typeOfQuery :: MonadThrow m 
              => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
-typeOfQuery (SetOp o l r)    ctx s = 
-  do tl <- typeOfQuery l ctx s 
-     tr <- typeOfQuery r ctx s 
-     sameType tl tr 
-     return tl 
+typeOfQuery (SetOp o l r)    ctx s = typeSetOp l r ctx s 
 typeOfQuery (Proj oas rq)    ctx s = typeProj oas rq ctx s
 typeOfQuery (Sel c rq)       ctx s = typeSel c rq ctx s
 typeOfQuery (AChc f l r)     ctx s = 
@@ -97,6 +93,16 @@ typeOfQuery (Prod rl rr rrs) ctx s = typeProd (rl : rr : rrs) ctx s
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
 typeOfQuery Empty            ctx s = 
   return $ appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
+
+-- | Determines the type a set operation query.
+typeSetOp :: MonadThrow m 
+          => Algebra -> Algebra -> VariationalContext -> Schema 
+          -> m TypeEnv
+typeSetOp l r ctx s = 
+  do tl <- typeOfQuery l ctx s
+     tr <- typeOfQuery r ctx s 
+     sameType tl tr 
+     return tl
 
 -- | Checks if two type are the same.
 sameType :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
@@ -113,6 +119,22 @@ typeSel :: MonadThrow m
          => VsqlCond -> Rename Algebra -> VariationalContext -> Schema
          -> m TypeEnv
 typeSel = undefined
+
+-- | Type checks variational sql conditions.
+typeVsqlCond :: MonadThrow m 
+             => VsqlCond -> VariationalContext -> Schema -> TypeEnv 
+             -> m ()
+typeVsqlCond = undefined
+
+-- | Type checks variational relational conditions.
+typeCondition :: MonadThrow m 
+              => Condition -> VariationalContext -> TypeEnv
+              -> m ()
+typeCondition = undefined
+
+-- | Type checks a comparison.
+typeComp :: MonadThrow m => Atom -> Atom -> TypeEnv -> m ()
+typeComp = undefined
 
 -- | Unions two type envs for a choice query.
 unionChoiceType ::  TypeEnv -> TypeEnv -> TypeEnv
