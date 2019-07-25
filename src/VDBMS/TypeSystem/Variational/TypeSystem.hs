@@ -62,13 +62,39 @@ data TypeError
   -- | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
   -- | EmptyAttrList Algebra 
   -- | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
-  -- | CompInvalid Atom Atom TypeEnv
+  | CompInvalid Atom Atom TypeEnv
   -- | IncompatibleTypes [TypeEnv]
   -- | NotDisjointTypes [TypeEnv]
   -- | EnvFexpUnsat F.FeatureExpr TypeEnv
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
+
+-- | looks up attr info for a qualifier.
+lookupAttrInfo  ::  MonadThrow m
+                => AttrInformation -> Qualifier
+                -> m AttrInfo
+lookupAttrInfo i q = undefined
+
+-- | Returns all qualifiers for an attribute in a type.
+lookupAttrQuals :: MonadThrow m => Attribute -> TypeEnv -> m [Qualifier]
+lookupAttrQuals a t = undefined
+
+-- | Looks up attribute information from the type.
+lookupAttr :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
+lookupAttr a t = undefined
+
+-- | Checks if an attribute (possibly with its qualifier) exists in a type env.
+attrInType :: MonadThrow m 
+           => Attr -> TypeEnv
+           -> m ()
+attrInType a t = undefined
+
+-- | looks up the type of an attribute in the env.
+lookupAttrTypeInEnv :: MonadThrow m
+                    => Attr -> TypeEnv
+                    -> m SqlType
+lookupAttrTypeInEnv a t = undefined
 
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
@@ -130,7 +156,8 @@ typeVsqlCond :: MonadThrow m
              -> m ()
 typeVsqlCond (VsqlCond c)     ctx s t = appCtxtToEnv ctx t 
   >>= typeCondition c ctx 
-typeVsqlCond (VsqlIn a q)     ctx s t = undefined
+typeVsqlCond (VsqlIn a q)     ctx s t = typeOfQuery q ctx s 
+  >>= onlyAttrInType a t
   -- do t <- typeOfQuery q ctx s 
   --    lookupAttFexpTypeInRowType (attribute a) (getObj t)
   --    return ()
@@ -142,6 +169,11 @@ typeVsqlCond (VsqlAnd l r)    ctx s t = typeVsqlCond l ctx s t
 typeVsqlCond (VsqlCChc f l r) ctx s t = typeVsqlCond l (F.And ctx f) s t
   >> typeVsqlCond r (F.And ctx (F.Not f)) s t
 
+-- | Checks if the attribute is the only attribute of a type env.
+onlyAttrInType :: MonadThrow m 
+               => Attr -> TypeEnv -> TypeEnv
+               -> m ()
+onlyAttrInType = undefined
 
 -- | Type checks variational relational conditions.
 typeCondition :: MonadThrow m 
@@ -154,13 +186,32 @@ typeCondition (Or l r)     ctx t = typeCondition l ctx t >> typeCondition r ctx 
 typeCondition (And l r)    ctx t = typeCondition l ctx t >> typeCondition r ctx t
 typeCondition (CChc f l r) ctx t = 
   (appCtxtToEnv (F.And ctx f) t >>= typeCondition l (F.And ctx f))
-  >> (appCtxtToEnv (F.And ctx (F.Not f)) t >>= typeCondition r (F.And ctx (F.Not f)))
+  >> (appCtxtToEnv (F.And ctx (F.Not f)) t 
+  >>= typeCondition r (F.And ctx (F.Not f)))
 
 -- | Type checks a comparison.
 typeComp :: MonadThrow m 
          => Atom -> Atom -> TypeEnv 
          -> m ()
-typeComp = undefined
+typeComp a@(Val l)  a'@(Val r)  t 
+  | typeOf l == typeOf r = return ()
+  | otherwise = throwM $ CompInvalid a a' t 
+typeComp a@(Val l)  a'@(Att r) t = 
+  do at <- lookupAttrTypeInEnv r t
+     if typeOf l == at 
+     then return () 
+     else throwM $ CompInvalid a a' t
+typeComp a@(Att l) a'@(Val r)  t = 
+  do at <- lookupAttrTypeInEnv l t
+     if typeOf r == at 
+     then return () 
+     else throwM $ CompInvalid a a' t
+typeComp a@(Att l) a'@(Att r) t = 
+  do lt <- lookupAttrTypeInEnv l t
+     rt <- lookupAttrTypeInEnv r t
+     if lt == rt
+     then return ()
+     else throwM $ CompInvalid a a' t
 
 -- | Unions two type envs for a choice query.
 typeUnion ::  TypeEnv -> TypeEnv -> TypeEnv
