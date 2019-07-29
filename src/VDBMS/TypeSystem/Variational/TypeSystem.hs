@@ -115,12 +115,14 @@ attrConsistentWithType a t =
 lookupAttrTypeInEnv :: MonadThrow m => Attr -> TypeEnv -> m SqlType
 lookupAttrTypeInEnv a t = 
   do i <- nonAmbiguousAttr a t 
+     attrConsistentWithType a t
      return $ attrType i 
 
 -- | Looks up the presence condition of an attribute in the env.
 lookupAttrFexpInEnv :: MonadThrow m => Attr -> TypeEnv -> m F.FeatureExpr
 lookupAttrFexpInEnv a t = 
   do i <- nonAmbiguousAttr a t 
+     attrConsistentWithType a t
      return $ attrFexp i  
 
 -- | checks if the attribute is ambigusous or not.
@@ -184,7 +186,21 @@ typeProj = undefined
 typeSel :: MonadThrow m 
          => VsqlCond -> Rename Algebra -> VariationalContext -> Schema
          -> m TypeEnv
-typeSel = undefined
+typeSel c rq ctx s =
+  do validSubQ rq --ctx s 
+     t <- typeOfQuery (thing rq) ctx s
+     let t' = updateType (name rq) t 
+     typeVsqlCond c ctx s t'
+     return t'
+
+-- | Checks if a subquery is valid within a seleciton or projection.
+--   Assumption: optimizations has applied before this.
+validSubQ :: MonadThrow m => Rename Algebra -> m ()
+validSubQ = undefined
+
+-- | updates a type env with a new name.
+updateType :: Alias -> TypeEnv -> TypeEnv
+updateType = undefined
 
 -- | Type checks variational sql conditions.
 typeVsqlCond :: MonadThrow m 
