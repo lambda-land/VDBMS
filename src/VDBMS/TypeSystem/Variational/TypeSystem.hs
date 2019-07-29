@@ -185,17 +185,17 @@ compTypes :: (F.FeatureExpr -> F.FeatureExpr -> Bool)
           -> (SqlType -> SqlType -> Bool) 
           -> (Qualifier -> Qualifier -> Bool)
           -> TypeEnv -> TypeEnv -> Bool 
-compTypes ff tf qf lt rt = SM.keysSet (getObj lt) == SM.keysSet (getObj rt) 
+compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
   && tfexpEq
-  && fexpsEq 
-  && typesEq
-  && qualsEq
+  && envsEq
   where
+    rObj = getObj rt
+    lObj = getObj lt
     tfexpEq = ff (getFexp lt) (getFexp rt)
-    fexpsEq = undefined
-      -- foldr (ff . lookupAttrFexpInEnv 
-    typesEq = undefined
-    qualsEq = undefined
+    envsEq = SM.isSubmapOfBy eqAttInfo lObj rObj 
+          && SM.isSubmapOfBy eqAttInfo rObj lObj
+    eqAttInfo :: AttrInformation -> AttrInformation -> Bool
+    eqAttInfo lis ris = undefined
 
 -- | Type of a projection query.
 typeProj :: MonadThrow m 
