@@ -64,6 +64,7 @@ data TypeError
   | AttrNotInEnv Attribute TypeEnv
   | AmbiguousAttr Attr TypeEnv
   | QualNotInInfo Qualifier AttrInformation
+  | MissingAlias (Rename Algebra)
   -- | InvalidRelRef Relation VariationalContext F.FeatureExpr
   -- | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
   -- | EmptyAttrList Algebra 
@@ -196,11 +197,20 @@ typeSel c rq ctx s =
 -- | Checks if a subquery is valid within a seleciton or projection.
 --   Assumption: optimizations has applied before this.
 validSubQ :: MonadThrow m => Rename Algebra -> m ()
-validSubQ = undefined
+validSubQ rq@(Rename a (SetOp _ _ _)) =
+  maybe (throwM $ MissingAlias rq) (\_ -> return ()) a 
+validSubQ _ = return ()
 
 -- | updates a type env with a new name.
 updateType :: Alias -> TypeEnv -> TypeEnv
-updateType = undefined
+updateType a t = updateOptObj updatedTypeObj t
+  where
+    tObj = getObj t
+    updatedTypeObj = maybe tObj (\n -> SM.map (appName n) tObj) a 
+    appName :: String -> AttrInformation -> AttrInformation
+    appName n = fmap (updateQual (SubqueryQualifier n))
+    updateQual q (AttrInfo af at aq) = AttrInfo af at q 
+
 
 -- | Type checks variational sql conditions.
 typeVsqlCond :: MonadThrow m 
