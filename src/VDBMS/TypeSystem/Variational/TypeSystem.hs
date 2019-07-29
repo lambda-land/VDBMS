@@ -65,6 +65,7 @@ data TypeError
   | AmbiguousAttr Attr TypeEnv
   | QualNotInInfo Qualifier AttrInformation
   | MissingAlias (Rename Algebra)
+  | NotEquiveEnv TypeEnv TypeEnv
   -- | InvalidRelRef Relation VariationalContext F.FeatureExpr
   -- | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
   -- | EmptyAttrList Algebra 
@@ -175,13 +176,32 @@ typeSetOp l r ctx s =
 
 -- | Checks if two type are the same.
 sameType :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
-sameType = undefined
+sameType lt rt 
+  | compTypes equivalent (\_ _ -> True) (==) lt rt = return ()
+  | otherwise = throwM $ NotEquiveEnv lt rt  
+
+-- | compares two types with the given functions over each field of attr info.
+compTypes :: (F.FeatureExpr -> F.FeatureExpr -> Bool)
+          -> (SqlType -> SqlType -> Bool) 
+          -> (Qualifier -> Qualifier -> Bool)
+          -> TypeEnv -> TypeEnv -> Bool 
+compTypes ff tf qf lt rt = SM.keysSet (getObj lt) == SM.keysSet (getObj rt) 
+  && tfexpEq
+  && fexpsEq 
+  && typesEq
+  && qualsEq
+  where
+    tfexpEq = ff (getFexp lt) (getFexp rt)
+    fexpsEq = undefined
+      -- foldr (ff . lookupAttrFexpInEnv 
+    typesEq = undefined
+    qualsEq = undefined
 
 -- | Type of a projection query.
 typeProj :: MonadThrow m 
          => OptAttributes -> Rename Algebra -> VariationalContext -> Schema
          -> m TypeEnv
-typeProj = undefined
+typeProj oas rq ctx s = undefined
 
 -- | Type of a selection query.
 typeSel :: MonadThrow m 
