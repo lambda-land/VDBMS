@@ -66,14 +66,7 @@ data TypeError
   | QualNotInInfo Qualifier AttrInformation
   | MissingAlias (Rename Algebra)
   | NotEquiveEnv TypeEnv TypeEnv
-  -- | InvalidRelRef Relation VariationalContext F.FeatureExpr
-  -- | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
-  -- | EmptyAttrList Algebra 
-  -- | NotEquiveTypeEnv TypeEnv TypeEnv VariationalContext
   | CompInvalid Atom Atom TypeEnv
-  -- | IncompatibleTypes [TypeEnv]
-  -- | NotDisjointTypes [TypeEnv]
-  -- | EnvFexpUnsat F.FeatureExpr TypeEnv
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
