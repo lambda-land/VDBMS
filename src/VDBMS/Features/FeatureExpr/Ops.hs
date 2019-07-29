@@ -3,7 +3,8 @@ module VDBMS.Features.FeatureExpr.Ops (
 
         tautImplyFexps,
         selectFeatureExpr,
-        shrinkFeatureExpr
+        shrinkFeatureExpr,
+        satAnds
 
 ) where
 
@@ -18,6 +19,9 @@ import VDBMS.Features.SAT
 tautImplyFexps :: FeatureExpr -> FeatureExpr -> Bool
 tautImplyFexps f f' = tautology $ imply f f' 
 
+-- | checks the satisfiability of the conjunction of two fexps.
+satAnds :: FeatureExpr -> FeatureExpr -> Bool
+satAnds l r = satisfiable (And l r)
 
 -- | Select a feature within a feature expressions, potentially simplifying it.
 selectFeatureExpr :: Feature -> Bool -> FeatureExpr -> FeatureExpr

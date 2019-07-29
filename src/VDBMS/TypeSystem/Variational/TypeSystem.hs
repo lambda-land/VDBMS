@@ -58,6 +58,12 @@ data TypeError
   = CtxUnsatOverEnv VariationalContext TypeEnv
   | NotUniqueRelAlias [Rename Relation]
   | UnsatFexpsInProduct F.FeatureExpr 
+  | InOpMustContainOneClm TypeEnv
+  | UnsatAttPCandEnv F.FeatureExpr TypeEnv
+  | AttrQualNotInEnv Attr TypeEnv
+  | AttrNotInEnv Attribute TypeEnv
+  | AmbiguousAttr Attr TypeEnv
+  | QualNotInInfo Qualifier AttrInformation
   -- | InvalidRelRef Relation VariationalContext F.FeatureExpr
   -- | AttrNotSubsume (Opt (Rename Attr)) TypeEnv
   -- | EmptyAttrList Algebra 
@@ -71,30 +77,61 @@ data TypeError
 instance Exception TypeError  
 
 -- | looks up attr info for a qualifier.
-lookupAttrInfo  ::  MonadThrow m
-                => AttrInformation -> Qualifier
-                -> m AttrInfo
-lookupAttrInfo i q = undefined
+lookupAttrInfo :: MonadThrow m => AttrInformation -> Qualifier -> m AttrInfo
+lookupAttrInfo is q = 
+  maybe 
+    (throwM $ QualNotInInfo q is)
+    (\(f,t) -> return $ AttrInfo f t q)
+    (lookup q $ zip (fmap attrQual is) (zip (fmap attrFexp is) (fmap attrType is)))
 
 -- | Returns all qualifiers for an attribute in a type.
 lookupAttrQuals :: MonadThrow m => Attribute -> TypeEnv -> m [Qualifier]
-lookupAttrQuals a t = undefined
+lookupAttrQuals a t = 
+  do i <- lookupAttr a t 
+     return $ fmap attrQual i
 
 -- | Looks up attribute information from the type.
 lookupAttr :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
-lookupAttr a t = undefined
+lookupAttr a t = 
+  maybe (throwM $ AttrNotInEnv a t)
+        return
+        (SM.lookup a (getObj t))
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
-attrInType :: MonadThrow m 
-           => Attr -> TypeEnv
-           -> m ()
-attrInType a t = undefined
+attrConsistentWithType :: MonadThrow m => Attr -> TypeEnv -> m ()
+attrConsistentWithType a t = 
+  do i <- nonAmbiguousAttr a t
+     qs <- lookupAttrQuals (attribute a) t 
+     pc <- lookupAttrFexpInEnv a t 
+     maybe (return ())
+           (\q -> if q `elem` qs
+                  then if F.satAnds pc (getFexp t)
+                       then return ()
+                       else throwM $ UnsatAttPCandEnv pc t
+                  else throwM $ AttrQualNotInEnv a t)
+           (qualifier a)
 
 -- | looks up the type of an attribute in the env.
-lookupAttrTypeInEnv :: MonadThrow m
-                    => Attr -> TypeEnv
-                    -> m SqlType
-lookupAttrTypeInEnv a t = undefined
+lookupAttrTypeInEnv :: MonadThrow m => Attr -> TypeEnv -> m SqlType
+lookupAttrTypeInEnv a t = 
+  do i <- nonAmbiguousAttr a t 
+     return $ attrType i 
+
+-- | Looks up the presence condition of an attribute in the env.
+lookupAttrFexpInEnv :: MonadThrow m => Attr -> TypeEnv -> m F.FeatureExpr
+lookupAttrFexpInEnv a t = 
+  do i <- nonAmbiguousAttr a t 
+     return $ attrFexp i  
+
+-- | checks if the attribute is ambigusous or not.
+nonAmbiguousAttr :: MonadThrow m => Attr -> TypeEnv -> m AttrInfo
+nonAmbiguousAttr a t = 
+  do is <- lookupAttr (attribute a) t 
+     qs <- lookupAttrQuals (attribute a) t
+     if length qs > 1
+     then maybe (throwM $ AmbiguousAttr a t) (lookupAttrInfo is) (qualifier a)
+     else return $ head is
+
 
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
@@ -158,9 +195,6 @@ typeVsqlCond (VsqlCond c)     ctx s t = appCtxtToEnv ctx t
   >>= typeCondition c ctx 
 typeVsqlCond (VsqlIn a q)     ctx s t = typeOfQuery q ctx s 
   >>= onlyAttrInType a t
-  -- do t <- typeOfQuery q ctx s 
-  --    lookupAttFexpTypeInRowType (attribute a) (getObj t)
-  --    return ()
 typeVsqlCond (VsqlNot c)      ctx s t = typeVsqlCond c ctx s t 
 typeVsqlCond (VsqlOr l r)     ctx s t = typeVsqlCond l ctx s t 
   >> typeVsqlCond r ctx s t 
@@ -173,7 +207,11 @@ typeVsqlCond (VsqlCChc f l r) ctx s t = typeVsqlCond l (F.And ctx f) s t
 onlyAttrInType :: MonadThrow m 
                => Attr -> TypeEnv -> TypeEnv
                -> m ()
-onlyAttrInType = undefined
+onlyAttrInType a tenv tq =
+  do attrConsistentWithType a tenv
+     if Set.null $ attribute a `Set.delete` SM.keysSet (getObj tq)
+     then return ()
+     else throwM $ InOpMustContainOneClm tq
 
 -- | Type checks variational relational conditions.
 typeCondition :: MonadThrow m 
@@ -208,8 +246,10 @@ typeComp a@(Att l) a'@(Val r)  t =
      else throwM $ CompInvalid a a' t
 typeComp a@(Att l) a'@(Att r) t = 
   do lt <- lookupAttrTypeInEnv l t
+     lf <- lookupAttrFexpInEnv l t
      rt <- lookupAttrTypeInEnv r t
-     if lt == rt
+     rf <- lookupAttrFexpInEnv r t
+     if lt == rt && satisfiable (F.And lf rf)
      then return ()
      else throwM $ CompInvalid a a' t
 

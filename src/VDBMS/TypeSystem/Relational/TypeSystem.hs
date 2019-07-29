@@ -159,7 +159,7 @@ lookupAttr :: MonadThrow m => Attribute -> RTypeEnv -> m RAttrInformation
 lookupAttr a t = 
   maybe 
   (throwM $ RAttrNotInTypeEnv a t)
-  (\i -> return i)
+  return
   (SM.lookup a t)
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
@@ -167,7 +167,8 @@ attrInType :: MonadThrow m
            => Attr -> RTypeEnv
            -> m ()
 attrInType a t = 
-  do qs <- lookupAttrQuals (attribute a) t
+  do i <- nonAmbiguousAttr a t
+     qs <- lookupAttrQuals (attribute a) t
      maybe (return ()) 
            (\q -> if q `elem` qs 
                   then return () 
