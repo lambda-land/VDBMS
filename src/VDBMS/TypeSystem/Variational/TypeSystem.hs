@@ -194,7 +194,22 @@ compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
 typeProj :: MonadThrow m 
          => OptAttributes -> Rename Algebra -> VariationalContext -> Schema
          -> m TypeEnv
-typeProj oas rq ctx s = undefined
+typeProj oas rq ctx s = 
+  do t <- typeOfQuery (thing rq) ctx s 
+     let t' = updateType (name rq) t
+     updateAttrs oas t'
+
+-- | Projects an attribute from a type.
+projAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
+projAtt = undefined
+
+-- | gives a type env of only a given attribute.
+updateAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
+updateAtt = undefined
+
+-- | update the attribute names to their new name if possible.
+updateAttrs :: MonadThrow m => OptAttributes -> TypeEnv -> m TypeEnv
+updateAttrs = undefined
 
 -- | Type of a selection query.
 typeSel :: MonadThrow m 

@@ -2,6 +2,7 @@
 module VDBMS.QueryLang.RelAlg.Variational.Algebra (
 
         Algebra(..)
+        , OptAttribute(..)
         , OptAttributes(..)
         , VsqlCond(..)
         , Joins(..)
@@ -95,9 +96,11 @@ instance Boolean VsqlCond where
   (&&&) = VsqlAnd
   (|||) = VsqlOr
 
+-- | Optional attribute.
+type OptAttribute = Opt (Rename Attr)
 
 -- | Optional attributes.
-type OptAttributes = [Opt (Rename Attr)]
+type OptAttributes = [OptAttribute]
 
 -- | Variational conditional relational joins.
 data Joins 
