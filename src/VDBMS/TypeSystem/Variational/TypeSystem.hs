@@ -132,7 +132,6 @@ nonAmbiguousAttr a t =
      then maybe (throwM $ AmbiguousAttr a t) (lookupAttrInfo is) (qualifier a)
      else return $ head is
 
-
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
 --   with table pres cond.
@@ -249,7 +248,7 @@ typeComp a@(Att l) a'@(Att r) t =
      lf <- lookupAttrFexpInEnv l t
      rt <- lookupAttrTypeInEnv r t
      rf <- lookupAttrFexpInEnv r t
-     if lt == rt && satisfiable (F.And lf rf)
+     if lt == rt && F.satAnds lf rf
      then return ()
      else throwM $ CompInvalid a a' t
 
@@ -341,7 +340,7 @@ appCtxtToEnv ctx t
   where 
     f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
     appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
-    appCtxtToAttInfo fexp is = filter (\i -> satisfiable (F.And fexp (attrFexp i))) is
+    appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
 
 
