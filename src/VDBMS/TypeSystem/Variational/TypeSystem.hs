@@ -126,8 +126,8 @@ nonAmbiguousAttr a t =
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
 --   with table pres cond.
-verifyTypeEnv :: MonadThrow m => TypeEnv -> m TypeEnv
-verifyTypeEnv t = undefined
+-- verifyTypeEnv :: MonadThrow m => TypeEnv -> m TypeEnv
+-- verifyTypeEnv t = undefined
   -- | satisfiable (getFexp t) = return $ propagateFexpToTsch t
   -- | otherwise = throwM $ EnvFexpUnsat (getFexp t) t
 
