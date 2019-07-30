@@ -16,12 +16,9 @@ import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Features.SAT (equivalent, tautology, satisfiable)
 import VDBMS.DBMS.Value.Value
--- import VDBMS.Features.Config
 
--- import Prelude hiding (EQ,LT , GT)
 import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM
--- import qualified Data.Map.Merge.Strict as StrictM
 import qualified Data.Set as Set 
 import Data.Set (Set)
 import Data.List (nub)
@@ -46,9 +43,6 @@ data AttrInfo
 -- | Comprehensive attribute information required for a variaitnoal
 --   type env.
 type AttrInformation = [AttrInfo]
-
--- | Variational type env.
--- type TypeEnv = TableSchema
 
 -- | Variational type env.
 type TypeEnv = Opt (M.Map Attribute AttrInformation)
@@ -96,7 +90,6 @@ lookupAttr a t =
 attrConsistentWithType :: MonadThrow m => Attr -> TypeEnv -> m ()
 attrConsistentWithType a t = 
   do i <- nonAmbiguousAttr a t
-     -- qs <- lookupAttrQuals (attribute a) t 
      pc <- lookupAttrFexpInEnv a t 
      maybe (return ())
            (\q -> if q == attrQual i
@@ -243,7 +236,6 @@ attr2env tPC a attEnvPC attrPC sqlt q =
 projOptAttrs :: MonadThrow m => OptAttributes -> TypeEnv -> m TypeEnv
 projOptAttrs oras t = 
   do ts <- mapM (flip projOptAtt t) oras
-     -- let combTypes lt rt = mkOpt (F.Or (getFexp lt) (getFexp rt))
      return $ mkOpt (F.shrinkFeatureExpr $ F.disjFexp $ fmap getFexp ts)
                     (SM.unionsWith (++) $ fmap getObj ts)
 
@@ -387,7 +379,6 @@ prodTypes ts
   | satisfiable f = appCtxtToEnv f prodTypeMaps
   | otherwise = throwM $ UnsatFexpsInProduct f
   where
-    -- f = foldr F.And (F.Lit True) (map getFexp ts)
     f = foldr (F.And . getFexp) (F.Lit True) ts
     prodTypeMaps = mkOpt f (SM.unionsWith (++) (map getObj ts))
 
