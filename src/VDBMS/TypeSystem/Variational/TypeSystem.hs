@@ -198,7 +198,8 @@ typeProj :: MonadThrow m
          -> m TypeEnv
 typeProj oas rq ctx s = 
   do t <- typeOfQuery (thing rq) ctx s 
-     projOptAttrs oas t
+     t' <- projOptAttrs oas t
+     appCtxtToEnv ctx t' 
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
 projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
@@ -256,7 +257,7 @@ typeSel c rq ctx s =
      t <- typeOfQuery (thing rq) ctx s
      let t' = updateType (name rq) t 
      typeVsqlCond c ctx s t'
-     return t'
+     appCtxtToEnv ctx t'
 
 -- | Checks if a subquery is valid within a seleciton or projection.
 --   Assumption: optimizations has applied before this.
