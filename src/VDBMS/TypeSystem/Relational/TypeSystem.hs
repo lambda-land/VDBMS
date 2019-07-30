@@ -168,9 +168,8 @@ attrInType :: MonadThrow m
            -> m ()
 attrInType a t = 
   do i <- nonAmbiguousAttr a t
-     qs <- lookupAttrQuals (attribute a) t
      maybe (return ()) 
-           (\q -> if q `elem` qs 
+           (\q -> if q == rAttrQual i 
                   then return () 
                   else throwM $ RAttrQualNotInTypeEnv a t)
            (qualifier a) 
