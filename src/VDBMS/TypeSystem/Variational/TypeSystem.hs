@@ -201,30 +201,43 @@ typeProj oas rq ctx s =
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
 projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
-projOptAtt ora t = undefined 
-  -- do let aObj = getObj ora
-  --        attr = thing aObj
-  --        a = attribute attr
-  --        aq = qualifier attr
-  --        aName = name aObj
-  --        aPC = getFexp ora
-  --    i <- nonAmbiguousAttr attr t
-  --    pc <- lookupAttrFexpInEnv attr t 
-  --    maybe (if F.satAnds (F.And pc aPC) (getFexp t)
-  --           then return $ maybe
-  --                           (SM.singleton a (pure i))
-  --                           (\n -> SM.singleton (Attribute n) (pure i))
-  --                           aName
-  --           else throwM $ UnsatAttPCandEnv ora t)
-  --          (\q -> if q == attrQual i
-  --                 then if F.satAnds (F.And pc aPC) (getFexp t)
-  --                      then return $ maybe
-  --                                     (SM.singleton a (pure i))
-  --                                     (\n -> SM.singleton (Attribute n) (pure i))
-  --                                     aName
-  --                      else throwM $ UnsatAttPCandEnv ora t
-  --                 else throwM $ AttrQualNotInEnv attr t)
-  --          aq
+projOptAtt ora t = 
+  do let aObj = getObj ora
+         attr = thing aObj
+         a = attribute attr
+         aq = qualifier attr
+         aName = name aObj
+         aPC = getFexp ora
+         tPC = getFexp t
+     i <- nonAmbiguousAttr attr t
+     let iQual = attrQual i
+         iSqlT = attrType i
+         iPC = attrFexp i
+     pc <- lookupAttrFexpInEnv attr t 
+     maybe (if F.satAnds (F.And pc aPC) tPC
+            then return $ maybe
+                            (attr2env tPC a iPC aPC iSqlT iQual)
+                            (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
+                            aName
+            else throwM $ UnsatAttPCandEnv ora t)
+           (\q -> if q == attrQual i
+                  then if F.satAnds (F.And pc aPC) (getFexp t)
+                       then return $ maybe
+                                      (attr2env tPC a iPC aPC iSqlT iQual)
+                                      (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
+                                      aName
+                       else throwM $ UnsatAttPCandEnv ora t
+                  else throwM $ AttrQualNotInEnv attr t)
+           aq
+
+-- | constructs a new type env for one attribute.
+attr2env :: F.FeatureExpr 
+  -> Attribute 
+  -> F.FeatureExpr -> F.FeatureExpr
+  -> SqlType -> Qualifier
+  -> TypeEnv
+attr2env tPC a attEnvPC attrPC sqlt q =
+  mkOpt tPC (SM.singleton a (pure $ AttrInfo (F.And attEnvPC attrPC) sqlt q))
 
 -- | update the attribute names to their new name if possible.
 projOptAttrs :: MonadThrow m => OptAttributes -> TypeEnv -> m TypeEnv
