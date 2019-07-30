@@ -47,7 +47,7 @@ data RTypeError =
   | RQualNotInInfo Qualifier RAttrInformation
   | RAttrQualNotInTypeEnv Attr RTypeEnv
   | RAttrNotInTypeEnv Attribute RTypeEnv
-  | REmptyAttrList RAlgebra
+  | REmptyAttrList Attributes (Rename RAlgebra)
   | RAmbiguousAttr Attr RTypeEnv
   | RNotUniqueRelAlias [Rename Relation]
   | RInOpMustContainOneClm RTypeEnv
@@ -87,10 +87,12 @@ sameRType tl tr
 typeRProj :: MonadThrow m 
           => Attributes -> Rename RAlgebra -> RSchema
           -> m RTypeEnv
-typeRProj as rq s = 
-  do t   <- typeOfRQuery (thing rq) s
-     let t'  = updateType (name rq) t 
-     updateAttrs as t'
+typeRProj as rq s 
+  | null as = throwM $ REmptyAttrList as rq
+  | otherwise =
+    do t   <- typeOfRQuery (thing rq) s
+       let t'  = updateType (name rq) t 
+       updateAttrs as t'
 
 -- | Checks if a subquery is valid within a selection or projection.
 --   Assumption: optimization has already been done. so we don't have 
@@ -271,8 +273,7 @@ typeRProd :: MonadThrow m
 typeRProd rrs s = 
   do uniqueRelAlias rrs 
      ts <- mapM (flip typeRRel s) rrs
-     let t = prodRTypes ts
-     return $ t
+     return $ prodRTypes ts
 
 -- | Gets a list of relational type env and product them.
 --   i.e., for repeated attributes accumulates the qualifiers.

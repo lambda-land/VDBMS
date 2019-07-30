@@ -61,6 +61,7 @@ data TypeError
   | MissingAlias (Rename Algebra)
   | NotEquiveEnv TypeEnv TypeEnv
   | CompInvalid Atom Atom TypeEnv
+  | EmptyAttrList OptAttributes (Rename Algebra)
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception TypeError  
@@ -196,10 +197,12 @@ compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
 typeProj :: MonadThrow m 
          => OptAttributes -> Rename Algebra -> VariationalContext -> Schema
          -> m TypeEnv
-typeProj oas rq ctx s = 
-  do t <- typeOfQuery (thing rq) ctx s 
-     t' <- projOptAttrs oas t
-     appCtxtToEnv ctx t' 
+typeProj oas rq ctx s 
+  | null oas = throwM $ EmptyAttrList oas rq 
+  | otherwise = 
+    do t <- typeOfQuery (thing rq) ctx s 
+       t' <- projOptAttrs oas t
+       appCtxtToEnv ctx t' 
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
 projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
