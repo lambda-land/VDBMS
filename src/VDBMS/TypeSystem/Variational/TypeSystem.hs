@@ -59,7 +59,7 @@ data TypeError
   | NotUniqueRelAlias [Rename Relation]
   | UnsatFexpsInProduct F.FeatureExpr 
   | InOpMustContainOneClm TypeEnv
-  | UnsatAttPCandEnv F.FeatureExpr TypeEnv
+  | UnsatAttPCandEnv OptAttribute TypeEnv
   | AttrQualNotInEnv Attr TypeEnv
   | AttrNotInEnv Attribute TypeEnv
   | AmbiguousAttr Attr TypeEnv
@@ -96,13 +96,14 @@ lookupAttr a t =
 attrConsistentWithType :: MonadThrow m => Attr -> TypeEnv -> m ()
 attrConsistentWithType a t = 
   do i <- nonAmbiguousAttr a t
-     qs <- lookupAttrQuals (attribute a) t 
+     -- qs <- lookupAttrQuals (attribute a) t 
      pc <- lookupAttrFexpInEnv a t 
      maybe (return ())
-           (\q -> if q `elem` qs
-                  then if F.satAnds pc (getFexp t)
-                       then return ()
-                       else throwM $ UnsatAttPCandEnv pc t
+           (\q -> if q == attrQual i
+                  then return ()
+                    -- if F.satAnds pc (getFexp t)
+                       -- then return ()
+                       -- else throwM $ UnsatAttPCandEnv pc t
                   else throwM $ AttrQualNotInEnv a t)
            (qualifier a)
 
@@ -196,20 +197,42 @@ typeProj :: MonadThrow m
          -> m TypeEnv
 typeProj oas rq ctx s = 
   do t <- typeOfQuery (thing rq) ctx s 
-     let t' = updateType (name rq) t
-     updateAttrs oas t'
+     projOptAttrs oas t
 
--- | Projects an attribute from a type.
-projAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
-projAtt = undefined
-
--- | gives a type env of only a given attribute.
-updateAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
-updateAtt = undefined
+-- | Checks if an attribute (possibly with its qualifier) exists in a type env.
+projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
+projOptAtt ora t = undefined 
+  -- do let aObj = getObj ora
+  --        attr = thing aObj
+  --        a = attribute attr
+  --        aq = qualifier attr
+  --        aName = name aObj
+  --        aPC = getFexp ora
+  --    i <- nonAmbiguousAttr attr t
+  --    pc <- lookupAttrFexpInEnv attr t 
+  --    maybe (if F.satAnds (F.And pc aPC) (getFexp t)
+  --           then return $ maybe
+  --                           (SM.singleton a (pure i))
+  --                           (\n -> SM.singleton (Attribute n) (pure i))
+  --                           aName
+  --           else throwM $ UnsatAttPCandEnv ora t)
+  --          (\q -> if q == attrQual i
+  --                 then if F.satAnds (F.And pc aPC) (getFexp t)
+  --                      then return $ maybe
+  --                                     (SM.singleton a (pure i))
+  --                                     (\n -> SM.singleton (Attribute n) (pure i))
+  --                                     aName
+  --                      else throwM $ UnsatAttPCandEnv ora t
+  --                 else throwM $ AttrQualNotInEnv attr t)
+  --          aq
 
 -- | update the attribute names to their new name if possible.
-updateAttrs :: MonadThrow m => OptAttributes -> TypeEnv -> m TypeEnv
-updateAttrs = undefined
+projOptAttrs :: MonadThrow m => OptAttributes -> TypeEnv -> m TypeEnv
+projOptAttrs oras t = 
+  do ts <- mapM (flip projOptAtt t) oras
+     -- let combTypes lt rt = mkOpt (F.Or (getFexp lt) (getFexp rt))
+     return $ mkOpt (F.shrinkFeatureExpr $ F.disjFexp $ fmap getFexp ts)
+                    (SM.unionsWith (++) $ fmap getObj ts)
 
 -- | Type of a selection query.
 typeSel :: MonadThrow m 
