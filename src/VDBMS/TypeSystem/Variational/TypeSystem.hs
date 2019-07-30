@@ -21,7 +21,7 @@ import qualified Data.Map as M
 import qualified Data.Map.Strict as SM
 import qualified Data.Set as Set 
 import Data.Set (Set)
-import Data.List (nub)
+import Data.List (nub, (\\))
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -179,10 +179,18 @@ compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
     rObj = getObj rt
     lObj = getObj lt
     tfexpEq = ff (getFexp lt) (getFexp rt)
-    envsEq = SM.isSubmapOfBy eqAttInfo lObj rObj 
-          && SM.isSubmapOfBy eqAttInfo rObj lObj
-    eqAttInfo :: AttrInformation -> AttrInformation -> Bool
-    eqAttInfo lis ris = undefined
+    envsEq = SM.isSubmapOfBy (eqAttInfo ff tf qf) lObj rObj 
+          && SM.isSubmapOfBy (eqAttInfo ff tf qf) rObj lObj
+    -- eqAttInfo :: AttrInformation -> AttrInformation -> Bool
+    eqAttInfo f t q lis ris = length lis == length ris 
+      && null (lqs \\ rqs)
+      && null (rqs \\ lqs)
+      && and res
+      where 
+        lqs = fmap attrQual lis
+        rqs = fmap attrQual ris
+        res = [ t (attrType li) (attrType ri) && f (attrFexp li) (attrFexp ri) 
+                | li <- lis, ri <- ris, q (attrQual li) (attrQual ri) ]
 
 -- | Type of a projection query.
 typeProj :: MonadThrow m 
