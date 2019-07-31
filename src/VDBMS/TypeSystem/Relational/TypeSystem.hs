@@ -11,7 +11,7 @@ import qualified Data.Map as M
 import qualified Data.Map.Strict as SM
 import qualified Data.Set as Set 
 import Data.Set (Set)
-import Data.List (nub)
+import Data.List (nub, (\\))
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -79,9 +79,27 @@ typeOfRQuery REmpty            _ = return M.empty
 sameRType :: MonadThrow m 
            => RTypeEnv -> RTypeEnv 
            -> m ()
-sameRType tl tr 
-  | SM.keysSet tl == SM.keysSet tr = return ()
-  | otherwise = throwM $ RNotEquiveTypeEnv tl tr
+sameRType lt rt 
+  | compRTypes (\_ _ -> True) (==) lt rt = return ()
+  | otherwise = throwM $ RNotEquiveTypeEnv lt rt
+
+compRTypes :: (SqlType -> SqlType -> Bool)
+           -> (Qualifier -> Qualifier -> Bool)
+           -> RTypeEnv -> RTypeEnv -> Bool 
+compRTypes tf qf lt rt = SM.keysSet lt == SM.keysSet rt
+  && envsEq
+  where
+    envsEq = SM.isSubmapOfBy (eqRAttInfo tf qf) lt rt 
+          && SM.isSubmapOfBy (eqRAttInfo tf qf) rt lt 
+    eqRAttInfo t q lis ris = length lis == length ris
+      && null (lqs \\ rqs)
+      && null (rqs \\ lqs)
+      && and res 
+      where
+        lqs = fmap rAttrQual lis
+        rqs = fmap rAttrQual ris 
+        res = [ t (rAttrType li) (rAttrType ri) 
+                | li <- lis, ri <- ris, q (rAttrQual li) (rAttrQual ri) ]
 
 -- | Determines the type of a relational projection.
 typeRProj :: MonadThrow m 
