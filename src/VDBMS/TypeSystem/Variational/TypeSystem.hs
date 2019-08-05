@@ -146,8 +146,10 @@ typeOfQuery (AChc f l r)     ctx s =
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
      return $ typeUnion tl tr
-typeOfQuery (Join js)        ctx s = typeJoin js ctx s
-typeOfQuery (Prod rl rr rrs) ctx s = typeProd (rl : rr : rrs) ctx s
+typeOfQuery (Join rl rr c)   ctx s = undefined
+  -- typeJoin js ctx s
+typeOfQuery (Prod rl rr)     ctx s = undefined
+  -- typeProd (rl : rr : rrs) ctx s
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
 typeOfQuery Empty            ctx s = 
   appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
@@ -353,30 +355,31 @@ typeUnion t t' =
         (SM.unionWith (++) (getObj t) (getObj t'))
 
 -- | Gives the type of rename joins.
-typeJoin :: MonadThrow m 
-         => Joins -> VariationalContext -> Schema
-         -> m TypeEnv
-typeJoin j@(JoinTwoTables rl rr c) ctx s = 
-  do uniqueRelAlias $ relJoins j
-     tl <- typeRel rl ctx s 
-     tr <- typeRel rr ctx s 
-     t <- prodTypes (pure tl ++ pure tr)
-     typeCondition c ctx t 
-     return t 
-typeJoin j@(JoinMore js rr c)      ctx s = 
-  do uniqueRelAlias $ relJoins j
-     ts <- typeJoin js ctx s 
-     tr <- typeRel rr ctx s 
-     t <- prodTypes $ pure ts ++ pure tr 
-     typeCondition c ctx t 
-     return t
+-- typeJoin :: MonadThrow m 
+--          => Joins -> VariationalContext -> Schema
+--          -> m TypeEnv
+-- typeJoin j@(JoinTwoTables rl rr c) ctx s = 
+--   do uniqueRelAlias $ relJoins j
+--      tl <- typeRel rl ctx s 
+--      tr <- typeRel rr ctx s 
+--      t <- prodTypes (pure tl ++ pure tr)
+--      typeCondition c ctx t 
+--      return t 
+-- typeJoin j@(JoinMore js rr c)      ctx s = 
+--   do uniqueRelAlias $ relJoins j
+--      ts <- typeJoin js ctx s 
+--      tr <- typeRel rr ctx s 
+--      t <- prodTypes $ pure ts ++ pure tr 
+--      typeCondition c ctx t 
+--      return t
 
 -- | Gets relation names/aliases from joins.
-relJoins :: Joins -> [Rename Relation]
-relJoins (JoinTwoTables rl rr c) = pure rl ++ pure rr
-relJoins (JoinMore js rr c)      = relJoins js ++ pure rr 
+-- relJoins :: Joins -> [Rename Relation]
+-- relJoins (JoinTwoTables rl rr c) = pure rl ++ pure rr
+-- relJoins (JoinMore js rr c)      = relJoins js ++ pure rr 
 
 -- | Gives the type of cross producting multiple rename relations.
+-- TODO: check this after refactoring prod type!!
 typeProd :: MonadThrow m 
          => [Rename Relation] -> VariationalContext -> Schema
          -> m TypeEnv
@@ -386,6 +389,7 @@ typeProd rrs ctx s =
      prodTypes ts
 
 -- | Products a list of types.
+-- TODO: check this after refactoring prod type!!
 prodTypes :: MonadThrow m => [TypeEnv] -> m TypeEnv
 prodTypes ts 
   | satisfiable f = appCtxtToEnv f prodTypeMaps

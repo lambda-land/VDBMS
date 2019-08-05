@@ -35,10 +35,10 @@ transAlgebra2Sql (RSel c q)
   = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) (name q)
     where 
       sql = transAlgebra2Sql (thing q)
-transAlgebra2Sql (RJoin js)     
-  = SqlSelect [SqlAllAtt] [constructJoinRels js] [] Nothing
-transAlgebra2Sql (RProd l r rs) 
-  = SqlSelect [SqlAllAtt] ([constructRel l, constructRel r] ++ map constructRel rs) [] Nothing
+transAlgebra2Sql (RJoin rl rr c) = undefined     
+  -- = SqlSelect [SqlAllAtt] [constructJoinRels js] [] Nothing
+transAlgebra2Sql (RProd rl rr ) = undefined 
+  -- = SqlSelect [SqlAllAtt] ([constructRel l, constructRel r] ++ map constructRel rs) [] Nothing
 transAlgebra2Sql (RTRef r)      
   = SqlSelect [SqlAllAtt] [constructRel r] [] Nothing
 transAlgebra2Sql REmpty         = SqlEmpty
@@ -50,9 +50,9 @@ constructRel r = SqlRelation $ renameMap SqlTRef r
 
 -- | Consructs a list of sql relaiton from joins.
 --   Helper for transAlgebra2Sql.
-constructJoinRels :: RJoins -> SqlRelation
-constructJoinRels (RJoinTwoTable l r c) = SqlTwoTableInnerJoin l r c
-constructJoinRels (RJoinMore js r c) = SqlMoreInnerJoin (constructJoinRels js) r c
+-- constructJoinRels :: RJoins -> SqlRelation
+-- constructJoinRels (RJoinTwoTable l r c) = SqlTwoTableInnerJoin l r c
+-- constructJoinRels (RJoinMore js r c) = SqlMoreInnerJoin (constructJoinRels js) r c
 
 -- | Translates algebra conditions to sql conditions.
 --   Helper for transAlgebra2Sql.

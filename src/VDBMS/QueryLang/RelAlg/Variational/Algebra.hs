@@ -5,7 +5,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , OptAttribute(..)
         , OptAttributes(..)
         , VsqlCond(..)
-        , Joins(..)
+        -- , Joins(..)
         
 
 ) where
@@ -103,10 +103,10 @@ type OptAttribute = Opt (Rename Attr)
 type OptAttributes = [OptAttribute]
 
 -- | Variational conditional relational joins.
-data Joins 
-   = JoinTwoTables (Rename Relation) (Rename Relation) Condition
-   | JoinMore      Joins             (Rename Relation) Condition
-  deriving (Data,Eq,Show,Typeable,Ord)
+-- data Joins 
+--    = JoinTwoTables (Rename Relation) (Rename Relation) Condition
+--    | JoinMore      Joins             (Rename Relation) Condition
+--   deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | More expressive variational relational algebra.
 data Algebra
@@ -114,8 +114,10 @@ data Algebra
    | Proj  OptAttributes (Rename Algebra)
    | Sel   VsqlCond (Rename Algebra)
    | AChc  F.FeatureExpr Algebra Algebra
-   | Join  Joins
-   | Prod  (Rename Relation) (Rename Relation) [Rename Relation]
+   -- | Join  Joins
+   | Join (Rename Algebra) (Rename Algebra) Condition
+   -- | Prod  (Rename Relation) (Rename Relation) [Rename Relation]
+   | Prod (Rename Algebra) (Rename Algebra)
    | TRef  (Rename Relation)
    | Empty 
   deriving (Data,Eq,Show,Typeable,Ord)
@@ -138,14 +140,16 @@ configureAlgebra c (Sel cond q)    =
 configureAlgebra c (AChc f l r) 
   | F.evalFeatureExpr c f   = configureAlgebra c l
   | otherwise               = configureAlgebra c r
-configureAlgebra c (Join js) = RJoin (configure' c js)
-  where
-    configure' :: Config Bool -> Joins -> RJoins
-    configure' c (JoinTwoTables l r cond) = 
-      RJoinTwoTable l r (configure c cond)
-    configure' c (JoinMore js r cond)     = 
-      RJoinMore (configure' c js) r (configure c cond)
-configureAlgebra c (Prod r l rs)   = RProd r l rs
+configureAlgebra c (Join rl rr cnd) = undefined
+  -- RJoin  (configure' c js)
+  -- where
+  --   configure' :: Config Bool -> Joins -> RJoins
+  --   configure' c (JoinTwoTables l r cond) = 
+  --     RJoinTwoTable l r (configure c cond)
+  --   configure' c (JoinMore js r cond)     = 
+  --     RJoinMore (configure' c js) r (configure c cond)
+configureAlgebra c (Prod rl rr)   = undefined
+  -- RProd r l rs
 configureAlgebra c (TRef r)        = RTRef r 
 configureAlgebra c Empty           = REmpty
 
@@ -161,14 +165,16 @@ optAlgebra (Sel c q)       =
   combOpts F.And RSel (optionalize_ c) (optRename q) 
 optAlgebra (AChc f q1 q2)  = mapFst (F.And f) (optAlgebra q1) ++
                              mapFst (F.And (F.Not f)) (optAlgebra q2)
-optAlgebra (Join js)       = mapSnd RJoin $ opt' js
-  where
-    opt' :: Joins -> [Opt RJoins]
-    opt' (JoinTwoTables l r c) = 
-      mapSnd (\cond -> RJoinTwoTable l r cond) (optionalize_ c)
-    opt' (JoinMore js r c)     = 
-      combOpts F.And (\c' js' -> RJoinMore js' r c') (optionalize_ c) (opt' js)
-optAlgebra (Prod r l rs)   = pure $ mkOpt (F.Lit True) (RProd r l rs)
+optAlgebra (Join rl rr c)  = undefined
+  -- mapSnd RJoin $ opt' js
+  -- where
+  --   opt' :: Joins -> [Opt RJoins]
+  --   opt' (JoinTwoTables l r c) = 
+  --     mapSnd (\cond -> RJoinTwoTable l r cond) (optionalize_ c)
+  --   opt' (JoinMore js r c)     = 
+  --     combOpts F.And (\c' js' -> RJoinMore js' r c') (optionalize_ c) (opt' js)
+optAlgebra (Prod rl rr)    = undefined
+  -- pure $ mkOpt (F.Lit True) (RProd r l rs)
 optAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
 optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
 

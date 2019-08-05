@@ -2,7 +2,7 @@
 module VDBMS.QueryLang.RelAlg.Relational.Algebra (
 
         RAlgebra(..),
-        RJoins(..),
+        -- RJoins(..),
         SetOp(..)
 
 ) where
@@ -17,10 +17,10 @@ import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Basics.SetOp
 
 -- | Conditional relational joins.
-data RJoins 
-   = RJoinTwoTable (Rename Relation) (Rename Relation) RCondition 
-   | RJoinMore     RJoins            (Rename Relation) RCondition 
-  deriving (Data,Eq,Show,Typeable,Ord)
+-- data RJoins 
+--    = RJoinTwoTable (Rename Relation) (Rename Relation) RCondition 
+--    | RJoinMore     RJoins            (Rename Relation) RCondition 
+--   deriving (Data,Eq,Show,Typeable,Ord)
 
 -- | More expressive relaitonal algebra.
 --   Ie, it has renaming of attributes and subqueries in addition to 
@@ -29,8 +29,10 @@ data RAlgebra
    = RSetOp SetOp RAlgebra RAlgebra
    | RProj  Attributes (Rename RAlgebra)
    | RSel   (SqlCond RAlgebra) (Rename RAlgebra)
-   | RJoin  RJoins
-   | RProd  (Rename Relation) (Rename Relation) [Rename Relation]
+   -- | RJoin  RJoins
+   | RJoin (Rename RAlgebra) (Rename RAlgebra) RCondition
+   -- | RProd  (Rename Relation) (Rename Relation) [Rename Relation]
+   | RProd (Rename RAlgebra) (Rename RAlgebra)
    | RTRef  (Rename Relation)
    | REmpty
   deriving (Data,Eq,Show,Typeable,Ord)
