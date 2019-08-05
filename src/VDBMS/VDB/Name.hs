@@ -10,7 +10,8 @@ module VDBMS.VDB.Name (
         Attr(..),
         Attributes(..),
         renameMap,
-        attsSet
+        attsSet,
+        qualName
 
 ) where
 
@@ -33,6 +34,11 @@ data Qualifier
       subqueryQualifier :: String
     }
  deriving (Data,Eq,Ord,Read,Show,Typeable)
+
+-- | The qualifier name.
+qualName :: Qualifier -> String
+qualName (RelQualifier r) = relationName r 
+qualName (SubqueryQualifier q) = q 
 
 -- | A qualified/unqualified attribute (i.e., its relation name can be
 --   attached to it) with the possibility to rename to a new

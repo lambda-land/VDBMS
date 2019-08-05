@@ -11,7 +11,7 @@ import qualified Data.Map as M
 import qualified Data.Map.Strict as SM
 import qualified Data.Set as Set 
 import Data.Set (Set)
-import Data.List (nub, (\\))
+import Data.List (intersect, nub, (\\))
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -49,7 +49,7 @@ data RTypeError =
   | RAttrNotInTypeEnv Attribute RTypeEnv
   | REmptyAttrList Attributes (Rename RAlgebra)
   | RAmbiguousAttr Attr RTypeEnv
-  | RNotUniqueRelAlias [Rename Relation]
+  | RNotUniqueRelAlias RTypeEnv RTypeEnv
   | RInOpMustContainOneClm RTypeEnv
   | RMissingAlias (Rename RAlgebra)
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
@@ -72,7 +72,7 @@ typeOfRQuery q@(RSel c rq)       s =
      return t'
 typeOfRQuery (RJoin rl rr c)   s = undefined
   -- typeJoins js s 
-typeOfRQuery (RProd rl rr )    s = undefined
+typeOfRQuery (RProd rl rr )    s = typeRProd rl rr s
   -- typeRProd (rl : rr : rrs) s
 typeOfRQuery (RTRef rr)        s = typeRRel rr s 
 typeOfRQuery REmpty            _ = return M.empty
@@ -289,12 +289,14 @@ typeComp a@(Att l) a'@(Att r) t =
 -- | Gives the type of cross producting multiple rename relations.
 -- TODO: check this after refactoring prod type!!
 typeRProd :: MonadThrow m 
-          => [Rename Relation] -> RSchema
+          => Rename RAlgebra -> Rename RAlgebra -> RSchema
           -> m RTypeEnv
-typeRProd rrs s = 
-  do uniqueRelAlias rrs 
-     ts <- mapM (flip typeRRel s) rrs
-     return $ prodRTypes ts
+typeRProd rl rr s = 
+  do tl <- typeOfRQuery (thing rl) s
+     tr <- typeOfRQuery (thing rr) s
+     uniqueRelAlias tl tr
+     -- ts <- mapM (flip typeRRel s) rrs
+     return $ prodRTypes (pure tl ++ pure tr)
 
 -- | Gets a list of relational type env and product them.
 --   i.e., for repeated attributes accumulates the qualifiers.
@@ -309,18 +311,24 @@ typeRProd rrs s =
 prodRTypes :: [RTypeEnv] -> RTypeEnv
 prodRTypes ts = SM.unionsWith combAttInfos ts
 
--- | combinees attr informations. 
+-- | Combines attr informations. 
 combAttInfos = (++) 
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
-uniqueRelAlias :: MonadThrow m => [Rename Relation] -> m ()
-uniqueRelAlias rrs 
-  | nub relNames == relNames = return ()
-  | otherwise                = throwM $ RNotUniqueRelAlias rrs
+uniqueRelAlias :: MonadThrow m => RTypeEnv -> RTypeEnv -> m ()
+uniqueRelAlias lt rt 
+  | null (relNames lt `intersect` relNames rt) = return ()
+  | otherwise = throwM $ RNotUniqueRelAlias lt rt 
     where
-      relNames  = fmap relName rrs
-      relName r = maybe (thing r) Relation (name r)
+      relNames :: RTypeEnv -> [String]
+      relNames t = undefined
+      -- nub $ qualName fmap rAttrQual $ SM.
+  -- | nub relNames == relNames = return ()
+  -- | otherwise                = throwM $ RNotUniqueRelAlias rrs
+  --   where
+  --     relNames  = fmap relName rrs
+  --     relName r = maybe (thing r) Relation (name r)
 
 -- | Returns the type of a rename relation.
 typeRRel :: MonadThrow m 
