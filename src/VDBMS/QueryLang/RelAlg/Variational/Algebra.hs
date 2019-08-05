@@ -161,7 +161,12 @@ optAlgebra (Sel c q)       =
   combOpts F.And RSel (optionalize_ c) (optRename q) 
 optAlgebra (AChc f q1 q2)  = mapFst (F.And f) (optAlgebra q1) ++
                              mapFst (F.And (F.Not f)) (optAlgebra q2)
-optAlgebra (Join rl rr c)  = undefined
+optAlgebra (Join l r c)    = 
+  combOpts F.And constRJoin (combRenameAlgs l r) (optionalize_ c)
+    where 
+      -- combRenameAlgs :: Rename Algebra -> Rename Algebra -> 
+      combRenameAlgs rl rr = combOpts F.And (,) (optRename rl) (optRename rr)
+      constRJoin (rq1,rq2) cond = RJoin rq1 rq2 cond
   -- mapSnd RJoin $ opt' js
   -- where
   --   opt' :: Joins -> [Opt RJoins]
@@ -169,7 +174,8 @@ optAlgebra (Join rl rr c)  = undefined
   --     mapSnd (\cond -> RJoinTwoTable l r cond) (optionalize_ c)
   --   opt' (JoinMore js r c)     = 
   --     combOpts F.And (\c' js' -> RJoinMore js' r c') (optionalize_ c) (opt' js)
-optAlgebra (Prod rl rr)    = undefined
+optAlgebra (Prod l r)      = 
+  combOpts F.And RProd (optRename l) (optRename r)
   -- pure $ mkOpt (F.Lit True) (RProd r l rs)
 optAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
 optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
