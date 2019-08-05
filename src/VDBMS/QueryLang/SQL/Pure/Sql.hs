@@ -9,8 +9,8 @@ data SqlSelect =
     SqlSelect {
       attributes :: [SqlAttrExpr],
       tables :: [SqlRelation],
-      condition :: [SqlCond SqlSelect],
-      sqlName :: Maybe String 
+      condition :: [SqlCond SqlSelect]
+      -- sqlName :: Maybe String 
     }
   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
   | SqlTRef Relation -- ^ return a table
@@ -35,8 +35,8 @@ data SqlAttrExpr =
 --   Also note that if you want to cross product you'll have:
 --   [Rename SqlTRef R, Rename SqlTRef T]
 data SqlRelation = 
-    SqlRelation (Rename SqlSelect)
-  -- | SqlTwoTableInnerJoin (Rename Relation) (Rename Relation) RCondition
+    SqlSubQuery (Rename SqlSelect)
+  | SqlInnerJoin SqlRelation SqlRelation RCondition
   -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
 
 -- | Sql set operations.

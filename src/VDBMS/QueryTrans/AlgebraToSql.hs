@@ -20,6 +20,7 @@ import Data.List ((\\))
 --   schema and make sure that attributes and relations are in line with 
 --   the schema.
 --   It just translates queries. it doesn't optimize the generated sql query.
+-- TODO: check it wrt renaming of attributes.
 transAlgebra2Sql :: RAlgebra -> SqlSelect
 transAlgebra2Sql (RSetOp o l r) 
   = SqlBin (algBin2SqlBin o) (transAlgebra2Sql l) (transAlgebra2Sql r)
@@ -27,26 +28,35 @@ transAlgebra2Sql (RSetOp o l r)
       algBin2SqlBin Union = SqlUnion
       algBin2SqlBin Diff  = SqlDiff
 transAlgebra2Sql (RProj as q)   
-  = SqlSelect (map SqlAttr as ++ atts) (tables sql) (condition sql) (name q)
+  = SqlSelect (map SqlAttr as ++ atts) (tables sql) (condition sql) 
     where 
-      sql = transAlgebra2Sql (thing q)
+      rsql = alg2SqlWithName q
+      sql = thing rsql
       atts = attributes sql \\ [SqlAllAtt]
-transAlgebra2Sql (RSel c q)     
-  = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) (name q)
+transAlgebra2Sql (RSel c q) 
+  = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) 
     where 
-      sql = transAlgebra2Sql (thing q)
+      rsql = alg2SqlWithName q 
+      sql = thing rsql
 transAlgebra2Sql (RJoin rl rr c) = undefined     
   -- = SqlSelect [SqlAllAtt] [constructJoinRels js] [] Nothing
-transAlgebra2Sql (RProd rl rr)   = undefined 
+transAlgebra2Sql (RProd rl rr)   
+  = SqlSelect [SqlAllAtt] 
+              [ SqlSubQuery $ alg2SqlWithName rl
+              , SqlSubQuery $ alg2SqlWithName rr]
+              [] 
   -- = SqlSelect [SqlAllAtt] ([constructRel l, constructRel r] ++ map constructRel rs) [] Nothing
 transAlgebra2Sql (RTRef r)      
-  = SqlSelect [SqlAllAtt] [constructRel r] [] Nothing
+  = SqlSelect [SqlAllAtt] [constructRel r] [] 
 transAlgebra2Sql REmpty         = SqlEmpty
+
+alg2SqlWithName :: Rename RAlgebra -> Rename SqlSelect
+alg2SqlWithName rq = undefined
 
 -- | Constructs a sql relation from a rename relation.
 --   Helper for transAlgebra2Sql.
 constructRel :: Rename Relation -> SqlRelation
-constructRel r = SqlRelation $ renameMap SqlTRef r
+constructRel r = SqlSubQuery $ renameMap SqlTRef r
 
 -- | Consructs a list of sql relaiton from joins.
 --   Helper for transAlgebra2Sql.
