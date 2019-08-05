@@ -144,16 +144,8 @@ configureAlgebra c (Join l r cond) =
   RJoin (renameMap (configureAlgebra c) l)
         (renameMap (configureAlgebra c) r)
         (configure c cond)
-  -- RJoin  (configure' c js)
-  -- where
-  --   configure' :: Config Bool -> Joins -> RJoins
-  --   configure' c (JoinTwoTables l r cond) = 
-  --     RJoinTwoTable l r (configure c cond)
-  --   configure' c (JoinMore js r cond)     = 
-  --     RJoinMore (configure' c js) r (configure c cond)
 configureAlgebra c (Prod l r)      = 
   RProd (renameMap (configureAlgebra c) l) (renameMap (configureAlgebra c) r)
-  -- RProd r l rs
 configureAlgebra c (TRef r)        = RTRef r 
 configureAlgebra c Empty           = REmpty
 
