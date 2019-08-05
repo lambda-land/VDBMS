@@ -38,7 +38,11 @@ transAlgebra2Sql (RSel c q)
     where 
       rsql = alg2SqlWithName q 
       sql = thing rsql
-transAlgebra2Sql (RJoin rl rr c) = undefined     
+transAlgebra2Sql (RJoin rl rr c) 
+  = SqlSelect [SqlAllAtt] [SqlInnerJoin lsql rsql c] []
+    where
+      lsql = SqlSubQuery $ alg2SqlWithName rl
+      rsql = SqlSubQuery $ alg2SqlWithName rr
   -- = SqlSelect [SqlAllAtt] [constructJoinRels js] [] Nothing
 transAlgebra2Sql (RProd rl rr)   
   = SqlSelect [SqlAllAtt] 
@@ -51,7 +55,7 @@ transAlgebra2Sql (RTRef r)
 transAlgebra2Sql REmpty         = SqlEmpty
 
 alg2SqlWithName :: Rename RAlgebra -> Rename SqlSelect
-alg2SqlWithName rq = undefined
+alg2SqlWithName = renameMap transAlgebra2Sql
 
 -- | Constructs a sql relation from a rename relation.
 --   Helper for transAlgebra2Sql.
