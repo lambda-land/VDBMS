@@ -20,7 +20,8 @@ import Data.List ((\\))
 --   schema and make sure that attributes and relations are in line with 
 --   the schema.
 --   It just translates queries. it doesn't optimize the generated sql query.
--- TODO: check it wrt renaming of attributes.
+--  You could possibly add qualifier where ever possible in this step!
+--  Sth to keep in mind if things go wrong!!
 transAlgebra2Sql :: RAlgebra -> SqlSelect
 transAlgebra2Sql (RSetOp o l r) 
   = SqlBin (algBin2SqlBin o) (transAlgebra2Sql l) (transAlgebra2Sql r)
