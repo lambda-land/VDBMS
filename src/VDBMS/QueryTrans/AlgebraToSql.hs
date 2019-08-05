@@ -43,17 +43,17 @@ transAlgebra2Sql (RJoin rl rr c)
     where
       lsql = SqlSubQuery $ alg2SqlWithName rl
       rsql = SqlSubQuery $ alg2SqlWithName rr
-  -- = SqlSelect [SqlAllAtt] [constructJoinRels js] [] Nothing
 transAlgebra2Sql (RProd rl rr)   
   = SqlSelect [SqlAllAtt] 
               [ SqlSubQuery $ alg2SqlWithName rl
               , SqlSubQuery $ alg2SqlWithName rr]
               [] 
-  -- = SqlSelect [SqlAllAtt] ([constructRel l, constructRel r] ++ map constructRel rs) [] Nothing
 transAlgebra2Sql (RTRef r)      
   = SqlSelect [SqlAllAtt] [constructRel r] [] 
 transAlgebra2Sql REmpty         = SqlEmpty
 
+-- | Attaches the name of a relational alg query to its equiv
+--   sql query.
 alg2SqlWithName :: Rename RAlgebra -> Rename SqlSelect
 alg2SqlWithName = renameMap transAlgebra2Sql
 
@@ -61,12 +61,6 @@ alg2SqlWithName = renameMap transAlgebra2Sql
 --   Helper for transAlgebra2Sql.
 constructRel :: Rename Relation -> SqlRelation
 constructRel r = SqlSubQuery $ renameMap SqlTRef r
-
--- | Consructs a list of sql relaiton from joins.
---   Helper for transAlgebra2Sql.
--- constructJoinRels :: RJoins -> SqlRelation
--- constructJoinRels (RJoinTwoTable l r c) = SqlTwoTableInnerJoin l r c
--- constructJoinRels (RJoinMore js r c) = SqlMoreInnerJoin (constructJoinRels js) r c
 
 -- | Translates algebra conditions to sql conditions.
 --   Helper for transAlgebra2Sql.
