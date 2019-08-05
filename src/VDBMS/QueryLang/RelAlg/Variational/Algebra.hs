@@ -5,7 +5,6 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , OptAttribute(..)
         , OptAttributes(..)
         , VsqlCond(..)
-        -- , Joins(..)
         
 
 ) where
@@ -102,21 +101,13 @@ type OptAttribute = Opt (Rename Attr)
 -- | Optional attributes.
 type OptAttributes = [OptAttribute]
 
--- | Variational conditional relational joins.
--- data Joins 
---    = JoinTwoTables (Rename Relation) (Rename Relation) Condition
---    | JoinMore      Joins             (Rename Relation) Condition
---   deriving (Data,Eq,Show,Typeable,Ord)
-
 -- | More expressive variational relational algebra.
 data Algebra
    = SetOp SetOp Algebra Algebra
    | Proj  OptAttributes (Rename Algebra)
    | Sel   VsqlCond (Rename Algebra)
    | AChc  F.FeatureExpr Algebra Algebra
-   -- | Join  Joins
    | Join (Rename Algebra) (Rename Algebra) Condition
-   -- | Prod  (Rename Relation) (Rename Relation) [Rename Relation]
    | Prod (Rename Algebra) (Rename Algebra)
    | TRef  (Rename Relation)
    | Empty 
@@ -164,19 +155,10 @@ optAlgebra (AChc f q1 q2)  = mapFst (F.And f) (optAlgebra q1) ++
 optAlgebra (Join l r c)    = 
   combOpts F.And constRJoin (combRenameAlgs l r) (optionalize_ c)
     where 
-      -- combRenameAlgs :: Rename Algebra -> Rename Algebra -> 
       combRenameAlgs rl rr = combOpts F.And (,) (optRename rl) (optRename rr)
       constRJoin (rq1,rq2) cond = RJoin rq1 rq2 cond
-  -- mapSnd RJoin $ opt' js
-  -- where
-  --   opt' :: Joins -> [Opt RJoins]
-  --   opt' (JoinTwoTables l r c) = 
-  --     mapSnd (\cond -> RJoinTwoTable l r cond) (optionalize_ c)
-  --   opt' (JoinMore js r c)     = 
-  --     combOpts F.And (\c' js' -> RJoinMore js' r c') (optionalize_ c) (opt' js)
 optAlgebra (Prod l r)      = 
   combOpts F.And RProd (optRename l) (optRename r)
-  -- pure $ mkOpt (F.Lit True) (RProd r l rs)
 optAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
 optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
 
