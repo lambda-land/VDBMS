@@ -36,8 +36,8 @@ data SqlAttrExpr =
 --   [Rename SqlTRef R, Rename SqlTRef T]
 data SqlRelation = 
     SqlRelation (Rename SqlSelect)
-  | SqlTwoTableInnerJoin (Rename Relation) (Rename Relation) RCondition
-  | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
+  -- | SqlTwoTableInnerJoin (Rename Relation) (Rename Relation) RCondition
+  -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
 
 -- | Sql set operations.
 data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff

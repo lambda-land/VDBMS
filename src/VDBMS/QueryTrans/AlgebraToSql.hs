@@ -37,7 +37,7 @@ transAlgebra2Sql (RSel c q)
       sql = transAlgebra2Sql (thing q)
 transAlgebra2Sql (RJoin rl rr c) = undefined     
   -- = SqlSelect [SqlAllAtt] [constructJoinRels js] [] Nothing
-transAlgebra2Sql (RProd rl rr ) = undefined 
+transAlgebra2Sql (RProd rl rr)   = undefined 
   -- = SqlSelect [SqlAllAtt] ([constructRel l, constructRel r] ++ map constructRel rs) [] Nothing
 transAlgebra2Sql (RTRef r)      
   = SqlSelect [SqlAllAtt] [constructRel r] [] Nothing
