@@ -307,7 +307,6 @@ typeRProd rl rr s =
 --   uniqueRelAlias in typeRProd is taking care of this.
 --   So while combining lists of attr info for a given attr
 --   we don't need to check this anymore.
--- TODO: check this after refactoring prod type!!
 prodRTypes :: [RTypeEnv] -> RTypeEnv
 prodRTypes ts = SM.unionsWith combAttInfos ts
 
@@ -322,13 +321,7 @@ uniqueRelAlias lt rt
   | otherwise = throwM $ RNotUniqueRelAlias lt rt 
     where
       relNames :: RTypeEnv -> [String]
-      relNames t = undefined
-      -- nub $ qualName fmap rAttrQual $ SM.
-  -- | nub relNames == relNames = return ()
-  -- | otherwise                = throwM $ RNotUniqueRelAlias rrs
-  --   where
-  --     relNames  = fmap relName rrs
-  --     relName r = maybe (thing r) Relation (name r)
+      relNames t = nub $ fmap (qualName . rAttrQual) $ concatMap snd $ SM.toList t 
 
 -- | Returns the type of a rename relation.
 typeRRel :: MonadThrow m 
