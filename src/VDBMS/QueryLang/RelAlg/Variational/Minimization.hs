@@ -9,7 +9,9 @@ import VDBMS.QueryLang.RelAlg.Variational.Algebra
 
 -- | Applies the minimization rules until the query doesn't change.
 appMin :: Algebra -> Algebra
-appMin = undefined 
+appMin q 
+  | minVar q == q = q 
+  | otherwise = appMin (minVar q)
 
 -- | Variation minimization rules.
 -- Note: not sure which side is more optimized. We can determine that by
