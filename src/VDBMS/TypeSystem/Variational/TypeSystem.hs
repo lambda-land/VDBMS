@@ -146,9 +146,9 @@ typeOfQuery (AChc f l r)     ctx s =
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
      return $ typeUnion tl tr
-typeOfQuery (Join rl rr c)   ctx s = undefined
+typeOfQuery (Join rl rr c)   ctx s = undefined -- typeJoin rl rr c ctx s 
   -- typeJoin js ctx s
-typeOfQuery (Prod rl rr)     ctx s = undefined
+typeOfQuery (Prod rl rr)     ctx s = undefined -- typeProd rl rr ctx s 
   -- typeProd (rl : rr : rrs) ctx s
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
 typeOfQuery Empty            ctx s = 
@@ -266,6 +266,7 @@ typeSel c rq ctx s =
 
 -- | Checks if a subquery is valid within a seleciton or projection.
 --   Assumption: optimizations has applied before this.
+-- TODO: Come back to this after opt rules are done!
 validSubQ :: MonadThrow m => Rename Algebra -> m ()
 validSubQ rq@(Rename a (SetOp _ _ _)) =
   maybe (throwM $ MissingAlias rq) (\_ -> return ()) a 
