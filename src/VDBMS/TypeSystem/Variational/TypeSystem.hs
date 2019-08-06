@@ -21,7 +21,7 @@ import qualified Data.Map as M
 import qualified Data.Map.Strict as SM
 import qualified Data.Set as Set 
 import Data.Set (Set)
-import Data.List (nub, (\\))
+import Data.List (intersect, nub, (\\))
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -50,7 +50,7 @@ type TypeEnv = Opt (M.Map Attribute AttrInformation)
 -- | Possible typing errors.
 data TypeError 
   = CtxUnsatOverEnv VariationalContext TypeEnv
-  | NotUniqueRelAlias [Rename Relation]
+  | NotUniqueRelAlias TypeEnv TypeEnv
   | UnsatFexpsInProduct F.FeatureExpr 
   | InOpMustContainOneClm TypeEnv
   | UnsatAttPCandEnv OptAttribute TypeEnv
@@ -410,7 +410,14 @@ typeProd rl rr ctx s =
 -- | Products a list of types.
 -- TODO: check this after refactoring prod type!!
 prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
-prodTypes tl tr = undefined
+prodTypes tl tr 
+  | satisfiable f = appCtxtToEnv f prodTypeMaps
+  | otherwise = throwM $ UnsatFexpsInProduct f
+    where 
+      f  = F.And fl fr 
+      fl = getFexp tl
+      fr = getFexp tr
+      prodTypeMaps = mkOpt f (SM.unionWith (++) (getObj tl) (getObj tr))
   -- | satisfiable f = appCtxtToEnv f prodTypeMaps
   -- | otherwise = throwM $ UnsatFexpsInProduct f
   -- where
@@ -420,7 +427,12 @@ prodTypes tl tr = undefined
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
 uniqueRelAlias :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
-uniqueRelAlias tl tr = undefined
+uniqueRelAlias tl tr 
+  | null relNs = return ()
+  | otherwise  = throwM $ NotUniqueRelAlias tl tr 
+    where 
+      relNs = relNames (getObj tl) `intersect` relNames (getObj tr)
+      relNames envObj = nub $ fmap (qualName . attrQual) $ concatMap snd $ SM.toList envObj
   -- | nub relNames == relNames = return ()
   -- | otherwise                = throwM $ NotUniqueRelAlias rrs
   --   where
