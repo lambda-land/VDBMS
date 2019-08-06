@@ -70,7 +70,7 @@ typeOfRQuery q@(RSel c rq)       s =
      let t' = updateType (name rq) t
      typeSqlCond c t' s
      return t'
-typeOfRQuery (RJoin rl rr c)   s = undefined
+typeOfRQuery (RJoin rl rr c)   s = typeJoin rl rr c s 
   -- typeJoins js s 
 typeOfRQuery (RProd rl rr )    s = typeRProd rl rr s
   -- typeRProd (rl : rr : rrs) s
@@ -263,6 +263,17 @@ typeComp a@(Att l) a'@(Att r) t =
      else throwM $ RCompInvalid a a' t
 
 -- | Gives the type of rename joins.
+typeJoin :: MonadThrow m 
+         => Rename RAlgebra -> Rename RAlgebra -> RCondition -> RSchema
+         -> m RTypeEnv
+typeJoin rl rr c s = 
+  do tl <- typeOfRQuery (thing rl) s 
+     tr <- typeOfRQuery (thing rr) s
+     uniqueRelAlias tl tr 
+     let t = prodRTypes (pure tl ++ pure tr)
+     typeRCondition c t 
+     return t 
+     
 -- typeJoins :: MonadThrow m 
 --           => RJoins -> RSchema
 --           -> m RTypeEnv
