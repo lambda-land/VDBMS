@@ -147,9 +147,7 @@ typeOfQuery (AChc f l r)     ctx s =
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
      return $ typeUnion tl tr
 typeOfQuery (Join rl rr c)   ctx s = typeJoin rl rr c ctx s 
-  -- typeJoin js ctx s
 typeOfQuery (Prod rl rr)     ctx s = typeProd rl rr ctx s 
-  -- typeProd (rl : rr : rrs) ctx s
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
 typeOfQuery Empty            ctx s = 
   appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
@@ -363,37 +361,10 @@ typeJoin :: MonadThrow m
          -> m TypeEnv
 typeJoin rl rr c ctx s = 
   do t <- typeProd rl rr ctx s 
-    -- tl <- typeOfQuery (thing rl) ctx s 
-    --  tr <- typeOfQuery (thing rr) ctx s 
-    --  uniqueRelAlias tl tr 
-     -- t <- prodTypes (pure tl ++ pure tr)
      typeCondition c ctx t 
      return t 
--- typeJoin :: MonadThrow m 
---          => Joins -> VariationalContext -> Schema
---          -> m TypeEnv
--- typeJoin j@(JoinTwoTables rl rr c) ctx s = 
---   do uniqueRelAlias $ relJoins j
---      tl <- typeRel rl ctx s 
---      tr <- typeRel rr ctx s 
---      t <- prodTypes (pure tl ++ pure tr)
---      typeCondition c ctx t 
---      return t 
--- typeJoin j@(JoinMore js rr c)      ctx s = 
---   do uniqueRelAlias $ relJoins j
---      ts <- typeJoin js ctx s 
---      tr <- typeRel rr ctx s 
---      t <- prodTypes $ pure ts ++ pure tr 
---      typeCondition c ctx t 
---      return t
-
--- | Gets relation names/aliases from joins.
--- relJoins :: Joins -> [Rename Relation]
--- relJoins (JoinTwoTables rl rr c) = pure rl ++ pure rr
--- relJoins (JoinMore js rr c)      = relJoins js ++ pure rr 
 
 -- | Gives the type of cross producting multiple rename relations.
--- TODO: check this after refactoring prod type!!
 typeProd :: MonadThrow m 
          => Rename Algebra -> Rename Algebra 
          -> VariationalContext -> Schema
@@ -403,12 +374,8 @@ typeProd rl rr ctx s =
      tr <- typeOfQuery (thing rr) ctx s 
      uniqueRelAlias tl tr 
      prodTypes tl tr 
-    -- uniqueRelAlias rrs 
-    --  ts <- mapM (flip (flip typeRel ctx) s) rrs
-    --  prodTypes ts
 
 -- | Products a list of types.
--- TODO: check this after refactoring prod type!!
 prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
 prodTypes tl tr 
   | satisfiable f = appCtxtToEnv f prodTypeMaps
@@ -418,11 +385,6 @@ prodTypes tl tr
       fl = getFexp tl
       fr = getFexp tr
       prodTypeMaps = mkOpt f (SM.unionWith (++) (getObj tl) (getObj tr))
-  -- | satisfiable f = appCtxtToEnv f prodTypeMaps
-  -- | otherwise = throwM $ UnsatFexpsInProduct f
-  -- where
-  --   f = foldr (F.And . getFexp) (F.Lit True) ts
-  --   prodTypeMaps = mkOpt f (SM.unionsWith (++) (map getObj ts))
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
@@ -433,11 +395,6 @@ uniqueRelAlias tl tr
     where 
       relNs = relNames (getObj tl) `intersect` relNames (getObj tr)
       relNames envObj = nub $ fmap (qualName . attrQual) $ concatMap snd $ SM.toList envObj
-  -- | nub relNames == relNames = return ()
-  -- | otherwise                = throwM $ NotUniqueRelAlias rrs
-  --   where
-  --     relNames  = fmap relName rrs
-  --     relName r = maybe (thing r) Relation (name r)
 
 
 -- | Returns the type of a rename relation.
