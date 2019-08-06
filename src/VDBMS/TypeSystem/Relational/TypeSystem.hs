@@ -115,7 +115,7 @@ typeRProj as rq s
 -- | Checks if a subquery is valid within a selection or projection.
 --   Assumption: optimization has already been done. so we don't have 
 --   an unncessary combination of selections and projections in a query.
--- You may need to add more cases to this!
+-- You may need to add more cases to this! Come back to this after opt rules.
 validSubQ :: MonadThrow m => Rename RAlgebra -> m ()
 validSubQ rq@(Rename a (RSetOp _ _ _)) = 
   maybe (throwM $ RMissingAlias rq) (\_ -> return ()) a 
