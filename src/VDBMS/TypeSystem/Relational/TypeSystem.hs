@@ -71,9 +71,7 @@ typeOfRQuery q@(RSel c rq)       s =
      typeSqlCond c t' s
      return t'
 typeOfRQuery (RJoin rl rr c)   s = typeJoin rl rr c s 
-  -- typeJoins js s 
 typeOfRQuery (RProd rl rr )    s = typeRProd rl rr s
-  -- typeRProd (rl : rr : rrs) s
 typeOfRQuery (RTRef rr)        s = typeRRel rr s 
 typeOfRQuery REmpty            _ = return M.empty
 
@@ -117,6 +115,7 @@ typeRProj as rq s
 -- | Checks if a subquery is valid within a selection or projection.
 --   Assumption: optimization has already been done. so we don't have 
 --   an unncessary combination of selections and projections in a query.
+-- You may need to add more cases to this!
 validSubQ :: MonadThrow m => Rename RAlgebra -> m ()
 validSubQ rq@(Rename a (RSetOp _ _ _)) = 
   maybe (throwM $ RMissingAlias rq) (\_ -> return ()) a 
@@ -273,32 +272,8 @@ typeJoin rl rr c s =
      let t = prodRTypes (pure tl ++ pure tr)
      typeRCondition c t 
      return t 
-     
--- typeJoins :: MonadThrow m 
---           => RJoins -> RSchema
---           -> m RTypeEnv
--- typeJoins j@(RJoinTwoTable rl rr c) s = 
---   do uniqueRelAlias $ relJoins j
---      tl <- typeRRel rl s 
---      tr <- typeRRel rr s 
---      let t = prodRTypes (pure tl ++ pure tr)
---      typeRCondition c t
---      return t
--- typeJoins j@(RJoinMore js rr c)     s = 
---   do uniqueRelAlias $ relJoins j
---      ts <- typeJoins js s
---      tr <- typeRRel rr s
---      let t = prodRTypes $ pure ts ++ pure tr
---      typeRCondition c t
---      return t
-
--- | Gets the relations/aliases from the joins.
--- relJoins :: RJoins -> [Rename Relation]
--- relJoins (RJoinTwoTable rl rr c) = pure rl ++ pure rr 
--- relJoins (RJoinMore js rr c)     = relJoins js ++ pure rr
 
 -- | Gives the type of cross producting multiple rename relations.
--- TODO: check this after refactoring prod type!!
 typeRProd :: MonadThrow m 
           => Rename RAlgebra -> Rename RAlgebra -> RSchema
           -> m RTypeEnv
@@ -306,7 +281,6 @@ typeRProd rl rr s =
   do tl <- typeOfRQuery (thing rl) s
      tr <- typeOfRQuery (thing rr) s
      uniqueRelAlias tl tr
-     -- ts <- mapM (flip typeRRel s) rrs
      return $ prodRTypes (pure tl ++ pure tr)
 
 -- | Gets a list of relational type env and product them.
