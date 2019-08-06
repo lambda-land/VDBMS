@@ -146,9 +146,9 @@ typeOfQuery (AChc f l r)     ctx s =
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
      return $ typeUnion tl tr
-typeOfQuery (Join rl rr c)   ctx s = undefined -- typeJoin rl rr c ctx s 
+typeOfQuery (Join rl rr c)   ctx s = typeJoin rl rr c ctx s 
   -- typeJoin js ctx s
-typeOfQuery (Prod rl rr)     ctx s = undefined -- typeProd rl rr ctx s 
+typeOfQuery (Prod rl rr)     ctx s = typeProd rl rr ctx s 
   -- typeProd (rl : rr : rrs) ctx s
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
 typeOfQuery Empty            ctx s = 
@@ -319,7 +319,8 @@ typeCondition (Not c)      ctx t = typeCondition c ctx t
 typeCondition (Or l r)     ctx t = typeCondition l ctx t >> typeCondition r ctx t
 typeCondition (And l r)    ctx t = typeCondition l ctx t >> typeCondition r ctx t
 typeCondition (CChc f l r) ctx t = 
-  (appCtxtToEnv (F.And ctx f) t >>= typeCondition l (F.And ctx f))
+  (appCtxtToEnv (F.And ctx f) t 
+  >>= typeCondition l (F.And ctx f))
   >> (appCtxtToEnv (F.And ctx (F.Not f)) t 
   >>= typeCondition r (F.And ctx (F.Not f)))
 
@@ -356,6 +357,18 @@ typeUnion t t' =
         (SM.unionWith (++) (getObj t) (getObj t'))
 
 -- | Gives the type of rename joins.
+typeJoin :: MonadThrow m 
+         => Rename Algebra -> Rename Algebra -> Condition
+         -> VariationalContext -> Schema
+         -> m TypeEnv
+typeJoin rl rr c ctx s = 
+  do t <- typeProd rl rr ctx s 
+    -- tl <- typeOfQuery (thing rl) ctx s 
+    --  tr <- typeOfQuery (thing rr) ctx s 
+    --  uniqueRelAlias tl tr 
+     -- t <- prodTypes (pure tl ++ pure tr)
+     typeCondition c ctx t 
+     return t 
 -- typeJoin :: MonadThrow m 
 --          => Joins -> VariationalContext -> Schema
 --          -> m TypeEnv
@@ -382,32 +395,37 @@ typeUnion t t' =
 -- | Gives the type of cross producting multiple rename relations.
 -- TODO: check this after refactoring prod type!!
 typeProd :: MonadThrow m 
-         => [Rename Relation] -> VariationalContext -> Schema
+         => Rename Algebra -> Rename Algebra 
+         -> VariationalContext -> Schema
          -> m TypeEnv
-typeProd rrs ctx s = 
-  do uniqueRelAlias rrs 
-     ts <- mapM (flip (flip typeRel ctx) s) rrs
-     prodTypes ts
+typeProd rl rr ctx s = 
+  do tl <- typeOfQuery (thing rl) ctx s 
+     tr <- typeOfQuery (thing rr) ctx s 
+     uniqueRelAlias tl tr 
+     prodTypes tl tr 
+    -- uniqueRelAlias rrs 
+    --  ts <- mapM (flip (flip typeRel ctx) s) rrs
+    --  prodTypes ts
 
 -- | Products a list of types.
 -- TODO: check this after refactoring prod type!!
-prodTypes :: MonadThrow m => [TypeEnv] -> m TypeEnv
-prodTypes ts 
-  | satisfiable f = appCtxtToEnv f prodTypeMaps
-  | otherwise = throwM $ UnsatFexpsInProduct f
-  where
-    f = foldr (F.And . getFexp) (F.Lit True) ts
-    prodTypeMaps = mkOpt f (SM.unionsWith (++) (map getObj ts))
+prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
+prodTypes tl tr = undefined
+  -- | satisfiable f = appCtxtToEnv f prodTypeMaps
+  -- | otherwise = throwM $ UnsatFexpsInProduct f
+  -- where
+  --   f = foldr (F.And . getFexp) (F.Lit True) ts
+  --   prodTypeMaps = mkOpt f (SM.unionsWith (++) (map getObj ts))
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
-uniqueRelAlias :: MonadThrow m => [Rename Relation] -> m ()
-uniqueRelAlias rrs 
-  | nub relNames == relNames = return ()
-  | otherwise                = throwM $ NotUniqueRelAlias rrs
-    where
-      relNames  = fmap relName rrs
-      relName r = maybe (thing r) Relation (name r)
+uniqueRelAlias :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
+uniqueRelAlias tl tr = undefined
+  -- | nub relNames == relNames = return ()
+  -- | otherwise                = throwM $ NotUniqueRelAlias rrs
+  --   where
+  --     relNames  = fmap relName rrs
+  --     relName r = maybe (thing r) Relation (name r)
 
 
 -- | Returns the type of a rename relation.
