@@ -268,10 +268,6 @@ typeJoin :: MonadThrow m
          -> m RTypeEnv
 typeJoin rl rr c s = 
   do t <- typeRProd rl rr s 
-    -- tl <- typeOfRQuery (thing rl) s 
-    --  tr <- typeOfRQuery (thing rr) s
-    --  uniqueRelAlias tl tr 
-    --  let t = prodRTypes (pure tl ++ pure tr)
      typeRCondition c t 
      return t 
 
