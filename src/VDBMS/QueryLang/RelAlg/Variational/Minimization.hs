@@ -7,12 +7,13 @@ import VDBMS.QueryLang.RelAlg.Variational.Algebra
 -- import VDBMS.Variational.Opt
 -- import VDBMS.Variational.Variational
 
--- Issues:
--- * equivalency of queries (and confedQs) is wrong!
+-- | Applies the minimization rules until the query doesn't change.
+appMin :: Algebra -> Algebra
+appMin = undefined 
 
-
--- | checks whether two configured queries are equivalent or not.
---   need to rewrite this! because == won't cut it!
--- equivConfedQs :: Algebra -> Algebra -> Bool
--- equivConfedQs = (==)
-
+-- | Variation minimization rules.
+-- Note: not sure which side is more optimized. We can determine that by
+--       running some experiments. It also probably depends on the 
+--       approach we take.
+minVar :: Algebra -> Algebra 
+minVar = undefined
