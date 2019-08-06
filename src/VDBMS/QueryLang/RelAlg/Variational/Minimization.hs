@@ -1,5 +1,5 @@
--- | Configuration semantics of vquery. 
-module VDBMS.QueryLang.RelAlg.Variational.Optimizations where 
+-- | Variation minimization of variational relational queries.
+module VDBMS.QueryLang.RelAlg.Variational.Minimization where 
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra
 -- import VDBMS.Features.Config
