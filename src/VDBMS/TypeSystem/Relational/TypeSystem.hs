@@ -304,7 +304,8 @@ uniqueRelAlias lt rt
   | otherwise = throwM $ RNotUniqueRelAlias lt rt 
     where
       relNames :: RTypeEnv -> [String]
-      relNames t = nub $ fmap (qualName . rAttrQual) $ concatMap snd $ SM.toList t 
+      relNames t = nub $ fmap (qualName . rAttrQual) 
+                            $ concatMap snd $ SM.toList t 
 
 -- | Returns the type of a rename relation.
 typeRRel :: MonadThrow m 
