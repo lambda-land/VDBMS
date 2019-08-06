@@ -267,10 +267,11 @@ typeJoin :: MonadThrow m
          => Rename RAlgebra -> Rename RAlgebra -> RCondition -> RSchema
          -> m RTypeEnv
 typeJoin rl rr c s = 
-  do tl <- typeOfRQuery (thing rl) s 
-     tr <- typeOfRQuery (thing rr) s
-     uniqueRelAlias tl tr 
-     let t = prodRTypes (pure tl ++ pure tr)
+  do t <- typeRProd rl rr s 
+    -- tl <- typeOfRQuery (thing rl) s 
+    --  tr <- typeOfRQuery (thing rr) s
+    --  uniqueRelAlias tl tr 
+    --  let t = prodRTypes (pure tl ++ pure tr)
      typeRCondition c t 
      return t 
 
