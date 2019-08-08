@@ -44,14 +44,23 @@ chcDistr (AChc f (Join rq1 rq2 c1) (Join rq3 rq4 c2))
 chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
   = SetOp Union (AChc f q1 q3) (AChc f q2 q4)
 
+-- | Pushes out projection as far as possible.
+pushOutProj :: Algebra -> Algebra
+pushOutProj (Sel c (Rename Nothing (Proj as rq))) = Proj as (Rename Nothing (Sel c rq))
+pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq))) = Proj as1 rq 
+
 -- | relational alg rules.
+relEq :: Algebra -> Algebra
+-- question: how to extract all selections from inner queries?
+relEq (Sel c1 (Rename Nothing (Sel c2 rq))) = Sel (VsqlAnd c1 c2) rq 
 
 -- | choices rules.
 
 -- | relational alg and choices combined rules.
--- chcRel :: Algebra -> Algebra
--- chcRel (AChc f (Sel () rq1))
-
+chcRel :: Algebra -> Algebra
+chcRel (AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) = undefined
+chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
+-- chcRel 
 
 
 
