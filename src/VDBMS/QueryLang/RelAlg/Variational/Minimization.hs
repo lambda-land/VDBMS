@@ -45,9 +45,17 @@ chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
   = SetOp Union (AChc f q1 q3) (AChc f q2 q4)
 
 -- | Pushes out projection as far as possible.
+-- Note that you don't necessarily want to push out all projs.
+-- Eg: proj l1 R * proj l2 S = proj (l1 + l2) (R * S)
+--     but the rhs isn't more efficient than the lhs! keep in 
+--     min that the same goes for joins.
+-- There are also cases that you CANNOT push out projs:
+-- Eg: proj l1 q1 `union` proj l1 q2 <> proj l1 (q1 `union` q2)
 pushOutProj :: Algebra -> Algebra
-pushOutProj (Sel c (Rename Nothing (Proj as rq))) = Proj as (Rename Nothing (Sel c rq))
-pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq))) = Proj as1 rq 
+pushOutProj (Sel c (Rename Nothing (Proj as rq))) = 
+  Proj as (Rename Nothing (Sel c (renameMap pushOutProj rq)))
+pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq))) = 
+  Proj as1 (renameMap pushOutProj rq)
 
 -- | relational alg rules.
 relEq :: Algebra -> Algebra
