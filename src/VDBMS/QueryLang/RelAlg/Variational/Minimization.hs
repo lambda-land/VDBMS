@@ -6,8 +6,10 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.VDB.Name
 -- import VDBMS.Features.Config
 -- import VDBMS.QueryLang.ConfigQuery
-import VDBMS.Variational.Opt (mapFst)
+import VDBMS.Variational.Opt (mapFst, getObj)
 -- import VDBMS.Variational.Variational
+
+import Data.Maybe (isNothing)
 
 -- | Applies the minimization rules until the query doesn't change.
 appMin :: Algebra -> Algebra
@@ -52,10 +54,6 @@ chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
 -- There are also cases that you CANNOT push out projs:
 -- Eg: proj l1 q1 `union` proj l1 q2 <> proj l1 (q1 `union` q2)
 pushOutProj :: Algebra -> Algebra
-pushOutProj (Sel c (Rename Nothing (Proj as rq)))
-  = Proj as (Rename Nothing (Sel c (renameMap pushOutProj rq)))
-pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
-  = Proj as1 (renameMap pushOutProj rq)
 pushOutProj (SetOp o q1 q2)
   = SetOp o (pushOutProj q1) (pushOutProj q2)
 pushOutProj (AChc f q1 q2) 
@@ -64,11 +62,47 @@ pushOutProj (Join rq1 rq2 c)
   = Join (renameMap pushOutProj rq1) (renameMap pushOutProj rq2) c
 pushOutProj (Prod rq1 rq2) 
   = Prod (renameMap pushOutProj rq1) (renameMap pushOutProj rq2)
+pushOutProj (Sel c (Rename Nothing (Proj as rq)))
+  = Proj as (Rename Nothing (Sel c (renameMap pushOutProj rq)))
+pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
+  = Proj as1 (renameMap pushOutProj rq)
+
+-- | checks if a sql condition is of the form "attr in query" condition.
+notInCond :: VsqlCond -> Bool 
+notInCond (VsqlIn _ _)     = True
+notInCond (VsqlCond _)     = False
+notInCond (VsqlNot c)      = notInCond c
+notInCond (VsqlOr l r)     = notInCond l && notInCond r
+notInCond (VsqlAnd l r)    = notInCond l && notInCond r 
+notInCond (VsqlCChc _ l r) = notInCond l && notInCond r 
+
+-- | knowing that the sql condition is not of the form "attr in query"
+--   converts the sql condition to a relational condition.
+relCond :: VsqlCond -> Condition
+relCond (VsqlCond c) = c 
+relCond (VsqlIn _ _) = error $ "didn't expect to get a condition of the form attr in query!! QUERY VAR MIN!!"
+relCond (VsqlNot c) = Not (relCond c)
+relCond (VsqlOr l r) = Or (relCond l) (relCond r)
+relCond (VsqlAnd l r) = And (relCond l) (relCond r)
+relCond (VsqlCChc f l r) = CChc f (relCond l) (relCond r)
+
 
 -- | relational alg rules.
-relEq :: Algebra -> Algebra
--- question: how to extract all selections from inner queries?
-relEq (Sel c1 (Rename Nothing (Sel c2 rq))) = Sel (VsqlAnd c1 c2) rq 
+minSel :: Algebra -> Algebra
+minSel (Sel c1 (Rename Nothing (Sel c2 rq))) 
+  = Sel (VsqlAnd c1 c2) (renameMap minSel rq)
+minSel q@(Sel c1 (Rename Nothing (Proj as (Rename n (Sel c2 rq)))))
+  | noAttRename as = Proj as (Rename n (Sel (VsqlAnd c1 c2) (renameMap minSel rq)))
+  | otherwise = q
+    where
+      noAttRename :: OptAttributes -> Bool
+      noAttRename as = and $ fmap (isNothing . name . getObj) as
+minSel q@(Sel c (Rename Nothing (Prod rq1 rq2)))
+  | notInCond c = Join (renameMap minSel rq1) (renameMap minSel rq2) (relCond c)
+  | otherwise = q 
+minSel (Sel c1 (Rename Nothing (Join rq1 rq2 c2)))
+  | notInCond c1 = Join rq1 rq2 (And (relCond c1) c2)
+
 
 -- | choices rules.
 
