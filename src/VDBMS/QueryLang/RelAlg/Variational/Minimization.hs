@@ -53,6 +53,8 @@ chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
 --     min that the same goes for joins.
 -- There are also cases that you CANNOT push out projs:
 -- Eg: proj l1 q1 `union` proj l1 q2 <> proj l1 (q1 `union` q2)
+-- TODO: you haven't consider the possibility of renaming attributes.
+--       it may screw up some of the rules. GO OVER THEM AGAIN!!
 pushOutProj :: Algebra -> Algebra
 pushOutProj (SetOp o q1 q2)
   = SetOp o (pushOutProj q1) (pushOutProj q2)
@@ -79,11 +81,11 @@ notInCond (VsqlCChc _ l r) = notInCond l && notInCond r
 -- | knowing that the sql condition is not of the form "attr in query"
 --   converts the sql condition to a relational condition.
 relCond :: VsqlCond -> Condition
-relCond (VsqlCond c) = c 
-relCond (VsqlIn _ _) = error $ "didn't expect to get a condition of the form attr in query!! QUERY VAR MIN!!"
-relCond (VsqlNot c) = Not (relCond c)
-relCond (VsqlOr l r) = Or (relCond l) (relCond r)
-relCond (VsqlAnd l r) = And (relCond l) (relCond r)
+relCond (VsqlCond c)     = c 
+relCond (VsqlIn _ _)     = error $ "didn't expect to get a condition of the form attr in query!! QUERY VAR MIN!!"
+relCond (VsqlNot c)      = Not (relCond c)
+relCond (VsqlOr l r)     = Or (relCond l) (relCond r)
+relCond (VsqlAnd l r)    = And (relCond l) (relCond r)
 relCond (VsqlCChc f l r) = CChc f (relCond l) (relCond r)
 
 -- | optimizes the selection queries.
@@ -92,15 +94,16 @@ optSel (Sel c1 (Rename Nothing (Sel c2 rq)))
   = Sel (VsqlAnd c1 c2) (renameMap optSel rq)
 optSel q@(Sel c1 (Rename Nothing (Proj as (Rename n (Sel c2 rq)))))
   | noAttRename as = Proj as (Rename n (Sel (VsqlAnd c1 c2) (renameMap optSel rq)))
-  | otherwise = q
+  | otherwise      = q
     where
       noAttRename :: OptAttributes -> Bool
       noAttRename as = and $ fmap (isNothing . name . getObj) as
 optSel q@(Sel c (Rename Nothing (Prod rq1 rq2)))
   | notInCond c = Join (renameMap optSel rq1) (renameMap optSel rq2) (relCond c)
-  | otherwise = q 
-optSel (Sel c1 (Rename Nothing (Join rq1 rq2 c2)))
+  | otherwise   = q 
+optSel q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2)))
   | notInCond c1 = Join rq1 rq2 (And (relCond c1) c2)
+  | otherwise    = q
 
 
 -- | choices rules.
