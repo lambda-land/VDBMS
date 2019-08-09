@@ -86,8 +86,6 @@ chcDistr (AChc f (SetOp Diff q1 q2) (SetOp Diff q3 q4))
 --     min that the same goes for joins.
 -- There are also cases that you CANNOT push out projs:
 -- Eg: proj l1 q1 `union` proj l1 q2 <> proj l1 (q1 `union` q2)
--- TODO: you haven't consider the possibility of renaming attributes.
---       it may screw up some of the rules. GO OVER THEM AGAIN!!
 pushOutProj :: Algebra -> Algebra
 pushOutProj (SetOp o q1 q2)
   = SetOp o (pushOutProj q1) (pushOutProj q2)
@@ -105,6 +103,21 @@ pushOutProj (Sel c (Rename Nothing (Proj as rq)))
 -- l₁ appropriately!
 pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
   = Proj as1 (renameMap pushOutProj rq)
+    -- where
+    --   appAttrAliases :: OptAttributes -> OptAttributes -> OptAttributes
+    --   appAttrAliases orgs subs = [upd a subs | a <- orgs]
+    --     where 
+    --       upd :: OptAttribute -> OptAttributes -> OptAttribute
+    --       upd att as 
+    --         | attrOfOptAttr att `elem` (fmap attrOfOptAttr )
+
+
+
+
+-- | applies the name alias of sub to org. i.e., sub renames the
+--   attribute and so we apply it to the same attribute of org.
+appAttrAlias :: OptAttribute -> OptAttribute -> OptAttribute
+appAttrAlias org sub = undefined
 
 -- | checks if a sql condition is of the form "attr in query" condition.
 notInCond :: VsqlCond -> Bool 

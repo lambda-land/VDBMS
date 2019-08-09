@@ -7,6 +7,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , VsqlCond(..)
         , module VDBMS.QueryLang.RelAlg.Basics.SetOp
         , module VDBMS.QueryLang.RelAlg.Variational.Condition 
+        , attrOfOptAttr
         
 
 ) where
@@ -99,6 +100,10 @@ instance Boolean VsqlCond where
 
 -- | Optional attribute.
 type OptAttribute = Opt (Rename Attr)
+
+-- | gets the original attribute out of optattr.
+attrOfOptAttr :: OptAttribute -> Attribute 
+attrOfOptAttr = attribute . thing . getObj
 
 -- | Optional attributes.
 type OptAttributes = [OptAttribute]
