@@ -75,8 +75,12 @@ pushOutProj (Join rq1 rq2 c)
   = Join (renameMap pushOutProj rq1) (renameMap pushOutProj rq2) c
 pushOutProj (Prod rq1 rq2) 
   = Prod (renameMap pushOutProj rq1) (renameMap pushOutProj rq2)
+-- σ c (π l q) ≡ π l (σ c q)
 pushOutProj (Sel c (Rename Nothing (Proj as rq)))
   = Proj as (Rename Nothing (Sel c (renameMap pushOutProj rq)))
+-- π l₁ (π l₂ q) = π l₁ q
+-- TODO: need to check if renaming happened in l₂ and update 
+-- l₁ appropriately!
 pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
   = Proj as1 (renameMap pushOutProj rq)
 
@@ -102,17 +106,21 @@ relCond (VsqlCChc f l r) = CChc f (relCond l) (relCond r)
 -- | optimizes the selection queries.
 -- TODO: complete the recursion!
 optSel :: Algebra -> Algebra
+-- σ c₁ (σ c₂ q) ≡ σ (c₁ ∧ c₂) q
 optSel (Sel c1 (Rename Nothing (Sel c2 rq))) 
   = Sel (VsqlAnd c1 c2) (renameMap optSel rq)
+-- σ c₁ (π l (σ c₂ q)) ≡ π l (σ (c₁ ∧ c₂) q)
 optSel q@(Sel c1 (Rename Nothing (Proj as (Rename n (Sel c2 rq)))))
   | noAttRename as = Proj as (Rename n (Sel (VsqlAnd c1 c2) (renameMap optSel rq)))
   | otherwise      = q
     where
       noAttRename :: OptAttributes -> Bool
       noAttRename as = and $ fmap (isNothing . name . getObj) as
+-- σ c (q₁ × q₂) ≡ q₁ ⋈\_c q₂
 optSel q@(Sel c (Rename Nothing (Prod rq1 rq2)))
   | notInCond c = Join (renameMap optSel rq1) (renameMap optSel rq2) (relCond c)
   | otherwise   = q 
+-- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_(c₁ ∧ c₂) q₂
 optSel q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2)))
   | notInCond c1 = Join rq1 rq2 (And (relCond c1) c2)
   | otherwise    = q
