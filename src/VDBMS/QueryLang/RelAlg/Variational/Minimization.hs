@@ -1,4 +1,7 @@
 -- | Variation minimization of variational relational queries.
+-- ASSUMPTION: queries have been type checked before being
+--             optimized!! except for derived queries having
+--             a new name!
 module VDBMS.QueryLang.RelAlg.Variational.Minimization where 
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra 
@@ -27,7 +30,7 @@ minVar :: Algebra -> Algebra
 minVar = undefined
 
 -- | Applies a feature expression to all attributes in an opt attrs.
--- denoted as: l₁ᶠ
+-- denoted as: lᶠ
 appFexpOptAtts :: F.FeatureExpr -> OptAttributes -> OptAttributes
 appFexpOptAtts f = mapFst (F.And f) 
 
@@ -36,26 +39,45 @@ chcDistr :: Algebra -> Algebra
 -- f<π l₁ q₁, π l₁ q₂> ≡ π ((l₁ᶠ), (l₂ \^¬f )) (q₁ × q₂)
 chcDistr (AChc f (Proj l1 rq1) (Proj l2 rq2)) 
   = Proj (appFexpOptAtts f l1 ++ appFexpOptAtts (F.Not f) l2) 
-         (Rename Nothing (Prod rq1 rq2))
+         (Rename Nothing 
+                (Prod (renameMap chcDistr rq1) 
+                      (renameMap chcDistr rq2)))
 -- f<σ c₁ q₁, σ c₂ q₂> ≡ σ f<c₁, c₂> f<q₁, q₂>
 chcDistr (AChc f (Sel c1 rq1) (Sel c2 rq2))
   = Sel (VsqlCChc f c1 c2) 
-        (Rename Nothing (AChc f (thing rq1) (thing rq2)))
+        (Rename Nothing 
+               (AChc f 
+                    (thing (renameMap chcDistr rq1))
+                    (thing (renameMap chcDistr rq2))))
 -- f<q₁ × q₂, q₃ × q₄> ≡ f<q₁, q₃> × f<q₂, q₄>
 chcDistr (AChc f (Prod rq1 rq2) (Prod rq3 rq4)) 
-  = Prod (Rename Nothing (AChc f (thing rq1) (thing rq3))) 
-         (Rename Nothing (AChc f (thing rq2) (thing rq4)))
+  = Prod (Rename Nothing 
+                (AChc f 
+                     (thing (renameMap chcDistr rq1))
+                     (thing (renameMap chcDistr rq3)))) 
+         (Rename Nothing 
+                (AChc f 
+                      (thing (renameMap chcDistr rq2))
+                      (thing (renameMap chcDistr rq4))))
 -- f<q₁ ⋈\_c₁ q₂, q₃ ⋈\_c₂ q₄> ≡ f<q₁, q₃> ⋈\_(f<c₁, c₂>) f<q₂, q₄>
 chcDistr (AChc f (Join rq1 rq2 c1) (Join rq3 rq4 c2))
-  = Join (Rename Nothing (AChc f (thing rq1) (thing rq3))) 
-         (Rename Nothing (AChc f (thing rq2) (thing rq4))) 
+  = Join (Rename Nothing 
+                (AChc f 
+                     (thing (renameMap chcDistr rq1))
+                     (thing (renameMap chcDistr rq3))))
+         (Rename Nothing 
+                (AChc f 
+                     (thing (renameMap chcDistr rq2))
+                     (thing (renameMap chcDistr rq4))))
          (CChc f c1 c2)
 -- f<q₁ ∪ q₂, q₃ ∪ q₄> ≡ f<q₁, q₃> ∪ f<q₂, q₄>
 chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
-  = SetOp Union (AChc f q1 q3) (AChc f q2 q4)
+  = SetOp Union (AChc f (chcDistr q1) (chcDistr q3))
+                (AChc f (chcDistr q2) (chcDistr q4))
 -- f<q₁ ∩ q₂, q₃ ∩ q₄> ≡ f<q₁, q₃> ∩ f<q₂, q₄>
 chcDistr (AChc f (SetOp Diff q1 q2) (SetOp Diff q3 q4))
-  = SetOp Diff (AChc f q1 q3) (AChc f q2 q4)
+  = SetOp Diff (AChc f (chcDistr q1) (chcDistr q3))
+               (AChc f (chcDistr q2) (chcDistr q4))
 
 -- | Pushes out projection as far as possible.
 -- Note that you don't necessarily want to push out all projs.
@@ -78,7 +100,7 @@ pushOutProj (Prod rq1 rq2)
 -- σ c (π l q) ≡ π l (σ c q)
 pushOutProj (Sel c (Rename Nothing (Proj as rq)))
   = Proj as (Rename Nothing (Sel c (renameMap pushOutProj rq)))
--- π l₁ (π l₂ q) = π l₁ q
+-- π l₁ (π l₂ q) ≡ π l₁ q
 -- TODO: need to check if renaming happened in l₂ and update 
 -- l₁ appropriately!
 pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
@@ -131,16 +153,30 @@ optSel q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2)))
 --       the renaming to be nothing check if attributes in the condition 
 --       actually use the alias, if not then it's ok to do the opt.
 selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
+-- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
+-- or 
+-- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_c₂ (σ c₁ q₂)
 selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s = undefined
   -- | !notInCond c1 = q
   -- | notInCond c1 && attsOfCondExistInEnv (relCond c1) 
+-- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
+-- or 
+-- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
+
+-- | projection distributive properties.
+prjDistr :: Algebra -> Algebra
+prjDistr = undefined
+-- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
+-- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄))) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
+
 
 -- | choices rules.
 
 -- | relational alg and choices combined rules.
-chcRel :: Algebra -> Algebra
-chcRel (AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) = undefined
-chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
+-- chcRel :: Algebra -> Algebra
+-- -- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ 
+-- chcRel (AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) = undefined
+-- chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
 -- chcRel 
 
 
