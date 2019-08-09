@@ -4,6 +4,8 @@ module VDBMS.QueryLang.RelAlg.Variational.Minimization where
 import VDBMS.QueryLang.RelAlg.Variational.Algebra 
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.VDB.Name
+import VDBMS.TypeSystem.Variational.TypeSystem
+import VDBMS.VDB.Schema.Variational.Schema
 -- import VDBMS.Features.Config
 -- import VDBMS.QueryLang.ConfigQuery
 import VDBMS.Variational.Opt (mapFst, getObj)
@@ -25,26 +27,35 @@ minVar :: Algebra -> Algebra
 minVar = undefined
 
 -- | Applies a feature expression to all attributes in an opt attrs.
+-- denoted as: l₁ᶠ
 appFexpOptAtts :: F.FeatureExpr -> OptAttributes -> OptAttributes
 appFexpOptAtts f = mapFst (F.And f) 
 
 -- | Choice distributive laws.
 chcDistr :: Algebra -> Algebra
+-- f<π l₁ q₁, π l₁ q₂> ≡ π ((l₁ᶠ), (l₂ \^¬f )) (q₁ × q₂)
 chcDistr (AChc f (Proj l1 rq1) (Proj l2 rq2)) 
   = Proj (appFexpOptAtts f l1 ++ appFexpOptAtts (F.Not f) l2) 
          (Rename Nothing (Prod rq1 rq2))
+-- f<σ c₁ q₁, σ c₂ q₂> ≡ σ f<c₁, c₂> f<q₁, q₂>
 chcDistr (AChc f (Sel c1 rq1) (Sel c2 rq2))
   = Sel (VsqlCChc f c1 c2) 
         (Rename Nothing (AChc f (thing rq1) (thing rq2)))
+-- f<q₁ × q₂, q₃ × q₄> ≡ f<q₁, q₃> × f<q₂, q₄>
 chcDistr (AChc f (Prod rq1 rq2) (Prod rq3 rq4)) 
   = Prod (Rename Nothing (AChc f (thing rq1) (thing rq3))) 
          (Rename Nothing (AChc f (thing rq2) (thing rq4)))
+-- f<q₁ ⋈\_c₁ q₂, q₃ ⋈\_c₂ q₄> ≡ f<q₁, q₃> ⋈\_(f<c₁, c₂>) f<q₂, q₄>
 chcDistr (AChc f (Join rq1 rq2 c1) (Join rq3 rq4 c2))
   = Join (Rename Nothing (AChc f (thing rq1) (thing rq3))) 
          (Rename Nothing (AChc f (thing rq2) (thing rq4))) 
          (CChc f c1 c2)
+-- f<q₁ ∪ q₂, q₃ ∪ q₄> ≡ f<q₁, q₃> ∪ f<q₂, q₄>
 chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
   = SetOp Union (AChc f q1 q3) (AChc f q2 q4)
+-- f<q₁ ∩ q₂, q₃ ∩ q₄> ≡ f<q₁, q₃> ∩ f<q₂, q₄>
+chcDistr (AChc f (SetOp Diff q1 q2) (SetOp Diff q3 q4))
+  = SetOp Diff (AChc f q1 q3) (AChc f q2 q4)
 
 -- | Pushes out projection as far as possible.
 -- Note that you don't necessarily want to push out all projs.
@@ -89,6 +100,7 @@ relCond (VsqlAnd l r)    = And (relCond l) (relCond r)
 relCond (VsqlCChc f l r) = CChc f (relCond l) (relCond r)
 
 -- | optimizes the selection queries.
+-- TODO: complete the recursion!
 optSel :: Algebra -> Algebra
 optSel (Sel c1 (Rename Nothing (Sel c2 rq))) 
   = Sel (VsqlAnd c1 c2) (renameMap optSel rq)
@@ -105,6 +117,15 @@ optSel q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2)))
   | notInCond c1 = Join rq1 rq2 (And (relCond c1) c2)
   | otherwise    = q
 
+-- | selection distributive properties.
+-- TODO: check if you can do this in place that you're forcing the renaming :
+--       to be nothingyou can generalize your functions more by instead of forcing
+--       the renaming to be nothing check if attributes in the condition 
+--       actually use the alias, if not then it's ok to do the opt.
+selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
+selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s = undefined
+  -- | !notInCond c1 = q
+  -- | notInCond c1 && attsOfCondExistInEnv (relCond c1) 
 
 -- | choices rules.
 
