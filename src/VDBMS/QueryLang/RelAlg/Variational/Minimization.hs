@@ -14,7 +14,7 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Variational.Opt (mapFst, getObj)
 -- import VDBMS.Variational.Variational
 
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, catMaybes)
 
 -- | Applies the minimization rules until the query doesn't change.
 appMin :: Algebra -> Algebra
@@ -102,14 +102,13 @@ pushOutProj (Sel c (Rename Nothing (Proj as rq)))
 -- TODO: need to check if renaming happened in l₂ and update 
 -- l₁ appropriately!
 pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
-  = Proj as1 (renameMap pushOutProj rq)
-    -- where
-    --   appAttrAliases :: OptAttributes -> OptAttributes -> OptAttributes
-    --   appAttrAliases orgs subs = [upd a subs | a <- orgs]
-    --     where 
-    --       upd :: OptAttribute -> OptAttributes -> OptAttribute
-    --       upd att as 
-    --         | attrOfOptAttr att `elem` (fmap attrOfOptAttr )
+  = Proj (appAttrAliases as1 as2) (renameMap pushOutProj rq)
+    where
+      appAttrAliases :: OptAttributes -> OptAttributes -> OptAttributes
+      appAttrAliases orgs subs = [upd a subs | a <- orgs]
+      upd :: OptAttribute -> OptAttributes -> OptAttribute
+      upd att as = undefined
+        -- | attrOfOptAttr att `elem` (catMaybes (fmap (name . getObj) as))
 
 
 
