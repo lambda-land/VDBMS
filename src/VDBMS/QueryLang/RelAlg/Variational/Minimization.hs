@@ -87,14 +87,6 @@ chcDistr (AChc f (SetOp Diff q1 q2) (SetOp Diff q3 q4))
 -- There are also cases that you CANNOT push out projs:
 -- Eg: proj l1 q1 `union` proj l1 q2 <> proj l1 (q1 `union` q2)
 pushOutProj :: Algebra -> Algebra
-pushOutProj (SetOp o q1 q2)
-  = SetOp o (pushOutProj q1) (pushOutProj q2)
-pushOutProj (AChc f q1 q2) 
-  = AChc f (pushOutProj q1) (pushOutProj q2)
-pushOutProj (Join rq1 rq2 c)
-  = Join (renameMap pushOutProj rq1) (renameMap pushOutProj rq2) c
-pushOutProj (Prod rq1 rq2) 
-  = Prod (renameMap pushOutProj rq1) (renameMap pushOutProj rq2)
 -- σ c (π l q) ≡ π l (σ c q)
 pushOutProj (Sel c (Rename Nothing (Proj as rq)))
   = Proj as (Rename Nothing (Sel c (renameMap pushOutProj rq)))
@@ -122,6 +114,15 @@ pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
           && attrName a1 == (fromJust (attrAlias a2))
             = Just $ applyFuncFexp (F.And (getFexp a1)) a2
         | otherwise = Nothing
+pushOutProj (SetOp o q1 q2)
+  = SetOp o (pushOutProj q1) (pushOutProj q2)
+pushOutProj (AChc f q1 q2) 
+  = AChc f (pushOutProj q1) (pushOutProj q2)
+pushOutProj (Join rq1 rq2 c)
+  = Join (renameMap pushOutProj rq1) (renameMap pushOutProj rq2) c
+pushOutProj (Prod rq1 rq2) 
+  = Prod (renameMap pushOutProj rq1) (renameMap pushOutProj rq2)
+pushOutProj q = q 
 
 -- | applies the name alias of sub to org. i.e., sub renames the
 --   attribute and so we apply it to the same attribute of org.
