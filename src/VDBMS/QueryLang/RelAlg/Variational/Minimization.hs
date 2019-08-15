@@ -11,10 +11,10 @@ import VDBMS.TypeSystem.Variational.TypeSystem
 import VDBMS.VDB.Schema.Variational.Schema
 -- import VDBMS.Features.Config
 -- import VDBMS.QueryLang.ConfigQuery
-import VDBMS.Variational.Opt (mapFst, getObj)
+import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
 -- import VDBMS.Variational.Variational
 
-import Data.Maybe (isNothing, catMaybes)
+import Data.Maybe (isNothing, catMaybes, fromJust)
 
 -- | Applies the minimization rules until the query doesn't change.
 appMin :: Algebra -> Algebra
@@ -99,19 +99,29 @@ pushOutProj (Prod rq1 rq2)
 pushOutProj (Sel c (Rename Nothing (Proj as rq)))
   = Proj as (Rename Nothing (Sel c (renameMap pushOutProj rq)))
 -- π l₁ (π l₂ q) ≡ π l₁ q
--- TODO: need to check if renaming happened in l₂ and update 
--- l₁ appropriately!
+-- checks if renaming happened in l₂ and update 
+-- l₁ appropriately! also if the attribute in as1 is previously
+-- projected in as2 you need to conjunct their fexps!
 pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
-  = Proj (appAttrAliases as1 as2) (renameMap pushOutProj rq)
+  = Proj (updateAtts as1 as2) (renameMap pushOutProj rq)
     where
-      appAttrAliases :: OptAttributes -> OptAttributes -> OptAttributes
-      appAttrAliases orgs subs = [upd a subs | a <- orgs]
-      upd :: OptAttribute -> OptAttributes -> OptAttribute
-      upd att as = undefined
-        -- | attrOfOptAttr att `elem` (catMaybes (fmap (name . getObj) as))
-
-
-
+      updateAtts :: OptAttributes -> OptAttributes -> OptAttributes
+      updateAtts orgs subs = [ compAtts a subs | a <- orgs]
+      compAtts :: OptAttribute -> OptAttributes -> OptAttribute
+      compAtts a as 
+        | null attList = a 
+        | otherwise = head attList 
+          where attList = catMaybes [ compAtt a att | att <- as]
+      compAtt :: OptAttribute -> OptAttribute -> Maybe OptAttribute
+      compAtt a1 a2 
+        | attrAlias a2 == Nothing 
+          && attrOfOptAttr a1 == attrOfOptAttr a2 
+            = Just $ mkOpt (F.And (getFexp a1) (getFexp a2)) 
+                           (Rename (attrAlias a1) ((thing . getObj) a2))
+        | attrAlias a2 /= Nothing 
+          && attrName a1 == (fromJust (attrAlias a2))
+            = Just $ applyFuncFexp (F.And (getFexp a1)) a2
+        | otherwise = Nothing
 
 -- | applies the name alias of sub to org. i.e., sub renames the
 --   attribute and so we apply it to the same attribute of org.

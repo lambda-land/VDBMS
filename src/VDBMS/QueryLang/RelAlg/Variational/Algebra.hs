@@ -8,6 +8,8 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , module VDBMS.QueryLang.RelAlg.Basics.SetOp
         , module VDBMS.QueryLang.RelAlg.Variational.Condition 
         , attrOfOptAttr
+        , attrName
+        , attrAlias
         
 
 ) where
@@ -101,9 +103,17 @@ instance Boolean VsqlCond where
 -- | Optional attribute.
 type OptAttribute = Opt (Rename Attr)
 
--- | gets the original attribute out of optattr.
+-- | Gets the original attribute out of optattr.
 attrOfOptAttr :: OptAttribute -> Attribute 
 attrOfOptAttr = attribute . thing . getObj
+
+-- | Gets the attribute name out of optattr.
+attrName :: OptAttribute -> String
+attrName = attributeName . attrOfOptAttr
+
+-- | Alias of optattr.
+attrAlias :: OptAttribute -> Alias
+attrAlias = name . getObj
 
 -- | Optional attributes.
 type OptAttributes = [OptAttribute]
