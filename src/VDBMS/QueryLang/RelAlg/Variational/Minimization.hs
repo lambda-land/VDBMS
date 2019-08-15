@@ -148,7 +148,6 @@ relCond (VsqlAnd l r)    = And (relCond l) (relCond r)
 relCond (VsqlCChc f l r) = CChc f (relCond l) (relCond r)
 
 -- | optimizes the selection queries.
--- TODO: complete the recursion!
 optSel :: Algebra -> Algebra
 -- σ c₁ (σ c₂ q) ≡ σ (c₁ ∧ c₂) q
 optSel (Sel c1 (Rename Nothing (Sel c2 rq))) 
