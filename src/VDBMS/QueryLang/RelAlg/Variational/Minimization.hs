@@ -168,6 +168,13 @@ optSel q@(Sel c (Rename Nothing (Prod rq1 rq2)))
 optSel q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2)))
   | notInCond c1 = Join rq1 rq2 (And (relCond c1) c2)
   | otherwise    = q
+optSel (Sel c rq) = Sel c (renameMap optSel rq)
+optSel (SetOp o q1 q2) = SetOp o (optSel q1) (optSel q2)
+optSel (Proj as rq) = Proj as (renameMap optSel rq)
+optSel (AChc f q1 q2) = AChc f (optSel q1) (optSel q2)
+optSel (Join rq1 rq2 c) = Join (renameMap optSel rq1) (renameMap optSel rq2) c 
+optSel (Prod rq1 rq2) = Prod (renameMap optSel rq1) (renameMap optSel rq2)
+optSel q = q
 
 -- | selection distributive properties.
 -- TODO: check if you can do this in place that you're forcing the renaming :
