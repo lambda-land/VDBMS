@@ -184,12 +184,17 @@ selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
 selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s
   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
   | check c1 t1
-    = Join (Rename Nothing (Sel c1 rq1)) rq2 c2
+    = Join (Rename Nothing (Sel c1 (renameMap selDistr' rq1))) 
+           (renameMap selDistr' rq2) 
+           c2
   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_c₂ (σ c₁ q₂)
   | check c1 t2
-    = Join rq1 (Rename Nothing (Sel c1 rq2)) c2
+    = Join (renameMap selDistr' rq1) 
+           (Rename Nothing (Sel c1 (renameMap selDistr' rq2))) 
+           c2
   | otherwise = q 
     where
+      selDistr' q' = selDistr q' ctx s 
       check cond env = (not (notInCond cond) && inAttInEnv cond env)
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
@@ -197,11 +202,16 @@ selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s
 selDistr q@(Sel (VsqlAnd c1 c2) (Rename Nothing (Join rq1 rq2 c))) ctx s 
   -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
   | check c1 t1 && check c2 t2 
-    = Join (Rename Nothing (Sel c1 rq1)) (Rename Nothing (Sel c2 rq2)) c
+    = Join (Rename Nothing (Sel c1 (renameMap selDistr' rq1))) 
+           (Rename Nothing (Sel c2 (renameMap selDistr' rq2)))
+           c
   -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
   | check c2 t1 && check c1 t2 
-    = Join (Rename Nothing (Sel c2 rq1)) (Rename Nothing (Sel c1 rq2)) c
+    = Join (Rename Nothing (Sel c2 (renameMap selDistr' rq1))) 
+           (Rename Nothing (Sel c1 (renameMap selDistr' rq2))) 
+           c
     where 
+      selDistr' q' = selDistr q' ctx s 
       check cond env = (not (notInCond cond) && inAttInEnv cond env)
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
@@ -233,9 +243,9 @@ condAttsInEnv (CChc f c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
 
 -- | projection distributive properties.
 prjDistr :: Algebra -> Algebra
-prjDistr = undefined
 -- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
--- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄))) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
+prjDistr (Proj as rq)  = undefined
+-- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
 
 
 -- | choices rules.
