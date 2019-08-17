@@ -183,20 +183,29 @@ optSel q                = q
 selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
 selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s
   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
-  | (not (notInCond c1) && inAttInEnv c1 t1)
-    || (notInCond c1 && condAttsInEnv (relCond c1) t1)
-      = Join (Rename Nothing (Sel c1 rq1)) rq2 c2
+  | check c1 t1
+    = Join (Rename Nothing (Sel c1 rq1)) rq2 c2
   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_c₂ (σ c₁ q₂)
-  | (not (notInCond c1) && inAttInEnv c1 t2)
-    || (notInCond c1 && condAttsInEnv (relCond c1) t2)
-      = Join rq1 (Rename Nothing (Sel c1 rq2)) c2
+  | check c1 t2
+    = Join rq1 (Rename Nothing (Sel c1 rq2)) c2
   | otherwise = q 
     where
+      check cond env = (not (notInCond cond) && inAttInEnv cond env)
+                    || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
       t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
--- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
--- or 
--- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
+selDistr q@(Sel (VsqlAnd c1 c2) (Rename Nothing (Join rq1 rq2 c))) ctx s 
+  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
+  | check c1 t1 && check c2 t2 
+    = Join (Rename Nothing (Sel c1 rq1)) (Rename Nothing (Sel c2 rq2)) c
+  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
+  | check c2 t1 && check c1 t2 
+    = Join (Rename Nothing (Sel c2 rq1)) (Rename Nothing (Sel c1 rq2)) c
+    where 
+      check cond env = (not (notInCond cond) && inAttInEnv cond env)
+                    || (notInCond cond && condAttsInEnv (relCond cond) env)
+      t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
+      t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
 
 -- | gets a condition of the "IN" format and determines if
 --   its attribute exists in a type env.
