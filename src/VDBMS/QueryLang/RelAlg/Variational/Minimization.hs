@@ -14,6 +14,8 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
 -- import VDBMS.Variational.Variational
 
+import qualified Data.Map as M 
+import qualified Data.Map.Strict as SM (lookup)
 import Data.Maybe (isNothing, catMaybes, fromJust)
 
 -- | Applies the minimization rules until the query doesn't change.
@@ -154,12 +156,13 @@ optSel :: Algebra -> Algebra
 optSel (Sel c1 (Rename Nothing (Sel c2 rq))) 
   = Sel (VsqlAnd c1 c2) (renameMap optSel rq)
 -- σ c₁ (π l (σ c₂ q)) ≡ π l (σ (c₁ ∧ c₂) q)
-optSel q@(Sel c1 (Rename Nothing (Proj as (Rename n (Sel c2 rq)))))
-  | noAttRename as = Proj as (Rename n (Sel (VsqlAnd c1 c2) (renameMap optSel rq)))
-  | otherwise      = q
-    where
-      noAttRename :: OptAttributes -> Bool
-      noAttRename as = and $ fmap (isNothing . name . getObj) as
+-- discuss this with Eric?
+-- optSel q@(Sel c1 (Rename Nothing (Proj as (Rename n (Sel c2 rq)))))
+--   | noAttRename as = Proj as (Rename n (Sel (VsqlAnd c1 c2) (renameMap optSel rq)))
+--   | otherwise      = q
+--     where
+--       noAttRename :: OptAttributes -> Bool
+--       noAttRename as = and $ fmap (isNothing . name . getObj) as
 -- σ c (q₁ × q₂) ≡ q₁ ⋈\_c q₂
 optSel q@(Sel c (Rename Nothing (Prod rq1 rq2)))
   | notInCond c = Join (renameMap optSel rq1) (renameMap optSel rq2) (relCond c)
@@ -177,20 +180,47 @@ optSel (Prod rq1 rq2)   = Prod (renameMap optSel rq1) (renameMap optSel rq2)
 optSel q                = q
 
 -- | selection distributive properties.
--- TODO: check if you can do this in place that you're forcing the renaming :
---       to be nothingyou can generalize your functions more by instead of forcing
---       the renaming to be nothing check if attributes in the condition 
---       actually use the alias, if not then it's ok to do the opt.
 selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
--- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
--- or 
--- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_c₂ (σ c₁ q₂)
-selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s = undefined
-  -- | !notInCond c1 = q
-  -- | notInCond c1 && attsOfCondExistInEnv (relCond c1) 
+selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s
+  -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
+  | (not (notInCond c1) && inAttInEnv c1 t1)
+    || (notInCond c1 && condAttsInEnv (relCond c1) t1)
+      = Join (Rename Nothing (Sel c1 rq1)) rq2 c2
+  -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_c₂ (σ c₁ q₂)
+  | (not (notInCond c1) && inAttInEnv c1 t2)
+    || (notInCond c1 && condAttsInEnv (relCond c1) t2)
+      = Join rq1 (Rename Nothing (Sel c1 rq2)) c2
+  | otherwise = q 
+    where
+      t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
+      t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
 -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
 -- or 
 -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
+
+-- | gets a condition of the "IN" format and determines if
+--   its attribute exists in a type env.
+inAttInEnv :: VsqlCond -> TypeEnv -> Bool
+inAttInEnv (VsqlIn a q) t = attInEnv a t 
+inAttInEnv _ _ = error "Can only accept conditions of the IN format!!"
+
+-- | checks if an attribute exists in a type env or not.
+attInEnv :: Attr -> TypeEnv -> Bool
+attInEnv a t = maybe False (\ _ -> True) (SM.lookup (attribute a) (getObj t))
+
+-- | takes a relational condition and determines if it's 
+--   consistent with a type env.
+condAttsInEnv :: Condition -> TypeEnv -> Bool
+condAttsInEnv (Lit b)        t = True
+condAttsInEnv (Comp o a1 a2) t = case (a1, a2) of 
+  (Val v, Att a)  -> attInEnv a t 
+  (Att a, Val v)  -> attInEnv a t 
+  (Att a, Att a') -> attInEnv a t && attInEnv a' t 
+  _               -> True 
+condAttsInEnv (Not c)        t = condAttsInEnv c t 
+condAttsInEnv (Or c1 c2)     t = condAttsInEnv c1 t && condAttsInEnv c2 t 
+condAttsInEnv (And c1 c2)    t = condAttsInEnv c1 t && condAttsInEnv c2 t 
+condAttsInEnv (CChc f c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
 
 -- | projection distributive properties.
 prjDistr :: Algebra -> Algebra

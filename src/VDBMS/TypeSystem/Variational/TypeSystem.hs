@@ -4,7 +4,7 @@ module VDBMS.TypeSystem.Variational.TypeSystem (
         TypeEnv
         , VariationalContext
         , typeOfQuery
-        , attsOfCondExistInEnv
+        -- , attsOfCondExistInEnv
 
 ) where 
 
@@ -134,8 +134,8 @@ nonAmbiguousAttr a t =
   -- | otherwise = throwM $ EnvFexpUnsat (getFexp t) t
 
 -- |
-attsOfCondExistInEnv :: Condition -> Algebra -> VariationalContext -> Schema
-attsOfCondExistInEnv = undefined
+-- attsOfCondExistInEnv :: Condition -> Algebra -> VariationalContext -> Schema
+-- attsOfCondExistInEnv = undefined
 
 -- 
 -- Static semantics of a vquery that returns a table schema,
