@@ -216,7 +216,22 @@ selDistr q@(Sel (VsqlAnd c1 c2) (Rename Nothing (Join rq1 rq2 c))) ctx s
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
       t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
-
+selDistr (Sel c rq) ctx s 
+  = Sel c (renameMap (flip (flip selDistr ctx) s) rq)
+selDistr (SetOp o q1 q2) ctx s 
+  = SetOp o (selDistr q1 ctx s ) (selDistr q2 ctx s)
+selDistr (Proj as rq) ctx s 
+  = Proj as (renameMap (flip (flip selDistr ctx) s) rq)
+selDistr (AChc f q1 q2) ctx s 
+  = AChc f (selDistr q1 ctx s) (selDistr q2 ctx s)
+selDistr (Join rq1 rq2 c) ctx s
+  = Join (renameMap (flip (flip selDistr ctx) s) rq1)
+         (renameMap (flip (flip selDistr ctx) s) rq2)
+         c 
+selDistr (Prod rq1 rq2) ctx s 
+  = Prod (renameMap (flip (flip selDistr ctx) s) rq1)
+         (renameMap (flip (flip selDistr ctx) s) rq2)
+selDistr q ctx s = q 
 -- | gets a condition of the "IN" format and determines if
 --   its attribute exists in a type env.
 inAttInEnv :: VsqlCond -> TypeEnv -> Bool
@@ -244,7 +259,7 @@ condAttsInEnv (CChc f c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
 -- | projection distributive properties.
 prjDistr :: Algebra -> Algebra
 -- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
-prjDistr (Proj as rq)  = undefined
+prjDistr (Proj as rq) = undefined
 -- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
 
 
