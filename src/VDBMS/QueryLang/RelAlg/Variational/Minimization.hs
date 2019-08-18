@@ -217,19 +217,19 @@ selDistr q@(Sel (VsqlAnd c1 c2) (Rename Nothing (Join rq1 rq2 c))) ctx s
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
       t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
-selDistr (Sel c rq) ctx s 
+selDistr (Sel c rq)       ctx s 
   = Sel c (renameMap (flip (flip selDistr ctx) s) rq)
-selDistr (SetOp o q1 q2) ctx s 
+selDistr (SetOp o q1 q2)  ctx s 
   = SetOp o (selDistr q1 ctx s ) (selDistr q2 ctx s)
-selDistr (Proj as rq) ctx s 
+selDistr (Proj as rq)     ctx s 
   = Proj as (renameMap (flip (flip selDistr ctx) s) rq)
-selDistr (AChc f q1 q2) ctx s 
+selDistr (AChc f q1 q2)   ctx s 
   = AChc f (selDistr q1 ctx s) (selDistr q2 ctx s)
 selDistr (Join rq1 rq2 c) ctx s
   = Join (renameMap (flip (flip selDistr ctx) s) rq1)
          (renameMap (flip (flip selDistr ctx) s) rq2)
          c 
-selDistr (Prod rq1 rq2) ctx s 
+selDistr (Prod rq1 rq2)   ctx s 
   = Prod (renameMap (flip (flip selDistr ctx) s) rq1)
          (renameMap (flip (flip selDistr ctx) s) rq2)
 selDistr q ctx s = q 
