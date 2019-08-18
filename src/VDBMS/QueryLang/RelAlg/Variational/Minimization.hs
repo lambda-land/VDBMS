@@ -271,6 +271,22 @@ prjDistr (Proj as (Rename Nothing (Join rq1 rq2 c))) ctx s
       as1 = fst pas 
       as2 = snd pas 
       prjDistr' q = prjDistr q ctx s 
+prjDistr (Proj as rq)     ctx s 
+  = Proj as (renameMap (flip (flip prjDistr ctx) s) rq)
+prjDistr (SetOp o q1 q2)  ctx s 
+  = SetOp o (prjDistr q1 ctx s) (prjDistr q2 ctx s)
+prjDistr (Sel c rq)       ctx s 
+  = Sel c (renameMap (flip (flip prjDistr ctx) s) rq)
+prjDistr (AChc f q1 q2)   ctx s 
+  = AChc f (prjDistr q1 ctx s) (prjDistr q2 ctx s)
+prjDistr (Join rq1 rq2 c) ctx s 
+  = Join (renameMap (flip (flip prjDistr ctx) s) rq1)
+         (renameMap (flip (flip prjDistr ctx) s) rq2)
+         c
+prjDistr (Prod rq1 rq2)   ctx s
+  = Prod (renameMap (flip (flip prjDistr ctx) s) rq1)
+         (renameMap (flip (flip prjDistr ctx) s) rq2)
+prjDistr q _ _ = q 
 -- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
 -- discuss with Eric. don't think we need this since we can regenerate
 -- it with prjDistr and pushOutPrj
