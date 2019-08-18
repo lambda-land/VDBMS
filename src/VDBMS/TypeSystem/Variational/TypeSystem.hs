@@ -1,9 +1,11 @@
 -- | Statically syntesizes the types of vqs.
 module VDBMS.TypeSystem.Variational.TypeSystem (
 
-        TypeEnv
+        TypeEnv(..)
         , VariationalContext
         , typeOfQuery
+        , AttrInfo(..)
+        , updateType
 
 ) where 
 

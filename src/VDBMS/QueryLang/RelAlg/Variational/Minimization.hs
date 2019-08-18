@@ -17,6 +17,7 @@ import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
 import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM (lookup)
 import Data.Maybe (isNothing, catMaybes, fromJust)
+import Data.List (partition)
 
 -- | Applies the minimization rules until the query doesn't change.
 appMin :: Algebra -> Algebra
@@ -258,11 +259,32 @@ condAttsInEnv (And c1 c2)    t = condAttsInEnv c1 t && condAttsInEnv c2 t
 condAttsInEnv (CChc f c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
 
 -- | projection distributive properties.
-prjDistr :: Algebra -> Algebra
+prjDistr :: Algebra -> VariationalContext -> Schema -> Algebra
 -- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
-prjDistr (Proj as rq) = undefined
+prjDistr (Proj as (Rename Nothing (Join rq1 rq2 c))) ctx s 
+  = Join (Rename Nothing (Proj as1 (renameMap prjDistr' rq1)))
+         (Rename Nothing (Proj as2 (renameMap prjDistr' rq2)))
+         c
+    where
+      t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
+      pas = partitionAtts as (name rq1) t1
+      as1 = fst pas 
+      as2 = snd pas 
+      prjDistr' q = prjDistr q ctx s 
 -- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
+-- discuss with Eric. don't think we need this since we can regenerate
+-- it with prjDistr and pushOutPrj
 
+partitionAtts :: OptAttributes -> Alias -> TypeEnv -> (OptAttributes, OptAttributes)
+partitionAtts as n t = partition divideAtt as 
+  where
+    divideAtt :: OptAttribute -> Bool
+    divideAtt a = maybe False 
+                        (\inf -> maybe True
+                           (`elem` fmap attrQual inf) 
+                           ((qualifier . thing . getObj) a))
+                        (SM.lookup (attrOfOptAttr a) (getObj t'))
+    t' = updateType n t 
 
 -- | choices rules.
 
