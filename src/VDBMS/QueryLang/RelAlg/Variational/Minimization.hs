@@ -232,6 +232,7 @@ selDistr (Prod rq1 rq2) ctx s
   = Prod (renameMap (flip (flip selDistr ctx) s) rq1)
          (renameMap (flip (flip selDistr ctx) s) rq2)
 selDistr q ctx s = q 
+
 -- | gets a condition of the "IN" format and determines if
 --   its attribute exists in a type env.
 inAttInEnv :: VsqlCond -> TypeEnv -> Bool
