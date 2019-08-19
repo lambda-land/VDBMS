@@ -40,7 +40,14 @@ data VsqlCond
    | VsqlOr   VsqlCond VsqlCond
    | VsqlAnd  VsqlCond VsqlCond
    | VsqlCChc F.FeatureExpr VsqlCond VsqlCond
-  deriving (Data,Eq,Typeable,Ord)
+  deriving (Data,Typeable)
+
+-- | Vsqlcond equivalence.
+vsqlCondEq :: VsqlCond -> VsqlCond -> Bool
+vsqlCondEq = undefined
+
+instance Eq VsqlCond where
+  (==) = vsqlCondEq
 
 -- | pretty prints pure relational and IN conditions.
 prettySqlCond :: VsqlCond -> String
@@ -128,7 +135,7 @@ data Algebra
    | Prod (Rename Algebra) (Rename Algebra)
    | TRef  (Rename Relation)
    | Empty 
-  deriving (Data,Eq,Show,Typeable,Ord)
+  deriving (Data,Eq,Show,Typeable)
 
 -- | Optionalizes a rename algebra.
 --   Helper for optAlgebra.

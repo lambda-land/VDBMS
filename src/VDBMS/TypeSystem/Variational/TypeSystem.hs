@@ -64,7 +64,7 @@ data TypeError
   | NotEquiveEnv TypeEnv TypeEnv
   | CompInvalid Atom Atom TypeEnv
   | EmptyAttrList OptAttributes (Rename Algebra)
-    deriving (Data,Eq,Generic,Ord,Show,Typeable)
+    deriving (Data,Eq,Generic,Show,Typeable)
 
 instance Exception TypeError  
 

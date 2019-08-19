@@ -28,7 +28,7 @@ data Condition
    | Or   Condition Condition
    | And  Condition Condition
    | CChc F.FeatureExpr Condition Condition
-  deriving (Data,Eq,Typeable,Ord)
+  deriving (Data,Typeable)
 
 -- | condition equivalenc.
 conditionEq :: Condition -> Condition -> Bool
@@ -62,6 +62,9 @@ conditionEq (And r1 l1)      (And r2 l2)
  || (conditionEq r1 l2 && conditionEq l1 r2)
 conditionEq (CChc f1 r1 l1)  (CChc f2 r2 l2) 
   = equivalent f1 f2 && conditionEq r1 r2 && conditionEq l1 l2
+
+instance Eq Condition where
+  (==) = conditionEq
 
 -- | pretty prints pure relational conditions.
 prettyRelCondition :: Condition -> String
