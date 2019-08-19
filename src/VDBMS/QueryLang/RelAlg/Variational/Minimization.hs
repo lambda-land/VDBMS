@@ -99,9 +99,7 @@ pushOutProj (Sel c (Rename Nothing (Proj as rq)))
 -- l₁ appropriately! also if the attribute in as1 is previously
 -- projected in as2 you need to conjunct their fexps!
 pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
-  | optAttEq as1 as2 = Proj as1 rq 
-  | otherwise
-    = Proj (updateAtts as1 as2) (renameMap pushOutProj rq)
+  = Proj (updateAtts as1 as2) (renameMap pushOutProj rq)
     where
       updateAtts :: OptAttributes -> OptAttributes -> OptAttributes
       updateAtts orgs subs = [ compAtts a subs | a <- orgs]
@@ -274,7 +272,6 @@ prjDistr (Proj as (Rename Nothing (Join rq1 rq2 c))) ctx s
       as1 = fst pas 
       as2 = snd pas 
       prjDistr' q = prjDistr q ctx s 
--- π
 prjDistr (Proj as rq)     ctx s 
   = Proj as (renameMap (flip (flip prjDistr ctx) s) rq)
 prjDistr (SetOp o q1 q2)  ctx s 
@@ -310,13 +307,22 @@ partitionAtts as n t = partition divideAtt as
 -- | choices rules.
 
 -- | relational alg and choices combined rules.
+-- Note: the last three combination rules in my thesis 
+--       can be generated from the combination of other rules.
 chcRel :: Algebra -> Algebra
 -- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂ ∧ c₃>) f<q₁, q₂>
-chcRel (AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) = undefined
+-- chcRel (AChc f (Sel (VsqlAnd c1 c2) rq1) (Sel (VsqlAnd c3 c4) rq2)) 
+-- chcRel (AChc f (Sel c@(VsqlCond (And c1 c2)) rq1) (Sel c'@(VsqlCond (And c3 c4)) rq2)) 
+chcRel (AChc f (Sel c rq1) (Sel c' rq2)) 
+  = case (c, c') of 
+      (VsqlAnd c1 c2, VsqlAnd c3 c4) -> undefined
+      (VsqlCond (And c1 c2), VsqlAnd c3 c4) -> undefined
+      (VsqlAnd c1 c2, VsqlCond (And c3 c4)) -> undefined
+      (VsqlCond (And c1 c2), VsqlCond (And c3 c4)) -> undefined
 -- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
 chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
 -- f<q₁ ⋈\_(c₁ ∧ c₂) q₂, q₃ ⋈\_(c₁ ∧ c₃) q₄> ≡ σ (f<c₂, c₃>) (f<q₁, q₃> ⋈\_c₁ f<q₂, q₄>)
--- 
+
 
 
 
