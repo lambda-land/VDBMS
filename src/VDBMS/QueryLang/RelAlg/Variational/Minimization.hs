@@ -39,12 +39,13 @@ appFexpOptAtts f = mapFst (F.And f)
 
 -- | Choice distributive laws.
 chcDistr :: Algebra -> Algebra
--- f<π l₁ q₁, π l₁ q₂> ≡ π ((l₁ᶠ), (l₂ \^¬f )) (q₁ × q₂)
-chcDistr (AChc f (Proj l1 rq1) (Proj l2 rq2)) 
+-- f<π l₁ q₁, π l₂ q₂> ≡ π (f<l₁, l₂>) f<q₁, q₂>
+-- f<π l₁ q₁, π l₂ q₂> ≡ π ((l₁ᶠ), (l₂ \^¬f )) f<q₁, q₂>
+chcDistr (AChc f (Proj l1 (Rename Nothing q1)) (Proj l2 (Rename Nothing q2)))
   = Proj (appFexpOptAtts f l1 ++ appFexpOptAtts (F.Not f) l2) 
          (Rename Nothing 
-                (Prod (renameMap chcDistr rq1) 
-                      (renameMap chcDistr rq2)))
+                (AChc f (chcDistr q1) 
+                        (chcDistr q2)))
 -- f<σ c₁ q₁, σ c₂ q₂> ≡ σ f<c₁, c₂> f<q₁, q₂>
 chcDistr (AChc f (Sel c1 rq1) (Sel c2 rq2))
   = Sel (VsqlCChc f c1 c2) 
@@ -312,7 +313,8 @@ chcRel :: Algebra -> Algebra
 chcRel (AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) = undefined
 -- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
 chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
--- 
+-- f<q₁ ⋈\_(c₁ ∧ c₂) q₂, q₃ ⋈\_(c₁ ∧ c₃) q₄> ≡ σ (f<c₂, c₃>) (f<q₁, q₃> ⋈\_c₁ f<q₂, q₄>)
+
 
 
 
