@@ -27,6 +27,7 @@ import VDBMS.Variational.Variational
 import VDBMS.Variational.Opt
 import VDBMS.QueryLang.RelAlg.Basics.SetOp
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
+import VDBMS.Features.SAT (equivalent)
 
 --
 -- * Variaitonal sql condition data type and instances.
@@ -44,7 +45,34 @@ data VsqlCond
 
 -- | Vsqlcond equivalence.
 vsqlCondEq :: VsqlCond -> VsqlCond -> Bool
-vsqlCondEq = undefined
+vsqlCondEq (VsqlCond c1) (VsqlCond c2) = conditionEq c1 c2
+vsqlCondEq (VsqlIn a1 q1) (VsqlIn a2 q2) 
+  = a1 == a2 && q1 == q2 
+vsqlCondEq (VsqlNot c1) (VsqlNot c2) = vsqlCondEq c1 c2 
+vsqlCondEq (VsqlNot c1) (VsqlCond (Not c2)) 
+  = vsqlCondEq c1 (VsqlCond c2)
+vsqlCondEq (VsqlCond (Not c1)) (VsqlNot c2) 
+  = vsqlCondEq (VsqlCond c1) c2
+vsqlCondEq (VsqlOr r1 l1) (VsqlOr r2 l2) 
+  = (vsqlCondEq r1 r2 && vsqlCondEq l1 l2)
+ || (vsqlCondEq r1 l2 && vsqlCondEq l1 r2)
+vsqlCondEq (VsqlOr r1 l1) (VsqlCond (Or r2 l2)) 
+  = (vsqlCondEq r1 (VsqlCond r2) && vsqlCondEq l1 (VsqlCond l2))
+ || (vsqlCondEq r1 (VsqlCond l2) && vsqlCondEq l1 (VsqlCond r2))
+vsqlCondEq (VsqlCond (Or r1 l1)) (VsqlOr r2 l2)
+  = (vsqlCondEq (VsqlCond r1) r2 && vsqlCondEq (VsqlCond l1) l2)
+ || (vsqlCondEq (VsqlCond r1) l2 && vsqlCondEq (VsqlCond l1) r2) 
+vsqlCondEq (VsqlAnd r1 l1) (VsqlAnd r2 l2) 
+  = (vsqlCondEq r1 r2 && vsqlCondEq l1 l2)
+ || (vsqlCondEq r1 l2 && vsqlCondEq l1 r2)
+vsqlCondEq (VsqlAnd r1 l1) (VsqlCond (And r2 l2))
+  = (vsqlCondEq r1 (VsqlCond r2) && vsqlCondEq l1 (VsqlCond l2))
+ || (vsqlCondEq r1 (VsqlCond l2) && vsqlCondEq l1 (VsqlCond r2))
+vsqlCondEq (VsqlCond (And r1 l1)) (VsqlAnd r2 l2)
+  = (vsqlCondEq (VsqlCond r1) r2 && vsqlCondEq (VsqlCond l1) l2)
+ || (vsqlCondEq (VsqlCond r1) l2 && vsqlCondEq (VsqlCond l1) r2)
+vsqlCondEq (VsqlCChc f1 r1 l1) (VsqlCChc f2 r2 l2) 
+  = equivalent f1 f2 && vsqlCondEq r1 r2 && vsqlCondEq l1 l2
 
 instance Eq VsqlCond where
   (==) = vsqlCondEq

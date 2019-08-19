@@ -3,6 +3,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Condition (
 
         Condition(..)
         , Atom(..)
+        , conditionEq
 
 ) where
 
