@@ -99,7 +99,9 @@ pushOutProj (Sel c (Rename Nothing (Proj as rq)))
 -- l₁ appropriately! also if the attribute in as1 is previously
 -- projected in as2 you need to conjunct their fexps!
 pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
-  = Proj (updateAtts as1 as2) (renameMap pushOutProj rq)
+  | optAttEq as1 as2 = Proj as1 rq 
+  | otherwise
+    = Proj (updateAtts as1 as2) (renameMap pushOutProj rq)
     where
       updateAtts :: OptAttributes -> OptAttributes -> OptAttributes
       updateAtts orgs subs = [ compAtts a subs | a <- orgs]
@@ -314,7 +316,7 @@ chcRel (AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)
 -- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
 chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
 -- f<q₁ ⋈\_(c₁ ∧ c₂) q₂, q₃ ⋈\_(c₁ ∧ c₃) q₄> ≡ σ (f<c₂, c₃>) (f<q₁, q₃> ⋈\_c₁ f<q₂, q₄>)
-
+-- 
 
 
 

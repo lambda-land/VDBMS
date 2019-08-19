@@ -10,6 +10,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , attrOfOptAttr
         , attrName
         , attrAlias
+        , optAttEq
         
 
 ) where
@@ -114,6 +115,10 @@ attrName = attributeName . attrOfOptAttr
 -- | Alias of optattr.
 attrAlias :: OptAttribute -> Alias
 attrAlias = name . getObj
+
+-- | opt att list equivalenc.
+optAttEq :: OptAttributes -> OptAttributes -> Bool
+optAttEq = undefined
 
 -- | Optional attributes.
 type OptAttributes = [OptAttribute]
