@@ -16,6 +16,9 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.Features.Config (Config)
 import VDBMS.Variational.Variational
 import VDBMS.Variational.Opt
+import VDBMS.Features.SAT (equivalent)
+
+import Prelude hiding (Ordering(..))
 
 -- | Variational relational conditions.
 data Condition 
@@ -26,6 +29,39 @@ data Condition
    | And  Condition Condition
    | CChc F.FeatureExpr Condition Condition
   deriving (Data,Eq,Typeable,Ord)
+
+-- | condition equivalenc.
+conditionEq :: Condition -> Condition -> Bool
+conditionEq (Lit b1)         (Lit b2) = b1 == b2 
+conditionEq (Comp EQ r1 l1)  (Comp EQ r2 l2) 
+  = (r1 == r2 && l1 == l2) || (r1 == l2 && l1 == r2)
+conditionEq (Comp NEQ r1 l1) (Comp NEQ r2 l2) 
+  = (r1 == r2 && l1 == l2) || (r1 == l2 && l1 == r2)
+conditionEq (Comp LT r1 l1)  (Comp LT r2 l2) 
+  = r1 == r2 && l1 == l2
+conditionEq (Comp LT r1 l1)  (Comp GTE r2 l2) 
+  = r1 == l2 && l1 == r2
+conditionEq (Comp LTE r1 l1) (Comp LTE r2 l2) 
+  = r1 == r2 && l1 == l2
+conditionEq (Comp LTE r1 l1) (Comp GT r2 l2) 
+  = r1 == l2 && l1 == r2
+conditionEq (Comp GTE r1 l1) (Comp GTE r2 l2) 
+  = r1 == r2 && l1 == l2
+conditionEq (Comp GTE r1 l1) (Comp LT r2 l2) 
+  = r1 == l2 && l1 == r2
+conditionEq (Comp GT r1 l1)  (Comp GT r2 l2) 
+  = r1 == r2 && l1 == l2
+conditionEq (Comp GT r1 l1)  (Comp LTE r2 l2) 
+  = r1 == l2 && l1 == r2
+conditionEq (Not c1)         (Not c2) = conditionEq c1 c2
+conditionEq (Or r1 l1)       (Or r2 l2) 
+  = (conditionEq r1 r2 && conditionEq l1 l2)
+ || (conditionEq r1 l2 && conditionEq l1 r2)
+conditionEq (And r1 l1)      (And r2 l2) 
+  = (conditionEq r1 r2 && conditionEq l1 l2)
+ || (conditionEq r1 l2 && conditionEq l1 r2)
+conditionEq (CChc f1 r1 l1)  (CChc f2 r2 l2) 
+  = equivalent f1 f2 && conditionEq r1 r2 && conditionEq l1 l2
 
 -- | pretty prints pure relational conditions.
 prettyRelCondition :: Condition -> String
