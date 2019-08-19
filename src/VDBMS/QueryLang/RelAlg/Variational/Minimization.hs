@@ -271,6 +271,7 @@ prjDistr (Proj as (Rename Nothing (Join rq1 rq2 c))) ctx s
       as1 = fst pas 
       as2 = snd pas 
       prjDistr' q = prjDistr q ctx s 
+-- π
 prjDistr (Proj as rq)     ctx s 
   = Proj as (renameMap (flip (flip prjDistr ctx) s) rq)
 prjDistr (SetOp o q1 q2)  ctx s 
@@ -291,6 +292,7 @@ prjDistr q _ _ = q
 -- discuss with Eric. don't think we need this since we can regenerate
 -- it with prjDistr and pushOutPrj
 
+-- | partitions a list of attributes based on a given type env.
 partitionAtts :: OptAttributes -> Alias -> TypeEnv -> (OptAttributes, OptAttributes)
 partitionAtts as n t = partition divideAtt as 
   where
@@ -305,11 +307,12 @@ partitionAtts as n t = partition divideAtt as
 -- | choices rules.
 
 -- | relational alg and choices combined rules.
--- chcRel :: Algebra -> Algebra
--- -- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ 
--- chcRel (AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) = undefined
--- chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
--- chcRel 
+chcRel :: Algebra -> Algebra
+-- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂ ∧ c₃>) f<q₁, q₂>
+chcRel (AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) = undefined
+-- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
+chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
+-- 
 
 
 
