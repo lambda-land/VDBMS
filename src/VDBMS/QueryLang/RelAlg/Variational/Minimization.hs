@@ -311,8 +311,6 @@ partitionAtts as n t = partition divideAtt as
 --       can be generated from the combination of other rules.
 chcRel :: Algebra -> Algebra
 -- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂ ∧ c₃>) f<q₁, q₂>
--- chcRel (AChc f (Sel (VsqlAnd c1 c2) rq1) (Sel (VsqlAnd c3 c4) rq2)) 
--- chcRel (AChc f (Sel c@(VsqlCond (And c1 c2)) rq1) (Sel c'@(VsqlCond (And c3 c4)) rq2)) 
 chcRel (AChc f (Sel c rq1) (Sel c' rq2)) 
   = case (c, c') of 
       (VsqlAnd c1 c2, VsqlAnd c3 c4) -> undefined
@@ -320,7 +318,9 @@ chcRel (AChc f (Sel c rq1) (Sel c' rq2))
       (VsqlAnd c1 c2, VsqlCond (And c3 c4)) -> undefined
       (VsqlCond (And c1 c2), VsqlCond (And c3 c4)) -> undefined
 -- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
-chcRel (AChc f (Sel (VsqlAnd (VsqlCond c1) (VsqlCond c2)) rq1) (Sel (VsqlAnd (VsqlCond c3) (VsqlCond c4)) rq2)) = undefined
+chcRel (Sel c1 (Rename n (AChc f (Sel c2 (Rename Nothing q1)) 
+	                             (Sel c3 (Rename Nothing q2)))))
+  = Sel (VsqlAnd c1 (VsqlCChc f c2 c3)) (Rename n (AChc f q1 q2))
 -- f<q₁ ⋈\_(c₁ ∧ c₂) q₂, q₃ ⋈\_(c₁ ∧ c₃) q₄> ≡ σ (f<c₂, c₃>) (f<q₁, q₃> ⋈\_c₁ f<q₂, q₄>)
 
 
