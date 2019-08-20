@@ -310,9 +310,10 @@ partitionAtts as n t = partition divideAtt as
 -- Note: the last three combination rules in my thesis 
 --       can be generated from the combination of other rules.
 chcRel :: Algebra -> Algebra
--- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂ ∧ c₃>) f<q₁, q₂>
+-- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
 chcRel q@(AChc f (Sel (VsqlAnd c1 c2) rq1) (Sel (VsqlAnd c3 c4) rq2)) 
-  | vsqlCondEq c1 c3 = undefined
+  | vsqlCondEq c1 c3 
+    = undefined
   | vsqlCondEq c1 c4 = undefined
   | vsqlCondEq c2 c3 = undefined
   | vsqlCondEq c2 c4 = undefined
