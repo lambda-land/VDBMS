@@ -10,6 +10,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , attrOfOptAttr
         , attrName
         , attrAlias
+        , vsqlCondEq
         
 
 ) where
