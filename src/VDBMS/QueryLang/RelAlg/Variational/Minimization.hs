@@ -309,6 +309,7 @@ partitionAtts as n t = partition divideAtt as
 -- | relational alg and choices combined rules.
 -- Note: the last three combination rules in my thesis 
 --       can be generated from the combination of other rules.
+-- Discuss the note with Eric.
 chcRel :: Algebra -> Algebra
 -- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
 chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1)) 
