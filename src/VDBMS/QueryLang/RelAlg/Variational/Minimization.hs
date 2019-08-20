@@ -20,17 +20,18 @@ import Data.Maybe (isNothing, catMaybes, fromJust)
 import Data.List (partition)
 
 -- | Applies the minimization rules until the query doesn't change.
-appMin :: Algebra -> Algebra
-appMin q 
-  | minVar q == q = q 
-  | otherwise = appMin (minVar q)
+appMin :: Algebra -> VariationalContext -> Schema -> Algebra
+appMin q ctx s
+  | minVar q ctx s == q = q 
+  | otherwise           = appMin (minVar q ctx s) ctx s
 
 -- | Variation minimization rules.
 -- Note: not sure which side is more optimized. We can determine that by
 --       running some experiments. It also probably depends on the 
 --       approach we take.
-minVar :: Algebra -> Algebra 
-minVar = undefined
+minVar :: Algebra -> VariationalContext -> Schema -> Algebra 
+minVar q ctx s = 
+  prjDistr (selDistr ((chcRel . optSel . pushOutProj . chcDistr) q) ctx s) ctx s
 
 -- | Applies a feature expression to all attributes in an opt attrs.
 -- denoted as: lᶠ
