@@ -311,30 +311,61 @@ partitionAtts as n t = partition divideAtt as
 --       can be generated from the combination of other rules.
 chcRel :: Algebra -> Algebra
 -- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
-chcRel q@(AChc f (Sel (VsqlAnd c1 c2) rq1) (Sel (VsqlAnd c3 c4) rq2)) 
+chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1)) 
+	             (Sel (VsqlAnd c3 c4) (Rename Nothing q2)))
   | vsqlCondEq c1 c3 
-    = undefined
-  | vsqlCondEq c1 c4 = undefined
-  | vsqlCondEq c2 c3 = undefined
-  | vsqlCondEq c2 c4 = undefined
+    = Sel (VsqlAnd c1 (VsqlCChc f c2 c4)) (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq c1 c4 
+    = Sel (VsqlAnd c1 (VsqlCChc f c2 c3)) (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq c2 c3 
+    = Sel (VsqlAnd c2 (VsqlCChc f c1 c4)) (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq c2 c4 
+    = Sel (VsqlAnd c2 (VsqlCChc f c1 c3)) (Rename Nothing (AChc f q1 q2))
   | otherwise = q
-chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlAnd c3 c4) rq2)) 
-  | vsqlCondEq (VsqlCond c1) c3 = undefined
-  | vsqlCondEq (VsqlCond c1) c4 = undefined
-  | vsqlCondEq (VsqlCond c2) c3 = undefined
-  | vsqlCondEq (VsqlCond c2) c4 = undefined
+chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) (Rename Nothing q1)) 
+	             (Sel (VsqlAnd c3 c4) (Rename Nothing q2)))
+  | vsqlCondEq (VsqlCond c1) c3 
+    = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) c4)) 
+          (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq (VsqlCond c1) c4 
+    = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) c3)) 
+          (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq (VsqlCond c2) c3 
+    = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) c4)) 
+          (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq (VsqlCond c2) c4 
+    = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) c3)) 
+          (Rename Nothing (AChc f q1 q2))
   | otherwise = q
-chcRel q@(AChc f (Sel (VsqlAnd c1 c2) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) 
-  | vsqlCondEq c1 (VsqlCond c3) = undefined
-  | vsqlCondEq c1 (VsqlCond c4) = undefined
-  | vsqlCondEq c2 (VsqlCond c3) = undefined
-  | vsqlCondEq c2 (VsqlCond c4) = undefined
+chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1)) 
+	             (Sel (VsqlCond (And c3 c4)) (Rename Nothing q2)))
+  | vsqlCondEq c1 (VsqlCond c3) 
+    = Sel (VsqlAnd c1 (VsqlCChc f c2 (VsqlCond c4))) 
+          (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq c1 (VsqlCond c4) 
+    = Sel (VsqlAnd c1 (VsqlCChc f c2 (VsqlCond c3))) 
+          (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq c2 (VsqlCond c3) 
+    = Sel (VsqlAnd c2 (VsqlCChc f c1 (VsqlCond c4))) 
+          (Rename Nothing (AChc f q1 q2))
+  | vsqlCondEq c2 (VsqlCond c4) 
+    = Sel (VsqlAnd c2 (VsqlCChc f c1 (VsqlCond c3))) 
+          (Rename Nothing (AChc f q1 q2))
   | otherwise = q
-chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) rq1) (Sel (VsqlCond (And c3 c4)) rq2)) 
-  | conditionEq c1 c3 = undefined
-  | conditionEq c1 c4 = undefined
-  | conditionEq c2 c3 = undefined
-  | conditionEq c2 c4 = undefined
+chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) (Rename Nothing q1)) 
+	             (Sel (VsqlCond (And c3 c4)) (Rename Nothing q2)))
+  | conditionEq c1 c3 
+    = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) (VsqlCond c4))) 
+          (Rename Nothing (AChc f q1 q2))
+  | conditionEq c1 c4 
+    = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) (VsqlCond c3))) 
+          (Rename Nothing (AChc f q1 q2))
+  | conditionEq c2 c3 
+    = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) (VsqlCond c4))) 
+          (Rename Nothing (AChc f q1 q2))
+  | conditionEq c2 c4 
+    = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) (VsqlCond c3)))
+          (Rename Nothing (AChc f q1 q2))
   | otherwise = q
 -- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
 chcRel (Sel c1 (Rename n (AChc f (Sel c2 (Rename Nothing q1)) 
