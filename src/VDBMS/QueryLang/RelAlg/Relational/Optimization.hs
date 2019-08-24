@@ -25,7 +25,7 @@ appOpt q s
 -- | Relational optimization rules.
 opts :: RAlgebra -> RSchema -> RAlgebra 
 opts q s = 
-  prjDistr (selDistr ((optSel . pushOutProj) q) s) s
+  prjDistr (selDistr ((optSel . pushOutRProj) q) s) s
 
 -- | Pushes out projection as far as possible.
 -- Note that you don't necessarily want to push out all projs.
@@ -34,16 +34,15 @@ opts q s =
 --     min that the same goes for joins.
 -- There are also cases that you CANNOT push out projs:
 -- Eg: proj l1 q1 `union` proj l1 q2 <> proj l1 (q1 `union` q2)
-pushOutProj :: RAlgebra -> RAlgebra
--- pushOutProj = undefined
+pushOutRProj :: RAlgebra -> RAlgebra
 -- σ c (π l q) ≡ π l (σ c q)
-pushOutProj (RSel c (Rename Nothing (RProj as rq)))
-  = RProj as (Rename Nothing (RSel c (renameMap pushOutProj rq)))
+pushOutRProj (RSel c (Rename Nothing (RProj as rq)))
+  = RProj as (Rename Nothing (RSel c (renameMap pushOutRProj rq)))
 -- π l₁ (π l₂ q) ≡ π l₁ q
 -- checks if renaming happened in l₂ and update 
 -- l₁ appropriately! 
-pushOutProj (RProj as1 (Rename Nothing (RProj as2 rq)))
-  = RProj (updateAtts as1 as2) (renameMap pushOutProj rq)
+pushOutRProj (RProj as1 (Rename Nothing (RProj as2 rq)))
+  = RProj (updateAtts as1 as2) (renameMap pushOutRProj rq)
     where
       updateAtts :: Attributes -> Attributes -> Attributes
       updateAtts orgs subs = [ compAtts a subs | a <- orgs]
@@ -60,13 +59,13 @@ pushOutProj (RProj as1 (Rename Nothing (RProj as2 rq)))
           && (attributeName . attribute . thing) a1 == (fromJust (name a2))
             = Just a2
         | otherwise = Nothing
-pushOutProj (RSetOp o q1 q2)
-  = RSetOp o (pushOutProj q1) (pushOutProj q2)
-pushOutProj (RJoin rq1 rq2 c)
-  = RJoin (renameMap pushOutProj rq1) (renameMap pushOutProj rq2) c
-pushOutProj (RProd rq1 rq2) 
-  = RProd (renameMap pushOutProj rq1) (renameMap pushOutProj rq2)
-pushOutProj q = q 
+pushOutRProj (RSetOp o q1 q2)
+  = RSetOp o (pushOutRProj q1) (pushOutRProj q2)
+pushOutRProj (RJoin rq1 rq2 c)
+  = RJoin (renameMap pushOutRProj rq1) (renameMap pushOutRProj rq2) c
+pushOutRProj (RProd rq1 rq2) 
+  = RProd (renameMap pushOutRProj rq1) (renameMap pushOutRProj rq2)
+pushOutRProj q = q 
 
 -- | checks if a sql condition is of the form "attr in query" condition.
 -- notInCond :: VsqlCond -> Bool 
