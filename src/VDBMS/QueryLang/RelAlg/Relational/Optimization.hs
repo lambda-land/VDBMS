@@ -25,7 +25,7 @@ appOpt q s
 -- | Relational optimization rules.
 opts :: RAlgebra -> RSchema -> RAlgebra 
 opts q s = 
-  prjDistr (selDistr ((optSel . pushOutRProj) q) s) s
+  prjDistr (selDistr ((optRSel . pushOutRProj) q) s) s
 
 -- | Pushes out projection as far as possible.
 -- Note that you don't necessarily want to push out all projs.
@@ -68,53 +68,50 @@ pushOutRProj (RProd rq1 rq2)
 pushOutRProj q = q 
 
 -- | checks if a sql condition is of the form "attr in query" condition.
--- notInCond :: VsqlCond -> Bool 
--- notInCond (VsqlIn _ _)     = True
--- notInCond (VsqlCond _)     = False
--- notInCond (VsqlNot c)      = notInCond c
--- notInCond (VsqlOr l r)     = notInCond l && notInCond r
--- notInCond (VsqlAnd l r)    = notInCond l && notInCond r 
--- notInCond (VsqlCChc _ l r) = notInCond l && notInCond r 
+notInCond :: SqlCond RAlgebra -> Bool 
+notInCond (SqlIn _ _)     = True
+notInCond (SqlCond _)     = False
+notInCond (SqlNot c)      = notInCond c
+notInCond (SqlOr l r)     = notInCond l && notInCond r
+notInCond (SqlAnd l r)    = notInCond l && notInCond r 
 
 -- | knowing that the sql condition is not of the form "attr in query"
 --   converts the sql condition to a relational condition.
--- relCond :: VsqlCond -> Condition
--- relCond (VsqlCond c)     = c 
--- relCond (VsqlIn _ _)     = error $ "didn't expect to get a condition of the form attr in query!! QUERY VAR MIN!!"
--- relCond (VsqlNot c)      = Not (relCond c)
--- relCond (VsqlOr l r)     = Or (relCond l) (relCond r)
--- relCond (VsqlAnd l r)    = And (relCond l) (relCond r)
--- relCond (VsqlCChc f l r) = CChc f (relCond l) (relCond r)
+relCond :: SqlCond RAlgebra -> RCondition
+relCond (SqlCond c)     = c 
+relCond (SqlIn _ _)     = error $ "didn't expect to get a condition of the form attr in query!! QUERY VAR MIN!!"
+relCond (SqlNot c)      = RNot (relCond c)
+relCond (SqlOr l r)     = ROr (relCond l) (relCond r)
+relCond (SqlAnd l r)    = RAnd (relCond l) (relCond r)
 
 -- | optimizes the selection queries.
-optSel :: RAlgebra -> RAlgebra
-optSel = undefined
--- -- σ c₁ (σ c₂ q) ≡ σ (c₁ ∧ c₂) q
--- optSel (Sel c1 (Rename Nothing (Sel c2 rq))) 
---   = Sel (VsqlAnd c1 c2) (renameMap optSel rq)
--- -- σ c₁ (π l (σ c₂ q)) ≡ π l (σ (c₁ ∧ c₂) q)
--- -- discuss this with Eric?
--- -- optSel q@(Sel c1 (Rename Nothing (Proj as (Rename n (Sel c2 rq)))))
--- --   | noAttRename as = Proj as (Rename n (Sel (VsqlAnd c1 c2) (renameMap optSel rq)))
--- --   | otherwise      = q
--- --     where
--- --       noAttRename :: OptAttributes -> Bool
--- --       noAttRename as = and $ fmap (isNothing . name . getObj) as
--- -- σ c (q₁ × q₂) ≡ q₁ ⋈\_c q₂
--- optSel q@(Sel c (Rename Nothing (Prod rq1 rq2)))
---   | notInCond c = Join (renameMap optSel rq1) (renameMap optSel rq2) (relCond c)
---   | otherwise   = q 
--- -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_(c₁ ∧ c₂) q₂
--- optSel q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2)))
---   | notInCond c1 = Join rq1 rq2 (And (relCond c1) c2)
---   | otherwise    = q
--- optSel (Sel c rq)       = Sel c (renameMap optSel rq)
--- optSel (SetOp o q1 q2)  = SetOp o (optSel q1) (optSel q2)
--- optSel (Proj as rq)     = Proj as (renameMap optSel rq)
--- optSel (AChc f q1 q2)   = AChc f (optSel q1) (optSel q2)
--- optSel (Join rq1 rq2 c) = Join (renameMap optSel rq1) (renameMap optSel rq2) c 
--- optSel (Prod rq1 rq2)   = Prod (renameMap optSel rq1) (renameMap optSel rq2)
--- optSel q                = q
+optRSel :: RAlgebra -> RAlgebra
+-- optSel = undefined
+-- σ c₁ (σ c₂ q) ≡ σ (c₁ ∧ c₂) q
+optRSel (RSel c1 (Rename Nothing (RSel c2 rq))) 
+  = RSel (SqlAnd c1 c2) (renameMap optRSel rq)
+-- σ c₁ (π l (σ c₂ q)) ≡ π l (σ (c₁ ∧ c₂) q)
+-- discuss this with Eric?
+-- optSel q@(Sel c1 (Rename Nothing (Proj as (Rename n (Sel c2 rq)))))
+--   | noAttRename as = Proj as (Rename n (Sel (VsqlAnd c1 c2) (renameMap optSel rq)))
+--   | otherwise      = q
+--     where
+--       noAttRename :: OptAttributes -> Bool
+--       noAttRename as = and $ fmap (isNothing . name . getObj) as
+-- σ c (q₁ × q₂) ≡ q₁ ⋈\_c q₂
+optRSel q@(RSel c (Rename Nothing (RProd rq1 rq2)))
+  | notInCond c = RJoin (renameMap optRSel rq1) (renameMap optRSel rq2) (relCond c)
+  | otherwise   = q 
+-- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_(c₁ ∧ c₂) q₂
+optRSel q@(RSel c1 (Rename Nothing (RJoin rq1 rq2 c2)))
+  | notInCond c1 = RJoin rq1 rq2 (RAnd (relCond c1) c2)
+  | otherwise    = q
+optRSel (RSel c rq)       = RSel c (renameMap optRSel rq)
+optRSel (RSetOp o q1 q2)  = RSetOp o (optRSel q1) (optRSel q2)
+optRSel (RProj as rq)     = RProj as (renameMap optRSel rq)
+optRSel (RJoin rq1 rq2 c) = RJoin (renameMap optRSel rq1) (renameMap optRSel rq2) c 
+optRSel (RProd rq1 rq2)   = RProd (renameMap optRSel rq1) (renameMap optRSel rq2)
+optRSel q                 = q
 
 -- | selection distributive properties.
 selDistr :: RAlgebra -> RSchema -> RAlgebra

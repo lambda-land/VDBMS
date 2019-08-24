@@ -1,9 +1,9 @@
 -- | Sql conditions in relational algebra and queries.
 module VDBMS.QueryLang.SQL.Condition (
 
-        RCondition(..),
-        SqlCond(..),
-        Atom(..)
+        module VDBMS.QueryLang.RelAlg.Relational.Condition
+        , SqlCond(..)
+        , Atom(..)
 
 ) where
 

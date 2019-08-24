@@ -3,6 +3,7 @@ module VDBMS.QueryLang.RelAlg.Relational.Algebra (
 
         RAlgebra(..)
         , SetOp(..)
+        , module VDBMS.QueryLang.SQL.Condition
 
 ) where
 
