@@ -3,7 +3,7 @@ module VDBMS.QueryLang.RelAlg.Relational.Optimization where
 
 import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 -- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
--- import VDBMS.VDB.Name
+import VDBMS.VDB.Name
 -- import VDBMS.TypeSystem.Variational.TypeSystem
 import VDBMS.VDB.Schema.Relational.Types
 -- -- import VDBMS.Features.Config
@@ -13,7 +13,7 @@ import VDBMS.VDB.Schema.Relational.Types
 
 -- import qualified Data.Map as M 
 -- import qualified Data.Map.Strict as SM (lookup)
--- import Data.Maybe (isNothing, catMaybes, fromJust)
+import Data.Maybe (catMaybes, fromJust)
 -- import Data.List (partition)
 
 -- | Applies the minimization rules until the query doesn't change.
@@ -35,48 +35,38 @@ opts q s =
 -- There are also cases that you CANNOT push out projs:
 -- Eg: proj l1 q1 `union` proj l1 q2 <> proj l1 (q1 `union` q2)
 pushOutProj :: RAlgebra -> RAlgebra
-pushOutProj = undefined
--- -- σ c (π l q) ≡ π l (σ c q)
--- pushOutProj (Sel c (Rename Nothing (Proj as rq)))
---   = Proj as (Rename Nothing (Sel c (renameMap pushOutProj rq)))
--- -- π l₁ (π l₂ q) ≡ π l₁ q
--- -- checks if renaming happened in l₂ and update 
--- -- l₁ appropriately! also if the attribute in as1 is previously
--- -- projected in as2 you need to conjunct their fexps!
--- pushOutProj (Proj as1 (Rename Nothing (Proj as2 rq)))
---   = Proj (updateAtts as1 as2) (renameMap pushOutProj rq)
---     where
---       updateAtts :: OptAttributes -> OptAttributes -> OptAttributes
---       updateAtts orgs subs = [ compAtts a subs | a <- orgs]
---       compAtts :: OptAttribute -> OptAttributes -> OptAttribute
---       compAtts a as 
---         | null attList = a 
---         | otherwise = head attList 
---           where attList = catMaybes [ compAtt a att | att <- as]
---       compAtt :: OptAttribute -> OptAttribute -> Maybe OptAttribute
---       compAtt a1 a2 
---         | attrAlias a2 == Nothing 
---           && attrOfOptAttr a1 == attrOfOptAttr a2 
---             = Just $ mkOpt (F.And (getFexp a1) (getFexp a2)) 
---                            (Rename (attrAlias a1) ((thing . getObj) a2))
---         | attrAlias a2 /= Nothing 
---           && attrName a1 == (fromJust (attrAlias a2))
---             = Just $ applyFuncFexp (F.And (getFexp a1)) a2
---         | otherwise = Nothing
--- pushOutProj (SetOp o q1 q2)
---   = SetOp o (pushOutProj q1) (pushOutProj q2)
--- pushOutProj (AChc f q1 q2) 
---   = AChc f (pushOutProj q1) (pushOutProj q2)
--- pushOutProj (Join rq1 rq2 c)
---   = Join (renameMap pushOutProj rq1) (renameMap pushOutProj rq2) c
--- pushOutProj (Prod rq1 rq2) 
---   = Prod (renameMap pushOutProj rq1) (renameMap pushOutProj rq2)
--- pushOutProj q = q 
-
--- | applies the name alias of sub to org. i.e., sub renames the
---   attribute and so we apply it to the same attribute of org.
--- appAttrAlias :: OptAttribute -> OptAttribute -> OptAttribute
--- appAttrAlias org sub = undefined
+-- pushOutProj = undefined
+-- σ c (π l q) ≡ π l (σ c q)
+pushOutProj (RSel c (Rename Nothing (RProj as rq)))
+  = RProj as (Rename Nothing (RSel c (renameMap pushOutProj rq)))
+-- π l₁ (π l₂ q) ≡ π l₁ q
+-- checks if renaming happened in l₂ and update 
+-- l₁ appropriately! 
+pushOutProj (RProj as1 (Rename Nothing (RProj as2 rq)))
+  = RProj (updateAtts as1 as2) (renameMap pushOutProj rq)
+    where
+      updateAtts :: Attributes -> Attributes -> Attributes
+      updateAtts orgs subs = [ compAtts a subs | a <- orgs]
+      compAtts :: Rename Attr -> Attributes -> Rename Attr
+      compAtts a as 
+        | null attList = a 
+        | otherwise = head attList 
+          where attList = catMaybes [ compAtt a att | att <- as]
+      compAtt :: Rename Attr -> Rename Attr -> Maybe (Rename Attr)
+      compAtt a1 a2 
+        | name a2 == Nothing 
+            = Just (Rename (name a1) (thing a2))
+        | name a2 /= Nothing 
+          && (attributeName . attribute . thing) a1 == (fromJust (name a2))
+            = Just a2
+        | otherwise = Nothing
+pushOutProj (RSetOp o q1 q2)
+  = RSetOp o (pushOutProj q1) (pushOutProj q2)
+pushOutProj (RJoin rq1 rq2 c)
+  = RJoin (renameMap pushOutProj rq1) (renameMap pushOutProj rq2) c
+pushOutProj (RProd rq1 rq2) 
+  = RProd (renameMap pushOutProj rq1) (renameMap pushOutProj rq2)
+pushOutProj q = q 
 
 -- | checks if a sql condition is of the form "attr in query" condition.
 -- notInCond :: VsqlCond -> Bool 

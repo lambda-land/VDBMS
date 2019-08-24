@@ -129,11 +129,6 @@ pushOutProj (Prod rq1 rq2)
   = Prod (renameMap pushOutProj rq1) (renameMap pushOutProj rq2)
 pushOutProj q = q 
 
--- | applies the name alias of sub to org. i.e., sub renames the
---   attribute and so we apply it to the same attribute of org.
-appAttrAlias :: OptAttribute -> OptAttribute -> OptAttribute
-appAttrAlias org sub = undefined
-
 -- | checks if a sql condition is of the form "attr in query" condition.
 notInCond :: VsqlCond -> Bool 
 notInCond (VsqlIn _ _)     = True
