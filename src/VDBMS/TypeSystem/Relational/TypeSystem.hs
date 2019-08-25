@@ -3,7 +3,9 @@ module VDBMS.TypeSystem.Relational.TypeSystem
 (
 
         RTypeEnv
+        , RAttrInfo(..)
         , typeOfRQuery
+        , updateType
 
 ) where 
 

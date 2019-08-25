@@ -14,7 +14,7 @@ import VDBMS.VDB.Schema.Relational.Types
 import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM (lookup)
 import Data.Maybe (catMaybes, fromJust)
--- import Data.List (partition)
+import Data.List (partition)
 
 -- | Applies the minimization rules until the query doesn't change.
 appOpt :: RAlgebra -> RSchema -> RAlgebra
@@ -25,7 +25,7 @@ appOpt q s
 -- | Relational optimization rules.
 opts :: RAlgebra -> RSchema -> RAlgebra 
 opts q s = 
-  prjDistr (selRDistr ((optRSel . pushOutRProj) q) s) s
+  prjRDistr (selRDistr ((optRSel . pushOutRProj) q) s) s
 
 -- | Pushes out projection as far as possible.
 -- Note that you don't necessarily want to push out all projs.
@@ -187,50 +187,47 @@ condAttsInEnv (ROr c1 c2)     t = condAttsInEnv c1 t && condAttsInEnv c2 t
 condAttsInEnv (RAnd c1 c2)    t = condAttsInEnv c1 t && condAttsInEnv c2 t 
 
 -- | projection distributive properties.
-prjDistr :: RAlgebra -> RSchema -> RAlgebra
-prjDistr = undefined
--- -- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
--- prjDistr (Proj as (Rename Nothing (Join rq1 rq2 c))) ctx s 
---   = Join (Rename Nothing (Proj as1 (renameMap prjDistr' rq1)))
---          (Rename Nothing (Proj as2 (renameMap prjDistr' rq2)))
---          c
---     where
---       t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
---       pas = partitionAtts as (name rq1) t1
---       as1 = fst pas 
---       as2 = snd pas 
---       prjDistr' q = prjDistr q ctx s 
--- prjDistr (Proj as rq)     ctx s 
---   = Proj as (renameMap (flip (flip prjDistr ctx) s) rq)
--- prjDistr (SetOp o q1 q2)  ctx s 
---   = SetOp o (prjDistr q1 ctx s) (prjDistr q2 ctx s)
--- prjDistr (Sel c rq)       ctx s 
---   = Sel c (renameMap (flip (flip prjDistr ctx) s) rq)
--- prjDistr (AChc f q1 q2)   ctx s 
---   = AChc f (prjDistr q1 ctx s) (prjDistr q2 ctx s)
--- prjDistr (Join rq1 rq2 c) ctx s 
---   = Join (renameMap (flip (flip prjDistr ctx) s) rq1)
---          (renameMap (flip (flip prjDistr ctx) s) rq2)
---          c
--- prjDistr (Prod rq1 rq2)   ctx s
---   = Prod (renameMap (flip (flip prjDistr ctx) s) rq1)
---          (renameMap (flip (flip prjDistr ctx) s) rq2)
--- prjDistr q _ _ = q 
--- -- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
--- -- discuss with Eric. don't think we need this since we can regenerate
--- -- it with prjDistr and pushOutPrj
+prjRDistr :: RAlgebra -> RSchema -> RAlgebra
+-- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
+prjRDistr (RProj as (Rename Nothing (RJoin rq1 rq2 c))) s 
+  = RJoin (Rename Nothing (RProj as1 (renameMap prjDistr' rq1)))
+          (Rename Nothing (RProj as2 (renameMap prjDistr' rq2)))
+          c
+    where
+      t1  = fromJust $ typeOfRQuery (thing rq1) s 
+      pas = partitionAtts as (name rq1) t1
+      as1 = fst pas 
+      as2 = snd pas 
+      prjDistr' = flip prjRDistr s 
+prjRDistr (RProj as rq)     s 
+  = RProj as (renameMap (flip prjRDistr s) rq)
+prjRDistr (RSetOp o q1 q2)  s 
+  = RSetOp o (prjRDistr q1 s) (prjRDistr q2 s)
+prjRDistr (RSel c rq)       s 
+  = RSel c (renameMap (flip prjRDistr s) rq)
+prjRDistr (RJoin rq1 rq2 c) s 
+  = RJoin (renameMap (flip prjRDistr s) rq1)
+          (renameMap (flip prjRDistr s) rq2)
+          c
+prjRDistr (RProd rq1 rq2)  s
+  = RProd (renameMap (flip prjRDistr s) rq1)
+          (renameMap (flip prjRDistr s) rq2)
+prjRDistr q _ = q 
+-- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
+-- discuss with Eric. don't think we need this since we can regenerate
+-- it with prjDistr and pushOutPrj
 
 -- | partitions a list of attributes based on a given type env.
--- partitionAtts :: OptAttributes -> Alias -> TypeEnv -> (OptAttributes, OptAttributes)
--- partitionAtts as n t = partition divideAtt as 
---   where
---     divideAtt :: OptAttribute -> Bool
---     divideAtt a = maybe False 
---                         (\inf -> maybe True
---                            (`elem` fmap attrQual inf) 
---                            ((qualifier . thing . getObj) a))
---                         (SM.lookup (attrOfOptAttr a) (getObj t'))
---     t' = updateType n t 
+partitionAtts :: Attributes -> Alias -> RTypeEnv -> (Attributes, Attributes)
+partitionAtts as n t = partition divideAtt as 
+  where
+    divideAtt :: Rename Attr -> Bool
+    divideAtt a = maybe False 
+                        (\inf -> maybe True
+                           (`elem` fmap rAttrQual inf) 
+                           ((qualifier . thing) a))
+                        (SM.lookup ((attribute . thing) a) t')
+    t' = updateType n t 
 
 
 
