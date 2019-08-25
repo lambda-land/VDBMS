@@ -1,8 +1,9 @@
 -- | Relational database schema look up operations.
 module VDBMS.VDB.Schema.Relational.Lookups (
 
-        lookupRelation,
-        lookupAttrType
+        rlookupRelation
+        , rlookupAttrType
+        , rlookupAttsList
 
 ) where
 
@@ -15,9 +16,11 @@ import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.VDB.Name
 import VDBMS.DBMS.Value.Type (SqlType)
 
-lookupRelation :: MonadThrow m => Relation -> RSchema -> m RTableSchema
-lookupRelation r s = maybe (throwM $ RMissingRelation r) return $ M.lookup r s
+rlookupRelation :: MonadThrow m => Relation -> RSchema -> m RTableSchema
+rlookupRelation r s = maybe (throwM $ RMissingRelation r) return $ M.lookup r s
 
-lookupAttrType :: MonadThrow m => Attribute -> RTableSchema -> m SqlType
-lookupAttrType a t = maybe (throwM $ RMissingAttribute a) return $ M.lookup a t
+rlookupAttrType :: MonadThrow m => Attribute -> RTableSchema -> m SqlType
+rlookupAttrType a t = maybe (throwM $ RMissingAttribute a) return $ M.lookup a t
 
+rlookupAttsList :: MonadThrow m => Relation -> RSchema -> m [Attribute]
+rlookupAttsList r s = M.keys <$> rlookupRelation r s

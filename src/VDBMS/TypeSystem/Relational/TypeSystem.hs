@@ -314,7 +314,7 @@ typeRRel :: MonadThrow m
           => Rename Relation -> RSchema
           -> m RTypeEnv
 typeRRel rr s = 
-  do r <- lookupRelation (thing rr) s
+  do r <- rlookupRelation (thing rr) s
      return $ SM.map (sqlType2RAttrInfo rr) r 
 
 -- | Generates a relational attr info from a rename relation and sql type.

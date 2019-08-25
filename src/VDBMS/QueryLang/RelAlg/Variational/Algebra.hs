@@ -29,6 +29,13 @@ import VDBMS.Variational.Opt
 import VDBMS.QueryLang.RelAlg.Basics.SetOp
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
 import VDBMS.Features.SAT (equivalent)
+import VDBMS.VDB.Schema.Relational.Lookups (rlookupAttsList)
+import VDBMS.VDB.Schema.Variational.Schema 
+
+-- import Data.Map.Strict (Map)
+-- import qualified Data.Map.Strict as M
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 --
 -- * Variaitonal sql condition data type and instances.
@@ -173,25 +180,59 @@ optRename r = mapSnd (Rename (name r)) $ optionalize_ (thing r)
 
 -- | Configures an algebra.
 configureAlgebra :: Config Bool -> Algebra -> RAlgebra
-configureAlgebra c (SetOp o l r)   = RSetOp o (configureAlgebra c l) (configureAlgebra c r)
+configureAlgebra c (SetOp o l r)   
+  = RSetOp o (configureAlgebra c l) (configureAlgebra c r)
 configureAlgebra c (Proj as q)     
   | confedAtts == [] = REmpty
   | otherwise        = RProj confedAtts (renameMap (configureAlgebra c) q)
     where
       confedAtts = configureOptList c as 
-configureAlgebra c (Sel cond q)    = 
-  RSel (configure c cond) (renameMap (configureAlgebra c) q) 
+configureAlgebra c (Sel cond q)     
+  = RSel (configure c cond) (renameMap (configureAlgebra c) q) 
 configureAlgebra c (AChc f l r) 
   | F.evalFeatureExpr c f   = configureAlgebra c l
   | otherwise               = configureAlgebra c r
-configureAlgebra c (Join l r cond) = 
-  RJoin (renameMap (configureAlgebra c) l)
+configureAlgebra c (Join l r cond) 
+  = RJoin (renameMap (configureAlgebra c) l)
         (renameMap (configureAlgebra c) r)
         (configure c cond)
-configureAlgebra c (Prod l r)      = 
-  RProd (renameMap (configureAlgebra c) l) (renameMap (configureAlgebra c) r)
+configureAlgebra c (Prod l r)       
+  = RProd (renameMap (configureAlgebra c) l) 
+          (renameMap (configureAlgebra c) r)
 configureAlgebra c (TRef r)        = RTRef r 
 configureAlgebra c Empty           = REmpty
+
+-- | configure a query wrt the schema.
+configureAlgebra_ :: Config Bool -> Schema -> Algebra -> RAlgebra
+configureAlgebra_ c s (SetOp o l r) 
+  = RSetOp o (configureAlgebra_ c s l) (configureAlgebra_ c s r)
+configureAlgebra_ c s (Proj as rq) 
+  | confedAtts == [] = REmpty
+  | otherwise        = RProj confedAtts (renameMap (configureAlgebra_ c s) rq)
+    where
+      confedAtts = configureOptList c as 
+configureAlgebra_ c s (Sel cond rq) 
+  = RSel (configure c cond) (renameMap (configureAlgebra_ c s) rq) 
+configureAlgebra_ c s (AChc f l r) 
+  | F.evalFeatureExpr c f   = configureAlgebra_ c s l
+  | otherwise               = configureAlgebra_ c s r
+configureAlgebra_ c s (Join rl rr cond) 
+  = RJoin (renameMap (configureAlgebra_ c s) rl)
+          (renameMap (configureAlgebra_ c s) rr)
+          (configure c cond)
+configureAlgebra_ c s (Prod rl rr) 
+  = RProd (renameMap (configureAlgebra_ c s) rl) 
+          (renameMap (configureAlgebra_ c s) rr)
+configureAlgebra_ c s (TRef r) 
+  | check = RTRef r
+  | otherwise = RProj (fmap (\a -> Rename Nothing (Attr a Nothing)) ras) 
+                      (Rename Nothing (RTRef r))
+    where
+      check = Set.fromList vas == Set.fromList ras
+      vas = maybe [] id (lookupRelAttsList (thing r) s)
+      ras = maybe [] id (rlookupAttsList (thing r) confedsch)
+      confedsch = configure c s 
+configureAlgebra_ c s Empty = REmpty
 
 -- | Optionalizes an algebra.
 --   Note that optionalization doesn't consider schema at all. it just
