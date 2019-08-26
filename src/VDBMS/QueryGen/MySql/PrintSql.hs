@@ -12,6 +12,7 @@ import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.VDB.Name
 
 import Text.PrettyPrint
+import Data.Maybe (isNothing, isJust, fromJust)
 
 -- | prints sql select queries.
 ppSql :: SqlSelect -> Doc
@@ -38,10 +39,42 @@ ppSql SqlEmpty = text "SELECT NULL"
 
 -- | prints sql attribute expressions.
 ppAtts :: SqlAttrExpr -> Doc
-ppAtts SqlAllAtt = undefined
-ppAtts (SqlAttr ras) = undefined
-ppAtts (SqlNullAttr ra) = undefined
-ppAtts (SqlConcatAtt ra s) = undefined
+ppAtts SqlAllAtt = text "*"
+ppAtts (SqlAttr ra) 
+  | isNothing n && isNothing q = a
+  | isNothing n && isJust q    
+    = text ((qualName . fromJust) q) <+> char '.' <+> a
+  | isJust n    && isNothing q = a <+> text "AS" <+> text (fromJust n)
+  | isJust n    && isJust q    
+    = text ((qualName . fromJust) q) 
+      <+> char '.' 
+      <+> a 
+      <+> text "AS" 
+      <+> text (fromJust n)
+    where 
+      n = name ra
+      q = (qualifier . thing) ra
+      a = (text . attributeName . attribute . thing) ra
+ppAtts (SqlNullAttr rnull) 
+  | isNothing n = text "NULL"
+  | isJust n    = text "NULL AS" <+> text (fromJust n)
+    where
+      n = name rnull
+ppAtts (SqlConcatAtt ra ss) 
+  | isNothing n && isNothing q = concat a
+  | isNothing n && isJust q    
+    = concat (text ((qualName . fromJust) q) <+> char '.' <+> a)
+  | isJust n    && isNothing q 
+    = concat a <+> text "AS" <+> text (fromJust n)
+  | isJust n    && isJust q    
+    = concat (text ((qualName . fromJust) q) <+> char '.' <+> a)
+      <+> text "AS" <+> text (fromJust n)
+    where 
+      n = name ra
+      q = (qualifier . thing) ra
+      a = (text . attributeName . attribute . thing) ra
+      concat rest = text "CONCAT" <+> parens (rest <+> comma <+> ts)
+      ts = hcomma doubleQuotes (fmap text ss)
 
 -- | prints sql relations.
 ppRel :: SqlRelation -> Doc
