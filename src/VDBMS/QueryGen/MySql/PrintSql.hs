@@ -108,7 +108,9 @@ ppRCond :: RCondition -> Doc
 ppRCond (RLit b) 
   | b         = text "TRUE"
   | otherwise = text "FALSE"
-ppRCond (RComp o l r) = undefined
+ppRCond (RComp o l r) = sht l <> (text . show) o <> sht r
+  where 
+    sht = text . show
 ppRCond (RNot c)   = text "NOT" <+> parens (ppRCond c)
 ppRCond (ROr l r)  = ppRCond l <+> text "OR" <+> ppRCond r
 ppRCond (RAnd l r) = ppRCond l <+> text "AND" <+> ppRCond r

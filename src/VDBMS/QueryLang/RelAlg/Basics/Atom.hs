@@ -2,7 +2,7 @@
 module VDBMS.QueryLang.RelAlg.Basics.Atom (
 
         Atom(..)
-        , prettyAttr
+        -- , prettyAttr
 
 ) where
 
