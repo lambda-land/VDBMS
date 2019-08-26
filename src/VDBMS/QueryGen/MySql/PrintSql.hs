@@ -78,8 +78,14 @@ ppAtts (SqlConcatAtt ra ss)
 
 -- | prints sql relations.
 ppRel :: SqlRelation -> Doc
-ppRel (SqlSubQuery rq) = undefined
-ppRel (SqlInnerJoin l r c) = undefined
+ppRel (SqlSubQuery rq) 
+  | isNothing n = q 
+  | otherwise   = parens q <+> text "AS" <+> text (fromJust n)
+    where
+      n = name rq
+      q = (ppSql . thing) rq
+ppRel (SqlInnerJoin l r c) 
+  = ppRel l <+> text "INNER JOIN" <+> ppRel r <+> text "ON" <+> ppRCond c
 
 -- | prints sql conditions.
 ppCond :: SqlCond SqlSelect -> Doc
