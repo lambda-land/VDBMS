@@ -1,6 +1,12 @@
 -- | generates a sql query for values of SQL data type.
 --   the sql query is of type Doc.
-module VDBMS.QueryGen.MySql.PrintSql where 
+module VDBMS.QueryGen.MySql.PrintSql (
+
+       ppSql
+       , ppTempCTE
+       , ppTempView
+
+) where 
 
 import VDBMS.QueryLang.SQL.Pure.Sql
 
@@ -11,7 +17,7 @@ ppSql :: SqlSelect -> Doc
 ppSql (SqlSelect as ts c) = undefined
 ppSql (SqlBin o l r) = undefined
 ppSql (SqlTRef r) = undefined
-ppSql SqlEmpty = undefined
+ppSql SqlEmpty = text "SELECT NULL"
 
 -- | prints sql attribute expressions.
 ppAtts :: SqlAttrExpr -> Doc
