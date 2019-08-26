@@ -7,11 +7,12 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , SqlRelation(..)
        , SqlBinOp(..)
        , SqlTempRes(..)
+       , module VDBMS.QueryLang.SQL.Condition
 
 ) where
 
 import VDBMS.VDB.Name 
-import VDBMS.QueryLang.SQL.Condition (SqlCond,RCondition)
+import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
 
 -- | Sql select statements.
 data SqlSelect =  
