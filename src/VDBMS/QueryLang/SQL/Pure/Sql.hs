@@ -1,5 +1,14 @@
 -- | Relational algebra.
-module VDBMS.QueryLang.SQL.Pure.Sql where
+module VDBMS.QueryLang.SQL.Pure.Sql (
+
+       SqlSelect(..)
+       , SqlNullAtt(..)
+       , SqlAttrExpr(..)
+       , SqlRelation(..)
+       , SqlBinOp(..)
+       , SqlTempRes(..)
+
+) where
 
 import VDBMS.VDB.Name 
 import VDBMS.QueryLang.SQL.Condition (SqlCond,RCondition)
