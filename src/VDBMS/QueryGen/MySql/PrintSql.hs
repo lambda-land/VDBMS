@@ -11,6 +11,7 @@ module VDBMS.QueryGen.MySql.PrintSql (
 import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.VDB.Name
 
+import Prelude hiding ((<>))
 import Text.PrettyPrint
 import Data.Maybe (isNothing, isJust, fromJust)
 
@@ -43,12 +44,12 @@ ppAtts SqlAllAtt = text "*"
 ppAtts (SqlAttr ra) 
   | isNothing n && isNothing q = a
   | isNothing n && isJust q    
-    = text ((qualName . fromJust) q) <+> char '.' <+> a
+    = text ((qualName . fromJust) q) <+> char '.' <> a
   | isJust n    && isNothing q = a <+> text "AS" <+> text (fromJust n)
   | isJust n    && isJust q    
     = text ((qualName . fromJust) q) 
       <+> char '.' 
-      <+> a 
+      <> a 
       <+> text "AS" 
       <+> text (fromJust n)
     where 
@@ -63,11 +64,11 @@ ppAtts (SqlNullAttr rnull)
 ppAtts (SqlConcatAtt ra ss) 
   | isNothing n && isNothing q = concat a
   | isNothing n && isJust q    
-    = concat (text ((qualName . fromJust) q) <+> char '.' <+> a)
+    = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
   | isJust n    && isNothing q 
     = concat a <+> text "AS" <+> text (fromJust n)
   | isJust n    && isJust q    
-    = concat (text ((qualName . fromJust) q) <+> char '.' <+> a)
+    = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
       <+> text "AS" <+> text (fromJust n)
     where 
       n = name ra
@@ -89,19 +90,28 @@ ppRel (SqlInnerJoin l r c)
 
 -- | prints sql conditions.
 ppCond :: SqlCond SqlSelect -> Doc
-ppCond (SqlCond c) = undefined
-ppCond (SqlIn a q) = undefined
-ppCond (SqlNot c) = undefined
-ppCond (SqlOr l r) = undefined
-ppCond (SqlAnd l r) = undefined
+ppCond (SqlCond c)  = ppRCond c
+ppCond (SqlIn a q) 
+  | isNothing aq = at <+> qt
+  | otherwise 
+    = text ((qualName . fromJust) aq) <+> char '.' <> at <+> qt
+    where
+      aq = qualifier a 
+      at = (text . attributeName . attribute) a 
+      qt = text "IN" <+> ppSql q 
+ppCond (SqlNot c)   = text "NOT" <+> parens (ppCond c)
+ppCond (SqlOr l r)  = ppCond l <+> text "OR" <+> ppCond r
+ppCond (SqlAnd l r) = ppCond l <+> text "OR" <+> ppCond r
 
 -- | prints relaitonal conditions.
 ppRCond :: RCondition -> Doc
-ppRCond (RLit b) = undefined
+ppRCond (RLit b) 
+  | b         = text "TRUE"
+  | otherwise = text "FALSE"
 ppRCond (RComp o l r) = undefined
-ppRCond (RNot c) = undefined
-ppRCond (ROr l r) = undefined
-ppRCond (RAnd l r) = undefined
+ppRCond (RNot c)   = text "NOT" <+> parens (ppRCond c)
+ppRCond (ROr l r)  = ppRCond l <+> text "OR" <+> ppRCond r
+ppRCond (RAnd l r) = ppRCond l <+> text "AND" <+> ppRCond r
 
 -- | prints sql temporary result as CTEs.
 ppTempCTE :: SqlTempRes -> Doc
