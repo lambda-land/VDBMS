@@ -23,7 +23,7 @@ appFexpTableSch :: MonadThrow m => FeatureExpr -> TableSchema -> m TableSchema
 appFexpTableSch f t
     | satisfiable f' = return $ mkOpt f' $ appFexpRowType f t
     | otherwise = throwM $ InconsistentFexpWithTableSch f t
-    	-- error $ "applying the fexp " ++ show f ++ "to table schema results in an invalid table schema!!"
+    -- error $ "applying the fexp " ++ show f ++ "to table schema results in an invalid table schema!!"
   where 
     f' = shrinkFeatureExpr (And f $ getFexp t)
 

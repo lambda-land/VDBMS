@@ -73,17 +73,18 @@ applyFuncFexp :: (FeatureExpr -> FeatureExpr) -> Opt a -> Opt a
 applyFuncFexp f (fexp, a) = (f fexp, a)
 
 -- | maps a function to the fexp of an opt a.
-mapFst :: (FeatureExpr -> FeatureExpr) 
-  -> [Opt a] -> [Opt a]
+mapFst :: Traversable t => (FeatureExpr -> FeatureExpr) 
+  -> t (Opt a) -> t (Opt a)
 mapFst f = fmap (first f)
 
 -- | maps a function to the second of an opt a.
-mapSnd :: (a -> b) -> [Opt a] -> [Opt b]
+mapSnd :: Traversable t => (a -> b) -> t (Opt a) -> t (Opt b)
 mapSnd f = fmap (second f)
 
 -- | maps first and second at the same time.
-mapFstSnd :: (FeatureExpr -> FeatureExpr)
-  -> (a -> b) -> [Opt a] -> [Opt b]
+mapFstSnd :: Traversable t 
+  => (FeatureExpr -> FeatureExpr)
+  -> (a -> b) -> t (Opt a) -> t (Opt b)
 mapFstSnd f g = fmap (f *** g)
 -- mapFst f . mapSnd g
 

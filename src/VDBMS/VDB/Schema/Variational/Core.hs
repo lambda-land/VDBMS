@@ -2,6 +2,9 @@
 module VDBMS.VDB.Schema.Variational.Core (
 
         relArity
+        , filterRowType
+        , filterTSch
+        , filterSchema
         , getRowTypeAtts
         , getTableSchAtts
         , getTableSchAttsList
@@ -29,6 +32,37 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
 import VDBMS.DBMS.Value.Value (SqlType)
+import VDBMS.Features.SAT (satisfiable)
+
+-- | drops the attribute with unsat fexp.
+filterRowType :: RowType -> RowType
+filterRowType = M.filter (satisfiable . fst) 
+
+-- | drops the attribute that their fexp conjuncted with 
+--   the table schema fexp isn't satisfiable.
+filterTSch :: TableSchema -> TableSchema
+filterTSch t = updateOptObj (M.filter (\v -> satAnds f (fst v)) rt) t
+  where
+    f = tschFexp t
+    rt = tschRowType t 
+
+-- | drops the attribute that their fexp conjuncted with 
+--   the table schema fexp and a given fexp isn't satisfiable.
+filterTSch' :: FeatureExpr -> TableSchema -> TableSchema
+filterTSch' p t = updateOptObj (M.filter (\v -> satAnds (And f p) (fst v)) rt) t
+  where
+    f = tschFexp t
+    rt = tschRowType t 
+
+-- | drops the objects that their fexp conjuncted with the 
+--   higher level fexp isn't satisfiable.
+filterSchema :: Schema -> Schema
+filterSchema s = undefined
+  -- updateOptObj (mapSnd (M.filter M.null)
+  -- (mapSnd (M.map (filterTSch' f)) ss)) s
+  where
+    f = featureModel s 
+    ss = schemaStrct s 
 
 -- | returns a relation arity.
 relArity :: Relation -> Schema -> Int 
@@ -40,7 +74,7 @@ relArity r s = case rt of
 
 -- | get attributes of a rowtype.
 getRowTypeAtts :: RowType -> Set Attribute
-getRowTypeAtts = M.keysSet
+getRowTypeAtts = M.keysSet . filterRowType
 
 -- | get attributes of a table schema.
 getTableSchAtts :: TableSchema -> Set Attribute
@@ -54,7 +88,7 @@ getTableSchAttsList t = Set.toList $ getTableSchAtts t
 getAttTypeFromRowType :: RowType -> Set (Attribute, SqlType)
 getAttTypeFromRowType r = dropFexp rowSet
   where
-    rowSet = Set.fromList $ M.assocs r
+    rowSet = Set.fromList $ M.assocs (filterRowType r)
     dropFexp :: (Ord a, Ord t) => Set (a,(o,t)) -> Set (a,t)
     dropFexp = Set.map (\(a,(_,t)) -> (a,t)) 
 

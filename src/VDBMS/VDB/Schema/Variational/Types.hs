@@ -1,12 +1,14 @@
 -- | Variational database schema types.
 module VDBMS.VDB.Schema.Variational.Types (
 
-        RowType(..),
-        TableSchema(..),
-        Schema(..),
-        SchemaError(..),
-        featureModel,
-        schemaStrct
+        RowType(..)
+        , TableSchema(..)
+        , Schema(..)
+        , SchemaError(..)
+        , featureModel
+        , schemaStrct
+        , tschFexp
+        , tschRowType
 
 ) where
 
@@ -151,6 +153,14 @@ featureModel = getFexp
 -- | Gets the structure of schema.
 schemaStrct :: Schema -> Map Relation TableSchema
 schemaStrct = getObj 
+
+-- | returns the table schema fexp.
+tschFexp :: TableSchema -> FeatureExpr
+tschFexp = getFexp
+
+-- | returns the row type of a table schema.
+tschRowType :: TableSchema -> RowType 
+tschRowType = getObj
 
 -- | Errors querying schema.
 data SchemaError = MissingRelation Relation
