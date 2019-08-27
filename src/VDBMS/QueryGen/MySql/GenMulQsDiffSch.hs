@@ -4,5 +4,15 @@
 -- Note that this approach requires us to clean up the tables we get
 -- back from the database and adjust their schema into one unified
 -- schema and accumulate all tuples into one table
-module VDBMS.QueryGen.MySql.GenMulQsDiffSch where 
+module VDBMS.QueryGen.MySql.GenMulQsDiffSch (
 
+       genQs
+
+) where 
+
+import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
+import VDBMS.QueryLang.SQL.Pure.Sql (SqlSelect)
+import VDBMS.QueryTrans.AlgebraToSql
+
+genQs :: [RAlgebra] -> [SqlSelect]
+genQs = fmap transAlgebra2Sql
