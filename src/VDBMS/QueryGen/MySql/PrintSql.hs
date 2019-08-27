@@ -3,8 +3,7 @@
 module VDBMS.QueryGen.MySql.PrintSql (
 
        ppSql
-       , ppTempCTE
-       , ppTempView
+       , ppTemp
 
 ) where 
 
@@ -115,13 +114,19 @@ ppRCond (RNot c)   = text "NOT" <+> parens (ppRCond c)
 ppRCond (ROr l r)  = ppRCond l <+> text "OR" <+> ppRCond r
 ppRCond (RAnd l r) = ppRCond l <+> text "AND" <+> ppRCond r
 
--- | prints sql temporary result as CTEs.
-ppTempCTE :: SqlTempRes -> Doc
-ppTempCTE (SqlTemp rqs q) = undefined
-
--- | prints sql temporary result as views.
-ppTempView :: SqlTempRes -> Doc
-ppTempView (SqlTemp rqs q) = undefined
+-- | prints sql temporary resul.
+ppTemp :: SqlTempRes -> Doc
+ppTemp (SqlCTE rqs q)   
+  = text "WITH"
+    <+> hcomma rqt rqs
+    <+> ppSql q
+    where
+      rqt (n,q) = text n <+> text "AS" <+> parens (ppSql q)
+ppTemp (SqlView (n, q)) 
+  = text "CREATE VIEW"
+    <+> text n 
+    <+> text "AS"
+    <+> ppSql q
 
 -- | horizontal comma concat.
 hcomma :: (a -> Doc) -> [a] -> Doc

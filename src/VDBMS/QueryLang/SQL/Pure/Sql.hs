@@ -55,6 +55,7 @@ data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
 -- | Sql temparory storing intermediate results.
 --   Note: you can only use WITH statements in a single sql query.
 --         But you can use views in multiple sql queries.
+-- Note: i'm not doing the important point anymore!!
 --   Importnat point: do refactoring only once and then you'll have
 --                    two different SQL generator!
 -- so while refactoring you'll have a value of type sqltempres
@@ -62,8 +63,8 @@ data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
 -- Question to search: does postgres automatically run subq as cte in parallel?
 -- if so it'd make our job much easier for the big union all query.
 data SqlTempRes = 
-    SqlTemp [Rename SqlSelect] SqlSelect
-  -- | SqlView (Rename SqlSelect)
+    SqlCTE [(String, SqlSelect)] SqlSelect
+  | SqlView (String, SqlSelect)
 
 -- | Opitmized SQL queries. 
 -- data SqlOptimized = 
