@@ -3,8 +3,16 @@
 --   temporary result.
 module VDBMS.QueryGen.MySql.GenMulQsSameSch where 
 
--- import VDBMS.QueryLang.RelAlg.Relational.Algebra 
--- import VDBMS.QueryLang.SQL.Pure.Sql
+import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
+import VDBMS.QueryLang.SQL.Pure.Sql (SqlSelect)
+import VDBMS.VDB.Schema.Variational.Schema
+
+-- | generates sql queries for relational queries based on
+--   a given variational table schema. 
+genQsSameSch :: TableSchema -> [RAlgebra] -> [SqlSelect]
+genQsSameSch = undefined
 
 
--- genQsSameSch :: [RAlgebra] -> []
+-- | converts a variational table schema to the relational one.
+--   ie. it just drops the fexps as long as they're satisfible.
+-- tsch2attList

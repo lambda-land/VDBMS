@@ -1,15 +1,16 @@
 -- | Variational database schema core operations.
 module VDBMS.VDB.Schema.Variational.Core (
 
-        relArity,
-        getRowTypeAtts,
-        getTableSchAtts,
-        getAttTypeFromRowType,
-        getRels,
-        propagateFexpToTsch,
-        shrinkFexRowType,
-        combineTableSchema,
-        rowTypeUnion
+        relArity
+        , getRowTypeAtts
+        , getTableSchAtts
+        , getTableSchAttsList
+        , getAttTypeFromRowType
+        , getRels
+        , propagateFexpToTsch
+        , shrinkFexRowType
+        , combineTableSchema
+        , rowTypeUnion
 
 ) where
 
@@ -44,6 +45,10 @@ getRowTypeAtts = M.keysSet
 -- | get attributes of a table schema.
 getTableSchAtts :: TableSchema -> Set Attribute
 getTableSchAtts t = getRowTypeAtts $ getObj t
+
+-- | gives the list of attributes.
+getTableSchAttsList :: TableSchema -> [Attribute]
+getTableSchAttsList t = Set.toList $ getTableSchAtts t
 
 -- | Get attribute type pairs in a rowtype
 getAttTypeFromRowType :: RowType -> Set (Attribute, SqlType)
