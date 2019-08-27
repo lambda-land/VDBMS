@@ -14,5 +14,6 @@ import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
 import VDBMS.QueryLang.SQL.Pure.Sql (SqlSelect)
 import VDBMS.QueryTrans.AlgebraToSql
 
+-- | simply translates a given relatinoal query to SQL.
 genQs :: [RAlgebra] -> [SqlSelect]
 genQs = fmap transAlgebra2Sql
