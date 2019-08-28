@@ -10,19 +10,18 @@ import VDBMS.VDB.Schema.Relational.Types (RSchema)
 import VDBMS.TypeSystem.Relational.TypeSystem (typeOfRQuery)
 import VDBMS.VDB.Name (Attribute)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
+import VDBMS.QueryLang.SQL.Pure.Ops
 
 import Control.Monad.Catch 
 
 -- | generates sql queries for relational queries based on
 --   a given variational table schema. 
-genQsSameSch :: TableSchema -> [RAlgebra] -> [SqlSelect]
-genQsSameSch t qs = fmap ((adjustQSch as) . transAlgebra2Sql) qs
+genQsSameSch :: TableSchema -> [(RAlgebra, RSchema)] -> [SqlSelect]
+genQsSameSch t qss 
+  = fmap (\(q,r) -> (adjustQSch as (transAlgebra2Sql q) r)) qss
   where
     as = getTableSchAttsList t 
      -- ts <- mapM (uncurry typeOfRQuery) qss 
      -- let qs = fmap ((adjustQSch as) . transAlgebra2Sql . fst) qss
      -- return undefined
 
--- | adjusts the schema of a sql query wrt a given list of attribute.
-adjustQSch :: [Attribute] -> SqlSelect -> SqlSelect
-adjustQSch = undefined
