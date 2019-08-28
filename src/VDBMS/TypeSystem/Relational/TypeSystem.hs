@@ -14,6 +14,7 @@ import qualified Data.Map.Strict as SM
 import qualified Data.Set as Set 
 import Data.Set (Set)
 import Data.List (intersect, nub, (\\))
+import Data.Maybe (fromJust)
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
@@ -57,6 +58,13 @@ data RTypeError =
     deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception RTypeError 
+
+-- | returns the list of attributes in a relational type env.
+rtypeEnvAtts :: RTypeEnv -> [Attribute]
+rtypeEnvAtts t = concatMap (\at -> replicate (attRep at t) at) (Set.toList $ SM.keysSet t)
+  where 
+    attRep a rt = (length . fromJust) (SM.lookup a rt)
+
 
 -- | static semantics that returns a relational table schema.
 typeOfRQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv

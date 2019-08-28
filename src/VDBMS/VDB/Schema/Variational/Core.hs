@@ -4,7 +4,7 @@ module VDBMS.VDB.Schema.Variational.Core (
         relArity
         , filterRowType
         , filterTSch
-        , filterSchema
+        -- , filterSchema
         , getRowTypeAtts
         , getTableSchAtts
         , getTableSchAttsList
@@ -49,7 +49,8 @@ filterTSch t = updateOptObj (M.filter (\v -> satAnds f (fst v)) rt) t
 -- | drops the attribute that their fexp conjuncted with 
 --   the table schema fexp and a given fexp isn't satisfiable.
 filterTSch' :: FeatureExpr -> TableSchema -> TableSchema
-filterTSch' p t = updateOptObj (M.filter (\v -> satAnds (And f p) (fst v)) rt) t
+filterTSch' p t 
+  = updateOptObj (M.filter (\v -> satAnds (And f p) (fst v)) rt) t
   where
     f = tschFexp t
     rt = tschRowType t 

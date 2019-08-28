@@ -309,7 +309,7 @@ partitionAtts as n t = partition divideAtt as
 chcRel :: Algebra -> Algebra
 -- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
 chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1)) 
-	             (Sel (VsqlAnd c3 c4) (Rename Nothing q2)))
+               (Sel (VsqlAnd c3 c4) (Rename Nothing q2)))
   | vsqlCondEq c1 c3 
     = Sel (VsqlAnd c1 (VsqlCChc f c2 c4)) (Rename Nothing (AChc f q1 q2))
   | vsqlCondEq c1 c4 
