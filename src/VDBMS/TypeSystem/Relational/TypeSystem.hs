@@ -6,6 +6,7 @@ module VDBMS.TypeSystem.Relational.TypeSystem
         , RAttrInfo(..)
         , typeOfRQuery
         , updateType
+        , rtypeEnvAtts
 
 ) where 
 
@@ -61,7 +62,8 @@ instance Exception RTypeError
 
 -- | returns the list of attributes in a relational type env.
 rtypeEnvAtts :: RTypeEnv -> [Attribute]
-rtypeEnvAtts t = concatMap (\at -> replicate (attRep at t) at) (Set.toList $ SM.keysSet t)
+rtypeEnvAtts t = 
+  concatMap (\at -> replicate (attRep at t) at) (Set.toList $ SM.keysSet t)
   where 
     attRep a rt = (length . fromJust) (SM.lookup a rt)
 
