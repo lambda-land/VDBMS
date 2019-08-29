@@ -7,6 +7,7 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , SqlRelation(..)
        , SqlBinOp(..)
        , SqlTempRes(..)
+       , aExprAtt
        , module VDBMS.QueryLang.SQL.Condition
 
 ) where
@@ -38,6 +39,17 @@ data SqlAttrExpr =
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
   | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   deriving (Eq)
+
+-- | attributes in an attribute expr.
+aExprAtt :: SqlAttrExpr -> Attribute 
+aExprAtt SqlAllAtt 
+  = error "you have a list of attributes and not one!!!"
+aExprAtt (SqlAttr ra)                         = (attribute . thing) ra
+aExprAtt (SqlNullAttr (Rename Nothing _)) 
+  = error "null attribute!!"
+aExprAtt (SqlNullAttr (Rename (Just n) _))    = Attribute n 
+aExprAtt (SqlConcatAtt (Rename Nothing a) _)  = attribute a 
+aExprAtt (SqlConcatAtt (Rename (Just n) _) _) = Attribute n
 
 -- | Sql From expressions.
 --   Note that right now since we're only using inner joins that's 

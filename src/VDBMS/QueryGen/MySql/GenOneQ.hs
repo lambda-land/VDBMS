@@ -4,7 +4,7 @@ module VDBMS.QueryGen.MySql.GenOneQ where
 
 import VDBMS.QueryGen.MySql.GenMulQsSameSch
 import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
-import VDBMS.QueryLang.SQL.Pure.Sql (SqlSelect)
+import VDBMS.QueryLang.SQL.Pure.Sql 
 import VDBMS.VDB.Name (Attribute)
 import VDBMS.TypeSystem.Relational.TypeSystem (RTypeEnv)
 
