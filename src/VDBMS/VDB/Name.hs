@@ -4,6 +4,7 @@ module VDBMS.VDB.Name (
         Attribute(..),
         Relation(..),
         PresCondAtt(..),
+        PCatt(..),
         Rename(..),
         Alias(..),
         Qualifier(..),
@@ -21,8 +22,11 @@ import Data.String (IsString)
 import Data.Set (Set)
 import qualified Data.Set as Set (fromList)
 
+-- | Names.
+type Name = String
+
 -- | An attribute (i.e. column) name.
-newtype Attribute = Attribute { attributeName :: String }
+newtype Attribute = Attribute { attributeName :: Name }
   deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)
 
 -- | Qualifiers for attributes.
@@ -31,7 +35,7 @@ data Qualifier
       relQualifier :: Relation
     }
   | SubqueryQualifier {
-      subqueryQualifier :: String
+      subqueryQualifier :: Name
     }
  deriving (Data,Eq,Ord,Read,Show,Typeable)
 
@@ -57,7 +61,7 @@ attsSet :: Attributes -> Set Attribute
 attsSet = Set.fromList . fmap (attribute . thing) 
 
 -- | Possible names used for aliasing.
-type Alias = Maybe String
+type Alias = Maybe Name
 
 -- | A new name that could be used for attributes and subqueries.
 data Rename a = 
@@ -72,10 +76,16 @@ renameMap :: (a -> b) -> Rename a -> Rename b
 renameMap f (Rename n t) = Rename n (f t)
 
 -- | A relation (i.e. table) name.
-newtype Relation = Relation { relationName :: String }
+newtype Relation = Relation { relationName :: Name }
   deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)
 
 -- | Name of presence condition attribute in db.
-newtype PresCondAtt = PresCondAtt { presCondAttName :: String }
+newtype PresCondAtt = PresCondAtt { presCondAttName :: Name }
   deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)  
 
+-- | presence condition attribute name.
+type PCatt = Attribute
+
+-- | pc attribute name.
+-- pcAtt :: Name -> PCatt
+-- pcAtt pc = Attribute pc

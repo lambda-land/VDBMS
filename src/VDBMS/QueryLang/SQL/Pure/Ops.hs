@@ -2,11 +2,14 @@
 module VDBMS.QueryLang.SQL.Pure.Ops (
 
        adjustQSch
+       , updatePC
 
 ) where
 
 import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.VDB.Name
+import VDBMS.Features.FeatureExpr.FeatureExpr
+
 -- import VDBMS.VDB.Schema.Relational.Types (RSchema)
 -- import VDBMS.VDB.Schema.Relational.Lookups (rlookupAttsList)
 
@@ -44,3 +47,26 @@ updatesAs res already aes
       | a `elem` already = fromJust $ lookup a ates
       | otherwise
         = SqlNullAttr (Rename ((Just . attributeName) a) SqlNullAtt)
+
+-- | updates the queries in order to add the given feature expr 
+--   to tuples presence condition. the queries passed to this 
+--   function are either of the format of sqlselect as ts cs
+--   or sqlbin o l r. this function is used for combining 
+--   sql queries with the same schema into one query in genOneQ.
+updatePC :: FeatureExpr -> PCatt -> SqlSelect -> SqlSelect
+updatePC f p (SqlSelect as ts cs) 
+  = SqlSelect 
+    (as ++ [SqlConcatAtt (Rename Nothing (Attr p Nothing)) 
+                         [" AND " ++ show f]]) 
+    ts 
+    cs 
+updatePC f p (SqlBin o l r) 
+  = SqlBin o (updatePC f p l) (updatePC f p r)
+updatePC _ _ _ = error 
+  "expected a sqlselect value!! but got either tref or empty!!!"
+
+
+
+
+
+
