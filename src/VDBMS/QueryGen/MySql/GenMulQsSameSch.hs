@@ -17,15 +17,11 @@ import VDBMS.VDB.Name (Attribute)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 import VDBMS.QueryLang.SQL.Pure.Ops
 
-import Control.Arrow ((***))
-
 -- | generates sql queries for relational queries passed
 --   with their type env based on
 --   a given list of attribute.
 genQsSameSch :: [Attribute] -> [(RAlgebra, RTypeEnv)] -> [SqlSelect]
 genQsSameSch as qts = fmap (genQSameSch as) qts
-  -- fmap (\(q,atts) -> adjustQSch as atts q) 
-  --      (fmap (transAlgebra2Sql *** rtypeEnvAtts) qts)
 
 -- | generates a sql query for a given relational algebra query
 --   with a given schema (list of atts).
