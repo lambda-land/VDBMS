@@ -4,6 +4,7 @@
 module VDBMS.QueryGen.MySql.GenMulQsSameSch (
 
        genQsSameSch
+       , genQSameSch
 
 ) where 
 
@@ -22,6 +23,12 @@ import Control.Arrow ((***))
 --   with their type env based on
 --   a given list of attribute.
 genQsSameSch :: [Attribute] -> [(RAlgebra, RTypeEnv)] -> [SqlSelect]
-genQsSameSch as qts =
-  fmap (\(q,atts) -> adjustQSch as atts q) 
-       (fmap (transAlgebra2Sql *** rtypeEnvAtts) qts)
+genQsSameSch as qts = fmap (genQSameSch as) qts
+  -- fmap (\(q,atts) -> adjustQSch as atts q) 
+  --      (fmap (transAlgebra2Sql *** rtypeEnvAtts) qts)
+
+-- | generates a sql query for a given relational algebra query
+--   with a given schema (list of atts).
+genQSameSch :: [Attribute] -> (RAlgebra, RTypeEnv) -> SqlSelect
+genQSameSch as (q,t) =
+  adjustQSch as (rtypeEnvAtts t) (transAlgebra2Sql q)

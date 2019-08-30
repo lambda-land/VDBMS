@@ -53,15 +53,15 @@ updatesAs res already aes
 --   function are either of the format of sqlselect as ts cs
 --   or sqlbin o l r. this function is used for combining 
 --   sql queries with the same schema into one query in genOneQ.
-updatePC :: FeatureExpr -> PCatt -> SqlSelect -> SqlSelect
-updatePC f p (SqlSelect as ts cs) 
+updatePC :: PCatt -> SqlSelect -> FeatureExpr -> SqlSelect
+updatePC p (SqlSelect as ts cs) f
   = SqlSelect 
     (as ++ [SqlConcatAtt (Rename Nothing (Attr p Nothing)) 
                          [" AND " ++ show f]]) 
     ts 
     cs 
-updatePC f p (SqlBin o l r) 
-  = SqlBin o (updatePC f p l) (updatePC f p r)
+updatePC p (SqlBin o l r) f
+  = SqlBin o (updatePC p l f) (updatePC p r f)
 updatePC _ _ _ = error 
   "expected a sqlselect value!! but got either tref or empty!!!"
 
