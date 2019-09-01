@@ -5,7 +5,7 @@ module VDBMS.Features.FeatureExpr.Parser (
 
 ) where
 
-import Data.ByteString.Char8 as BC (pack, unpack)
+import Data.ByteString.Char8 as BC (unpack)
 import qualified Data.ByteString as B 
 import Data.Void (Void)
 
