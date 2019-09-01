@@ -25,7 +25,6 @@ import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
-import VDBMS.Features.SAT 
 
 import Database.HDBC (SqlValue(..))
 

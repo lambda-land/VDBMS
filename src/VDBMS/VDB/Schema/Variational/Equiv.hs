@@ -6,7 +6,6 @@ module VDBMS.VDB.Schema.Variational.Equiv (
 ) where
 
 import VDBMS.VDB.Schema.Variational.Types
-import VDBMS.VDB.Schema.Variational.Core
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.Config (Config, equivConfig)
 
