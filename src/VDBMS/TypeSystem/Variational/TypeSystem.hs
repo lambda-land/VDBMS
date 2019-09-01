@@ -1,7 +1,7 @@
 -- | Statically syntesizes the types of vqs.
 module VDBMS.TypeSystem.Variational.TypeSystem (
 
-        TypeEnv(..)
+        TypeEnv
         , VariationalContext
         , typeOfQuery
         , AttrInfo(..)
@@ -13,16 +13,15 @@ module VDBMS.TypeSystem.Variational.TypeSystem (
 import VDBMS.QueryLang.RelAlg.Variational.Algebra 
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import VDBMS.QueryLang.RelAlg.Variational.Condition 
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Variational.Schema
-import VDBMS.Features.SAT (equivalent, tautology, satisfiable)
+import VDBMS.Features.SAT (equivalent, satisfiable)
 import VDBMS.DBMS.Value.Value
 
 import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM
 import qualified Data.Set as Set 
-import Data.Set (Set)
+-- import Data.Set (Set)
 import Data.List (intersect, nub, (\\))
 
 import Data.Data (Data, Typeable)
@@ -93,7 +92,7 @@ lookupAttr a t =
 attrConsistentWithType :: MonadThrow m => Attr -> TypeEnv -> m ()
 attrConsistentWithType a t = 
   do i <- nonAmbiguousAttr a t
-     pc <- lookupAttrFexpInEnv a t 
+     -- pc <- lookupAttrFexpInEnv a t 
      maybe (return ())
            (\q -> if q == attrQual i
                   then return ()
@@ -141,7 +140,7 @@ nonAmbiguousAttr a t =
 typeOfQuery :: MonadThrow m 
              => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
-typeOfQuery (SetOp o l r)    ctx s = typeSetOp l r ctx s 
+typeOfQuery (SetOp _ l r)    ctx s = typeSetOp l r ctx s 
 typeOfQuery (Proj oas rq)    ctx s = typeProj oas rq ctx s
 typeOfQuery (Sel c rq)       ctx s = typeSel c rq ctx s
 typeOfQuery (AChc f l r)     ctx s = 
@@ -151,7 +150,7 @@ typeOfQuery (AChc f l r)     ctx s =
 typeOfQuery (Join rl rr c)   ctx s = typeJoin rl rr c ctx s 
 typeOfQuery (Prod rl rr)     ctx s = typeProd rl rr ctx s 
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
-typeOfQuery Empty            ctx s = 
+typeOfQuery Empty            ctx _ = 
   appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
 
 -- | Determines the type a set operation query.
@@ -280,14 +279,14 @@ updateType a t = updateOptObj updatedTypeObj t
     updatedTypeObj = maybe tObj (\n -> SM.map (appName n) tObj) a 
     appName :: String -> AttrInformation -> AttrInformation
     appName n = fmap (updateQual (SubqueryQualifier n))
-    updateQual q (AttrInfo af at aq) = AttrInfo af at q 
+    updateQual q (AttrInfo af at _) = AttrInfo af at q 
 
 
 -- | Type checks variational sql conditions.
 typeVsqlCond :: MonadThrow m 
              => VsqlCond -> VariationalContext -> Schema -> TypeEnv 
              -> m ()
-typeVsqlCond (VsqlCond c)     ctx s t = appCtxtToEnv ctx t 
+typeVsqlCond (VsqlCond c)     ctx _ t = appCtxtToEnv ctx t 
   >>= typeCondition c ctx 
 typeVsqlCond (VsqlIn a q)     ctx s t = typeOfQuery q ctx s 
   >>= onlyAttrInType a t
@@ -313,8 +312,8 @@ onlyAttrInType a tenv tq =
 typeCondition :: MonadThrow m 
               => Condition -> VariationalContext -> TypeEnv
               -> m ()
-typeCondition (Lit b)      ctx t = return ()
-typeCondition (Comp o l r) ctx t = typeComp l r t
+typeCondition (Lit _)      _   _ = return ()
+typeCondition (Comp _ l r) _   t = typeComp l r t
 typeCondition (Not c)      ctx t = typeCondition c ctx t
 typeCondition (Or l r)     ctx t = typeCondition l ctx t >> typeCondition r ctx t
 typeCondition (And l r)    ctx t = typeCondition l ctx t >> typeCondition r ctx t
@@ -413,10 +412,10 @@ tableSch2TypeEnv :: Rename Relation -> TableSchema -> TypeEnv
 tableSch2TypeEnv rr tsch = 
   updateOptObj (SM.map (optSqlType2AttInfo rr) (getObj tsch)) tsch 
   where 
-    optSqlType2AttInfo rr ot = pure $ AttrInfo (getFexp ot) (getObj ot) 
-      $ maybe (RelQualifier (thing rr))
+    optSqlType2AttInfo r ot = pure $ AttrInfo (getFexp ot) (getObj ot) 
+      $ maybe (RelQualifier (thing r))
               (\n -> RelQualifier (Relation n)) 
-              (name rr)
+              (name r)
 
 -- | Applies a variational ctxt to a type. 
 --   Don't forget the empty env!!
