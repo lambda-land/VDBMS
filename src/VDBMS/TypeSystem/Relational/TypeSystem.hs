@@ -13,7 +13,7 @@ module VDBMS.TypeSystem.Relational.TypeSystem
 import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM
 import qualified Data.Set as Set 
-import Data.Set (Set)
+-- import Data.Set (Set)
 import Data.List (intersect, nub, (\\))
 import Data.Maybe (fromJust)
 
@@ -70,13 +70,13 @@ rtypeEnvAtts t =
 
 -- | static semantics that returns a relational table schema.
 typeOfRQuery :: MonadThrow m => RAlgebra -> RSchema -> m RTypeEnv
-typeOfRQuery (RSetOp o l r)    s = 
+typeOfRQuery (RSetOp _ l r)   s = 
   do tl <- typeOfRQuery l s
      tr <- typeOfRQuery r s
      sameRType tl tr 
      return tl
-typeOfRQuery q@(RProj as rq)     s = validSubQ rq >> typeRProj as rq s 
-typeOfRQuery q@(RSel c rq)       s = 
+typeOfRQuery (RProj as rq)     s = validSubQ rq >> typeRProj as rq s 
+typeOfRQuery (RSel c rq)       s = 
   do validSubQ rq
      t  <- typeOfRQuery (thing rq) s
      let t' = updateType (name rq) t
@@ -142,7 +142,7 @@ updateType a t = maybe t (\n -> SM.map (appName n) t) a
   where
     appName :: String -> RAttrInformation -> RAttrInformation
     appName n = fmap (updateQual (SubqueryQualifier n))
-    updateQual q (RAttrInfo at aq) = RAttrInfo at q
+    updateQual q (RAttrInfo at _) = RAttrInfo at q
 
 -- | Projects one attribute from a type.
 projAtt :: MonadThrow m => Attr -> RTypeEnv -> m RTypeEnv
@@ -221,7 +221,7 @@ lookupAttrTypeInEnv a t =
 typeSqlCond :: MonadThrow m 
             => SqlCond RAlgebra -> RTypeEnv -> RSchema
             -> m ()
-typeSqlCond (SqlCond c)  t s = typeRCondition c t
+typeSqlCond (SqlCond c)  t _ = typeRCondition c t
 typeSqlCond (SqlIn a q)  t s = typeOfRQuery q s >>= onlyAttrInType a t
 typeSqlCond (SqlNot c)   t s = typeSqlCond c t s 
 typeSqlCond (SqlOr l r)  t s = typeSqlCond l t s >> typeSqlCond r t s
@@ -243,7 +243,7 @@ onlyAttrInType a tenv tq =
 typeRCondition :: MonadThrow m
                => RCondition -> RTypeEnv
                -> m ()
-typeRCondition (RLit b)      t = return () 
+typeRCondition (RLit _)      _ = return () 
 typeRCondition (RComp _ l r) t = typeComp l r t 
 typeRCondition (RNot c)      t = typeRCondition c t
 typeRCondition (ROr l r)     t = typeRCondition l t >> typeRCondition r t
@@ -306,6 +306,7 @@ prodRTypes :: [RTypeEnv] -> RTypeEnv
 prodRTypes ts = SM.unionsWith combAttInfos ts
 
 -- | Combines attr informations. 
+combAttInfos :: RAttrInformation -> RAttrInformation -> RAttrInformation
 combAttInfos = (++) 
 
 -- | Checks that table/alias are unique. The relation names or
