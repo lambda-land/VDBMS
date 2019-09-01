@@ -13,15 +13,13 @@ module VDBMS.DBMS.Table.SqlVtable (
 
 ) where
 
-import Data.Map.Strict (Map)
+-- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
-import Data.List (deleteBy,groupBy)
+import Data.List (groupBy)
 
 import VDBMS.Variational.Opt 
 import VDBMS.VDB.Name
 import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.VDB.Schema.Variational.Schema
-import VDBMS.DBMS.Value.Value
 import VDBMS.Features.SAT 
 import VDBMS.DBMS.Table.Table
 
@@ -47,10 +45,10 @@ disjoinDuplicate p t = destVTuples p shrinkedFexpRes
     groupedTs = groupBy (\x y -> snd x == snd y) vtuples
     groupedFexpTs :: [([FeatureExpr],SqlRow)]
     groupedFexpTs = map pushDownList groupedTs
-    mapFst g (a,b) = (g a,b)
-    resTs = map (mapFst disjFexp) groupedFexpTs
+    mapFst' g (a,b) = (g a,b)
+    resTs = map (mapFst' disjFexp) groupedFexpTs
     dropFalseRowsRes = filter (satisfiable . fst) resTs
-    shrinkedFexpRes = map (mapFst shrinkFeatureExpr) dropFalseRowsRes
+    shrinkedFexpRes = map (mapFst' shrinkFeatureExpr) dropFalseRowsRes
 
 
 -- | constructs a list of fexp for the group of vtuples
@@ -60,6 +58,7 @@ disjoinDuplicate p t = destVTuples p shrinkedFexpRes
 pushDownList :: [(a,b)] -> ([a],b)
 pushDownList [(a,b)] = ([a],b)
 pushDownList ((a,b):l) = (a:fst (pushDownList l),b)
+pushDownList [] = error "wasn't expecting an empty list!!"
 
 -- | extract the pres cond out of sqlrow and attachs it
 --   as the presence condition to the tuple.
