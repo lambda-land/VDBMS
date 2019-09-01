@@ -102,9 +102,9 @@ combOpts f g os1 os2 =
 -- | helper for groupOpts.
 --   pushes down the list and picks the first of head.
 pushDown :: [(a,b)] -> (a,[b])
--- pushDown [] = error "got an empty list of opts!!!"
 pushDown [(a,b)] = (a,[b])
 pushDown ((a,b):l) = (a,b:snd (pushDown l))
+pushDown [] = error "got an empty list of opts!!!"
 
 -- | groups objects of opt that their fexp are equiv together. 
 groupOpts :: [Opt a] -> [Opt [a]]
