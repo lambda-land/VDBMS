@@ -12,7 +12,7 @@ module VDBMS.VDB.Schema.Variational.Lookups (
 
 ) where
 
-import Data.Map.Strict (Map)
+-- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
 import Control.Monad.Catch
