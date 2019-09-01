@@ -31,10 +31,10 @@ prettySqlCond c = top c
     top (SqlCond r) = show r
     top (SqlOr l r) = sub l ++ " OR " ++ sub r 
     top (SqlAnd l r) = sub l ++ " AND " ++ sub r
-    top c = sub c
+    top c' = sub c'
     sub (SqlIn a q) = attributeName (attribute a) ++ " IN ( " ++ show q ++ " ) "
-    sub (SqlNot c) = " NOT " ++ sub c
-    sub c = " ( " ++ top c ++ " ) "
+    sub (SqlNot c') = " NOT " ++ sub c'
+    sub c' = " ( " ++ top c' ++ " ) "
 
 instance Show a => Show (SqlCond a) where
   show = prettySqlCond
