@@ -1,16 +1,16 @@
 -- | Variational database schema types.
 module VDBMS.VDB.Schema.Relational.Types (
 
-        RTableSchema(..),
-        RSchema(..),
-        RSchemaError(..)
+        RTableSchema
+        , RSchema
+        , RSchemaError(..)
 
 ) where
 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
-import Data.Map.Strict (Map)
+import Data.Map.Strict 
 
 import Control.Monad.Catch (Exception)
 
