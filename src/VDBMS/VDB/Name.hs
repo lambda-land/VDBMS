@@ -1,18 +1,18 @@
 -- | Typed symbol domains.
 module VDBMS.VDB.Name (
 
-        Attribute(..),
-        Relation(..),
-        PresCondAtt(..),
-        PCatt(..),
-        Rename(..),
-        Alias(..),
-        Qualifier(..),
-        Attr(..),
-        Attributes(..),
-        renameMap,
-        attsSet,
-        qualName
+        Attribute(..)
+        , Relation(..)
+        , PresCondAtt(..)
+        , PCatt
+        , Rename(..)
+        , Alias
+        , Qualifier(..)
+        , Attr(..)
+        , Attributes
+        , renameMap
+        , attsSet
+        , qualName
 
 ) where
 
