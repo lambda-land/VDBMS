@@ -2,7 +2,7 @@
 -- TODO: write the checks according to the new data type.
 module VDBMS.VDB.Table.Checks where 
 
-import VDBMS.VDB.Table.Core 
+-- import VDBMS.VDB.Table.Core 
 
 {--
 -- | A database is a mapping from relations to tables.
