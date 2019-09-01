@@ -5,11 +5,11 @@
 module VDBMS.Features.FeatureExpr.Instances where
 
 import Data.Maybe (fromMaybe)
-import Data.Set (Set)
+-- import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.Map (Map)
+-- import Data.Map (Map)
 import qualified Data.Map.Strict as Map
-import Data.ByteString.Char8 as BC (pack, unpack)
+import Data.ByteString.Char8 as BC (pack)
 import Data.Convertible.Base
 import Data.SBV 
 
@@ -75,18 +75,19 @@ extractFeatureExp _ = Left $ ConvertError source sourceType destType msg
 
 -- | Less than equal for feature expressions.
 leFexp :: FeatureExpr -> FeatureExpr -> Bool
-leFexp (Lit False) r           = True
+leFexp (Lit False) _           = True
 leFexp (Lit True)  (Lit False) = False
-leFexp (Lit b)     r           = True
-leFexp l           (Lit b)     = False
-leFexp (Ref v)     (Ref v')    = True
-leFexp (Ref v)     r           = True
-leFexp l           (Ref v)     = False
+leFexp (Lit _)     _           = True
+leFexp _           (Lit _)     = False
+leFexp (Ref _)     (Ref _)     = True
+leFexp (Ref _)     _           = True
+leFexp _           (Ref _)     = False
 leFexp (Not f)     (Not f')    = leFexp f f'
-leFexp (Not f)     r           = False
+leFexp (Not _)     _           = False
 leFexp (And l r)   (And l' r') = leFexp l l' && leFexp r r'
-leFexp lf          (And l r)   = False
+leFexp _           (And _ _)   = False
 leFexp (Or l r)    (Or l' r')  = leFexp l l' && leFexp r r'
+leFexp _ _ = False
 
 
 instance Boolean FeatureExpr where
