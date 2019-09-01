@@ -17,7 +17,7 @@ module VDBMS.VDB.Schema.Variational.Core (
 
 ) where
 
-import Data.Map.Strict (Map)
+-- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
 import Data.Set (Set)
@@ -48,22 +48,23 @@ filterTSch t = updateOptObj (M.filter (\v -> satAnds f (fst v)) rt) t
 
 -- | drops the attribute that their fexp conjuncted with 
 --   the table schema fexp and a given fexp isn't satisfiable.
-filterTSch' :: FeatureExpr -> TableSchema -> TableSchema
-filterTSch' p t 
-  = updateOptObj (M.filter (\v -> satAnds (And f p) (fst v)) rt) t
-  where
-    f = tschFexp t
-    rt = tschRowType t 
+-- filterTSch' :: FeatureExpr -> TableSchema -> TableSchema
+-- filterTSch' p t 
+--   = updateOptObj (M.filter (\v -> satAnds (And f p) (fst v)) rt) t
+--   where
+--     f = tschFexp t
+--     rt = tschRowType t 
 
 -- | drops the objects that their fexp conjuncted with the 
 --   higher level fexp isn't satisfiable.
-filterSchema :: Schema -> Schema
-filterSchema s = undefined
+-- filterSchema :: Schema -> Schema
+-- filterSchema = undefined
+-- filterSchema s = undefined
   -- updateOptObj (mapSnd (M.filter M.null)
   -- (mapSnd (M.map (filterTSch' f)) ss)) s
-  where
-    f = featureModel s 
-    ss = schemaStrct s 
+  -- where
+    -- f = featureModel s 
+    -- ss = schemaStrct s 
 
 -- | returns a relation arity.
 relArity :: Relation -> Schema -> Int 
@@ -100,9 +101,9 @@ getRels s = Set.filter (flip validRel $ s) rels
   where 
     rels = M.keysSet $ schemaStrct s
     validRel :: Relation -> Schema -> Bool
-    validRel r s 
-      | lookupRelationFexp r s == Just (Lit False) = False
-      | lookupRelationFexp r s == Nothing = False
+    validRel r sch 
+      | lookupRelationFexp r sch == Just (Lit False) = False
+      | lookupRelationFexp r sch == Nothing = False
       | otherwise = True
 
 -- | propagates the table pres cond to its attributes.
