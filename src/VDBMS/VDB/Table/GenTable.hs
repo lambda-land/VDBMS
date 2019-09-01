@@ -26,7 +26,7 @@ import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
 --         a, B
 --   ADD REMOVEDUPLICATE TO THE RESULT!
 sqlVtables2VTable :: PresCondAtt -> [SqlVtable] -> Table
-sqlVtables2VTable p ts = mkVTable tabelSchema table 
+sqlVtables2VTable _ ts = mkVTable tabelSchema table 
   where
     tss         = map constSchemaFromSqlVtable ts -- [TableSchema]
     tabelSchema = combineTableSchema tss -- TableSchema
