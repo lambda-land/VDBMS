@@ -18,11 +18,11 @@ instance Database Sqlite3 where
   
   connect t p s = S.open t >>= return . Sqlite3 p s
 
-  disconnect (Sqlite3 p s c) = S.close c
+  disconnect (Sqlite3 _ _ c) = S.close c
   
-  schema (Sqlite3 p s c) = s 
+  schema (Sqlite3 _ s _) = s 
   
-  presCond (Sqlite3 p s c) = p
+  presCond (Sqlite3 p _ _) = p
   
   runQ = undefined
 

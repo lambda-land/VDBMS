@@ -17,13 +17,13 @@ instance Database PostgresHDBC where
 
   connect f p s = P.connectPostgreSQL f >>= return . PostgresHDBC p s
 
-  disconnect (PostgresHDBC p s c) = H.disconnect c
+  disconnect (PostgresHDBC _ _ c) = H.disconnect c
   
-  schema (PostgresHDBC p s c) = s
+  schema (PostgresHDBC _ s _) = s
   
-  presCond (PostgresHDBC p s c) = p 
+  presCond (PostgresHDBC p _ _) = p 
   
-  runQ (PostgresHDBC p s c) = undefined
+  runQ (PostgresHDBC _ _ _) = undefined
 
 
 -- ex1 = PostgresHDBC "../../../databases/testDB/test1.db" 

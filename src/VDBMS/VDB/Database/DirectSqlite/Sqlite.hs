@@ -6,10 +6,10 @@ module VDBMS.VDB.Database.DirectSqlite.Sqlite where
 import VDBMS.VDB.Schema.Variational.Schema
 -- import VDBMS.VDB.Table.Table
 import VDBMS.VDB.Name
-import VDBMS.VDB.Database.Database
+-- import VDBMS.VDB.Database.Database
 
 import qualified Database.SQLite3.Direct as S
-import Data.Text
+-- import Data.Text
 
 -- | A database residing in Sqlite and using directsqlite
 --   to connect to it. 

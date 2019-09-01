@@ -17,11 +17,11 @@ instance Database SqliteHDBC where
   
   connect f p s = S.connectSqlite3 f >>= return . SqliteHDBC p s
   
-  disconnect (SqliteHDBC p s c) = H.disconnect c
+  disconnect (SqliteHDBC _ _ c) = H.disconnect c
   
-  schema (SqliteHDBC p s c) = s
+  schema (SqliteHDBC _ s _) = s
   
-  presCond (SqliteHDBC p s c) = p
+  presCond (SqliteHDBC p _ _) = p
   
   runQ = undefined
 
