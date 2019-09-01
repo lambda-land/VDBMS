@@ -63,6 +63,7 @@ conditionEq (And r1 l1)      (And r2 l2)
  || (conditionEq r1 l2 && conditionEq l1 r2)
 conditionEq (CChc f1 r1 l1)  (CChc f2 r2 l2) 
   = equivalent f1 f2 && conditionEq r1 r2 && conditionEq l1 l2
+conditionEq _ _ = False
 
 instance Eq Condition where
   (==) = conditionEq
@@ -72,21 +73,21 @@ prettyRelCondition :: Condition -> String
 prettyRelCondition (CChc _ _ _) = error "cannot pretty print a choice of conditions!!"
 prettyRelCondition c = top c
   where
-    top (Comp c l r) = show l ++ show c ++ show r
+    top (Comp o l r) = show l ++ show o ++ show r
     top (And l r) = sub l ++ " AND " ++ sub r
     top (Or l r) = sub l ++ " OR " ++ sub r
-    top c = sub c
+    top cond = sub cond
     sub (Lit b) = if b then " true " else " false "
-    sub (Not c) = " NOT " ++ sub c
-    sub c = " ( " ++ top c ++ " ) "
+    sub (Not cond) = " NOT " ++ sub cond
+    sub cond = " ( " ++ top cond ++ " ) "
 
 instance Show Condition where
   show = prettyRelCondition
 
 -- | configures a condition.
 configureCondition :: Config Bool -> Condition -> RCondition
-configureCondition c (Lit b)        = RLit b
-configureCondition c (Comp o l r)   = RComp o l r
+configureCondition _ (Lit b)        = RLit b
+configureCondition _ (Comp o l r)   = RComp o l r
 configureCondition c (Not cond)     = RNot $ configureCondition c cond
 configureCondition c (Or l r)       = 
   ROr (configureCondition c l) (configureCondition c r)
