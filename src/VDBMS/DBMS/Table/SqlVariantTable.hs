@@ -13,15 +13,13 @@ module VDBMS.DBMS.Table.SqlVariantTable (
 ) where
 
 import Data.Set (Set)
-import qualified Data.Set as S
+-- import qualified Data.Set as S
 
 import VDBMS.Features.Variant 
 import VDBMS.VDB.Name
-import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Schema.Variational.Schema
-import VDBMS.DBMS.Value.Value
 import VDBMS.DBMS.Table.Table
 
 type SqlVariantTable = Variant SqlTable Bool
@@ -36,7 +34,7 @@ applyConfVariantTable p as t = updateVariant (applyConfTable c as p $ getVariant
 -- | drops rows with false pres cond in a variant table.
 dropRowsInVariantTable :: PresCondAtt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
 dropRowsInVariantTable p as t = updateVariant (dropRows p $ getVariant (applyConfVariantTable p as t)) t
-  where c = getConfig t
+  -- where c = getConfig t
 
 -- | applies the variant config to variant tables.
 applyConfVariantTables :: PresCondAtt -> Set Attribute -> [SqlVariantTable] -> [SqlVariantTable]
