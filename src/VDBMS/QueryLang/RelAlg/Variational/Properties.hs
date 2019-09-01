@@ -17,12 +17,13 @@ import VDBMS.Features.Config
 
 -- | checks whether two configured queries are equivalent or not.
 --   need to rewrite this! because == won't cut it!
-equivConfedQs :: Algebra -> Algebra -> Bool
-equivConfedQs = (==)
+-- equivConfedQs :: Algebra -> Algebra -> Bool
+-- equivConfedQs = (==)
 
 -- | checks commuting diagram for a variaitonal query.
 equivVqs :: [Config Bool] -> Algebra -> Algebra -> Bool
-equivVqs cs q q' = undefined
+equivVqs = undefined
+-- equivVqs cs q q' = undefined
 -- and $ zipWith equivConfedQs confq confq'
  --  where 
  --    confq  = map (configure q) cs
