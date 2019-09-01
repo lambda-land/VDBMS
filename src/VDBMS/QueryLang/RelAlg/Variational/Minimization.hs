@@ -1,7 +1,6 @@
 -- | Variation minimization of variational relational queries.
 -- ASSUMPTION: queries have been type checked before being
---             optimized!! except for derived queries having
---             a new name!
+--             optimized!! 
 module VDBMS.QueryLang.RelAlg.Variational.Minimization where 
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra 
@@ -9,14 +8,10 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.VDB.Name
 import VDBMS.TypeSystem.Variational.TypeSystem
 import VDBMS.VDB.Schema.Variational.Schema
--- import VDBMS.Features.Config
--- import VDBMS.QueryLang.ConfigQuery
 import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
--- import VDBMS.Variational.Variational
 
-import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM (lookup)
-import Data.Maybe (isNothing, catMaybes, fromJust)
+import Data.Maybe (catMaybes, fromJust)
 import Data.List (partition)
 
 -- | Applies the minimization rules until the query doesn't change.
@@ -83,6 +78,7 @@ chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
 chcDistr (AChc f (SetOp Diff q1 q2) (SetOp Diff q3 q4))
   = SetOp Diff (AChc f (chcDistr q1) (chcDistr q3))
                (AChc f (chcDistr q2) (chcDistr q4))
+chcDistr q = q
 
 -- | Pushes out projection as far as possible.
 -- Note that you don't necessarily want to push out all projs.
@@ -179,6 +175,24 @@ optSel q                = q
 
 -- | selection distributive properties.
 selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
+selDistr q@(Sel (VsqlAnd c1 c2) (Rename Nothing (Join rq1 rq2 c))) ctx s 
+  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
+  | check c1 t1 && check c2 t2 
+    = Join (Rename Nothing (Sel c1 (renameMap selDistr' rq1))) 
+           (Rename Nothing (Sel c2 (renameMap selDistr' rq2)))
+           c
+  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
+  | check c2 t1 && check c1 t2 
+    = Join (Rename Nothing (Sel c2 (renameMap selDistr' rq1))) 
+           (Rename Nothing (Sel c1 (renameMap selDistr' rq2))) 
+           c
+  | otherwise = q
+    where 
+      selDistr' q' = selDistr q' ctx s 
+      check cond env = (not (notInCond cond) && inAttInEnv cond env)
+                    || (notInCond cond && condAttsInEnv (relCond cond) env)
+      t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
+      t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
 selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s
   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
   | check c1 t1
@@ -192,23 +206,6 @@ selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s
            c2
   | otherwise = q 
     where
-      selDistr' q' = selDistr q' ctx s 
-      check cond env = (not (notInCond cond) && inAttInEnv cond env)
-                    || (notInCond cond && condAttsInEnv (relCond cond) env)
-      t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
-      t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
-selDistr q@(Sel (VsqlAnd c1 c2) (Rename Nothing (Join rq1 rq2 c))) ctx s 
-  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
-  | check c1 t1 && check c2 t2 
-    = Join (Rename Nothing (Sel c1 (renameMap selDistr' rq1))) 
-           (Rename Nothing (Sel c2 (renameMap selDistr' rq2)))
-           c
-  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
-  | check c2 t1 && check c1 t2 
-    = Join (Rename Nothing (Sel c2 (renameMap selDistr' rq1))) 
-           (Rename Nothing (Sel c1 (renameMap selDistr' rq2))) 
-           c
-    where 
       selDistr' q' = selDistr q' ctx s 
       check cond env = (not (notInCond cond) && inAttInEnv cond env)
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
@@ -229,12 +226,12 @@ selDistr (Join rq1 rq2 c) ctx s
 selDistr (Prod rq1 rq2)   ctx s 
   = Prod (renameMap (flip (flip selDistr ctx) s) rq1)
          (renameMap (flip (flip selDistr ctx) s) rq2)
-selDistr q ctx s = q 
+selDistr q _ _ = q 
 
 -- | gets a condition of the "IN" format and determines if
 --   its attribute exists in a type env.
 inAttInEnv :: VsqlCond -> TypeEnv -> Bool
-inAttInEnv (VsqlIn a q) t = attInEnv a t 
+inAttInEnv (VsqlIn a _) t = attInEnv a t 
 inAttInEnv _ _ = error "Can only accept conditions of the IN format!!"
 
 -- | checks if an attribute exists in a type env or not.
@@ -244,16 +241,16 @@ attInEnv a t = maybe False (\ _ -> True) (SM.lookup (attribute a) (getObj t))
 -- | takes a relational condition and determines if it's 
 --   consistent with a type env.
 condAttsInEnv :: Condition -> TypeEnv -> Bool
-condAttsInEnv (Lit b)        t = True
-condAttsInEnv (Comp o a1 a2) t = case (a1, a2) of 
-  (Val v, Att a)  -> attInEnv a t 
-  (Att a, Val v)  -> attInEnv a t 
+condAttsInEnv (Lit _)        _ = True
+condAttsInEnv (Comp _ a1 a2) t = case (a1, a2) of 
+  (Val _, Att a)  -> attInEnv a t 
+  (Att a, Val _)  -> attInEnv a t 
   (Att a, Att a') -> attInEnv a t && attInEnv a' t 
   _               -> True 
 condAttsInEnv (Not c)        t = condAttsInEnv c t 
 condAttsInEnv (Or c1 c2)     t = condAttsInEnv c1 t && condAttsInEnv c2 t 
 condAttsInEnv (And c1 c2)    t = condAttsInEnv c1 t && condAttsInEnv c2 t 
-condAttsInEnv (CChc f c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
+condAttsInEnv (CChc _ c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
 
 -- | projection distributive properties.
 prjDistr :: Algebra -> VariationalContext -> Schema -> Algebra
@@ -320,7 +317,7 @@ chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1))
     = Sel (VsqlAnd c2 (VsqlCChc f c1 c3)) (Rename Nothing (AChc f q1 q2))
   | otherwise = q
 chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) (Rename Nothing q1)) 
-	             (Sel (VsqlAnd c3 c4) (Rename Nothing q2)))
+               (Sel (VsqlAnd c3 c4) (Rename Nothing q2)))
   | vsqlCondEq (VsqlCond c1) c3 
     = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) c4)) 
           (Rename Nothing (AChc f q1 q2))
@@ -335,7 +332,7 @@ chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) (Rename Nothing q1))
           (Rename Nothing (AChc f q1 q2))
   | otherwise = q
 chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1)) 
-	             (Sel (VsqlCond (And c3 c4)) (Rename Nothing q2)))
+               (Sel (VsqlCond (And c3 c4)) (Rename Nothing q2)))
   | vsqlCondEq c1 (VsqlCond c3) 
     = Sel (VsqlAnd c1 (VsqlCChc f c2 (VsqlCond c4))) 
           (Rename Nothing (AChc f q1 q2))
@@ -350,7 +347,7 @@ chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1))
           (Rename Nothing (AChc f q1 q2))
   | otherwise = q
 chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) (Rename Nothing q1)) 
-	             (Sel (VsqlCond (And c3 c4)) (Rename Nothing q2)))
+               (Sel (VsqlCond (And c3 c4)) (Rename Nothing q2)))
   | conditionEq c1 c3 
     = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) (VsqlCond c4))) 
           (Rename Nothing (AChc f q1 q2))
@@ -366,11 +363,11 @@ chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) (Rename Nothing q1))
   | otherwise = q
 -- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
 chcRel (Sel c1 (Rename n (AChc f (Sel c2 (Rename Nothing q1)) 
-	                             (Sel c3 (Rename Nothing q2)))))
+                               (Sel c3 (Rename Nothing q2)))))
   = Sel (VsqlAnd c1 (VsqlCChc f c2 c3)) (Rename n (AChc f q1 q2))
 -- f<q₁ ⋈\_(c₁ ∧ c₂) q₂, q₃ ⋈\_(c₁ ∧ c₃) q₄> ≡ σ (f<c₂, c₃>) (f<q₁, q₃> ⋈\_c₁ f<q₂, q₄>)
 chcRel q@(AChc f (Join (Rename Nothing q1) (Rename Nothing q2) (And c1 c2)) 
-	           (Join (Rename Nothing q3) (Rename Nothing q4) (And c3 c4)))
+             (Join (Rename Nothing q3) (Rename Nothing q4) (And c3 c4)))
   | conditionEq c1 c3 
     = Sel (VsqlCChc f (VsqlCond c2) (VsqlCond c4)) 
           (Rename Nothing (Join (Rename Nothing (AChc f q1 q3)) 
@@ -388,7 +385,7 @@ chcRel q@(AChc f (Join (Rename Nothing q1) (Rename Nothing q2) (And c1 c2))
           (Rename Nothing (Join (Rename Nothing (AChc f q1 q3))
                                 (Rename Nothing (AChc f q2 q4)) c2))
   | otherwise = q
-
+chcRel q = q
 
 
 
