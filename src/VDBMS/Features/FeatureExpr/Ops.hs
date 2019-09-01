@@ -8,11 +8,11 @@ module VDBMS.Features.FeatureExpr.Ops (
 
 ) where
 
-import Data.SBV
+import Data.SBV hiding (select)
 import VDBMS.Features.Feature
 import VDBMS.Features.FeatureExpr.Types
 import VDBMS.Features.FeatureExpr.Core (imply)
-import VDBMS.Features.FeatureExpr.Instances
+import VDBMS.Features.FeatureExpr.Instances ()
 import VDBMS.Features.SAT
 
 -- | Determines if f is more general than f'.
@@ -27,13 +27,13 @@ satAnds l r = satisfiable (And l r)
 selectFeatureExpr :: Feature -> Bool -> FeatureExpr -> FeatureExpr
 selectFeatureExpr f b e = shrinkFeatureExpr (select e)
   where
-    select e@(Lit _)  = e
-    select e@(Ref f')
+    select fe@(Lit _)  = fe
+    select fe@(Ref f')
         | f == f'     = if b then true else false
-        | otherwise   = e
-    select (Not e)    = Not (select e)
-    select (And l r)  = And (select l) (select r)
-    select (Or  l r)  = Or  (select l) (select r)
+        | otherwise   = fe
+    select (Not fe)    = Not (select fe)
+    select (And l r)   = And (select l) (select r)
+    select (Or  l r)   = Or  (select l) (select r)
 
 -- | Reduce the size of a feature expression by applying some basic
 --   simplification rules.
