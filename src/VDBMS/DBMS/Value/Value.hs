@@ -11,4 +11,4 @@ module VDBMS.DBMS.Value.Value (
 import VDBMS.DBMS.Value.Type 
 import VDBMS.DBMS.Value.Core
 import VDBMS.DBMS.Value.CompOp
-import VDBMS.DBMS.Value.Eval
+import VDBMS.DBMS.Value.Eval ()
