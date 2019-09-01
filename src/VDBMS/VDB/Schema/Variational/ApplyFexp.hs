@@ -6,7 +6,7 @@ module VDBMS.VDB.Schema.Variational.ApplyFexp (
 
 ) where
 
-import Data.Map.Strict (Map)
+-- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
 import VDBMS.VDB.Schema.Variational.Types
