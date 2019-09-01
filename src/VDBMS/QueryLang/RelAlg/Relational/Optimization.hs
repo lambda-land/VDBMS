@@ -11,7 +11,7 @@ import VDBMS.VDB.Schema.Relational.Types
 -- import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
 -- -- import VDBMS.Variational.Variational
 
-import qualified Data.Map as M 
+-- import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM (lookup)
 import Data.Maybe (catMaybes, fromJust)
 import Data.List (partition)
@@ -114,6 +114,24 @@ optRSel q                 = q
 
 -- | selection distributive properties.
 selRDistr :: RAlgebra -> RSchema -> RAlgebra
+selRDistr q@(RSel (SqlAnd c1 c2) (Rename Nothing (RJoin rq1 rq2 c))) s 
+  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
+  | check c1 t1 && check c2 t2 
+    = RJoin (Rename Nothing (RSel c1 (renameMap selRDistr' rq1))) 
+            (Rename Nothing (RSel c2 (renameMap selRDistr' rq2)))
+            c
+  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
+  | check c2 t1 && check c1 t2 
+    = RJoin (Rename Nothing (RSel c2 (renameMap selRDistr' rq1))) 
+            (Rename Nothing (RSel c1 (renameMap selRDistr' rq2))) 
+            c
+  | otherwise = q 
+    where 
+      selRDistr' = flip selRDistr s 
+      check cond env = (not (notInCond cond) && inAttInEnv cond env)
+                    || (notInCond cond && condAttsInEnv (relCond cond) env)
+      t1 = fromJust $ typeOfRQuery (thing rq1) s 
+      t2 = fromJust $ typeOfRQuery (thing rq2) s 
 selRDistr q@(RSel c1 (Rename Nothing (RJoin rq1 rq2 c2))) s
   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
   | check c1 t1
@@ -131,23 +149,6 @@ selRDistr q@(RSel c1 (Rename Nothing (RJoin rq1 rq2 c2))) s
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfRQuery (thing rq1) s 
       t2 = fromJust $ typeOfRQuery (thing rq2) s 
-selRDistr q@(RSel (SqlAnd c1 c2) (Rename Nothing (RJoin rq1 rq2 c))) s 
-  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
-  | check c1 t1 && check c2 t2 
-    = RJoin (Rename Nothing (RSel c1 (renameMap selRDistr' rq1))) 
-           (Rename Nothing (RSel c2 (renameMap selRDistr' rq2)))
-           c
-  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
-  | check c2 t1 && check c1 t2 
-    = RJoin (Rename Nothing (RSel c2 (renameMap selRDistr' rq1))) 
-           (Rename Nothing (RSel c1 (renameMap selRDistr' rq2))) 
-           c
-    where 
-      selRDistr' = flip selRDistr s 
-      check cond env = (not (notInCond cond) && inAttInEnv cond env)
-                    || (notInCond cond && condAttsInEnv (relCond cond) env)
-      t1 = fromJust $ typeOfRQuery (thing rq1) s 
-      t2 = fromJust $ typeOfRQuery (thing rq2) s 
 selRDistr (RSel c rq)       s 
   = RSel c (renameMap (flip selRDistr s) rq)
 selRDistr (RSetOp o q1 q2)  s 
@@ -161,12 +162,12 @@ selRDistr (RJoin rq1 rq2 c) s
 selRDistr (RProd rq1 rq2)   s 
   = RProd (renameMap (flip selRDistr s) rq1)
          (renameMap (flip selRDistr s) rq2)
-selRDistr q s = q 
+selRDistr q _ = q 
 
 -- | gets a condition of the "IN" format and determines if
 --   its attribute exists in a type env.
 inAttInEnv :: SqlCond RAlgebra -> RTypeEnv -> Bool
-inAttInEnv (SqlIn a q) t = attInEnv a t 
+inAttInEnv (SqlIn a _) t = attInEnv a t 
 inAttInEnv _ _ = error "Can only accept conditions of the IN format!!"
 
 -- | checks if an attribute exists in a type env or not.
@@ -176,10 +177,10 @@ attInEnv a t = maybe False (\ _ -> True) (SM.lookup (attribute a) t)
 -- | takes a relational condition and determines if it's 
 --   consistent with a type env.
 condAttsInEnv :: RCondition -> RTypeEnv -> Bool
-condAttsInEnv (RLit b)        t = True
-condAttsInEnv (RComp o a1 a2) t = case (a1, a2) of 
-  (Val v, Att a)  -> attInEnv a t 
-  (Att a, Val v)  -> attInEnv a t 
+condAttsInEnv (RLit _)        _ = True
+condAttsInEnv (RComp _ a1 a2) t = case (a1, a2) of 
+  (Val _, Att a)  -> attInEnv a t 
+  (Att a, Val _)  -> attInEnv a t 
   (Att a, Att a') -> attInEnv a t && attInEnv a' t 
   _               -> True 
 condAttsInEnv (RNot c)        t = condAttsInEnv c t 

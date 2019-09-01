@@ -10,8 +10,6 @@ module VDBMS.QueryGen.MySql.GenMulQsSameSch (
 
 import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
 import VDBMS.QueryLang.SQL.Pure.Sql (SqlSelect)
-import VDBMS.VDB.Schema.Variational.Schema (TableSchema, getTableSchAttsList)
-import VDBMS.VDB.Schema.Relational.Types (RSchema)
 import VDBMS.TypeSystem.Relational.TypeSystem (RTypeEnv, rtypeEnvAtts)
 import VDBMS.VDB.Name (Attribute)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
