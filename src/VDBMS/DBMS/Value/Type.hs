@@ -9,7 +9,6 @@ module VDBMS.DBMS.Value.Type (
 -- import Prelude hiding (Ordering(..))
 
 import Data.Data (Data,Typeable)
-import Data.Text (Text)
 import Data.Time.LocalTime (ZonedTime,zonedTimeToUTC)
 
 import Database.HDBC (SqlValue(..))
