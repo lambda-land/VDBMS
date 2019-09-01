@@ -12,7 +12,7 @@ allow-newer: true
 packages: 
 - .
 # - lib/haskelldb
-- /Users/Paris/Desktop/VDBMS/lib/haskelldb
+#- /Users/Paris/Desktop/VDBMS/lib/haskelldb
 flags: {}
 # extra-deps: [HDBC-sqlite3-2.3.3.1, time-1.9.2]
 # extra-deps: [HDBC-sqlite3-2.3.3.1, haskelldb-2.2.5]
@@ -20,6 +20,6 @@ extra-deps: [HDBC-sqlite3-2.3.3.1,
              HDBC-postgresql-2.3.2.6]
 
 extra-lib-dirs: 
-   - lib/haskelldb
+#   - lib/haskelldb
 #  - /Users/Paris/Desktop/VDBMS/lib/haskelldb
    

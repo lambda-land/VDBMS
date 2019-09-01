@@ -43,7 +43,7 @@ dependencies:
 - bytestring
 - directory
 - clock
-- haskelldb >= 2.2.5 
+# - haskelldb >= 2.2.5 
 - pretty
 - exceptions
 - parser-combinators
