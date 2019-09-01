@@ -10,9 +10,6 @@ module VDBMS.QueryLang.RelAlg.Relational.Algebra (
 import Data.Data (Data,Typeable)
 
 import VDBMS.VDB.Name
-import VDBMS.Features.FeatureExpr.FeatureExpr (FeatureExpr)
-import VDBMS.Variational.Variational
-import VDBMS.Variational.Opt
 import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Basics.SetOp
 
