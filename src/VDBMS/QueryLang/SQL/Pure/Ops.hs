@@ -22,7 +22,7 @@ adjustQSch resAtts qsAtts (SqlSelect as ts cs)
   = SqlSelect (updatesAs resAtts qsAtts as) ts cs
 adjustQSch resAtts qsAtts (SqlBin o l r) 
   = SqlBin o (adjustQSch resAtts qsAtts l) (adjustQSch resAtts qsAtts r)
-adjustQSch resAtts qsAtts q@(SqlTRef r) 
+adjustQSch resAtts qsAtts q@(SqlTRef _) 
   = SqlSelect (updatesAs resAtts qsAtts [SqlAllAtt]) [SqlSubQuery (Rename Nothing q)] []
 adjustQSch resAtts qsAtts SqlEmpty
   = SqlSelect (updatesAs resAtts qsAtts []) [SqlSubQuery (Rename Nothing SqlEmpty)] []
