@@ -2,8 +2,8 @@
 module VDBMS.QueryLang.RelAlg.Variational.Algebra (
 
         Algebra(..)
-        , OptAttribute(..)
-        , OptAttributes(..)
+        , OptAttribute
+        , OptAttributes
         , VsqlCond(..)
         , module VDBMS.QueryLang.RelAlg.Basics.SetOp
         , module VDBMS.QueryLang.RelAlg.Variational.Condition 
@@ -11,13 +11,13 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , attrName
         , attrAlias
         , vsqlCondEq
+        , configureAlgebra_
         
 
 ) where
 
 import Data.Data (Data,Typeable)
 import Data.SBV (Boolean(..))
-import Data.Maybe (catMaybes)
 
 import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Variational.Condition
@@ -32,9 +32,7 @@ import VDBMS.Features.SAT (equivalent)
 import VDBMS.VDB.Schema.Relational.Lookups (rlookupAttsList)
 import VDBMS.VDB.Schema.Variational.Schema 
 
--- import Data.Map.Strict (Map)
--- import qualified Data.Map.Strict as M
-import Data.Set (Set)
+-- import Data.Set (Set)
 import qualified Data.Set as Set
 
 --
@@ -81,6 +79,7 @@ vsqlCondEq (VsqlCond (And r1 l1)) (VsqlAnd r2 l2)
  || (vsqlCondEq (VsqlCond r1) l2 && vsqlCondEq (VsqlCond l1) r2)
 vsqlCondEq (VsqlCChc f1 r1 l1) (VsqlCChc f2 r2 l2) 
   = equivalent f1 f2 && vsqlCondEq r1 r2 && vsqlCondEq l1 l2
+vsqlCondEq _ _ = False
 
 instance Eq VsqlCond where
   (==) = vsqlCondEq
@@ -94,10 +93,10 @@ prettySqlCond c = top c
     top (VsqlCond r) = show r
     top (VsqlOr l r) = sub l ++ " OR " ++ sub r 
     top (VsqlAnd l r) = sub l ++ " AND " ++ sub r
-    top c = sub c
+    top cond = sub cond
     sub (VsqlIn a q) = attributeName (attribute a) ++ " IN ( " ++ show q ++ " ) "
-    sub (VsqlNot c) = " NOT " ++ sub c
-    sub c = " ( " ++ top c ++ " ) "
+    sub (VsqlNot cond) = " NOT " ++ sub cond
+    sub cond = " ( " ++ top cond ++ " ) "
 
 -- | Configure Variational SQL conditions.
 configureVsqlCond :: Config Bool -> VsqlCond -> SqlCond RAlgebra
@@ -199,8 +198,8 @@ configureAlgebra c (Join l r cond)
 configureAlgebra c (Prod l r)       
   = RProd (renameMap (configureAlgebra c) l) 
           (renameMap (configureAlgebra c) r)
-configureAlgebra c (TRef r)        = RTRef r 
-configureAlgebra c Empty           = REmpty
+configureAlgebra _ (TRef r)        = RTRef r 
+configureAlgebra _ Empty           = REmpty
 
 -- | configure a query wrt the schema.
 configureAlgebra_ :: Config Bool -> Schema -> Algebra -> RAlgebra
@@ -232,7 +231,7 @@ configureAlgebra_ c s (TRef r)
       vas = maybe [] id (lookupRelAttsList (thing r) s)
       ras = maybe [] id (rlookupAttsList (thing r) confedsch)
       confedsch = configure c s 
-configureAlgebra_ c s Empty = REmpty
+configureAlgebra_ _ _ Empty = REmpty
 
 -- | Optionalizes an algebra.
 --   Note that optionalization doesn't consider schema at all. it just

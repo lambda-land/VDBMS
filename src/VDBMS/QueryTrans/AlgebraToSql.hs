@@ -8,9 +8,6 @@ module VDBMS.QueryTrans.AlgebraToSql (
 import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.VDB.Name 
-import VDBMS.QueryLang.SQL.Condition 
-import VDBMS.QueryLang.RelAlg.Basics.SetOp
-import VDBMS.VDB.Schema.Variational.Schema
 
 import Data.List ((\\))
 
