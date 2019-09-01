@@ -2,14 +2,12 @@
 module VDBMS.Variational.Variational (
         
         Variational(..)
-        , Variant(..)
-        , VariantGroup(..)
+        , Variant
+        , VariantGroup
 
 ) where
 
 import VDBMS.Features.Config 
-import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.VDB.Name (Rename(..))
 import VDBMS.Variational.Opt
 import VDBMS.Features.ConfFexp (confs2fexp)
 
@@ -47,7 +45,7 @@ class Variational a where
     where
       -- pushdown :: [(Config Bool, NonVariational a)]
       --          -> ([Config Bool], NonVariational a)
-      pushdown xs = foldr (\(c,_) (cs,x) -> (c:cs,x)) 
+      pushdown xs = foldr (\(c,_) (cs',x) -> (c:cs',x)) 
                           ([fst $ head xs], snd $ head xs) 
                           (tail xs)
 
