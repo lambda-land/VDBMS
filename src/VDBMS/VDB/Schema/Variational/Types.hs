@@ -1,14 +1,15 @@
 -- | Variational database schema types.
 module VDBMS.VDB.Schema.Variational.Types (
 
-        RowType(..)
-        , TableSchema(..)
-        , Schema(..)
+        RowType
+        , TableSchema
+        , Schema
         , SchemaError(..)
         , featureModel
         , schemaStrct
         , tschFexp
         , tschRowType
+        , configSchema
 
 ) where
 
@@ -17,7 +18,8 @@ import Prelude hiding (map)
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
-import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe, map, empty)
+-- import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe, map, empty)
+import Data.Map.Strict (Map, mapMaybe, empty)
 
 import Control.Monad.Catch 
 
@@ -28,7 +30,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Variational.Variational
 import VDBMS.Features.Config (Config)
-import VDBMS.Features.SAT (satisfiable)
+-- import VDBMS.Features.SAT (satisfiable)
 import VDBMS.Features.ConfFexp (validConfsOfFexp)
 
 -- | Type of a relation in the database.
@@ -71,8 +73,8 @@ configTableSchema c t
     where 
       tablePresCond = getFexp t
       table = getObj t
-      configAttribute c ot 
-        | evalFeatureExpr c (getFexp ot) = Just $ getObj ot
+      configAttribute conf ot 
+        | evalFeatureExpr conf (getFexp ot) = Just $ getObj ot
         | otherwise = Nothing
 
 
@@ -81,15 +83,15 @@ configTableSchema c t
 --   of optionalizing table schema, if satisfiable it includes the relation
 --   in the relational schema if not it doesn't include it. Also, the new
 --   fexp is the conjuncted one.
-optSchema :: Schema -> [Opt RSchema]
-optSchema s = undefined
-  where
-    schStruct = schemaStrct s
-    schFexp = featureModel s
-    optedRels = map (filter (satisfiable . getFexp)) $
-      map (mapFst (shrinkFeatureExpr . And schFexp)) $ 
-      map optTableSch schStruct
-    resList = undefined
+-- optSchema :: Schema -> [Opt RSchema]
+-- optSchema s = undefined
+--   where
+--     schStruct = schemaStrct s
+--     schFexp = featureModel s
+--     optedRels = map (filter (satisfiable . getFexp)) $
+--       map (mapFst (shrinkFeatureExpr . And schFexp)) $ 
+--       map optTableSch schStruct
+    -- resList = undefined
 
 
 -- | Optionalizes a rowtype.
@@ -99,43 +101,43 @@ optSchema s = undefined
 --               presence condition.
 --   Note: we're not dropping the same lists of attributes for now.
 --         Such a filtering will happen at the end of optionalizing a schema.
-optAttrs :: RowType -> [Opt RTableSchema]
-optAttrs r = disjunctSameAtts
-  where
-    rList = fmap 
-      (\(a,ot) -> updateOptObj (a, getObj ot) ot) 
-      $ toList r -- ^ [opt (att,sqltype)]
-    rGrouped = groupOpts rList -- ^ [opt [(att,sqltype)]]
-    rNotGrouped = mapFstSnd Not (\_ -> []) rGrouped 
-    rMap = delete (Lit False) $ delete (Not $ Lit True) -- highly relies on eq of fexp!!
-      $ union (fromList rGrouped) (fromList rNotGrouped) -- Map Fexp (Att,Sqltype)
-    resList = [ applyFuncObj (getObj fas' ++) fas
-                | fas  <- toList rMap, 
-                  fas' <- toList rMap, 
-                  tautImplyFexps (getFexp fas) (getFexp fas')]
-                  -- tautology (imply (getFexp fas) (getFexp fas'))]
-    resMap = mapSnd fromList resList
-    -- note that fromList drops repetitive attributes in a list!
-    disjunctSameAtts = [ applyFuncFexp 
-                         (shrinkFeatureExpr . Or (getFexp optMapAtts')) 
-                         optMapAtts
-                         | optMapAtts <- resMap, 
-                           optMapAtts' <- resMap, 
-                           getObj optMapAtts == getObj optMapAtts']
+-- optAttrs :: RowType -> [Opt RTableSchema]
+-- optAttrs r = disjunctSameAtts
+--   where
+--     rList = fmap 
+--       (\(a,ot) -> updateOptObj (a, getObj ot) ot) 
+--       $ toList r -- ^ [opt (att,sqltype)]
+--     rGrouped = groupOpts rList -- ^ [opt [(att,sqltype)]]
+--     rNotGrouped = mapFstSnd Not (\_ -> []) rGrouped 
+--     rMap = delete (Lit False) $ delete (Not $ Lit True) -- highly relies on eq of fexp!!
+--       $ union (fromList rGrouped) (fromList rNotGrouped) -- Map Fexp (Att,Sqltype)
+--     resList = [ applyFuncObj (getObj fas' ++) fas
+--                 | fas  <- toList rMap, 
+--                   fas' <- toList rMap, 
+--                   tautImplyFexps (getFexp fas) (getFexp fas')]
+--                   -- tautology (imply (getFexp fas) (getFexp fas'))]
+--     resMap = mapSnd fromList resList
+--     -- note that fromList drops repetitive attributes in a list!
+--     disjunctSameAtts = [ applyFuncFexp 
+--                          (shrinkFeatureExpr . Or (getFexp optMapAtts')) 
+--                          optMapAtts
+--                          | optMapAtts <- resMap, 
+--                            optMapAtts' <- resMap, 
+--                            getObj optMapAtts == getObj optMapAtts']
 
 -- | Conjuncts the fexp of variational table schema 
 --   with the feature expression assigned to a relational table schema
 --   and if its satisfiable it returns the relational table schema with
 --   the new fexp. If not, it doesn't return it.
 --   Helper for optSchema.
-optTableSch :: TableSchema -> [Opt RTableSchema]
-optTableSch t = mapFst shrinkFeatureExpr 
-                           $ filter (satisfiable . getFexp) 
-                                  $ mapFst (And tableFexp) optedTable
-  where 
-    rowtype         = getObj t
-    tableFexp       = getFexp t
-    optedTable = optAttrs rowtype
+-- optTableSch :: TableSchema -> [Opt RTableSchema]
+-- optTableSch t = mapFst shrinkFeatureExpr 
+--                            $ filter (satisfiable . getFexp) 
+--                                   $ mapFst (And tableFexp) optedTable
+--   where 
+--     rowtype         = getObj t
+--     tableFexp       = getFexp t
+--     optedTable = optAttrs rowtype
 
 
 instance Variational Schema where
