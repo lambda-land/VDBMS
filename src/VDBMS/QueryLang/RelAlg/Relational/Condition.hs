@@ -32,13 +32,13 @@ data RCondition
 prettyRCondition :: RCondition -> String
 prettyRCondition c = top c
   where
-    top (RComp c l r) = show l ++ show c ++ show r
+    top (RComp o l r) = show l ++ show o ++ show r
     top (RAnd l r) = sub l ++ " AND " ++ sub r
     top (ROr l r) = sub l ++ " OR " ++ sub r
-    top c = sub c
+    top c' = sub c'
     sub (RLit b) = if b then " true " else " false "
-    sub (RNot c) = " NOT " ++ sub c
-    sub c = " ( " ++ top c ++ " ) "
+    sub (RNot c') = " NOT " ++ sub c'
+    sub c' = " ( " ++ top c' ++ " ) "
 
 instance Show RCondition where
   show = prettyRCondition
