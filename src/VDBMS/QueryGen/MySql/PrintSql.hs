@@ -10,7 +10,7 @@ module VDBMS.QueryGen.MySql.PrintSql (
 import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.VDB.Name
 
-import Prelude hiding ((<>))
+import Prelude hiding ((<>), concat)
 import Text.PrettyPrint
 import Data.Maybe (isNothing, isJust, fromJust)
 
@@ -51,6 +51,7 @@ ppAtts (SqlAttr ra)
       <> a 
       <+> text "AS" 
       <+> text (fromJust n)
+  | otherwise = error "the attr expr must have already matched one of the cases!"
     where 
       n = name ra
       q = (qualifier . thing) ra
@@ -58,7 +59,8 @@ ppAtts (SqlAttr ra)
 ppAtts (SqlNullAttr rnull) 
   | isNothing n = text "NULL"
   | isJust n    = text "NULL AS" <+> text (fromJust n)
-    where
+  | otherwise = error "the attr expr must have already matched one of the cases!"
+      where
       n = name rnull
 ppAtts (SqlConcatAtt ra ss) 
   | isNothing n && isNothing q = concat a
@@ -69,6 +71,7 @@ ppAtts (SqlConcatAtt ra ss)
   | isJust n    && isJust q    
     = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
       <+> text "AS" <+> text (fromJust n)
+  | otherwise = error "the attr expr must have already matched one of the cases!"
     where 
       n = name ra
       q = (qualifier . thing) ra
@@ -121,7 +124,7 @@ ppTemp (SqlCTE rqs q)
     <+> hcomma rqt rqs
     <+> ppSql q
     where
-      rqt (n,q) = text n <+> text "AS" <+> parens (ppSql q)
+      rqt (n,q') = text n <+> text "AS" <+> parens (ppSql q')
 ppTemp (SqlView (n, q)) 
   = text "CREATE VIEW"
     <+> text n 
