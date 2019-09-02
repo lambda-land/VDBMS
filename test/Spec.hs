@@ -1,6 +1,6 @@
 import Test.Tasty
 
-import qualified Schema.Test as S
+-- import qualified Schema.Test as S
 
 -- import TestParser 
 -- import TestTranslater_Phase1
@@ -10,7 +10,8 @@ import qualified Schema.Test as S
 -- import TestEmployeeQuery
 
 main :: IO ()
-main = defaultMain $ testGroup "top level" [S.unitTests]
+main = undefined
+-- defaultMain $ testGroup "top level" [S.unitTests]
 
 -- main = defaultMain $ testGroup ""
 --         [ -- testTwoOptionExample

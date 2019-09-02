@@ -27,25 +27,25 @@ type SqlVariantTable = Variant SqlTable Bool
 ------------------- apply config ----------------------
 
 -- | applies the variant config to the variant table.
-applyConfVariantTable :: PresCondAtt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
+applyConfVariantTable :: PCatt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
 applyConfVariantTable p as t = updateVariant (applyConfTable c as p $ getVariant t) t
   where c = getConfig t
 
 -- | drops rows with false pres cond in a variant table.
-dropRowsInVariantTable :: PresCondAtt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
+dropRowsInVariantTable :: PCatt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
 dropRowsInVariantTable p as t = updateVariant (dropRows p $ getVariant (applyConfVariantTable p as t)) t
   -- where c = getConfig t
 
 -- | applies the variant config to variant tables.
-applyConfVariantTables :: PresCondAtt -> Set Attribute -> [SqlVariantTable] -> [SqlVariantTable]
+applyConfVariantTables :: PCatt -> Set Attribute -> [SqlVariantTable] -> [SqlVariantTable]
 applyConfVariantTables p as = fmap $ applyConfVariantTable p as
 
 -- | drops rows with false pres cond over a list of variant tables.
--- dropRowsInVariantTables :: PresCondAtt -> [SqlVariantTable] -> [SqlVariantTable]
+-- dropRowsInVariantTables :: PCatt -> [SqlVariantTable] -> [SqlVariantTable]
 -- dropRowsInVariantTables p = fmap $ dropRowsInVariantTable p 
 
 -- | drops the pres key value of all rows in a variant table.
-dropPresInVariantTable :: PresCondAtt -> SqlVariantTable -> SqlVariantTable
+dropPresInVariantTable :: PCatt -> SqlVariantTable -> SqlVariantTable
 dropPresInVariantTable p t = updateVariant (dropPresInTable p (getVariant t)) t
 
 -- | generates the relation schema (rowtype) of a variant table.
@@ -81,7 +81,7 @@ conformSqlVariantTableToSchema t r = updateVariant
 --         attributes.
 -- DANGER: changed Attribute to (Attribute Nothing)
 -- MAY CAUSE PROBLEMS!!!
-addTuplePresCond :: PresCondAtt -> SqlVariantTable -> SqlTable
+addTuplePresCond :: PCatt -> SqlVariantTable -> SqlTable
 addTuplePresCond p vt = insertAttValToSqlTable (Attribute $ presCondAttName p) fexp t
   where 
     fexp = fexp2sqlval $ conf2fexp $ getConfig vt

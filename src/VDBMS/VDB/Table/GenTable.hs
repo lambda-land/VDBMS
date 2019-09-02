@@ -8,7 +8,7 @@ module VDBMS.VDB.Table.GenTable (
 ) where 
 
 import VDBMS.VDB.Table.Core
-import VDBMS.VDB.Name (PresCondAtt)
+import VDBMS.VDB.Name (PCatt)
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.SqlVtable
@@ -25,7 +25,7 @@ import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
 --         a, A
 --         a, B
 --   ADD REMOVEDUPLICATE TO THE RESULT!
-sqlVtables2VTable :: PresCondAtt -> [SqlVtable] -> Table
+sqlVtables2VTable :: PCatt -> [SqlVtable] -> Table
 sqlVtables2VTable _ ts = mkVTable tabelSchema table 
   where
     tss         = map constSchemaFromSqlVtable ts -- [TableSchema]
@@ -46,7 +46,7 @@ sqlVtables2VTable _ ts = mkVTable tabelSchema table
 --     4) union all res of 3
 --   NOTES: DOESN'T WORK RN DUE TO CONF2FEXP AND FEXP2CONF! 
 --          TODO: FIX AFTER SIGMOD SUBMISSION!!!!
-sqlVariantTables2VTable :: PresCondAtt -> [SqlVariantTable] -> Table
+sqlVariantTables2VTable :: PCatt -> [SqlVariantTable] -> Table
 sqlVariantTables2VTable p ts = mkVTable tabelSchema table 
   where
     tss         = map constructSchemaFromSqlVariantTable ts -- [TableSchema]

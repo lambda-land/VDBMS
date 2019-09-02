@@ -9,7 +9,7 @@ import qualified Database.HDBC as H
 import qualified Database.HDBC.PostgreSQL as P
 
 -- | Postgresql DBMS with HDBC interface.
-data PostgresHDBC = PostgresHDBC PresCondAtt Schema P.Connection
+data PostgresHDBC = PostgresHDBC PCatt Schema P.Connection
 
 instance Database PostgresHDBC where
   

@@ -9,7 +9,7 @@ import qualified Database.HDBC as H
 import qualified Database.HDBC.Sqlite3 as S
 
 -- | Sqlite DBMS with HDBC interface.
-data SqliteHDBC = SqliteHDBC PresCondAtt Schema S.Connection
+data SqliteHDBC = SqliteHDBC PCatt Schema S.Connection
 
 instance Database SqliteHDBC where
   

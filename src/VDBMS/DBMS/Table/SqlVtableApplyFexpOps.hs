@@ -25,14 +25,14 @@ import VDBMS.DBMS.Table.Table
 -- | runs the sat solver on tuples to filter out tuples
 --   that are unsatisfiable in the context of the vtabel
 --   i.e. the feature expr assigned to it.
-satFexpVtable :: PresCondAtt -> SqlVtable -> SqlVtable
+satFexpVtable :: PCatt -> SqlVtable -> SqlVtable
 satFexpVtable p t = updateOptObj table t 
   where
     f     = getFexp t 
     table = dropRows p $ map (satFexpRow f p) $ getObj t 
 
 -- | checks the satisfiability of a row with a fexp.
-satFexpRow :: FeatureExpr -> PresCondAtt -> SqlRow -> SqlRow
+satFexpRow :: FeatureExpr -> PCatt -> SqlRow -> SqlRow
 satFexpRow f p r 
   | check     = M.insert (presCondAttName p) (fexp2sqlval $ And f fp) r 
   | otherwise = M.empty
@@ -43,7 +43,7 @@ satFexpRow f p r
     check = tautImplyFexps f fp
 
 -- | filters out unsat tuples for a list of sqlvtables.
-satFexpVtables :: PresCondAtt -> [SqlVtable] -> [SqlVtable]
+satFexpVtables :: PCatt -> [SqlVtable] -> [SqlVtable]
 satFexpVtables p = map $ satFexpVtable p 
 
 -- | constructs the table schema from the sqlvtable.

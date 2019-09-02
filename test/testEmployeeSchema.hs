@@ -7,10 +7,7 @@ import VDB.Translations.VSqlToAlgebra
 import VDB.SQL
 import VDB.Algebra
 import VDB.Name 
-import VDB.FeatureExpr 
--- import VDB.Condition 
-import VDB.Variational
--- import qualified VDB.Value as V
+import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDB.Variational
 import VDB.Schema
 import VDB.Config

@@ -3,7 +3,7 @@ module VDBMS.VDB.Name (
 
         Attribute(..)
         , Relation(..)
-        , PresCondAtt(..)
+        , presCondAttName
         , PCatt
         , Rename(..)
         , Alias
@@ -80,12 +80,12 @@ newtype Relation = Relation { relationName :: Name }
   deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)
 
 -- | Name of presence condition attribute in db.
-newtype PresCondAtt = PresCondAtt { presCondAttName :: Name }
-  deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)  
+-- newtype PresCondAtt = PresCondAtt { presCondAttName :: Name }
+--   deriving (Data,Eq,IsString,Ord,Read,Show,Typeable)  
 
--- | presence condition attribute name.
+-- | presence condition attribute.
 type PCatt = Attribute
 
--- | pc attribute name.
--- pcAtt :: Name -> PCatt
--- pcAtt pc = Attribute pc
+-- | presence condition attribute name.
+presCondAttName :: PCatt -> Name 
+presCondAttName (Attribute p) = p

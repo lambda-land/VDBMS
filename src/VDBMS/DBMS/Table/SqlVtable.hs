@@ -33,7 +33,7 @@ type VTuples = [VTuple]
 --   cond, inserts only one such tuple and disjuncts all 
 --   their pres conds.
 -- NOTE: time this separately!!
-disjoinDuplicate :: PresCondAtt -> SqlTable -> SqlTable
+disjoinDuplicate :: PCatt -> SqlTable -> SqlTable
 disjoinDuplicate p t = destVTuples p shrinkedFexpRes
 -- destVTuples p resTs -- just disjoins duplicate tuples
 -- destVTuples p dropFalseRowsRes -- also drops tuples with false fexp
@@ -62,7 +62,7 @@ pushDownList [] = error "wasn't expecting an empty list!!"
 
 -- | extract the pres cond out of sqlrow and attachs it
 --   as the presence condition to the tuple.
-constVTuple :: PresCondAtt -> SqlRow -> VTuple
+constVTuple :: PCatt -> SqlRow -> VTuple
 constVTuple p r = mkOpt f t 
   where 
     pName = presCondAttName p
@@ -72,15 +72,15 @@ constVTuple p r = mkOpt f t
     t = M.delete pName r
 
 -- | constructs a table of vtuples.
-constVTuples :: PresCondAtt -> SqlTable -> VTuples
+constVTuples :: PCatt -> SqlTable -> VTuples
 constVTuples p t = map (constVTuple p) t
 
 -- | destructs a vtuple into a sqlrow.
-destVTuple :: PresCondAtt -> VTuple -> SqlRow
+destVTuple :: PCatt -> VTuple -> SqlRow
 destVTuple p t = M.insert (presCondAttName p) (fexp2sqlval $ getFexp t) $ getObj t
 
 -- | destructs a vtuples into a sqltable.
-destVTuples :: PresCondAtt -> VTuples -> SqlTable
+destVTuples :: PCatt -> VTuples -> SqlTable
 destVTuples p ts = map (destVTuple p) ts 
 
 

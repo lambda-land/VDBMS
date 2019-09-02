@@ -13,7 +13,7 @@ import qualified Database.SQLite3.Direct as S
 
 -- | A database residing in Sqlite and using directsqlite
 --   to connect to it. 
-data SqliteDirect = SqliteDirect PresCondAtt Schema S.Database
+data SqliteDirect = SqliteDirect PCatt Schema S.Database
 
 -- instance Database SqliteDirect where
 --   type Path SqliteDirect = Text

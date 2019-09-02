@@ -90,7 +90,7 @@ conformSqlRowToRowType r t = M.union r r'
 -----------apply conf------------------
 
 -- | drops a row if it's pres cond is false.
-dropRow :: PresCondAtt -> SqlRow -> SqlRow
+dropRow :: PCatt -> SqlRow -> SqlRow
 dropRow p r 
   | M.lookup (presCondAttName p) r == Just (fexp2sqlval $ Lit False)
   -- (toSql ("Lit False" :: String))
@@ -98,7 +98,7 @@ dropRow p r
   | otherwise = r
 
 -- | drops rows that their pres cond is false.
-dropRows :: PresCondAtt -> SqlTable -> SqlTable
+dropRows :: PCatt -> SqlTable -> SqlTable
 dropRows p t = filter (/= M.empty) $ fmap (dropRow p) t
   -- deleteBy (/=) M.empty $ fmap (dropRow p) t
 -- dropRows c p = fmap $ M.filterWithKey filterRow
@@ -109,15 +109,15 @@ dropRows p t = filter (/= M.empty) $ fmap (dropRow p) t
 -- filterWithKey :: (k -> a -> Bool) -> Map k a -> Map k a
 
 -- | drops the pres cond key value in a row.
-dropPres :: PresCondAtt -> SqlRow -> SqlRow
+dropPres :: PCatt -> SqlRow -> SqlRow
 dropPres p = M.delete (presCondAttName p)
 
 -- | drops the pres cond key value in a table.
-dropPresInTable :: PresCondAtt -> SqlTable -> SqlTable
+dropPresInTable :: PCatt -> SqlTable -> SqlTable
 dropPresInTable p = fmap $ dropPres p
 
 -- | applies a config to a row.
-applyConfRow :: Config Bool -> Set Attribute -> PresCondAtt -> SqlRow -> SqlRow 
+applyConfRow :: Config Bool -> Set Attribute -> PCatt -> SqlRow -> SqlRow 
 applyConfRow c as p r = M.adjust updatePres (presCondAttName p) r'
   where 
     -- pres = M.lookup p r 
@@ -127,11 +127,11 @@ applyConfRow c as p r = M.adjust updatePres (presCondAttName p) r'
     -- pres' = evalFeatureExpr c (sqlToFexp pres)
 
 -- | applies a config to a table.
-applyConfTable :: Config Bool -> Set Attribute -> PresCondAtt -> SqlTable -> SqlTable
+applyConfTable :: Config Bool -> Set Attribute -> PCatt -> SqlTable -> SqlTable
 applyConfTable c as p = fmap $ applyConfRow c as p
 
 -- | applies a config to tables.
-applyConfTables :: Config Bool -> Set Attribute -> PresCondAtt -> [SqlTable] -> [SqlTable]
+applyConfTables :: Config Bool -> Set Attribute -> PCatt -> [SqlTable] -> [SqlTable]
 applyConfTables c as p = fmap $ applyConfTable c as p
 
 
