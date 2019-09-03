@@ -7,6 +7,7 @@ import VDBMS.QueryLang.RelAlg.Relational.Algebra
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
+import VDBMS.DBMS.Value.Type
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -27,7 +28,20 @@ trtypesys = testGroup "Relational Type System Tests" [uts]
 
 -- | Unit tests.
 uts :: TestTree
-uts = testGroup "Unit tests" [t1, t2, t3]
+uts = testGroup "Unit tests" [t1, t2, t3, t4, t5]
+
+t5 :: TestTree
+t5 = testCase "query: Rename RR R" $
+  do let expectVal = fromList [(a, [RAttrInfo TInt32 (relQual "RR")])]
+     output <- typeOfRQuery (RTRef (rename "RR" r)) sampleRSch
+     output @?= expectVal
+
+
+t4 :: TestTree
+t4 = testCase "query: R" $
+  do let expectVal = fromList [(a, [RAttrInfo TInt32 (RelQualifier r)])]
+     output <- typeOfRQuery (RTRef (Rename Nothing r)) sampleRSch
+     output @?= expectVal
 
 t3 :: TestTree
 t3 = testCase "referring to a missing relation with rename" $

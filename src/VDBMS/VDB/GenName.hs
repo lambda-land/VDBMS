@@ -2,6 +2,7 @@
 module VDBMS.VDB.GenName (
 
        rename 
+       , relQual
 
 ) where
 
@@ -16,6 +17,10 @@ import VDBMS.VDB.Name
 -- | creates a rename for a given thing.
 rename :: Name -> a -> Rename a 
 rename n a = Rename (Just n) a
+
+-- | generates a relation qualifier for a given name.
+relQual :: Name -> Qualifier
+relQual n = RelQualifier $ Relation n
 
 -- -- | Names.
 -- type Name = String
