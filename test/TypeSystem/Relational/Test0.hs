@@ -30,6 +30,8 @@ trtypesys = testGroup "Relational Type System Tests" [uts]
 uts :: TestTree
 uts = testGroup "Unit tests" [t1, t2, t3, t4, t5]
 
+q0, q1 :: RAlgebra
+
 -- 
 -- set operation
 -- 
@@ -43,7 +45,10 @@ uts = testGroup "Unit tests" [t1, t2, t3, t4, t5]
 -- 
 
 -- t6 :: TestTree
--- t6 = testCase "query "
+-- t6 = testCase "query: σ (A = 2) R" $
+--   do let expectVal = fromList [(a, [RAttrInfo TInt32 (RelQualifier r)])]
+--      output <- typeOfRQuery (RSel ) sampleRSch 
+--      output @?= expectVal
 
 -- 
 -- join
@@ -59,43 +64,40 @@ uts = testGroup "Unit tests" [t1, t2, t3, t4, t5]
 
 t5 :: TestTree
 t5 = testCase "query: RR = R" $ 
-  do let expectVal = fromList [(a, [RAttrInfo TInt32 (relQual "RR")])]
-     output <- typeOfRQuery (RTRef (rename "RR" r)) sampleRSch
-     output @?= expectVal
+  utest q1 sampleRSch (fromList [(a, [RAttrInfo TInt32 (relQual "RR")])])
 
+q1 = RTRef (rename "RR" r)
 
 t4 :: TestTree
-t4 = testCase "query: R" $
-  do let expectVal = fromList [(a, [RAttrInfo TInt32 (RelQualifier r)])]
-     output <- typeOfRQuery (RTRef (Rename Nothing r)) sampleRSch
-     output @?= expectVal
+t4 = testCase "query: R" $ 
+  utest q0 sampleRSch (fromList [(a, [RAttrInfo TInt32 (RelQualifier r)])])
+
+q0 = RTRef (Rename Nothing r) 
 
 t3 :: TestTree
-t3 = testCase "refer missing relation w\ rename" $
-  assertException expectVal output  
-  where
-    expectVal = RMissingRelation miss
-    output = typeOfRQuery (RTRef (rename "R" miss)) sampleRSch
-   
+t3 = testCase "refer missing relation w rename" $
+  excpTest (RTRef (rename "R" miss)) sampleRSch (RMissingRelation miss) 
 
 t2 :: TestTree
 t2 = testCase "refer missing relation" $
-  assertException expectVal output  
-  where
-    expectVal = RMissingRelation miss
-    output = typeOfRQuery (RTRef (Rename Nothing miss)) sampleRSch
-     -- liftIO $ putStrLn (show output)
+  excpTest (RTRef (Rename Nothing miss)) sampleRSch (RMissingRelation miss)
 
--- | empty 
+-- 
+-- empty 
+-- 
 t1 :: TestTree
-t1 = testCase "query: ⊥ " $
-  do expectVal <- return empty
-     output <- typeOfRQuery REmpty sampleRSch 
-     output @?= expectVal
+t1 = testCase "query: ⊥ " $ utest REmpty sampleRSch empty
+  -- liftIO $ putStrLn (show output)
 
+-- | unit test for relational type system without exceptions.
+utest :: RAlgebra -> RSchema -> RTypeEnv -> Assertion 
+utest q s t = 
+  do output <- typeOfRQuery q s 
+     output @?= t
 
-
--- import Test.HUnit
+-- | unit test for relational type system for exceptions.
+excpTest :: RAlgebra -> RSchema -> RSchemaError -> IO ()
+excpTest q s err = assertException err (typeOfRQuery q s)
 
 -- | checks the exceptions.
 assertException :: (Exception e, Eq e) => e -> IO a -> IO ()
