@@ -5,6 +5,7 @@ module VDBMS.VDB.Name (
         , Relation(..)
         , presCondAttName
         , PCatt
+        , Name
         , Rename(..)
         , Alias
         , Qualifier(..)

@@ -1,5 +1,5 @@
 -- | queries that need to be tested on the first test database.
-module Databases.Queries.Test1 where
+module VDB.Databases.Queries.Test1 where
 
 -- | queries that test the type system. including:
 --   prj_{A,B,C,D} R ?=? prj_{A,F1<B,C>,D} R

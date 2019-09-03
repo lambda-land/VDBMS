@@ -1,5 +1,5 @@
 -- | a small test database.
-module Databases.Schemas.Test1 where
+module VDB.Databases.Schemas.Test1 where
 
 -- goal:
 -- 1) test the translations (both our approach and brute force)

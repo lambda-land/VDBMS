@@ -1,4 +1,4 @@
-module Schema.Test where 
+module VDB.Schema.Test where 
 
 -- import Databases.Schemas.Test1
 

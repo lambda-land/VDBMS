@@ -1,5 +1,7 @@
 import Test.Tasty
 
+import TypeSystem.Relational.Test0
+
 -- import qualified Schema.Test as S
 
 -- import TestParser 
@@ -10,8 +12,8 @@ import Test.Tasty
 -- import TestEmployeeQuery
 
 main :: IO ()
-main = undefined
--- defaultMain $ testGroup "top level" [S.unitTests]
+main = defaultMain $ testGroup "top level" 
+  [trtypesys]
 
 -- main = defaultMain $ testGroup ""
 --         [ -- testTwoOptionExample
