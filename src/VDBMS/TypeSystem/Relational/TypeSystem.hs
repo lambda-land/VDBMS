@@ -4,6 +4,7 @@ module VDBMS.TypeSystem.Relational.TypeSystem
 
         RTypeEnv
         , RAttrInfo(..)
+        , RTypeError(..)
         , typeOfRQuery
         , updateType
         , rtypeEnvAtts
