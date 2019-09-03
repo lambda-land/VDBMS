@@ -30,8 +30,35 @@ trtypesys = testGroup "Relational Type System Tests" [uts]
 uts :: TestTree
 uts = testGroup "Unit tests" [t1, t2, t3, t4, t5]
 
+-- 
+-- set operation
+-- 
+
+-- 
+-- projection
+-- 
+
+-- 
+-- selection
+-- 
+
+-- t6 :: TestTree
+-- t6 = testCase "query "
+
+-- 
+-- join
+-- 
+
+-- 
+-- production
+-- 
+
+-- 
+-- relation reference 
+-- 
+
 t5 :: TestTree
-t5 = testCase "query: Rename RR R" $
+t5 = testCase "query: RR = R" $ 
   do let expectVal = fromList [(a, [RAttrInfo TInt32 (relQual "RR")])]
      output <- typeOfRQuery (RTRef (rename "RR" r)) sampleRSch
      output @?= expectVal
@@ -44,7 +71,7 @@ t4 = testCase "query: R" $
      output @?= expectVal
 
 t3 :: TestTree
-t3 = testCase "referring to a missing relation with rename" $
+t3 = testCase "refer missing relation w\ rename" $
   assertException expectVal output  
   where
     expectVal = RMissingRelation miss
@@ -52,15 +79,16 @@ t3 = testCase "referring to a missing relation with rename" $
    
 
 t2 :: TestTree
-t2 = testCase "referring to a missing relation" $
+t2 = testCase "refer missing relation" $
   assertException expectVal output  
   where
     expectVal = RMissingRelation miss
     output = typeOfRQuery (RTRef (Rename Nothing miss)) sampleRSch
      -- liftIO $ putStrLn (show output)
 
+-- | empty 
 t1 :: TestTree
-t1 = testCase "empty query" $
+t1 = testCase "query: ⊥ " $
   do expectVal <- return empty
      output <- typeOfRQuery REmpty sampleRSch 
      output @?= expectVal
