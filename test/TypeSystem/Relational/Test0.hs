@@ -89,7 +89,8 @@ t10 = testCase "q10: σ (A = 2.0) R → mismatch types" $
                   env1)
 
 t11 = testCase "q11: σ (R.A = 2) RR → att qual not in env" $
-  excpTest (RSel c1' (rename "RR" q0)) sampleRSch
+  excpTest (RSel c1' (rename "RR" q0)) sampleRSch 
+  -- output: (fromList [(a, [RAttrInfo TInt64 (subqQual "RR")])])
     (RQualNotInInfo (RelQualifier r) [RAttrInfo TInt64 (subqQual "RR")])
 -- 
 -- join
