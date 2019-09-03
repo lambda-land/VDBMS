@@ -17,9 +17,10 @@ import Control.Monad.IO.Class
 -- import Control.Exception
 import Control.Monad (guard)
 
+import Prelude hiding (Ordering(..))
 import Data.Map
 
-
+import Database.HDBC (iToSql)
 
 
 -- | test relational type system.
@@ -28,9 +29,10 @@ trtypesys = testGroup "Relational Type System Tests" [uts]
 
 -- | Unit tests.
 uts :: TestTree
-uts = testGroup "Unit tests" [t1, t2, t3, t4, t5]
+uts = testGroup "Unit tests" [t1, t2, t3, t4, t5, t6, t7]
 
-q0, q1 :: RAlgebra
+q0, q1, q2 :: RAlgebra
+rq2 :: Rename RAlgebra
 
 -- 
 -- set operation
@@ -44,12 +46,26 @@ q0, q1 :: RAlgebra
 -- selection
 -- 
 
--- t6 :: TestTree
--- t6 = testCase "query: σ (A = 2) R" $
---   do let expectVal = fromList [(a, [RAttrInfo TInt32 (RelQualifier r)])]
---      output <- typeOfRQuery (RSel ) sampleRSch 
---      output @?= expectVal
+t6 :: TestTree
+t6 = testCase "query: σ (true) R" $
+  utest q2 sampleRSch (fromList [(a, [RAttrInfo TInt64 (RelQualifier r)])]) 
 
+q2 = RSel 
+  (SqlCond (RLit True))
+  rq2
+
+rq2 = (Rename Nothing q0)
+
+t7 :: TestTree
+t7 = testCase "query: σ (A = 2) R" $
+  utest q3 sampleRSch (fromList [(a, [RAttrInfo TInt64 (RelQualifier r)])]) 
+
+q3 = RSel c1 rq2
+
+c1 = SqlCond (RComp EQ (Att (Attr a Nothing))
+                       (Val (iToSql 2)))
+c2 = SqlCond (RComp EQ (Att (Attr a (Just (RelQualifier r))))
+                       (Val (iToSql 2)))
 -- 
 -- join
 -- 
@@ -64,13 +80,13 @@ q0, q1 :: RAlgebra
 
 t5 :: TestTree
 t5 = testCase "query: RR = R" $ 
-  utest q1 sampleRSch (fromList [(a, [RAttrInfo TInt32 (relQual "RR")])])
+  utest q1 sampleRSch (fromList [(a, [RAttrInfo TInt64 (relQual "RR")])])
 
 q1 = RTRef (rename "RR" r)
 
 t4 :: TestTree
 t4 = testCase "query: R" $ 
-  utest q0 sampleRSch (fromList [(a, [RAttrInfo TInt32 (RelQualifier r)])])
+  utest q0 sampleRSch (fromList [(a, [RAttrInfo TInt64 (RelQualifier r)])])
 
 q0 = RTRef (Rename Nothing r) 
 

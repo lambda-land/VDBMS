@@ -1,8 +1,9 @@
 -- | Relational conditions in relational algebra and queries.
 module VDBMS.QueryLang.RelAlg.Relational.Condition (
 
-        RCondition(..),
-        Atom(..)
+        RCondition(..)
+        , Atom(..)
+        , CompOp(..)
 
 ) where
 

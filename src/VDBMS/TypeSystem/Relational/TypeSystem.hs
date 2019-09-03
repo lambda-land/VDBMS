@@ -46,7 +46,7 @@ type RTypeEnv = M.Map Attribute RAttrInformation
 
 -- | Type enviornment errors.
 data RTypeError = 
-    RCompInvalid Atom Atom RTypeEnv
+    RCompInvalid Atom SqlType Atom SqlType RTypeEnv
   | RNotEquiveTypeEnv RTypeEnv RTypeEnv 
   | RQualNotInInfo Qualifier RAttrInformation
   | RAttrQualNotInTypeEnv Attr RTypeEnv
@@ -256,23 +256,28 @@ typeComp :: MonadThrow m
          -> m ()
 typeComp a@(Val l)  a'@(Val r)  t 
   | typeOf l == typeOf r = return ()
-  | otherwise = throwM $ RCompInvalid a a' t 
+  | otherwise = throwM $ RCompInvalid a at a' at' t 
+  where
+    at = typeOf l
+    at' = typeOf r
 typeComp a@(Val l)  a'@(Att r) t = 
-  do at <- lookupAttrTypeInEnv r t
-     if typeOf l == at 
+  do at' <- lookupAttrTypeInEnv r t
+     let at = typeOf l
+     if at == at'
      then return ()
-     else throwM $ RCompInvalid a a' t
+     else throwM $ RCompInvalid a at a' at' t
 typeComp a@(Att l) a'@(Val r)  t = 
   do at <- lookupAttrTypeInEnv l t
-     if typeOf r == at 
+     let at' = typeOf r
+     if at' == at 
      then return ()
-     else throwM $ RCompInvalid a a' t
+     else throwM $ RCompInvalid a at a' at' t 
 typeComp a@(Att l) a'@(Att r) t = 
   do at  <- lookupAttrTypeInEnv l t
      at' <- lookupAttrTypeInEnv r t
      if at == at'
      then return ()
-     else throwM $ RCompInvalid a a' t
+     else throwM $ RCompInvalid a at a' at' t
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 

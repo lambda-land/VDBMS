@@ -20,12 +20,12 @@ miss = Relation "Miss"
 -- | relation R(A: int32).
 r = Relation "R"
 a = Attribute "A"
-rs = (r, fromList [(a, TInt32)])
+rs = (r, fromList [(a, TInt64)])
 
 -- | relation S(A: int32,B: string).
 s = Relation "S"
 b = Attribute "B"
-ss = (s, fromList [ (a, TInt32)
+ss = (s, fromList [ (a, TInt64)
                   , (b, TString)])
 
 -- | relation Y(B: byte string,F: bool).
@@ -36,15 +36,15 @@ ys = (y, fromList [ (b, TByteString)
 
 -- | relation Z(C: int32, A: int32)
 z = Relation "Z"
-zs = (z, fromList [ (c, TInt32)
-                  , (a, TInt32)])
+zs = (z, fromList [ (c, TInt64)
+                  , (a, TInt64)])
 
 -- | relation T(C: int32, D: int32, E: int32)
 t = Relation "T"
 c = Attribute "C"
 d = Attribute "D"
 e = Attribute "E"
-ts = (t, fromList [ (c, TInt32)
-                  , (d, TInt32)
-                  , (e, TInt32)])
+ts = (t, fromList [ (c, TInt64)
+                  , (d, TInt64)
+                  , (e, TInt64)])
 
