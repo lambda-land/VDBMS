@@ -3,6 +3,7 @@ module VDBMS.VDB.GenName (
 
        rename 
        , relQual
+       , subqQual
 
 ) where
 
@@ -21,6 +22,10 @@ rename n a = Rename (Just n) a
 -- | generates a relation qualifier for a given name.
 relQual :: Name -> Qualifier
 relQual n = RelQualifier $ Relation n
+
+-- | generates a subquery qualifier for a given name.
+subqQual :: Name -> Qualifier
+subqQual n = SubqueryQualifier n
 
 -- -- | Names.
 -- type Name = String
