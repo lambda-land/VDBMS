@@ -14,13 +14,12 @@ import VDBMS.QueryLang.SQL.Pure.Sql
 
 -- import Data.List ((\\))
 
--- type FreshName = Int 
+type FreshName = Int 
 
 -- -- | A Query monad provides unique names (aliases)
 -- --   and constructs a SqlSelect.
--- type QState = (SqlSelect, FreshName)
--- data Query a = Query (QState -> (a, QState))
-
+type QState = (SqlSelect, FreshName)
+data Query a = Query (QState -> (a, QState))
 
 -- 
 genSql :: RAlgebra -> SqlSelect

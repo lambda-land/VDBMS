@@ -12,7 +12,7 @@ import Data.SBV (Boolean(..))
 
 import VDBMS.QueryLang.RelAlg.Basics.Atom
 import VDBMS.QueryLang.SQL.Condition
-import VDBMS.DBMS.Value.Value
+import VDBMS.DBMS.Value.Value ()
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.Features.Config (Config)
 import VDBMS.Variational.Variational
