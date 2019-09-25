@@ -18,7 +18,8 @@ import Control.Arrow (first)
 
 -- | generates a query from all queries generated with a same 
 --   list of attribute.
-genQ :: [Attribute] -> PCatt -> [((RAlgebra, RTypeEnv), FeatureExpr)] -> SqlSelect
+genQ :: [Attribute] -> PCatt -> [((RAlgebra, RTypeEnv), FeatureExpr)] 
+     -> SqlSelect
 genQ t p qsfs = foldr (SqlBin SqlUnionAll) (head qs) (tail qs) 
   where 
     qs = fmap (uncurry (updatePC p) . (first (genQSameSch t))) qsfs 
