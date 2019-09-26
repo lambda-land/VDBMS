@@ -16,26 +16,54 @@ import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 
 -- import Data.List ((\\))
 
-type FreshName = Int 
+import Control.Monad.State 
+
+-- |
+type AliasNum = Int 
 
 -- -- | A Query monad provides unique names (aliases)
 -- --   and constructs a SqlSelect.
-type QState = (SqlSelect, FreshName)
-data Query a = Query (QState -> (a, QState))
+-- type QState = State AliasNum SqlSelect
+type QState = State AliasNum 
+-- data Query  = Query (QState -> QState)
+
+-- | evaluates the qstate with zero.
+evalQState :: QState a -> a
+evalQState = flip evalState initState
+  where initState = 0
 
 -- | generates a sql query from a RA query while creating a 
 --   new name for subqueries and keeping the names that 
 --   the user has used in their original query.
 genSql :: RAlgebra -> SqlSelect
-genSql = nameSubSql . transAlgebra2Sql 
+genSql q = evalQState (nameSubSql sql) 
+  where sql = transAlgebra2Sql q
 
 -- | names subqueries within a sql query.
-nameSubSql :: SqlSelect -> SqlSelect
-nameSubSql (SqlSelect as ts cs) = SqlSelect as (nameRels ts) cs
-nameSubSql q = q
+nameSubSql :: SqlSelect -> QState SqlSelect
+nameSubSql (SqlSelect as ts cs) 
+  = do ts' <- mapM nameRel ts 
+       return $ SqlSelect as ts' cs
+  -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
+nameSubSql (SqlBin o lq rq) 
+  = do lq' <- nameSubSql lq
+       rq' <- nameSubSql rq 
+       return $ SqlBin o lq' rq'
+nameSubSql q = return q
 
--- | 
-nameRels :: [SqlRelation] -> [SqlRelation]
-nameRels = undefined
+-- | names a sql relation without a name.
+nameRel :: SqlRelation -> QState SqlRelation
+-- maybe :: b -> (a -> b) -> Maybe a -> b
+-- nameRel (SqlSubQuery rq)
+--   = do q' <- nameSubSql (thing rq)
+--        -- s <- get 
+--        if name rq == Nothing
+--        then  rename inc return
+--        else return 
+--   	maybe  id (name rq)
+nameRel (SqlInnerJoin l r c) 
+  = do l' <- nameRel l
+       r' <- nameRel r
+       return $ SqlInnerJoin l' r' c
 
--- nameRel :: SqlRelation -> 
+
