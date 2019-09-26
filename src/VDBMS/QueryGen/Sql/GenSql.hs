@@ -9,7 +9,7 @@ module VDBMS.QueryGen.Sql.GenSql (
 import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
--- import VDBMS.VDB.Name 
+import VDBMS.VDB.Name (Rename(..))
 -- import VDBMS.QueryLang.SQL.Condition 
 -- import VDBMS.QueryLang.RelAlg.Basics.SetOp
 -- import VDBMS.VDB.Schema.Variational.Schema
@@ -18,7 +18,7 @@ import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 
 import Control.Monad.State 
 
--- |
+-- | number for generating names.
 type AliasNum = Int 
 
 -- -- | A Query monad provides unique names (aliases)
@@ -53,14 +53,15 @@ nameSubSql q = return q
 
 -- | names a sql relation without a name.
 nameRel :: SqlRelation -> QState SqlRelation
--- maybe :: b -> (a -> b) -> Maybe a -> b
--- nameRel (SqlSubQuery rq)
---   = do q' <- nameSubSql (thing rq)
---        -- s <- get 
---        if name rq == Nothing
---        then  rename inc return
---        else return 
---   	maybe  id (name rq)
+nameRel q@(SqlSubQuery rq)
+  = do q' <- nameSubSql (thing rq)
+       s <- get 
+       if name rq == Nothing
+       then do s <- get
+               let q'' = SqlSubQuery (Rename (Just ("t"++ show s)) (thing rq))
+               modify succ
+               return q''
+       else return q
 nameRel (SqlInnerJoin l r c) 
   = do l' <- nameRel l
        r' <- nameRel r
