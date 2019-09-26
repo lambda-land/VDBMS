@@ -1,4 +1,5 @@
--- | tranlates relational queries to sql.
+-- | generates sql queries from sql queries/ra queries
+--   and renames subqueries/relations without an alias.
 module VDBMS.QueryGen.Sql.GenSql (
 
          genSql
