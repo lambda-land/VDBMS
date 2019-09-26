@@ -17,5 +17,6 @@ import VDBMS.QueryLang.SQL.Pure.Sql
 
 -- import Control.Monad.State 
 
+-- | generates sql queries with ctes given a sql query.
 genSqlCTE :: SqlSelect -> SqlSelect
 genSqlCTE = undefined
