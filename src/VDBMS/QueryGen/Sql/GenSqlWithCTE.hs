@@ -35,6 +35,9 @@ genSqlCTE (SqlBin o l r) = undefined
 genSqlCTE q@(SqlTRef _) = q
 genSqlCTE (SqlEmpty) = SqlEmpty
 
+
+genCTEs :: SqlSelect -> [(String, SqlSelect)] -> CteState SqlTempRes
+genCTEs = undefined
 -- -- -- | A Query monad provides unique names (aliases)
 -- -- --   and constructs a SqlSelect.
 -- -- type QState = State AliasNum SqlSelect
