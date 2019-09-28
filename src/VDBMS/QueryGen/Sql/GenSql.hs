@@ -9,7 +9,7 @@ module VDBMS.QueryGen.Sql.GenSql (
 
 import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
-import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
+-- import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 import VDBMS.VDB.Name (Rename(..))
 -- import VDBMS.QueryLang.SQL.Condition 
 -- import VDBMS.QueryLang.RelAlg.Basics.SetOp
@@ -33,12 +33,10 @@ evalQState :: QState a -> a
 evalQState = flip evalState initState
   where initState = 0
 
--- | generates a sql query from a RA query while creating a 
---   new name for subqueries and keeping the names that 
---   the user has used in their original query.
-genSql :: RAlgebra -> SqlSelect
-genSql q = evalQState (nameSubSql sql) 
-  where sql = transAlgebra2Sql q
+-- | gives names to a subqueries and relations of a given
+--   sql query.
+genSql :: SqlSelect -> SqlSelect
+genSql = evalQState . nameSubSql 
 
 -- | names subqueries within a sql query.
 nameSubSql :: SqlSelect -> QState SqlSelect
