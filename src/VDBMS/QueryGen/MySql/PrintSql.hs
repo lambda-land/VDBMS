@@ -119,17 +119,17 @@ ppRCond (RAnd l r) = ppRCond l <+> text "AND" <+> ppRCond r
 
 -- | prints sql temporary resul.
 ppTemp :: SqlTempRes -> Doc
-ppTemp (SqlCTE rqs q)   
-  = text "WITH"
-    <+> hcomma rqt rqs
-    <+> ppSql q
-    where
-      rqt (n,q') = text n <+> text "AS" <+> parens (ppSql q')
-ppTemp (SqlView (n, q)) 
-  = text "CREATE VIEW"
-    <+> text n 
-    <+> text "AS"
-    <+> ppSql q
+ppTemp (SqlCTE rqs q) = undefined
+  -- = text "WITH"
+  --   <+> hcomma rqt rqs
+  --   <+> ppSql q
+  --   where
+  --     rqt (n,q') = text n <+> text "AS" <+> parens (ppSql q')
+-- ppTemp (SqlView (n, q)) 
+--   = text "CREATE VIEW"
+--     <+> text n 
+--     <+> text "AS"
+--     <+> ppSql q
 
 -- | horizontal comma concat.
 hcomma :: (a -> Doc) -> [a] -> Doc

@@ -15,6 +15,9 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
 import VDBMS.VDB.Name 
 import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
 
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
+
 -- | Sql select statements.
 data SqlSelect =  
     SqlSelect {
@@ -74,9 +77,13 @@ data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
 -- which then can generate a cte or view!
 -- Question to search: does postgres automatically run subq as cte in parallel?
 -- if so it'd make our job much easier for the big union all query.
-data SqlTempRes = 
-    SqlCTE [(String, SqlSelect)] SqlSelect
-  | SqlView (String, SqlSelect)
+data SqlTempRes = SqlCTE { closure :: CteClosure
+                         , query   :: SqlSelect
+                         }
+  -- | SqlView (String, SqlSelect)
+
+-- | CTE closure.
+type CteClosure = Map SqlSelect Name
 
 -- | Opitmized SQL queries. 
 -- data SqlOptimized = 
