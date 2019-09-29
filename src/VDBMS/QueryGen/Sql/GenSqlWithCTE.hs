@@ -1,7 +1,7 @@
 -- | generates sql queries with ctes given a sql query.
 module VDBMS.QueryGen.Sql.GenSqlWithCTE (
 
-         genSqlCTE
+         genCTEs
 
 ) where 
 
@@ -36,8 +36,16 @@ evalCteState = flip evalState initState
 -- genSqlCTE (SqlEmpty) = SqlEmpty
 
 
-genCTEs :: SqlSelect -> CteClosure -> CteState SqlTempRes
-genCTEs (SqlSelect as ts cs) cls = undefined
+-- genCTEs :: SqlSelect -> CteClosure -> CteState SqlTempRes
+genCTEs :: MonadState s m => SqlSelect -> CteClosure -> m SqlTempRes
+genCTEs (SqlSelect as ts cs) cls 
+  = do 
+    -- for every t in ts do:
+    -- look up sql rel in closure
+    -- if not exist add it
+    -- if exists replace it with its name
+    -- look into atts and conds to see if you're using the name if sqlrel, if so substitute the name
+    -- move to the next t
 genCTEs (SqlBin o l r) cls = undefined
 genCTEs (SqlTRef r) cls = undefined
 genCTEs SqlEmpty cls = undefined

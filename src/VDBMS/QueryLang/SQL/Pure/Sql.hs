@@ -7,6 +7,7 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , SqlRelation(..)
        , SqlBinOp(..)
        , SqlTempRes(..)
+       , CteClosure
        , aExprAtt
        , module VDBMS.QueryLang.SQL.Condition
 
