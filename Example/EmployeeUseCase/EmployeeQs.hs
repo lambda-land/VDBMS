@@ -2,9 +2,15 @@
 module Example.EmployeeUseCase.EmployeeQs where
 
 import Prelude hiding (Ordering(..))
+
+import VDB.Algebra
+import qualified VDB.Condition as C
+import qualified VDB.FeatureExpr as F
+import VDB.Type
+import VDB.Name
+import VDB.Variational
 import Example.EmployeeUseCase.EmployeeSchema
 
-import qualified VDBMS.Features.FeatureExpr.FeatureExpr.Not as F
 import Database.HDBC 
 -- import Data.Time.LocalTime
 import Data.Time.Calendar
@@ -28,9 +34,9 @@ newtype QueryT = QueryT String
   deriving (Show, Eq)
 
 -- | attaches the feature expression true to an attribute. 
-trueAttr :: Rename Attr -> OptAttribute
-trueAttr a = (F.Lit True, a)
-{-
+trueAtt :: Attribute -> Opt Attribute
+trueAtt a = (F.Lit True, a)
+
 -- 
 -- first set of quesries:
 -- taken from the prima paper, adjusted to the employee database. 
@@ -104,7 +110,7 @@ empVQ1naive = AChc (F.Or empv3 empv4)
         (Proj [trueAtt salary] $
               Sel (C.And empCond
                          yearCond) $
-                  Proj [trueAtt, trueAtt hiredate, trueAtt salary] $ 
+                  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
                        Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
         (Proj [trueAtt salary] $
               Sel (C.And empCond
@@ -394,4 +400,3 @@ empVQ17 = undefined
 
 -- intent:
 -- query:
--}
