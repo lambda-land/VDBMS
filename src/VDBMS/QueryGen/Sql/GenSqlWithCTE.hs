@@ -33,18 +33,10 @@ evalCteState :: CteState a -> a
 evalCteState = flip evalState initState
   where initState = 0
 
--- | generates sql queries with ctes given a sql query.
--- genSqlCTE :: SqlSelect -> SqlSelect
--- genSqlCTE (SqlSelect as ts cs) = undefined
--- genSqlCTE (SqlBin o l r) = undefined
--- genSqlCTE q@(SqlTRef _) = q
--- genSqlCTE (SqlEmpty) = SqlEmpty
-
-
 -- genCTEs :: SqlSelect -> CteClosure -> CteState SqlTempRes
 genCTEs :: MonadState s m => SqlSelect -> CteClosure -> m SqlTempRes
-genCTEs (SqlSelect as ts cs) cls = undefined
-  -- = do n <- M.lookup 
+genCTEs q@(SqlSelect as ts cs) cls = undefined
+  -- = do mapM (updateSqlSelect q ) ts
     -- for every t in ts do:
     -- look up sql rel in closure
     -- if not exist add it
@@ -52,28 +44,38 @@ genCTEs (SqlSelect as ts cs) cls = undefined
     -- look into atts and conds to see if you're using the name if sqlrel, 
       -- if so substitute the name
     -- move to the next t
-genCTEs (SqlBin o l r) cls = undefined
-genCTEs (SqlTRef r) cls = undefined
-genCTEs SqlEmpty cls = undefined
+genCTEs (SqlBin o l r) cls 
+  = do lq <- genCTEs l cls 
+       let cls' = closure lq
+       rq <- genCTEs r cls'
+       return $ SqlCTE (closure rq) (SqlBin o (query lq) (query rq))
+genCTEs q@(SqlTRef r) cls = return $ SqlCTE cls q
+genCTEs    SqlEmpty   cls = return $ SqlCTE cls SqlEmpty
 
 
-cteCheck :: MonadState s m => SqlSelect -> CteClosure -> CteState SqlSelect
-         -> SqlRelation -> m SqlTempRes
-cteCheck q cls s (SqlSubQuery rq) = undefined
-  -- = do num <- get 
-  --      let n = M.lookup (thing rq) cls 
-  --      if isNothing n
-  --      then do let name = "temp" ++ show num
-  --                  cls' = M.insert (thing rq) name cls
-  --              modify succ
-  --      else do name <- n 
-  --              return name 
-  --      return ()
-cteCheck q cls s (SqlInnerJoin l r c) = undefined
+updateSqlSelect :: MonadState s m 
+         => SqlSelect -> CteClosure -> CteState SqlSelect -> SqlRelation 
+         -> m SqlTempRes
+updateSqlSelect = undefined
+-- cteCheck q cls s (SqlSubQuery rq) = undefined
+--   -- = do num <- get 
+--   --      let n = M.lookup (thing rq) cls 
+--   --      if isNothing n
+--   --      then do let name = "temp" ++ show num
+--   --                  cls' = M.insert (thing rq) name cls
+--   --              modify succ
+--   --      else do name <- n 
+--   --              return name 
+--   --      return ()
+-- cteCheck q cls s (SqlInnerJoin l r c) = undefined
   -- = do 
 
 -- | ??
--- checkSqlRel :: SqlRelation -> CteClosure 
+-- checkSqlRel :: CteClosure -> CteState -> SqlRelation -> 
+-- checkSqlRel cls (SqlSubQuery rq) = undefined
+--   -- = do 
+-- checkSqlRel cls (SqlInnerJoin l r c) = undefined
+
 
 -- | update attribute expressions.
 updateAtts :: Name -> [SqlAttrExpr] -> [SqlAttrExpr]
