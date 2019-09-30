@@ -56,8 +56,7 @@ nameRel q@(SqlSubQuery rq)
   = do q' <- nameSubSql (thing rq)
        s <- get 
        if name rq == Nothing
-       then do s <- get
-               let q'' = SqlSubQuery (Rename (Just ("t"++ show s)) (thing rq))
+       then do let q'' = SqlSubQuery (Rename (Just ("t"++ show s)) (thing rq))
                modify succ
                return q''
        else return q
