@@ -54,7 +54,7 @@ joinThreeRelation :: Relation -> Relation -> Relation -> Attr -> Algebra
 joinThreeRelation rel1 rel2 rel3 commonAttr = Join (genRenameAlgebra (joinTwoRelation rel1 rel2 commonAttr)) (genRenameAlgebra (tRef rel3)) cond 
   where cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel3 commonAttr))
 
--- 
+-- 1. 
 -- first set of quesries:
 -- taken from the prima paper, adjusted to the employee database. 
 -- e.g. instead of year 2003, we have year 1991, etc. 
@@ -98,6 +98,7 @@ date19910101, date19920101 :: Day
 date19910101 = ModifiedJulianDay 48257
 date19920101 = ModifiedJulianDay 48622
 
+-- | 1991-01-01 < hiredate < 1992-01-0
 yearCond :: C.Condition 
 yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate date19910101) (C.Att  hiredate))
                  (C.Comp LT (C.Att hiredate) (C.Val $ SqlLocalDate date19920101))
@@ -133,64 +134,72 @@ empVQ1 = AChc empv1 empQ1_v1 $ AChc (F.Or empv2 (F.Or empv3 empv4)) empQ1_v2v3v4
                   empQ1_v5 = Proj [trueAttr salary] $ genRenameAlgebra $ 
                               Sel (VsqlCond (C.And empCond yearCond)) $ genRenameAlgebra $ 
                                 tRef empacct 
-
+                            
+-- 2. 
 -- intent: return the managers (of department d001) on
 --         the year 1991.
 -- query:
 -- prj_managerno (sel_(1991-01-01<hiredate<1992-01-01 and deptno = d001)
 --                 empacct join_(managerno=empno) dept)
--- note:
--- the naive and manually optimized queries are basically the same.
--- classification: 3-0-2-1
-{-
-empVQ2 :: Algebra
-empVQ2 = Proj [trueAtt managerno] $
-  Sel ((C.Comp EQ (C.Attr deptno) (C.Val $ SqlInt32 001))
-       `C.And` yearCond
-       `C.And` (C.Comp EQ (C.Attr empno) (C.Attr managerno))) $
-      SetOp Prod (TRef empacct) (TRef dept)
+-- Note:
+-- 1. Attribute deptno only exist in v3,v4,v5.
+-- v3 or v4 or v5 <q2, empty> OR v3 <q2, v4 < q2, v5 <q2, Empty>>>???
 
-empVQ2T :: QueryT
-empVQ2T = QueryT $
+-- classification: 3-0-2-1
+departno_value :: SqlValue
+departno_value = SqlString "d001"
+
+empQ2T :: QueryT
+empQ2T = QueryT $
   "SELECT managerno" ++
   "FROM empacct INNER JOIN dept ON managerno = empNo" ++
-  "WHERE deptno = 001 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01"
+  "WHERE deptno = d001 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01"
 
--- classification: 5-3-2-1
+empQ2 :: Algebra
+empQ2 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
+                  Sel (VsqlCond cond) $ genRenameAlgebra $ 
+                  joinTwoRelation empacct dept deptno
+      where cond = (C.Comp EQ (C.Att deptno) (C.Val departno_value)) `C.And ` yearCond
+
+-- | VQ2 or VQ2naive, which one should use??
+empVQ2 :: Algebra
+empVQ2 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ2 Empty
+
 empVQ2naive :: Algebra
 empVQ2naive = AChc empv3 empVQ2 (AChc empv4 empVQ2 $ AChc empv5 empVQ2 Empty)
 
--- intent: find all managers that the employee 1004 worked with,
+-- 3. 
+-- intent: find all managers that the employee 10004 worked with,
 --         on the year 1991. 
 -- query:
--- prj_managerno (dept join_(deptno=deptno)
+-- prj_managerno (dept join_(deptno=deptno) 
 --                prj_deptno (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01) empacct))
 -- note:
 -- the naive and manually optimized queries are basically the same.
 -- classification: 3-0-2-1
-empVQ3 :: Algebra
-empVQ3 = Proj [trueAtt managerno] $
-  Sel (C.Comp EQ (C.Attr deptno) (C.Attr deptno)) $
-      SetOp Prod (TRef dept) $
-                 Proj [trueAtt deptno] $
-                      Sel ((C.Comp EQ (C.Attr deptno) (C.Val $ SqlInt32 001))
-                          `C.And` yearCond) $
-                          TRef empacct
-
-empVQ3T :: QueryT
-empVQ3T = QueryT $
+empQ3T :: QueryT
+empQ3T = QueryT $
   "SELECT managerno" ++
-  "FROM dept as t0, " ++
-                  "(SELECT deptno" ++
-                  " FROM empacct" ++
-                  " WHERE deptno = 001 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01) as t1" ++
-  "WHERE t0.deptno = t1.deptno"
+  "FROM empacct join dept on deptno" ++  
+  "WHERE empno = 10004 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01) as t1"
 
--- ASK Eric: should I consider the first two variants? I think I should! YES!
+empno_value :: SqlValue 
+empno_value  = SqlInt32 10004
+
+empQ3 :: Algebra
+empQ3 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
+  Sel (VsqlCond ((yearCond `C.And` (C.Comp EQ (C.Att empno) (C.Val empno_value)) ))) $ genRenameAlgebra $ 
+  joinTwoRelation empacct dept deptno 
+
+-- | v3 or v4 or v5 <q2, empty>
+empVQ3 :: Algebra
+empVQ3 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ2 Empty
+
 -- classification: 5-3-2-1
 empVQ3naive :: Algebra
-empVQ3naive = AChc empv3 empVQ3 (AChc empv4 empVQ3 $ AChc empv5 empVQ3 Empty)
+empVQ3naive = AChc empv3 empQ3 (AChc empv4 empQ3 $ AChc empv5 empQ3 Empty)
 
+{-
 -- intent: find all salary values of managers in all history,
 --         during the period of manager appointment. (the periods
 --         of salary and manager appointment need to overlap).
