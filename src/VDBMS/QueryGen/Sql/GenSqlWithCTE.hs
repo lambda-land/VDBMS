@@ -42,10 +42,15 @@ updateCTE cte =
   case query cte of 
     (SqlSelect as ts cs) ->
       case null ts of 
-        True -> do num <- get 
-                   let t = SqlSubQuery (Rename Nothing (SqlTRef (Relation ("temp" ++ show num))))
-                   return $ SqlCTE (closure cte) (SqlSelect as [t] cs)
-        False -> return cte -- WRONG!!!!!!!
+        True -> 
+          do num <- get 
+             let t = SqlSubQuery (Rename Nothing (SqlTRef (Relation ("temp" ++ show num))))
+             return $ SqlCTE (closure cte) (SqlSelect as [t] cs)
+        False -> 
+          do let t = head ts
+             case t of 
+               (SqlSubQuery rq) -> return cte -- WRONG!!!!!!
+               (SqlInnerJoin l r c) -> return cte -- WRONG!!!!!!
     (SqlBin o l r) -> 
       do cte' <- updateCTE (SqlCTE (closure cte) l)
          cte'' <- updateCTE (SqlCTE (closure cte') r)
