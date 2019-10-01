@@ -8,6 +8,9 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , SqlBinOp(..)
        , SqlTempRes(..)
        , CteClosure
+       , AddClosure
+       , getClosure
+       , getThing
        , aExprAtt
        , module VDBMS.QueryLang.SQL.Condition
 
@@ -85,6 +88,17 @@ data SqlTempRes = SqlCTE { closure :: CteClosure
 
 -- | CTE closure.
 type CteClosure = Map SqlSelect Name
+
+-- | couples up closure with something else.
+type AddClosure a = (a, CteClosure)
+
+-- | returns the closure.
+getClosure :: AddClosure a -> CteClosure
+getClosure = snd 
+
+-- | returns the thing.
+getThing :: AddClosure a -> a 
+getThing = fst 
 
 -- | Opitmized SQL queries. 
 -- data SqlOptimized = 

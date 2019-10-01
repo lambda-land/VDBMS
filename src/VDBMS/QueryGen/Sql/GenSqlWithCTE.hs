@@ -50,12 +50,51 @@ updateCTE cte =
           do let t = head ts
              case t of 
                (SqlSubQuery rq) -> return cte -- WRONG!!!!!!
-               (SqlInnerJoin l r c) -> return cte -- WRONG!!!!!!
+               (SqlInnerJoin l r c) ->
+                 do (lcls, (as', cs'), c') <- updateJoinRel l (closure cte) c as cs
+                    (rcls, (as'', cs''), c'') <- updateJoinRel r (getClosure lcls) c as' cs'
+                    let cls = addJoinToCls (getThing lcls) (getThing rcls) c'' (getClosure rcls)
+                    updateCTE $ SqlCTE cls (SqlSelect as'' (tail ts) cs'')
     (SqlBin o l r) -> 
       do cte' <- updateCTE (SqlCTE (closure cte) l)
          cte'' <- updateCTE (SqlCTE (closure cte') r)
          return $ SqlCTE (closure cte'') (SqlBin o (query cte') (query cte''))
     q -> return cte
+
+-- | update attribute expressions.
+updateAtts :: Name -> [SqlAttrExpr] -> [SqlAttrExpr]
+updateAtts = undefined
+
+-- | update relational condition.
+updateRCond :: Name -> Name -> RCondition -> RCondition
+updateRCond l r c = undefined
+
+-- | update conditions.
+updateConds :: Name -> [SqlCond SqlSelect] -> [SqlCond SqlSelect]
+updateConds = undefined
+
+-- |
+addJoinToCls :: SqlRelation -> SqlRelation -> RCondition -> CteClosure -> CteClosure
+addJoinToCls = undefined
+
+-- | update sql select query.
+-- updates rcondition.
+-- update sql query within sqlrel.
+-- update att list.
+-- update cond list.
+updateJoinRel :: SqlRelation -> CteClosure -> RCondition 
+             -> [SqlAttrExpr] -> [SqlCond SqlSelect]
+             -> CteState (AddClosure SqlRelation, ([SqlAttrExpr], [SqlCond SqlSelect]), RCondition)
+updateJoinRel = undefined
+-- r n (SqlSelect as ts cs) = undefined
+-- updateSqlRel _ _ _ = error "only accept sqlselct constructor"
+
+
+
+
+
+
+
 
 -- genCTEs :: SqlSelect -> CteClosure -> CteState SqlTempRes
 -- genCTEs :: MonadState s m => SqlSelect -> CteClosure -> m SqlTempRes
@@ -114,28 +153,5 @@ updateCTE cte =
 -- checkSqlRel cls (SqlSubQuery rq) = undefined
 --   -- = do 
 -- checkSqlRel cls (SqlInnerJoin l r c) = undefined
-
-
--- | update attribute expressions.
-updateAtts :: Name -> [SqlAttrExpr] -> [SqlAttrExpr]
-updateAtts = undefined
-
--- | update relational condition.
-updateRCond :: Name -> Name -> RCondition -> RCondition
-updateRCond l r c = undefined
-
--- | update conditions.
-updateConds :: Name -> [SqlCond SqlSelect] -> [SqlCond SqlSelect]
-updateConds = undefined
-
--- | update sql select query.
-updateSqlQuery :: SqlRelation -> Name -> SqlSelect -> SqlSelect
-updateSqlQuery r n (SqlSelect as ts cs) = undefined
-updateSqlQuery _ _ _ = error "only accept sqlselct constructor"
-
-
-
-
-
 
 
