@@ -41,7 +41,10 @@ updateCTE :: MonadState s m => SqlTempRes -> m SqlTempRes
 updateCTE cte = 
   case query cte of 
     (SqlSelect as ts cs) -> return cte
-    (SqlBin o l r) -> return cte
+    (SqlBin o l r) -> 
+      do cte' <- updateCTE (SqlCTE (closure cte) l)
+         cte'' <- updateCTE (SqlCTE (closure cte') r)
+         return $ SqlCTE (closure cte'') (SqlBin o (query cte') (query cte''))
     q -> return cte
 
 -- genCTEs :: SqlSelect -> CteClosure -> CteState SqlTempRes
