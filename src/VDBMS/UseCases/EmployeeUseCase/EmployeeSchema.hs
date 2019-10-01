@@ -2,13 +2,12 @@
 module VDBMS.UseCases.EmployeeUseCase.EmployeeSchema where
 
 
-import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
 -- 
 -- Features
 -- 
-
+empv1, empv2, empv3, empv4, empv5 :: FeatureExpr
 empv1 = Ref (Feature "v1")
 empv2 = Ref (Feature "v2")
 empv3 = Ref (Feature "v3")
@@ -20,40 +19,60 @@ empv5 = Ref (Feature "v5")
 -- Relations
 -- 
 genRelation :: Name -> Rename Relation
-genRelation name  =  Rename Nothing (Relation name)
+genRelation relName  =  Rename Nothing (Relation relName)
 
-engineerpersonnel, otherpersonnel, job, dept, empacct, empbio :: Rename Relation
-engineerpersonnel = genRelation "v_engineerpersonnel"
-otherpersonnel    = genRelation "v_otherpersonnel"
-job               = genRelation "v_job"
-dept              = genRelation "v_dept"
-empacct           = genRelation "v_empacct"
-empbio            = genRelation "v_empbio"
-
+engineerpersonnel, otherpersonnel, job, dept, empacct, empbio :: Relation
+engineerpersonnel = Relation "v_engineerpersonnel"
+otherpersonnel    = Relation "v_otherpersonnel"
+job               = Relation "v_job"
+dept              = Relation "v_dept"
+empacct           = Relation "v_empacct"
+empbio            = Relation "v_empbio"
 
 -- 
 -- Attributes
 -- 
-genAttr :: Name -> Rename Attr
-genAttr name = Rename Nothing $ Attr (Attribute name) Nothing 
+attr :: Name -> Attr 
+attr n = Attr (Attribute n) Nothing 
 
-genQualifiedAttr :: Name -> Name -> Rename Attr
-genQualifiedAttr rel name = Rename Nothing $ Attr (Attribute name) (Just (RelQualifier (Relation rel)))
+qualifiedAttr :: Relation -> Attr -> Attr
+qualifiedAttr rel a = Attr (attribute a) (Just (RelQualifier rel))
 
-empno, name, hiredate, title, deptname, salary :: Rename Attr
-deptno, managerno, sex, birthdate, firstname, lastname :: Rename Attr
-empno     = genAttr "empno"
-name      = genAttr "name"
-hiredate  = genAttr "hiredate"
-title     = genAttr "title"
-deptname  = genAttr "deptname"
-salary    = genAttr "salary"
-deptno    = genAttr "deptno"
-managerno = genAttr"managerno"
-sex       = genAttr "sex"
-firstname = genAttr "firstname"
-lastname  = genAttr "lastname"
-birthdate = genAttr "birthdate"
+empno, name, hiredate, title, deptname, salary :: Attr
+deptno, managerno, sex, birthdate, firstname, lastname :: Attr
+empno     = attr "empno"
+name      = attr "name"
+hiredate  = attr "hiredate"
+title     = attr "title"
+deptname  = attr "deptname"
+salary    = attr "salary"
+deptno    = attr "deptno"
+managerno = attr"managerno"
+sex       = attr "sex"
+firstname = attr "firstname"
+lastname  = attr "lastname"
+birthdate = attr "birthdate"
+
+genRenameAttr :: Attr -> Rename Attr
+genRenameAttr att = Rename Nothing $ att
+
+genQualifiedRenameAttr :: Name -> Attr -> Rename Attr
+genQualifiedRenameAttr rel att = Rename Nothing $ Attr (attribute att) (Just (RelQualifier (Relation rel)))
+
+-- empno, name, hiredate, title, deptname, salary :: Rename Attr
+-- deptno, managerno, sex, birthdate, firstname, lastname :: Rename Attr
+-- empno     = genAttr "empno"
+-- name      = genAttr "name"
+-- hiredate  = genAttr "hiredate"
+-- title     = genAttr "title"
+-- deptname  = genAttr "deptname"
+-- salary    = genAttr "salary"
+-- deptno    = genAttr "deptno"
+-- managerno = genAttr"managerno"
+-- sex       = genAttr "sex"
+-- firstname = genAttr "firstname"
+-- lastname  = genAttr "lastname"
+-- birthdate = genAttr "birthdate"
 
 
 {-

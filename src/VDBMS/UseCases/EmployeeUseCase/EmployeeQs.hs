@@ -1,13 +1,15 @@
 -- | vqs for employee database.
 module VDBMS.UseCases.EmployeeUseCase.EmployeeQs where
 
-{-
-import Prelude hiding (Ordering(..))
-
 import VDBMS.QueryLang.RelAlg.Variational.Algebra
-import Example.EmployeeUseCase.EmployeeSchema
-
+import VDBMS.UseCases.EmployeeUseCase.EmployeeSchema
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
+import VDBMS.VDB.Name
+import VDBMS.DBMS.Value.CompOp
+import Prelude hiding (Ordering(..))
 import Database.HDBC 
+
 -- import Data.Time.LocalTime
 import Data.Time.Calendar
 
@@ -30,8 +32,27 @@ newtype QueryT = QueryT String
   deriving (Show, Eq)
 
 -- | attaches the feature expression true to an attribute. 
-trueAtt :: Attribute -> Opt Attribute
-trueAtt a = (F.Lit True, a)
+trueAttr :: Attr -> OptAttribute
+trueAttr a = (F.Lit True, genRenameAttr a)
+
+genRenameAlgebra :: Algebra -> Rename Algebra
+genRenameAlgebra alg = Rename Nothing alg
+
+genRenameRelation :: Relation -> Rename Relation
+genRenameRelation rel = Rename Nothing rel
+
+tRef :: Relation -> Algebra 
+tRef rel = TRef $ Rename Nothing rel 
+
+joinTwoRelation :: Relation -> Relation -> Attr -> Algebra
+joinTwoRelation rel1 rel2 commonAttr = Join (genRenameAlgebra (tRef rel1)) (genRenameAlgebra (tRef rel2)) join_cond
+  where join_cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel2 commonAttr))
+
+-- | Join three relation(a,b,c) based on commonAttr. 
+--   (rel1 join(rel1.commonAttr = rel2.commonAttr) rel2) join(rel1.commonAttr = rel3.commonAttr) rel3
+joinThreeRelation :: Relation -> Relation -> Relation -> Attr -> Algebra
+joinThreeRelation rel1 rel2 rel3 commonAttr = Join (genRenameAlgebra (joinTwoRelation rel1 rel2 commonAttr)) (genRenameAlgebra (tRef rel3)) cond 
+  where cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel3 commonAttr))
 
 -- 
 -- first set of quesries:
@@ -52,66 +73,66 @@ trueAtt a = (F.Lit True, a)
 -- write the query for these variants for a fair comparison against
 -- prima.
 -- classification: 3-0-2-1
-empVQ1 :: Algebra
-empVQ1 = Proj [trueAtt salary] $
-  Sel (C.And empCond
-             yearCond)
-  (Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
-    Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
 
-empVQ1T :: QueryT
-empVQ1T = QueryT $ 
+empQ1T :: QueryT
+empQ1T = QueryT $ 
   "SELECT salary" ++
   "FROM (SELECT empno, hiredate, salary" ++
         "FROM empacct INNER JOIN job)" ++
   "WHERE empNo = 10004 AND 1991-01-01 < hiredate AND hiredate < 1992-01-01"
 
+empQ1 :: Algebra
+empQ1 = Proj [trueAttr salary] $ genRenameAlgebra $
+  Sel (VsqlCond (C.And empCond yearCond)) $ 
+     genRenameAlgebra $ Proj [trueAttr empno, trueAttr hiredate, trueAttr salary] selection
+     where selection = genRenameAlgebra $ Sel (VsqlCond cond) joinedtable 
+           joinedtable = genRenameAlgebra (Join (genRenameAlgebra (tRef empacct)) (genRenameAlgebra (tRef job)) cond)
+           cond = (C.Comp EQ (C.Att (qualifiedAttr empacct title)) (C.Att (qualifiedAttr job title)))
+
 -- | the year 1991 condition
-yearCond :: C.Condition
-yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate $ ModifiedJulianDay 19910101) (C.Attr hiredate))
-                 (C.Comp LT (C.Attr hiredate) (C.Val $ SqlLocalDate $ ModifiedJulianDay 19920101))
+--   ModifiedJulianDay Int (Count days from 1858-11-17)
+--   1991-01-01: ModifiedJulianDay 48257
+--   1992-01-01: ModifiedJulianDay 48622
+
+date19910101, date19920101 :: Day
+date19910101 = ModifiedJulianDay 48257
+date19920101 = ModifiedJulianDay 48622
+
+yearCond :: C.Condition 
+yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate date19910101) (C.Att  hiredate))
+                 (C.Comp LT (C.Att hiredate) (C.Val $ SqlLocalDate date19920101))
 
 -- | employee id = 10004 condition
 empCond :: C.Condition
-empCond = C.Comp EQ (C.Attr empno) (C.Val $ SqlInt32 10004)
+empCond = C.Comp EQ (C.Att empno) (C.Val $ SqlInt32 10004)
 
--- more optimized based on relational alg opt rules. prj and sel place
--- have been exchanged. check translations of them to see if they return
--- the same query.
--- classification: 3-0-2-1
-empVQ1' :: Algebra
-empVQ1' = Proj [trueAtt salary] $
-  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
-    Sel (C.And empCond
-               yearCond) $
-    Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job)    
-
--- more optimized based on sel_c sel_c' == sel_{c and c'}
--- classification: 3-0-2-1
-empVQ1'' :: Algebra
-empVQ1'' = Proj [trueAtt salary] $
-  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
-    Sel (empCond
-         `C.And` yearCond
-         `C.And` (C.Comp EQ (C.Attr title) (C.Attr title))) $ SetOp Prod (TRef empacct) (TRef job)    
-
--- the naive query of empVQ1:
---            v3 or v4 <prj_salary (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01)
---                                       prj_(empno, hiredate, salary) 
---                                            empacct join_(title=title) job),
---                      prj_salary (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01) job)>
+-- the variatonal query of empQ1:
+-- * v-query considering 5 versions
+--   v1 < q1_v1, (v2 or v3 or v4) < q1_v2v3v4, v5 < q1_v4, empty>>>
+-- * plain queries for each feature 
+--   q1_v1:  prj_salary 
+--          (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01))
+--          (job join_(title=title) engineerpersonnel) join_(tiltle=tiltle) otherpersonnel)
+--   q1_v2v3v4:
+--     prj_salary 
+--     (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01>))
+--     (empacct join_(title=title) job)
+--   q1_v5:
+--      prj_salary
+--     (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01))
+--     empacct 
 -- classification: 3-1-2-1
-empVQ1naive :: Algebra
-empVQ1naive = AChc (F.Or empv3 empv4)
-        (Proj [trueAtt salary] $
-              Sel (C.And empCond
-                         yearCond) $
-                  Proj [trueAtt empno, trueAtt hiredate, trueAtt salary] $ 
-                       Sel (C.Comp EQ (C.Attr title) (C.Attr title)) $ SetOp Prod (TRef empacct) (TRef job))
-        (Proj [trueAtt salary] $
-              Sel (C.And empCond
-                         yearCond)
-                  (TRef job))
+
+empVQ1 :: Algebra
+empVQ1 = AChc empv1 empQ1_v1 $ AChc (F.Or empv2 (F.Or empv3 empv4)) empQ1_v2v3v4 $ AChc empv5 empQ1_v5 Empty
+            where empQ1_v1 = Proj [trueAttr salary] $ genRenameAlgebra $ 
+                              joinThreeRelation job engineerpersonnel otherpersonnel title 
+                  empQ1_v2v3v4 = Proj [trueAttr salary] $ genRenameAlgebra $
+                                  Sel (VsqlCond (C.And empCond yearCond)) $ 
+                                   genRenameAlgebra $ joinTwoRelation empacct job title
+                  empQ1_v5 = Proj [trueAttr salary] $ genRenameAlgebra $ 
+                              Sel (VsqlCond (C.And empCond yearCond)) $ genRenameAlgebra $ 
+                                tRef empacct 
 
 -- intent: return the managers (of department d001) on
 --         the year 1991.
@@ -121,6 +142,7 @@ empVQ1naive = AChc (F.Or empv3 empv4)
 -- note:
 -- the naive and manually optimized queries are basically the same.
 -- classification: 3-0-2-1
+{-
 empVQ2 :: Algebra
 empVQ2 = Proj [trueAtt managerno] $
   Sel ((C.Comp EQ (C.Attr deptno) (C.Val $ SqlInt32 001))
