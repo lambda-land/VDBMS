@@ -25,9 +25,9 @@ type CteNum = Int
 type CteState = State CteNum
 
 -- | evaluates a cte state with zero.
-evalCteState :: CteState a -> a 
-evalCteState = flip evalState initState
-  where initState = 0
+-- evalCteState :: CteState a -> a 
+-- evalCteState = flip evalState initState
+--   where initState = 0
 
 -- | takes a sql select query and generates the initial sql temp res.
 initCTE :: SqlSelect -> SqlTempRes
@@ -37,11 +37,12 @@ initCTE q@(SqlTRef _)       = SqlCTE M.empty q
 initCTE SqlEmpty            = SqlCTE M.empty SqlEmpty 
 
 -- | updates a sql temp res one relation at the time.
-updateCTE :: MonadState s m => SqlTempRes -> m ()
+updateCTE :: MonadState s m => SqlTempRes -> m SqlTempRes
 updateCTE cte = 
   case query cte of 
-    (SqlSelect as ts cs) -> return ()
-    (SqlBin o l r) -> return ()
+    (SqlSelect as ts cs) -> return cte
+    (SqlBin o l r) -> return cte
+    q -> return cte
 
 -- genCTEs :: SqlSelect -> CteClosure -> CteState SqlTempRes
 -- genCTEs :: MonadState s m => SqlSelect -> CteClosure -> m SqlTempRes
