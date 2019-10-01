@@ -4,7 +4,7 @@ module VDBMS.QueryGen.Sql.GenSqlWithCTE where
 -- import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
 -- import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
-import VDBMS.VDB.Name (Rename(..), Name)
+import VDBMS.VDB.Name 
 -- import VDBMS.QueryLang.SQL.Condition 
 -- import VDBMS.QueryLang.RelAlg.Basics.SetOp
 -- import VDBMS.VDB.Schema.Variational.Schema
@@ -37,10 +37,15 @@ initCTE q@(SqlTRef _)       = SqlCTE M.empty q
 initCTE SqlEmpty            = SqlCTE M.empty SqlEmpty 
 
 -- | updates a sql temp res one relation at the time.
-updateCTE :: MonadState s m => SqlTempRes -> m SqlTempRes
+updateCTE :: SqlTempRes -> CteState SqlTempRes
 updateCTE cte = 
   case query cte of 
-    (SqlSelect as ts cs) -> return cte
+    (SqlSelect as ts cs) ->
+      case null ts of 
+        True -> do num <- get 
+                   let t = SqlSubQuery (Rename Nothing (SqlTRef (Relation ("temp" ++ show num))))
+                   return $ SqlCTE (closure cte) (SqlSelect as [t] cs)
+        False -> return cte -- WRONG!!!!!!!
     (SqlBin o l r) -> 
       do cte' <- updateCTE (SqlCTE (closure cte) l)
          cte'' <- updateCTE (SqlCTE (closure cte') r)
