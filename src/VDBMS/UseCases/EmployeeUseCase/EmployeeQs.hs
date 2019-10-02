@@ -54,7 +54,7 @@ joinThreeRelation :: Relation -> Relation -> Relation -> Attr -> Algebra
 joinThreeRelation rel1 rel2 rel3 commonAttr = Join (genRenameAlgebra (joinTwoRelation rel1 rel2 commonAttr)) (genRenameAlgebra (tRef rel3)) cond 
   where cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel3 commonAttr))
 
--- 1. 
+-- 1(Q1A). 
 -- first set of quesries:
 -- taken from the prima paper, adjusted to the employee database. 
 -- e.g. instead of year 2003, we have year 1991, etc. 
@@ -135,7 +135,7 @@ empVQ1 = AChc empv1 empQ1_v1 $ AChc (F.Or empv2 (F.Or empv3 empv4)) empQ1_v2v3v4
                               Sel (VsqlCond (C.And empCond yearCond)) $ genRenameAlgebra $ 
                                 tRef empacct 
                             
--- 2. 
+-- 2(Q1B). 
 -- intent: return the managers (of department d001) on
 --         the year 1991.
 -- query:
@@ -168,7 +168,7 @@ empVQ2 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ2 Empty
 empVQ2naive :: Algebra
 empVQ2naive = AChc empv3 empVQ2 (AChc empv4 empVQ2 $ AChc empv5 empVQ2 Empty)
 
--- 3. 
+-- 3 (Q2A). 
 -- intent: find all managers that the employee 10004 worked with,
 --         on the year 1991. 
 -- query:
@@ -195,11 +195,10 @@ empQ3 = Proj [trueAttr managerno] $ genRenameAlgebra $
 empVQ3 :: Algebra
 empVQ3 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ2 Empty
 
--- classification: 5-3-2-1
 empVQ3naive :: Algebra
 empVQ3naive = AChc empv3 empQ3 (AChc empv4 empQ3 $ AChc empv5 empQ3 Empty)
 
-
+-- 4(Q2B).
 -- intent: find all salary values of managers in all history,
 --         during the period of manager appointment. (the periods
 --         of salary and manager appointment need to overlap).
@@ -220,7 +219,7 @@ empVQ3naive = AChc empv3 empQ3 (AChc empv4 empQ3 $ AChc empv5 empQ3 Empty)
 -- check to see if the join only occurs for valid variants!!
 -- i.e. ... join dept is only valid for v3, v4, and v5. 
 -- and ... join job is not valid for v5.
--- classification: 3-0-3-2
+-- and there's no way to get the period of manager appointment.
 
 empQ4_v3v4 :: Algebra
 empQ4_v3v4 = Proj [trueAttr managerno, trueAttr salary] $ genRenameAlgebra $ 
@@ -235,51 +234,42 @@ empQ4_v5 = Proj [trueAttr managerno, trueAttr salary] $ genRenameAlgebra $
           Join (genRenameAlgebra (tRef empacct)) (genRenameAlgebra (tRef dept)) cond 
     where cond = C.Comp EQ (C.Att empno) (C.Att managerno)
 
-empVQ4naive :: Algebra
-empVQ4naive = AChc (F.Or empv3 empv4)
-                empQ4_v3v4
-                (AChc empv5 empQ4_v5 Empty)
-{-
--- intent: find the historical managers of department where the
---         employee 10004 worked, in all history. (the period 
---         of their appointments don't need to overlap.)
---         answer using data valid on the year 1991.
--- query:
--- prj_managerno
---     sel_(1991-01-01<hiredate<1992-01-01)
---         ((sel_(empno == 10004) empacct) join_(deptno = deptno) dept)
--- classification: 3-0-2-1
+empVQ4 :: Algebra
+empVQ4 = AChc (F.Or empv3 empv4)
+            empQ4_v3v4
+            (AChc empv5 empQ4_v5 Empty)
+
+-- 5(Q3A).
+-- Intent: Find the historical managers of department where the employee 10004 worked, in all history. 
+--         (The period of their appointments don't need to overlap.)
+--         Answer using data valid on the year 1991.
+-- Process: 1. find the departments where 10004 worked
+--          2. get managerno from those departments 
+-- 
+-- * variational queries:
+--   (v3 or v4 or v5) <empQ5, empty> or v3<empQ5, v4<empQ5, v5 <empQ5, empty>> ??? 
+-- * plain queries for each version:
+--   * For v3,v4,v5:
+--       SELECT managerno
+--       from dept
+--       where deptno in 
+--       (SELECT deptno 
+--       FROM empacct
+--       where empno = 10004 and 1991-01-01<hiredate<1992-01-01 )
+
+empQ5 :: Algebra
+empQ5 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
+          Sel (VsqlIn deptno sub) $ genRenameAlgebra $ 
+            tRef dept  
+      where sub = Proj [trueAttr deptno] $ genRenameAlgebra $ 
+                    Sel (VsqlCond cond) $ genRenameAlgebra $ 
+                    tRef empacct
+            cond = (C.Comp EQ (C.Att empno) (C.Val empno_value)) `C.And ` yearCond
+
 empVQ5 :: Algebra
-empVQ5 = Proj [trueAtt managerno] $
-  Sel (C.And yearCond 
-             (C.Comp EQ (C.Attr deptno) (C.Attr deptno))) $
-      SetOp Prod (Sel empCond (TRef empacct))
-                 (TRef dept)
+empVQ5 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ5 Empty
 
--- a less efficient vq in terms of relational algebra and sql.
--- since we're joining first and then applying the selection of
--- the particular employee. i.e.:
--- query:
--- prj_managerno
---     sel_(1991-01-01<hiredate<1992-01-01 and empno == 10004)
---         (empacct join_(deptno = deptno) dept)
--- classification: 3-0-2-1
-empVQ5' :: Algebra
-empVQ5' = Proj [trueAtt managerno] $
-  Sel (C.And yearCond $
-       C.And empCond 
-             (C.Comp EQ (C.Attr deptno) (C.Attr deptno))) $
-      SetOp Prod (TRef empacct)
-                 (TRef dept)
-
--- classification: 5-3-2-1
-empVQ5naive :: Algebra
-empVQ5naive = AChc empv3 empVQ5 $ AChc empv4 empVQ5 $ AChc empv5 empVQ5 Empty
-
--- classification: 5-1-2-1
-empVQ5naive' :: Algebra
-empVQ5naive' = AChc (F.disjFexp [empv3, empv4, empv5]) empVQ5 Empty
-
+--6(Q3B).
 -- intent: find all salary values of managers in all history.
 --         (the periods of salary and manager appointment 
 --         don't need to overlap.) 
@@ -290,48 +280,55 @@ empVQ5naive' = AChc (F.disjFexp [empv3, empv4, empv5]) empVQ5 Empty
 empVQ6 :: Algebra
 empVQ6 = empVQ4
 
--- intent: for all managers that the employee 10004 worked with,
---         find all the departments that the manager managed.
---         (temporal join followed by non-temporal join)
---         (10004's and the manager's affiliation with a single 
---         department should overlap, but the manager's manager
---         position periods do not need to overlap, naturally.)
---         answer using data valid on the year 1991.
--- query:
--- prj_deptname
---     empvq3 join_(managerno = managerno) dept
--- classification: 3-0-2-2
+-- 7(Q4A).
+-- intent: For all managers that the employee 10004 with, find all the departments that the manager managed. 
+--         (10004's and the manager's affiliation with a single department should overlap, but
+--         the manager's manager position periods do not need to overlap, naturally.)
+--         Answer using data valid on the year 1991.
+-- Process: 1. get managers that 10005 with
+--          2. get departments for those managers 
+-- 
+-- * variational queries:
+--   (v3 or v4 or v5) <empQ7, empty> or v3<empQ7, v4<empQ7, v5 <empQ7, empty>> ??? 
+-- * plain queries for each version:
+--   * For v3,v4,v5:
+--      SELECT deptname 
+--      from dept 
+--      where managerno in 
+--      (SELECT managerno 
+--      FROM v3_empacct JOIN dept ON v3_empacct.deptno = dept.deptno
+--      where empno = 10004 and 1991-01-01<hiredate<1992-01-01 ) 
+--     ** subquery here is the same with empQ3
+empQ7 :: Algebra
+empQ7 = Proj [trueAttr deptname] $ genRenameAlgebra $ 
+          Sel (VsqlIn managerno empQ3) $ genRenameAlgebra $ 
+            tRef dept
+
+-- | v3 or v4 or v5 <q2, empty>
 empVQ7 :: Algebra
-empVQ7 = Proj [trueAtt deptname] $
-  Sel (C.Comp EQ (C.Attr managerno) (C.Attr managerno)) $
-      SetOp Prod empVQ3 (TRef dept)
+empVQ7 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ7 Empty
 
--- just wondering about!!
-empVQ7naiveHelper :: Algebra
-empVQ7naiveHelper = Proj [trueAtt deptname] $
-  Sel (C.Comp EQ (C.Attr managerno) (C.Attr managerno)) $
-      SetOp Prod empVQ3naive (TRef dept)
 
--- classification: 5-3-2-2
 empVQ7naive :: Algebra
-empVQ7naive = AChc empv3 empVQ7 $ AChc empv4 empVQ7 $ AChc empv5 empVQ7 Empty
+empVQ7naive = AChc empv3 empQ7 $ AChc empv4 empQ7 $ AChc empv5 empQ7 Empty
 
--- note: Just wondering what happens!!!
-empVQ7naive' :: Algebra
-empVQ7naive' = AChc empv3 empVQ7naiveHelper $ 
-                          AChc empv4 empVQ7naiveHelper $ 
-                                     AChc empv5 empVQ7naiveHelper Empty
+-- 8(Q4B).
+-- intent: For all managers, find all managers in the department that he/she worked in. (two worked during the same period)
+--         (non-temporal join follwed by temporal-join)
+--          Answer using data valid on the year 1991.
+-- 
+-- Process: 1. Find departments and hiredate of manager worked in
+--          2. Find managers where has same departments and hiredate except itself
+-- 
+-- * variational queries:
+-- * plain queries for each version:
+-- Note: Two worked during same period, we consider it as two people hire at the same hiredate.
+empQ8 :: Algebra
+empQ8 = undefined
 
-
--- intent: for all managers, find all managers in the department
---         that he/she worked in. (two worked during the same
---         period)
---         (non-temporal join followed by temporal-join)
---         answer using data valid o the year 1991.
--- query:
--- classification:
 empVQ8 :: Algebra
 empVQ8 = undefined
+
 
 -- 
 -- Q9-Q16 is a relaxation of Q1-Q8, in terms of period.
@@ -436,4 +433,4 @@ empVQ17 = undefined
 
 -- intent:
 -- query:
--}
+
