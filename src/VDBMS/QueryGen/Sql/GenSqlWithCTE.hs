@@ -25,9 +25,13 @@ type CteNum = Int
 type CteState = State CteNum
 
 -- | evaluates a cte state with zero.
--- evalCteState :: CteState a -> a 
--- evalCteState = flip evalState initState
---   where initState = 0
+evalCteState :: CteState a -> a 
+evalCteState = flip evalState initState
+  where initState = 0
+
+-- | generates the cte for a sql query.
+genCTE :: SqlSelect -> CteState SqlTempRes
+genCTE = updateCTE . initCTE
 
 -- | takes a sql select query and generates the initial sql temp res.
 initCTE :: SqlSelect -> SqlTempRes
