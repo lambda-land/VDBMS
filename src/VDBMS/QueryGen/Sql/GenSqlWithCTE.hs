@@ -39,24 +39,27 @@ initCTE SqlEmpty            = SqlCTE M.empty SqlEmpty
 -- | updates a sql temp res one relation at the time.
 updateCTE :: SqlTempRes -> CteState SqlTempRes
 updateCTE cte = 
+  let cls = closure cte in 
   case query cte of 
     (SqlSelect as ts cs) ->
       case null ts of 
         True -> 
           do num <- get 
              let t = SqlSubQuery (Rename Nothing (SqlTRef (Relation ("temp" ++ show num))))
-             return $ SqlCTE (closure cte) (SqlSelect as [t] cs)
+             return $ SqlCTE cls (SqlSelect as [t] cs)
         False -> 
           do let t = head ts
              case t of 
-               (SqlSubQuery rq) -> return cte -- WRONG!!!!!!
+               (SqlSubQuery rq) -> 
+                 do (cls', (as', cs')) <- updateSqlRel rq cls as cs 
+                    updateCTE $ SqlCTE cls' (SqlSelect as' (tail ts) cs')
                (SqlInnerJoin l r c) ->
-                 do (lcls, (as', cs'), c') <- updateJoinRel l (closure cte) c as cs
+                 do (lcls, (as', cs'), c') <- updateJoinRel l cls c as cs
                     (rcls, (as'', cs''), c'') <- updateJoinRel r (getClosure lcls) c as' cs'
-                    let cls = addJoinToCls (getThing lcls) (getThing rcls) c'' (getClosure rcls)
-                    updateCTE $ SqlCTE cls (SqlSelect as'' (tail ts) cs'')
+                    let cls' = addJoinToCls (getThing lcls) (getThing rcls) c'' (getClosure rcls)
+                    updateCTE $ SqlCTE cls' (SqlSelect as'' (tail ts) cs'')
     (SqlBin o l r) -> 
-      do cte' <- updateCTE (SqlCTE (closure cte) l)
+      do cte' <- updateCTE (SqlCTE cls l)
          cte'' <- updateCTE (SqlCTE (closure cte') r)
          return $ SqlCTE (closure cte'') (SqlBin o (query cte') (query cte''))
     q -> return cte
@@ -77,7 +80,12 @@ updateConds = undefined
 addJoinToCls :: SqlRelation -> SqlRelation -> RCondition -> CteClosure -> CteClosure
 addJoinToCls = undefined
 
--- | update sql select query.
+-- | update a sql rel.
+updateSqlRel :: Rename SqlSelect -> CteClosure -> [SqlAttrExpr] -> [SqlCond SqlSelect]
+             -> CteState (CteClosure, ([SqlAttrExpr], [SqlCond SqlSelect]))
+updateSqlRel = undefined
+
+-- | update relation from a join.
 -- updates rcondition.
 -- update sql query within sqlrel.
 -- update att list.
