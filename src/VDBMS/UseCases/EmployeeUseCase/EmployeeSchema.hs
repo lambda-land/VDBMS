@@ -71,12 +71,12 @@ birthdate_ = N.Attribute "birthdate"
 
 empSchema1 :: Schema 
 empSchema1 = ( empv1, constructRelMap [ ( engineerpersonnel,  engineerpersonnel_v1)
-                                                   , ( otherpersonnel,    otherpersonnel_v1)
-                                                   , ( job,  job_v1234)
-                                                   ]
+                                      , ( otherpersonnel,    otherpersonnel_v1)
+                                      , ( job,  job_v1234)
+                                      ]
              )
 
--- |  engineerpersonnel(empno, name, hiredate, title, deptname) 
+-- |  engineerpersonnel(empno_, name_, hiredate_, title_, deptname_) 
 engineerpersonnel_v1 :: [(N.Attribute,SqlType)]
 engineerpersonnel_v1 = [ (empno_, TInt32), 
                          (name_,  TString)
@@ -85,7 +85,7 @@ engineerpersonnel_v1 = [ (empno_, TInt32),
                        , (deptname_, TString)
                        ]
 
--- | otherpersonnel(empno, name, hiredate, title, deptname) 
+-- | otherpersonnel(empno_, name_, hiredate_, title_, deptname_) 
 otherpersonnel_v1 :: [(N.Attribute,SqlType)]
 otherpersonnel_v1 =  [ (empno_,TInt32)
                      , (name_, TString)
@@ -94,130 +94,112 @@ otherpersonnel_v1 =  [ (empno_,TInt32)
                      , (deptname_, TString)
                      ]
 
--- | job(title, salary)
+-- | job(title_, salary_)
 job_v1234 ::[(N.Attribute,SqlType)]
 job_v1234 = [ (title_, TString)
             , (salary_,  TInt32)
             ]
 
-{-
 -- 
 -- ** schema version 2 
 -- 
 
 empSchema2 :: Schema 
 empSchema2 = (empv2, constructRelMap [ ( empacct, empacct_v2)
-                                                  , (job,  job_v1234)
-                                                  ] 
+                                     , (job,  job_v1234)
+                                     ] 
               )
 
 
--- |  empacct (empno, name, hiredate, title, deptname) 
+-- |  empacct (empno_, name_, hiredate_, title_, deptname_) 
 empacct_v2 :: [(N.Attribute,SqlType)]
-empacct_v2 =  [ (addEmpacct empno,    TInt32)
-              , (addEmpacct name,     TString)
-              , (addEmpacct hiredate, TUTCTime)
-              , (addEmpacct title,    TString)
-              , (addEmpacct deptname, TString)
+empacct_v2 =  [ (empno_,    TInt32)
+              , (name_,     TString)
+              , (hiredate_, TUTCTime)
+              , (title_,    TString)
+              , (deptname_, TString)
               ]
-  where 
-    addEmpacct = flip addRelToAtt empacct
 
 --
 --  ** schema version 3 
 -- 
 
 empSchema3 :: Schema
-empSchema3 = (empv3,  constructRelMap   [ (empacct,  empacct_v3)
-                                                     , ( job,  job_v1234)
-                                                     , ( dept,  dept_v345)
-                                                     ]
+empSchema3 = (empv3,  constructRelMap  [ (empacct,  empacct_v3)
+                                       , ( job,  job_v1234)
+                                       , ( dept,  dept_v345)
+                                       ]
               )
 
--- | empacct (empno, name, hiredate, title, deptno) 
+-- | empacct (empno_, name_, hiredate_, title_, deptno_) 
 empacct_v3 :: [(N.Attribute,SqlType)]
-empacct_v3 =  [ (addEmpacct empno,   TInt32)
-              , (addEmpacct name,    TString)
-              , (addEmpacct hiredate,TUTCTime)
-              , (addEmpacct title,   TString)
-              , (addEmpacct deptno,  TInt32)
+empacct_v3 =  [ (empno_,   TInt32)
+              , (name_,    TString)
+              , (hiredate_,TUTCTime)
+              , (title_,   TString)
+              , (deptno_,  TInt32)
               ]
-  where 
-    addEmpacct = flip addRelToAtt empacct
 
--- | dept (deptname, deptno, managerno)
+-- | dept (deptname_, deptno_, managerno_)
 dept_v345 :: [(N.Attribute,SqlType)]
-dept_v345 =   [ (addDept deptname, TString)
-            , (addDept deptno,   TInt32)
-            , (managerno,TInt32)
-            ]
-  where 
-    addDept = flip addRelToAtt dept
+dept_v345 =   [ (deptname_, TString)
+              , (deptno_,   TInt32)
+              , (managerno_,TInt32)
+              ]
 
 -- 
 -- ** schema version 4 
 --
 
 empSchema4 :: Schema 
-empSchema4 = (empv4, constructRelMap  [ ( empacct, empacct_v4)
-                                                   , ( job, job_v1234)
-                                                   , ( dept,  dept_v345)
-                                                   , ( empbio,  empbio_v4)
-                                                   ]
+empSchema4 = (empv4, constructRelMap [ ( empacct, empacct_v4)
+                                     , ( job, job_v1234)
+                                     , ( dept,  dept_v345)
+                                     , ( empbio,  empbio_v4)
+                                     ]
                     )
 
--- | empacct (empno, hiredate, title, deptno) 
+-- | empacct (empno_, hiredate_, title_, deptno_) 
 empacct_v4 :: [(N.Attribute,SqlType)]
-empacct_v4 =   [ (addEmpacct empno,    TInt32)
-               , (addEmpacct hiredate, TUTCTime)
-               , (addEmpacct title,    TString)
-               , (addEmpacct deptno,   TInt32)
+empacct_v4 =   [ (empno_,    TInt32)
+               , (hiredate_, TUTCTime)
+               , (title_,    TString)
+               , (deptno_,   TInt32)
                ]
-  where 
-    addEmpacct = flip addRelToAtt empacct
 
--- | empbio (empno, sex, birthdate, name)
+-- | empbio (empno_, sex_, birthdate_, name_)
 empbio_v4 :: [(N.Attribute,SqlType)]
-empbio_v4 =  [ (addEmpbio empno,    TInt32)
-             , (sex,      TString)
-             , (birthdate,TUTCTime)
-             , (addEmpbio name,     TString)
+empbio_v4 =  [ (empno_,    TInt32)
+             , (sex_,      TString)
+             , (birthdate_,TUTCTime)
+             , (name_,     TString)
              ]
-  where 
-    addEmpbio = flip addRelToAtt empbio
+
 -- 
 -- ** schema version 5
 -- 
 
 empSchema5 :: Schema 
 empSchema5 = ( empv5, constructRelMap [ ( empacct,  empacct_v5)
-                                                   , (dept,  dept_v345)
-                                                   , (empbio,  empbio_v5)
-                                                   ]
+                                      , (dept,  dept_v345)
+                                      , (empbio,  empbio_v5)
+                                      ]
              )
 
--- | empacct (empno, hiredate, title, deptno, salary) 
+-- | empacct (empno_, hiredate_, title_, deptno_, salary_) 
 empacct_v5 :: [(N.Attribute,SqlType)]
-empacct_v5 =   [ (addEmpacct empno,     TInt32)
-               , (addEmpacct hiredate,  TUTCTime)
-               , (addEmpacct title,     TString)
-               , (addEmpacct deptno,    TInt32)
-               , (addEmpacct salary,    TInt32)
+empacct_v5 =   [ (empno_,     TInt32)
+               , (hiredate_,  TUTCTime)
+               , (title_,     TString)
+               , (deptno_,    TInt32)
+               , (salary_,    TInt32)
                ]
-  where 
-    addEmpacct = flip addRelToAtt empacct
 
--- | empbio (empno, sex, birthdate, firstname, lastname)
+-- | empbio (empno_, sex_, birthdate_, firstname_, lastname_)
 empbio_v5 :: [(N.Attribute,SqlType)]
-empbio_v5 =  [ (addEmpbio empno,     TInt32)
-             , (sex,      TString)
-             , (birthdate, TUTCTime)
-             , (firstname, TString)
-             , (lastname,  TString)
+empbio_v5 =  [ (empno_,     TInt32)
+             , (sex_,      TString)
+             , (birthdate_, TUTCTime)
+             , (firstname_, TString)
+             , (lastname_,  TString)
              ]
-  where 
-    addEmpbio = flip addRelToAtt empbio
-
-
-
--}
