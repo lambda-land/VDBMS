@@ -287,7 +287,7 @@ empVQ8 = undefined
 -- 
 -- the variatonal query of empQ1:
 -- * v-query considering 5 versions
---   v1 < q1_v1, (v2 or v3 or v4) < q1_v2v3v4, v5 < q1_v4, empty>>>
+--   (v3 or v4) < q1_v3v4, v5< q1_v5, empty>>>
 -- * plain queries for each versiton 
 --   q1_v1:  prj_salary 
 --          (sel_(empNo=10004,hiredate>1991-01-01))
@@ -308,10 +308,8 @@ empQ9T = QueryT $
   "WHERE empNo = 10004 AND hiredate > 1991-01-01"
 
 empVQ9 :: Algebra
-empVQ9 = AChc empv1 empQ9_v1 $ AChc (F.Or empv2 (F.Or empv3 empv4)) empQ9_v2v3v4 $ AChc empv5 empQ9_v5 Empty
-            where empQ9_v1 = Proj [trueAttr salary] $ genRenameAlgebra $ 
-                              joinThreeRelation job engineerpersonnel otherpersonnel title 
-                  empQ9_v2v3v4 = Proj [trueAttr salary] $ genRenameAlgebra $
+empVQ9 = AChc (F.Or empv3 empv4) empQ9_v3v4 $ AChc empv5 empQ9_v5 Empty
+            where empQ9_v3v4 = Proj [trueAttr salary] $ genRenameAlgebra $
                                   Sel (VsqlCond (C.And empCond yearAfterCond)) $ 
                                    genRenameAlgebra $ joinTwoRelation empacct job title
                   empQ9_v5 = Proj [trueAttr salary] $ genRenameAlgebra $ 
@@ -321,12 +319,13 @@ empVQ9 = AChc empv1 empQ9_v1 $ AChc (F.Or empv2 (F.Or empv3 empv4)) empQ9_v2v3v4
 -- 10(Q5B). 
 -- intent: return the managers (of department d001) on
 --         1991-01-01 or after.
+-- variational query:
+--   v3 or v4 or v5 <q2, empty>
 -- query:
--- prj_managerno (sel_(hiredate>1991-01-01and deptno = d001)
---                 empacct join_(managerno=empno) dept)
+--   prj_managerno (sel_(hiredate>1991-01-01and deptno = d001)
+--                   empacct join_(managerno=empno) dept)
 -- Note:
 -- 1. Attribute deptno only exist in v3,v4,v5.
--- v3 or v4 or v5 <q2, empty> OR v3 <q2, v4 < q2, v5 <q2, Empty>>>???
 empQ10T :: QueryT
 empQ10T = QueryT $
   "SELECT managerno" ++
@@ -339,39 +338,31 @@ empQ10 = Proj [trueAttr managerno] $ genRenameAlgebra $
                   joinTwoRelation empacct dept deptno
       where cond = (C.Comp EQ (C.Att deptno) (C.Val departno_value)) `C.And ` yearAfterCond
 
--- | VQ2 or VQ2naive, which one should use??
 empVQ10 :: Algebra
 empVQ10 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ10 Empty
-
-empVQ10naive :: Algebra
-empVQ10naive = AChc empv3 empQ10 (AChc empv4 empQ10 $ AChc empv5 empQ10 Empty)
 
 -- 11(Q6A)
 -- intent: find all managers that employee 10004 worked with,
 --         with overlapping period. answer using data valid 
 --         on or after 1991-01-01.
+-- variational query:
+--   v3 or v4 or v5 <q, empty>
 -- query:
--- prj_managerno (dept join_(deptno=deptno) 
---                prj_deptno (sel_(empNo=10004, hiredate>1991-01-01) empacct))
--- note:
--- the naive and manually optimized queries are basically the same.
+--   prj_managerno (dept join_(deptno=deptno) 
+--                  prj_deptno (sel_(empNo=10004, hiredate>1991-01-01) empacct))
 empQ11T :: QueryT
 empQ11T = QueryT $
   "SELECT managerno" ++
   "FROM empacct join dept on deptno" ++  
-  "WHERE empno = 10004 AND hiredate > 1991-01-01  as t1"
+  "WHERE empno = 10004 AND hiredate > 1991-01-01"
 
 empQ11 :: Algebra
 empQ11 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
   Sel (VsqlCond ((yearAfterCond `C.And` (C.Comp EQ (C.Att empno) (C.Val empno_value)) ))) $ genRenameAlgebra $ 
   joinTwoRelation empacct dept deptno 
 
--- | v3 or v4 or v5 <q2, empty>
 empVQ11 :: Algebra
 empVQ11 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ10 Empty
-
-empVQ11naive :: Algebra
-empVQ11naive = AChc empv3 empQ11 (AChc empv4 empQ11 $ AChc empv5 empQ11 Empty)
 
 -- 12(Q6B)
 -- intent: find all salary values of managers in all history.
@@ -423,7 +414,7 @@ empVQ12 = AChc (F.Or empv3 empv4)
 --          2. get managerno from those departments 
 -- 
 -- * variational queries:
---   (v3 or v4 or v5) <empQ13, empty> or v3<empQ13, v4<empQ13, v5 <empQ13, empty>> ??? 
+--   (v3 or v4 or v5) <empQ13, empty> 
 -- * plain queries for each version:
 --   * For v3,v4,v5:
 --       SELECT managerno
@@ -465,7 +456,7 @@ empVQ14 = empVQ12
 --          2. get departments for those managers 
 -- 
 -- * variational queries:
---   (v3 or v4 or v5) <empQ15, empty> or v3<empQ15, v4<empQ15, v5 <empQ15, empty>> ??? 
+--   (v3 or v4 or v5) <empQ15, empty>
 -- * plain queries for each version:
 --   * For v3,v4,v5:
 --      SELECT deptname 
@@ -483,10 +474,6 @@ empQ15 = Proj [trueAttr deptname] $ genRenameAlgebra $
 -- | v3 or v4 or v5 <q2, empty>
 empVQ15 :: Algebra
 empVQ15 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ15 Empty
-
-
-empVQ15naive :: Algebra
-empVQ15naive = AChc empv3 empQ15 $ AChc empv4 empQ15 $ AChc empv5 empQ15 Empty
 
 -- 16(Q8B)
 -- intent: for all managers, find all managers in the department 
