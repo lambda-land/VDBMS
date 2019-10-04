@@ -3,7 +3,13 @@ module VDBMS.UseCases.EmployeeUseCase.EmployeeSchema where
 
 
 import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.VDB.Name
+import qualified VDBMS.VDB.Name as N 
+import VDBMS.VDB.Schema.Variational.Schema
+import VDBMS.DBMS.Value.Value
+import VDBMS.UseCases.SmartConstructor
+
+
+
 -- 
 -- Features
 -- 
@@ -18,28 +24,19 @@ empv5 = Ref (Feature "v5")
 -- 
 -- Relations
 -- 
-genRelation :: Name -> Rename Relation
-genRelation relName  =  Rename Nothing (Relation relName)
-
-engineerpersonnel, otherpersonnel, job, dept, empacct, empbio :: Relation
-engineerpersonnel = Relation "v_engineerpersonnel"
-otherpersonnel    = Relation "v_otherpersonnel"
-job               = Relation "v_job"
-dept              = Relation "v_dept"
-empacct           = Relation "v_empacct"
-empbio            = Relation "v_empbio"
+engineerpersonnel, otherpersonnel, job, dept, empacct, empbio :: N.Relation
+engineerpersonnel = N.Relation "v_engineerpersonnel"
+otherpersonnel    = N.Relation "v_otherpersonnel"
+job               = N.Relation "v_job"
+dept              = N.Relation "v_dept"
+empacct           = N.Relation "v_empacct"
+empbio            = N.Relation "v_empbio"
 
 -- 
 -- Attributes
 -- 
-attr :: Name -> Attr 
-attr n = Attr (Attribute n) Nothing 
-
-qualifiedAttr :: Relation -> Attr -> Attr
-qualifiedAttr rel a = Attr (attribute a) (Just (RelQualifier rel))
-
-empno, name, hiredate, title, deptname, salary :: Attr
-deptno, managerno, sex, birthdate, firstname, lastname :: Attr
+empno, name, hiredate, title, deptname, salary :: N.Attr
+deptno, managerno, sex, birthdate, firstname, lastname :: N.Attr
 empno     = attr "empno"
 name      = attr "name"
 hiredate  = attr "hiredate"
@@ -53,31 +50,23 @@ firstname = attr "firstname"
 lastname  = attr "lastname"
 birthdate = attr "birthdate"
 
-genRenameAttr :: Attr -> Rename Attr
-genRenameAttr att = Rename Nothing $ att
+empno_, name_, hiredate_, title_, deptname_, salary_ :: N.Attribute
+deptno_, managerno_, sex_, birthdate_, firstname_, lastname_ :: N.Attribute
+empno_     = N.Attribute "empno"
+name_      = N.Attribute "name"
+hiredate_  = N.Attribute "hiredate"
+title_     = N.Attribute "title"
+deptname_  = N.Attribute "deptname"
+salary_    = N.Attribute "salary"
+deptno_    = N.Attribute "deptno"
+managerno_ = N.Attribute "managerno"
+sex_       = N.Attribute "sex"
+firstname_ = N.Attribute "firstname"
+lastname_  = N.Attribute "lastname"
+birthdate_ = N.Attribute "birthdate"
 
-genQualifiedRenameAttr :: Name -> Attr -> Rename Attr
-genQualifiedRenameAttr rel att = Rename Nothing $ Attr (attribute att) (Just (RelQualifier (Relation rel)))
-
--- empno, name, hiredate, title, deptname, salary :: Rename Attr
--- deptno, managerno, sex, birthdate, firstname, lastname :: Rename Attr
--- empno     = genAttr "empno"
--- name      = genAttr "name"
--- hiredate  = genAttr "hiredate"
--- title     = genAttr "title"
--- deptname  = genAttr "deptname"
--- salary    = genAttr "salary"
--- deptno    = genAttr "deptno"
--- managerno = genAttr"managerno"
--- sex       = genAttr "sex"
--- firstname = genAttr "firstname"
--- lastname  = genAttr "lastname"
--- birthdate = genAttr "birthdate"
-
-
-{-
 --  
---  ** schema verison 1 
+--  ** schema for verison 1 
 --  
 
 empSchema1 :: Schema 
@@ -88,35 +77,30 @@ empSchema1 = ( empv1, constructRelMap [ ( engineerpersonnel,  engineerpersonnel_
              )
 
 -- |  engineerpersonnel(empno, name, hiredate, title, deptname) 
-engineerpersonnel_v1 :: [(Attribute,SqlType)]
-engineerpersonnel_v1 = [ (addEng empno, TInt32), 
-                         (addEng name,  TString)
-                       , (addEng hiredate, TUTCTime)
-                       , (addEng title,  TString)
-                       , (addEng deptname, TString)
+engineerpersonnel_v1 :: [(N.Attribute,SqlType)]
+engineerpersonnel_v1 = [ (empno_, TInt32), 
+                         (name_,  TString)
+                       , (hiredate_, TUTCTime)
+                       , (title_,  TString)
+                       , (deptname_, TString)
                        ]
-  where 
-    addEng = flip addRelToAtt engineerpersonnel
 
 -- | otherpersonnel(empno, name, hiredate, title, deptname) 
-otherpersonnel_v1 :: [(Attribute,SqlType)]
-otherpersonnel_v1 =  [ (addOther empno,TInt32)
-                     , (addOther name, TString)
-                     , (addOther hiredate, TUTCTime)
-                     , (addOther title, TString)
-                     , (addOther deptname, TString)
+otherpersonnel_v1 :: [(N.Attribute,SqlType)]
+otherpersonnel_v1 =  [ (empno_,TInt32)
+                     , (name_, TString)
+                     , (hiredate_, TUTCTime)
+                     , (title_, TString)
+                     , (deptname_, TString)
                      ]
-  where 
-    addOther = flip addRelToAtt otherpersonnel
 
 -- | job(title, salary)
-job_v1234 ::[(Attribute,SqlType)]
-job_v1234 = [ (addJob title, TString)
-          , (addJob salary,  TInt32)
-          ]
-  where 
-    addJob = flip addRelToAtt job
+job_v1234 ::[(N.Attribute,SqlType)]
+job_v1234 = [ (title_, TString)
+            , (salary_,  TInt32)
+            ]
 
+{-
 -- 
 -- ** schema version 2 
 -- 
@@ -129,7 +113,7 @@ empSchema2 = (empv2, constructRelMap [ ( empacct, empacct_v2)
 
 
 -- |  empacct (empno, name, hiredate, title, deptname) 
-empacct_v2 :: [(Attribute,SqlType)]
+empacct_v2 :: [(N.Attribute,SqlType)]
 empacct_v2 =  [ (addEmpacct empno,    TInt32)
               , (addEmpacct name,     TString)
               , (addEmpacct hiredate, TUTCTime)
@@ -151,7 +135,7 @@ empSchema3 = (empv3,  constructRelMap   [ (empacct,  empacct_v3)
               )
 
 -- | empacct (empno, name, hiredate, title, deptno) 
-empacct_v3 :: [(Attribute,SqlType)]
+empacct_v3 :: [(N.Attribute,SqlType)]
 empacct_v3 =  [ (addEmpacct empno,   TInt32)
               , (addEmpacct name,    TString)
               , (addEmpacct hiredate,TUTCTime)
@@ -162,7 +146,7 @@ empacct_v3 =  [ (addEmpacct empno,   TInt32)
     addEmpacct = flip addRelToAtt empacct
 
 -- | dept (deptname, deptno, managerno)
-dept_v345 :: [(Attribute,SqlType)]
+dept_v345 :: [(N.Attribute,SqlType)]
 dept_v345 =   [ (addDept deptname, TString)
             , (addDept deptno,   TInt32)
             , (managerno,TInt32)
@@ -183,7 +167,7 @@ empSchema4 = (empv4, constructRelMap  [ ( empacct, empacct_v4)
                     )
 
 -- | empacct (empno, hiredate, title, deptno) 
-empacct_v4 :: [(Attribute,SqlType)]
+empacct_v4 :: [(N.Attribute,SqlType)]
 empacct_v4 =   [ (addEmpacct empno,    TInt32)
                , (addEmpacct hiredate, TUTCTime)
                , (addEmpacct title,    TString)
@@ -193,7 +177,7 @@ empacct_v4 =   [ (addEmpacct empno,    TInt32)
     addEmpacct = flip addRelToAtt empacct
 
 -- | empbio (empno, sex, birthdate, name)
-empbio_v4 :: [(Attribute,SqlType)]
+empbio_v4 :: [(N.Attribute,SqlType)]
 empbio_v4 =  [ (addEmpbio empno,    TInt32)
              , (sex,      TString)
              , (birthdate,TUTCTime)
@@ -213,7 +197,7 @@ empSchema5 = ( empv5, constructRelMap [ ( empacct,  empacct_v5)
              )
 
 -- | empacct (empno, hiredate, title, deptno, salary) 
-empacct_v5 :: [(Attribute,SqlType)]
+empacct_v5 :: [(N.Attribute,SqlType)]
 empacct_v5 =   [ (addEmpacct empno,     TInt32)
                , (addEmpacct hiredate,  TUTCTime)
                , (addEmpacct title,     TString)
@@ -224,7 +208,7 @@ empacct_v5 =   [ (addEmpacct empno,     TInt32)
     addEmpacct = flip addRelToAtt empacct
 
 -- | empbio (empno, sex, birthdate, firstname, lastname)
-empbio_v5 :: [(Attribute,SqlType)]
+empbio_v5 :: [(N.Attribute,SqlType)]
 empbio_v5 =  [ (addEmpbio empno,     TInt32)
              , (sex,      TString)
              , (birthdate, TUTCTime)

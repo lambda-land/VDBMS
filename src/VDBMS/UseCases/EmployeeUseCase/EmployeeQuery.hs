@@ -6,7 +6,6 @@ import VDBMS.UseCases.EmployeeUseCase.EmployeeSchema
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
 import VDBMS.UseCases.SmartConstructor
-import VDBMS.VDB.Name
 import VDBMS.DBMS.Value.CompOp
 import Prelude hiding (Ordering(..))
 import Database.HDBC 
