@@ -8,8 +8,6 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.UseCases.SmartConstructor
 
-
-
 -- 
 -- Features
 -- 
@@ -19,7 +17,6 @@ empv2 = Ref (Feature "v2")
 empv3 = Ref (Feature "v3")
 empv4 = Ref (Feature "v4")
 empv5 = Ref (Feature "v5")
-
 
 -- 
 -- Relations
@@ -68,7 +65,6 @@ birthdate_ = N.Attribute "birthdate"
 --  
 --  ** schema for verison 1 
 --  
-
 empSchema1 :: Schema 
 empSchema1 = ( empv1, constructRelMap [ ( engineerpersonnel,  engineerpersonnel_v1)
                                       , ( otherpersonnel,    otherpersonnel_v1)
@@ -123,7 +119,6 @@ empacct_v2 =  [ (empno_,    TInt32)
 --
 --  ** schema version 3 
 -- 
-
 empSchema3 :: Schema
 empSchema3 = (empv3,  constructRelMap  [ (empacct,  empacct_v3)
                                        , ( job,  job_v1234)
@@ -150,7 +145,6 @@ dept_v345 =   [ (deptname_, TString)
 -- 
 -- ** schema version 4 
 --
-
 empSchema4 :: Schema 
 empSchema4 = (empv4, constructRelMap [ ( empacct, empacct_v4)
                                      , ( job, job_v1234)
@@ -178,7 +172,6 @@ empbio_v4 =  [ (empno_,    TInt32)
 -- 
 -- ** schema version 5
 -- 
-
 empSchema5 :: Schema 
 empSchema5 = ( empv5, constructRelMap [ ( empacct,  empacct_v5)
                                       , (dept,  dept_v345)

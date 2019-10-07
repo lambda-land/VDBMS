@@ -13,7 +13,6 @@ import VDBMS.Variational.Opt
 import qualified VDBMS.VDB.Name as N
 import VDBMS.VDB.Schema.Variational.Schema
 
-
 -- 
 -- * Smart Constructors for Query
 --
