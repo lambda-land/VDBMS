@@ -1,5 +1,10 @@
 -- | generates sql queries with ctes given a sql query.
-module VDBMS.QueryGen.Sql.GenSqlWithCTE where 
+module VDBMS.QueryGen.Sql.GenSqlWithCTE (
+
+       evalCteState
+       , genCTE
+
+) where 
 
 -- import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
@@ -80,18 +85,22 @@ updateRCond l r c = undefined
 updateConds :: Name -> [SqlCond SqlSelect] -> [SqlCond SqlSelect]
 updateConds = undefined
 
--- |
+-- | adds a join to closure. 
 addJoinToCls :: SqlRelation -> SqlRelation -> RCondition -> CteClosure -> CteClosure
 addJoinToCls = undefined
 
 -- | update a sql rel.
+-- gets a rename q. checks to see if it exists in closure.
+-- if yes gets the name assigned to it. updates atts and conds w.r.t. name from closure
+--   instead of the name from rename q.
+-- otherwise, it increments state, adds rename q to closure, updates atts and conds.
 updateSqlRel :: Rename SqlSelect -> CteClosure -> [SqlAttrExpr] -> [SqlCond SqlSelect]
              -> CteState (CteClosure, ([SqlAttrExpr], [SqlCond SqlSelect]))
 updateSqlRel = undefined
 
 -- | update relation from a join.
 -- updates rcondition.
--- update sql query within sqlrel.
+-- update sql query within sqlrel. --> why do I need this????
 -- update att list.
 -- update cond list.
 updateJoinRel :: SqlRelation -> CteClosure -> RCondition 
