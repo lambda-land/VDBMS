@@ -63,9 +63,17 @@ qualifiedAttr rel a = N.Attr (N.attribute a) (Just (N.RelQualifier rel))
 genRenameAttr :: N.Attr -> N.Rename N.Attr
 genRenameAttr att = N.Rename Nothing $ att
 
+-- | Generate Rename Attrs
+genRenameAttrList:: [N.Attr] -> [N.Rename N.Attr]
+genRenameAttrList = map genRenameAttr 
+
 -- | Genrate Rename Attr with qualifier
 genQualifiedRenameAttr :: N.Name -> N.Attr -> N.Rename N.Attr
 genQualifiedRenameAttr rel att = N.Rename Nothing $ N.Attr (N.attribute att) (Just (N.RelQualifier (N.Relation rel)))
+
+-- | Genrate Rename Attrs with qualifier
+genQualifiedRenameAttrList :: [(N.Name, N.Attr)] -> [N.Rename N.Attr]
+genQualifiedRenameAttrList = map (\(rel,attr) -> genQualifiedRenameAttr rel attr) 
 
 -- | contruct plain Schema without tag assigned based on a list of [(Relation, [Attribute, Sqltype])] 
 constructRelMap :: [(N.Relation, [(N.Attribute, SqlType)])] -> M.Map N.Relation (Opt RowType) 
