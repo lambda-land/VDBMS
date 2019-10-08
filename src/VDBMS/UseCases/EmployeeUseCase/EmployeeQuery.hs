@@ -28,9 +28,6 @@ import Data.Time.Calendar
 -- plain q of a vq and then running it on the appropriate 
 -- variant. 
 
-newtype QueryT = QueryT String
-  deriving (Show, Eq)
-
 --
 -- * Constant values used for employee use cases
 --
@@ -258,17 +255,19 @@ empVQ7 = AChc empv3 empQ7 Empty
 --         (non-temporal join follwed by temporal-join)
 --          Answer using data valid on the year 1991.
 -- 
--- Process: 1. Find departments and hiredate of manager worked in
---          2. Find managers where has same departments and hiredate except itself
+-- Process: Join the table empacct and dept and return the manager name and department name 
 -- 
 -- * variational queries:
 -- * plain queries for each version:
 -- Note: Two worked during same period, we consider it as two people hire at the same hiredate.
 empQ8 :: Algebra
-empQ8 = undefined
+empQ8 = Proj [trueAttr name, trueAttr deptname] $ genRenameAlgebra $ 
+          Sel (VsqlCond yearCond) $ genRenameAlgebra $ 
+            Join (genRenameAlgebra (tRef empacct)) (genRenameAlgebra (tRef dept)) cond 
+          where cond = C.Comp EQ (C.Att empno) (C.Att managerno)
 
 empVQ8 :: Algebra
-empVQ8 = undefined
+empVQ8 = AChc empv3 empQ8 Empty
 
 -- 
 -- Q9-Q16 is a relaxation of Q1-Q8, in terms of period.
@@ -480,5 +479,24 @@ empVQ15 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ15 Empty
 --         period) (non-temporal join followed by temporal-join)
 --         answer using data valid on or after the year 1991.
 empVQ16 :: Algebra
-empVQ16 = undefined
+empVQ16 = AChc empv3 empQ16_v3 (AChc empv4 empQ16_v4 (AChc empv5 empQ16_v5 Empty))
 
+empQ16_v3 :: Algebra
+empQ16_v3 = Proj [trueAttr name, trueAttr deptname] $ genRenameAlgebra $ 
+          Sel (VsqlCond yearCond) $ genRenameAlgebra $ 
+            Join (genRenameAlgebra (tRef empacct)) (genRenameAlgebra (tRef dept)) cond 
+          where cond = C.Comp EQ (C.Att empno) (C.Att managerno)
+
+empQ16_v4 :: Algebra 
+empQ16_v4 = Proj [trueAttr name, trueAttr deptname] $ genRenameAlgebra $ 
+          Sel (VsqlCond yearAfterCond) $ genRenameAlgebra $ 
+            Join (genRenameAlgebra join_empacct_empbio) (genRenameAlgebra (tRef dept)) cond 
+          where join_empacct_empbio = joinTwoRelation empacct empbio empno 
+                cond = C.Comp EQ (C.Att empno) (C.Att managerno)
+
+empQ16_v5 :: Algebra
+empQ16_v5 = Proj [trueAttr firstname, trueAttr lastname, trueAttr deptname] $ genRenameAlgebra $ 
+              Sel (VsqlCond yearAfterCond) $ genRenameAlgebra $ 
+                Join (genRenameAlgebra join_empacct_empbio) (genRenameAlgebra (tRef dept)) cond 
+            where join_empacct_empbio = joinTwoRelation empacct empbio empno 
+                  cond = C.Comp EQ (C.Att empno) (C.Att managerno)

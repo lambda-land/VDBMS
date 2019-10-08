@@ -13,6 +13,9 @@ import VDBMS.Variational.Opt
 import qualified VDBMS.VDB.Name as N
 import VDBMS.VDB.Schema.Variational.Schema
 
+newtype QueryT = QueryT String
+  deriving (Show, Eq)
+
 -- 
 -- * Smart Constructors for Query
 --
