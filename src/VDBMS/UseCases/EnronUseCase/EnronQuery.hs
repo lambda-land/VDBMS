@@ -64,8 +64,8 @@ join_msg_rec_emp_foward = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlg
 --   Then a message sent to this alias will go encrypted to one but in the clear to the other; 
 --   sending the message in the clear on the open network defeats the intent (privacy) of ENCRYPTMESSAGE.
 --   (eg. a single message with two addressees)
--- * Fix: fixed by customized UI, which has no query involved.
-
+-- * Fix by FNE: by customized UI, 
+--   Fix by VDB: This interation has no query involed. 
 
 --
 -- 2. Interaction: Addressbook vs RemailMessage 
@@ -75,7 +75,8 @@ join_msg_rec_emp_foward = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlg
 --   Then sending a meesage to that alias in remailer format will send the message both through the remailer
 --   to the third party and to the other correspondent. However, the correspondent can see who the thrid party is 
 --   and then leak the identity of the sender. 
--- * Fix: by customized UI, which has no query involed. 
+-- * Fix by FNE: by customized UI, 
+--   Fix by VDB: This interation has no query involed. 
 
 -- 
 -- 3. Interaction: SignMessage vs VerifyMessage 
@@ -128,6 +129,26 @@ i4_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $
             join_msg_rec_emp_foward
 
 
+--
+-- 5. Interaction: SignMessage vs RemailMessage 
+-- 
+-- * Feature: signature vs remailmsg
+-- * Situdation: Bob sign a message that is then sent though the remail(use pseudonyms), 
+--               the recipient receive the signed message, defeating the anonymity.
+-- * Fix by FNE: UI --> Either disallow this or warn the user.
+--   Fix by VDB: Check if the sender's is_sign is true and receiver of the msg is remail@rmhost
+--   - signautre AND remailmsg => Q1: query the sender's is_sign and receiver of the msg
+--   - signautre AND (NOT remailmsg) => Empty
+--   - (NOT signautre) AND remailmsg => Empty
+--   - (NOT signautre) AND (NOT remailmsg) => Empty
+-- * V-Query: signature AND remailmsg <Q1, Empty>
+enronVQ5 :: Algebra
+enronVQ5 = undefined 
 
+-- Proj_ is_signed, rvalue Sel_ mid = midValue (v_message join_[mid = mid] v_recipientinfo)
+i5_Q1 :: Algebra
+i5_Q1 = Proj [trueAttr is_signed, trueAttr rvalue] $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+           joinTwoRelation v_message v_recipientinfo "mid"
 
 
