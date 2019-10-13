@@ -97,7 +97,7 @@ empQ1T = QueryT $
 empQ1 :: Algebra
 empQ1 = Proj [trueAttr salary] $ genRenameAlgebra $
           Sel (VsqlCond (C.And empCond yearCond)) $ 
-            genRenameAlgebra $ joinTwoRelation empacct job title
+            genRenameAlgebra $ joinTwoRelation empacct job "title"
 
 empVQ1 :: Algebra
 empVQ1 = AChc empv3 empQ1 Empty
@@ -121,7 +121,7 @@ empQ2T = QueryT $
 empQ2 :: Algebra
 empQ2 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
                   Sel (VsqlCond cond) $ genRenameAlgebra $ 
-                  joinTwoRelation empacct dept deptno
+                  joinTwoRelation empacct dept "deptno"
       where cond = (C.Comp EQ (C.Att deptno) (C.Val departno_value)) `C.And ` yearCond
 
 -- | VQ2 or VQ2naive, which one should use??
@@ -148,7 +148,7 @@ empQ3T = QueryT $
 empQ3 :: Algebra
 empQ3 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
   Sel (VsqlCond ((yearCond `C.And` (C.Comp EQ (C.Att empno) (C.Val empno_value)) ))) $ genRenameAlgebra $ 
-  joinTwoRelation empacct dept deptno 
+  joinTwoRelation empacct dept "deptno" 
 
 -- | v3 or v4 or v5 <q3, empty>
 empVQ3 :: Algebra
@@ -177,7 +177,7 @@ empQ4:: Algebra
 empQ4 = Proj [trueAttr managerno, trueAttr salary] $ genRenameAlgebra $ 
           Sel (VsqlCond yearCond) $ genRenameAlgebra $ 
           Join (genRenameAlgebra join_empacct_job) (genRenameAlgebra (tRef dept)) cond 
-    where join_empacct_job = joinTwoRelation empacct job title 
+    where join_empacct_job = joinTwoRelation empacct job "title" 
           cond = C.Comp EQ (C.Att empno) (C.Att managerno)
 
 empVQ4 :: Algebra
@@ -309,7 +309,7 @@ empVQ9 :: Algebra
 empVQ9 = AChc (F.Or empv3 empv4) empQ9_v3v4 $ AChc empv5 empQ9_v5 Empty
             where empQ9_v3v4 = Proj [trueAttr salary] $ genRenameAlgebra $
                                   Sel (VsqlCond (C.And empCond yearAfterCond)) $ 
-                                   genRenameAlgebra $ joinTwoRelation empacct job title
+                                   genRenameAlgebra $ joinTwoRelation empacct job "title"
                   empQ9_v5 = Proj [trueAttr salary] $ genRenameAlgebra $ 
                               Sel (VsqlCond (C.And empCond yearAfterCond)) $ genRenameAlgebra $ 
                                 tRef empacct 
@@ -333,7 +333,7 @@ empQ10T = QueryT $
 empQ10 :: Algebra
 empQ10 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
                   Sel (VsqlCond cond) $ genRenameAlgebra $ 
-                  joinTwoRelation empacct dept deptno
+                  joinTwoRelation empacct dept "deptno"
       where cond = (C.Comp EQ (C.Att deptno) (C.Val departno_value)) `C.And ` yearAfterCond
 
 empVQ10 :: Algebra
@@ -357,7 +357,7 @@ empQ11T = QueryT $
 empQ11 :: Algebra
 empQ11 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
   Sel (VsqlCond ((yearAfterCond `C.And` (C.Comp EQ (C.Att empno) (C.Val empno_value)) ))) $ genRenameAlgebra $ 
-  joinTwoRelation empacct dept deptno 
+  joinTwoRelation empacct dept "deptno" 
 
 empVQ11 :: Algebra
 empVQ11 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ10 Empty
@@ -388,7 +388,7 @@ empQ12_v3v4 :: Algebra
 empQ12_v3v4 = Proj [trueAttr managerno, trueAttr salary] $ genRenameAlgebra $ 
           Sel (VsqlCond yearAfterCond) $ genRenameAlgebra $ 
           Join (genRenameAlgebra join_empacct_job) (genRenameAlgebra (tRef dept)) cond 
-    where join_empacct_job = joinTwoRelation empacct job title 
+    where join_empacct_job = joinTwoRelation empacct job "title" 
           cond = C.Comp EQ (C.Att empno) (C.Att managerno)
 
 empQ12_v5 :: Algebra
@@ -491,12 +491,12 @@ empQ16_v4 :: Algebra
 empQ16_v4 = Proj [trueAttr name, trueAttr deptname] $ genRenameAlgebra $ 
           Sel (VsqlCond yearAfterCond) $ genRenameAlgebra $ 
             Join (genRenameAlgebra join_empacct_empbio) (genRenameAlgebra (tRef dept)) cond 
-          where join_empacct_empbio = joinTwoRelation empacct empbio empno 
+          where join_empacct_empbio = joinTwoRelation empacct empbio "empno" 
                 cond = C.Comp EQ (C.Att empno) (C.Att managerno)
 
 empQ16_v5 :: Algebra
 empQ16_v5 = Proj [trueAttr firstname, trueAttr lastname, trueAttr deptname] $ genRenameAlgebra $ 
               Sel (VsqlCond yearAfterCond) $ genRenameAlgebra $ 
                 Join (genRenameAlgebra join_empacct_empbio) (genRenameAlgebra (tRef dept)) cond 
-            where join_empacct_empbio = joinTwoRelation empacct empbio empno 
+            where join_empacct_empbio = joinTwoRelation empacct empbio "empno" 
                   cond = C.Comp EQ (C.Att empno) (C.Att managerno)

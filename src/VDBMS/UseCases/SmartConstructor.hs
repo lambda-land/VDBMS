@@ -33,13 +33,13 @@ genRenameRelation rel = Rename Nothing rel
 tRef :: Relation -> Algebra 
 tRef rel = TRef $ Rename Nothing rel 
 
-joinTwoRelation :: Relation -> Relation -> Attr -> Algebra
+joinTwoRelation :: Relation -> Relation -> N.Name -> Algebra
 joinTwoRelation rel1 rel2 commonAttr = Join (genRenameAlgebra (tRef rel1)) (genRenameAlgebra (tRef rel2)) join_cond
   where join_cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel2 commonAttr))
 
 -- | Join three relation(a,b,c) based on commonAttr. 
 --   (rel1 join(rel1.commonAttr = rel2.commonAttr) rel2) join(rel1.commonAttr = rel3.commonAttr) rel3
-joinThreeRelation :: Relation -> Relation -> Relation -> Attr -> Algebra
+joinThreeRelation :: Relation -> Relation -> Relation -> N.Name -> Algebra
 joinThreeRelation rel1 rel2 rel3 commonAttr = Join (genRenameAlgebra (joinTwoRelation rel1 rel2 commonAttr)) (genRenameAlgebra (tRef rel3)) cond 
   where cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel3 commonAttr))
 
@@ -56,8 +56,11 @@ attr :: N.Name -> N.Attr
 attr n = N.Attr (N.Attribute n) Nothing 
 
 -- | Gaven a attribute name (a) and return a Attr with Qualifier (rel)
-qualifiedAttr :: N.Relation -> N.Attr -> N.Attr
-qualifiedAttr rel a = N.Attr (N.attribute a) (Just (N.RelQualifier rel))
+qualifiedAttr :: N.Relation -> N.Name -> N.Attr
+qualifiedAttr rel a = N.Attr (N.attribute (attr a)) (Just (N.RelQualifier rel))
+
+genQualifiedAttrList :: [(N.Relation, N.Name)] -> [N.Attr] 
+genQualifiedAttrList = map $ \(rel,attrName) -> qualifiedAttr rel attrName
 
 -- | Generate Rename Attr
 genRenameAttr :: N.Attr -> N.Rename N.Attr
@@ -73,7 +76,7 @@ genQualifiedRenameAttr rel att = N.Rename Nothing $ N.Attr (N.attribute att) (Ju
 
 -- | Genrate Rename Attrs with qualifier
 genQualifiedRenameAttrList :: [(N.Name, N.Attr)] -> [N.Rename N.Attr]
-genQualifiedRenameAttrList = map (\(rel,attr) -> genQualifiedRenameAttr rel attr) 
+genQualifiedRenameAttrList = map $ \(rel,attr) -> genQualifiedRenameAttr rel attr
 
 -- | contruct plain Schema without tag assigned based on a list of [(Relation, [Attribute, Sqltype])] 
 constructRelMap :: [(N.Relation, [(N.Attribute, SqlType)])] -> M.Map N.Relation (Opt RowType) 
