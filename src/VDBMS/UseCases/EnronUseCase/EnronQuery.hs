@@ -376,6 +376,7 @@ i13_Q2 = Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAl
             join_msg_rec_emp_auto
         where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
               vautomsg_body    = qualifiedAttr v_auto_msg "body"
+
 -- Proj_ forwardaddr 
 --  Sel_ mid = midValue and rtype == "To" 
 --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
@@ -383,6 +384,57 @@ i13_Q3 :: Algebra
 i13_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_foward
+
+--
+-- 14. Interaction: AutoResponder vs. RemailMessage (1)
+-- 
+-- * Feature: autoresponder vs. remailmsg
+-- * Situdation: Bob activate an autoresponder in his remailer account when he is on vacation.
+--   Rjh can reply a msg to Bob's pseudonym which then remailMessage mails to Bob. Then
+--   the autoresponder of Bob will sends a message directly to Rjh telling him Bob is on vacation.
+--   This allows rjh to infer that the pseudonym is for Bob.
+--   (The problem is the content of the autoreply message giving Bob's identity, header manipulation will not avoid that)
+-- 
+-- * Fix by FNE: The autoresponder should be altered to notice when a message has arrived via the remailer(it can tell 
+--               this by examining message headers) and not respond to them. 
+-- 
+-- * Fix by VDB: 
+--   autoresponder AND remailmsg  => Q1: query the is_from_remailer, and autoresponse's body and subject
+--                                      (if is_from_remailer is False, then auto-reply; else do not auto-reply msg)
+--   autoresponder AND (NOT remailmsg) => Q2. normal query about autoresponse's body and subject
+--   (NOT autoresponder AND remailmsg => Q3. normal query abot pseudonym form remailer    
+--   (NOT autoresponder) AND (NOT remailmsg) => Nothing 
+-- * V-Query: autoresponder <remailmsg <Q1,Q2>, remailmsg<Q3, Empty>> 
+enronVQ14 :: Algebra
+enronVQ14 = AChc autoresponder (AChc remailmsg i14_Q1 i14_Q2) (AChc remailmsg i14_Q3 Empty) 
+
+-- Proj_ is_from_remailer, v_auto_msg.subject, v_auto_msg.body  
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)i14_Q1 :: Algebra
+i14_Q1 :: Algebra
+i14_Q1 = Proj (map trueAttr [ is_from_remailer, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_auto
+        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
+              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+
+-- Proj_ v_auto_msg.subject, v_auto_msg.body  
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+i14_Q2 :: Algebra
+i14_Q2 = Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_auto
+        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
+              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+
+-- Proj_ pseudonym
+--  Sel_ mid = midValue 
+--  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
+i14_Q3 :: Algebra
+i14_Q3 = Proj [trueAttr pseudonym] $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_remail
 
 --
 -- . Interaction: 

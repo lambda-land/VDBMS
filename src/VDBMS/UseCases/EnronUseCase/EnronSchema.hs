@@ -49,12 +49,12 @@ v_alias         = N.Relation "v_alias"
 email_id :: N.Attr 
 email_id = attr "email_id"
 
-mid, sender, is_signed, is_encrypted :: N.Attr 
+mid, sender, is_signed, is_encrypted, is_from_remailer :: N.Attr 
 mid = attr "mid"
 sender = attr "sender"
 is_signed = attr "is_signed"
 is_encrypted = attr "is_encrypted"
-
+is_from_remailer = attr "is_from_remailer"
 forwardaddr :: N.Attr 
 forwardaddr = attr "forwardaddr"
 
