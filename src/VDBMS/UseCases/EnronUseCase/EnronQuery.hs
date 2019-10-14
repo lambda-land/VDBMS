@@ -305,16 +305,95 @@ i10_Q1 = Proj [trueAttr is_encrypted, trueAttr pseudonym] $ genRenameAlgebra $
             join_msg_rec_emp_remail 
 
 --
+-- 11. Interaction: DecryptMessage vs. AutoResponder
+-- 
+-- * Feature: encrypt vs. autoresponder
+-- * Situation: Bob sends a message to rjh encrypted, but rjh's decrypt has the wrong key for Bob.
+--              AutoResponder attempts to extract the subject from the message to include in the 
+--              reponse text, but fails because it's encapsulated in the encryption. 
+-- 
+-- * Fix by FNE: DNI. The garbling of the subject line is of minor importance compared to the 
+--               failure to decrypt. 
+-- * Fix by VDB: DNI
+
+--
+-- 12. Interaction: VerifySignature vs. RemailMessage 
+--                  (second half of interaction 5 "SignMessage vs RemailMessage" which is controled by own side UI)
+--  
+-- * Feature:  signature vs. remailmsg 
+-- * Situation: A signed message sent through the remailer will be signed by the actual originator, but the RemailMessage
+--              has altered the header fields by changing the originator to the pseudonym. Thus, the verifyMessage will fail
+--              when applied to the message, notifying the recipient of the failure. But the clever recipient being informed
+--              the failure, could search known signature ekys and try each on. Thus, the sender's identity could be leaked.  
+-- 
+-- * Fix by FNE: the remailer notice the signature block and purposely deleting it. 
+-- * Fix by VDB: Query will be same with that of interaction 5.
+enronVQ12:: Algebra
+enronVQ12 = enronVQ5
+
+--
+-- 13. Interaction: AutoResponder vs. ForwardMessages
+-- 
+-- * Feature:  autoresponder vs. forwardmsg
+-- * Situation: Bob sets up forwarding to rjh. Rjh has autoresponse enbaled.
+--              A third party sends a message to Bob, which is forwarded to rjh.
+--              The autoresponse is sent back to Bob and then forwarded to rjh. Thus, msg arriving at rjh via
+--              Bob are no effectively autoresponded. 
+-- 
+-- * Fix by FNE: fix ForwardMessages so that it manipulates header lines better: leave the "sender: " line intact.
+--               The autoresponder will then reply to the originator of the message instead of to the forwarder.    
+-- 
+-- * Fix by VDB: 
+--   - autoresponder AND forwardmsg  => Q1: Query the original sender, forwardAddr, auto_response's body and subject of forwardaddr
+--                                          (forward with intact sender info and auto reply to original sender)
+--   - autoresponder AND (NOT forwardmsg) => Q2: normal query with autoresponse. (body and forward)  
+--   - (NOT autoresponder) AND forwardmsg => Q3. normal query with forwardmsg (forwardAddr)
+--   - (NOT autoresponder) AND (NOT forwardmsg) => Nothing
+--   
+-- * V-Query: autoresponder <forwardmsg <Q1,Q2>, forwardmsg<Q3, Empty>>
+enronVQ13 :: Algebra
+enronVQ13 =  AChc autoresponder (AChc forwardmsg i13_Q1 i13_Q2) (AChc forwardmsg i13_Q3 Empty) 
+
+-- Proj_ sender, forwardaddr, v_auto_msg.subject, v_auto_msg.body  
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg [eid = eid] v_forward_msg)
+i13_Q1 :: Algebra
+i13_Q1 = Proj (map trueAttr [sender, forwardaddr, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            Join (genRenameAlgebra join_msg_rec_emp_auto) (genRenameAlgebra (tRef v_forward_msg)) cond    
+        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
+              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+              vforwardmsg_eid  = qualifiedAttr v_forward_msg "eid"
+              vemployee_eid    = qualifiedAttr v_employee "eid"
+              cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
+
+-- Proj_ v_auto_msg.subject, v_auto_msg.body  
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+i13_Q2 :: Algebra
+i13_Q2 = Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_auto
+        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
+              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+-- Proj_ forwardaddr 
+--  Sel_ mid = midValue and rtype == "To" 
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
+i13_Q3 :: Algebra
+i13_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_foward
+
+--
 -- . Interaction: 
 -- 
--- * Feature:
+-- * Feature: 
 -- * Situation: 
 -- 
--- * Fix by FNE:
+-- * Fix by FNE: 
+-- 
 -- * Fix by VDB:
 -- * V-Query: 
-
-
 
 
 
