@@ -32,28 +32,36 @@ auto_forward_mhost = autoresponder `And` forwardmsg `And` mailhost
 --
 -- * Relations 
 -- 
-v_employee, v_message, v_recipientinfo, v_auto_msg :: N.Relation
+v_employee, v_message, v_recipientinfo, v_auto_msg, v_referenceinfo, v_forward_msg :: N.Relation
+v_remail_msg, v_mailhost, v_alias :: N.Relation
 v_employee      = N.Relation "v_employee"
 v_message       = N.Relation "v_message"
 v_recipientinfo = N.Relation "v_recipientinfo"
 v_auto_msg      = N.Relation "v_auto_msg"
 v_referenceinfo = N.Relation "v_referenceinfo"
 v_forward_msg   = N.Relation "v_forward_msg"
+v_remail_msg    = N.Relation "v_remail_msg"
+v_mailhost      = N.Relation "v_remail_msg"
+v_alias         = N.Relation "v_alias"
 --
 -- * Attributes 
 --
 email_id :: N.Attr 
 email_id = attr "email_id"
 
-mid, is_signed :: N.Attr 
+mid, is_signed, is_encrypted :: N.Attr 
 mid = attr "mid"
 is_signed = attr "is_signed"
+is_encrypted = attr "is_encrypted"
 
 forwardaddr :: N.Attr 
 forwardaddr = attr "forwardaddr"
 
 rvalue :: N.Attr 
 rvalue = attr "rvalue"
+
+pseudonym :: N.Attr 
+pseudonym = attr "pseudonym"
 -- vemployee_eid, vemployee_firstname, vemployee_lastname, vemployee_email_id :: N.Attr
 -- vemployee_folder,vemployee_status, vemployee_sign, vemployee_public_key,vemployee_did :: N.Attr 
 -- vemployee_eid       = qualifiedAttr v_employee (attr "eid") 
@@ -195,10 +203,10 @@ forward_msg_v1 =  [ ("eid", TInt32)
 	              , ("forwardaddr",  TString)
 	              ]
 
--- remail_msg(eid, psuedonym, presCond)
+-- remail_msg(eid, pseudonym, presCond)
 remail_msg_v1 :: [(String, SqlType)]
 remail_msg_v1 =   [ ("eid", TInt32) 
-	              , ("psuedonym",  TString)
+	              , ("pseudonym",  TString)
 	              ]
 
 -- filter_msg(eid, suffix, presCond)
@@ -384,10 +392,10 @@ referenceInfo_v3 = [ ("rfid", TInt32)
 		           ]
 
 
--- remail_msg(eid, psuedonym, presCond)
+-- remail_msg(eid, pseudonym, presCond)
 remail_msg_v3 :: [(String, SqlType)]
 remail_msg_v3 =   [ ("eid", TInt32) 
-	              , ("psuedonym",  TString)
+	              , ("pseudonym",  TString)
 	              ]
 
 -- filter_msg(eid, suffix, presCond)
@@ -563,10 +571,10 @@ forward_msg_v5 =  [ ("eid", TInt32)
 	              , ("forwardaddr",  TString)
 	              ]
 
--- remail_msg(eid, psuedonym, presCond)
+-- remail_msg(eid, pseudonym, presCond)
 remail_msg_v5 :: [(String, SqlType)]
 remail_msg_v5 =   [ ("eid", TInt32) 
-	              , ("psuedonym",  TString)
+	              , ("pseudonym",  TString)
 	              ]
 
 -- filter_msg(eid, suffix, presCond)
@@ -750,10 +758,10 @@ referenceInfo_v7 = [ ("rfid", TInt32)
 
 
 
--- remail_msg(eid, psuedonym, presCond)
+-- remail_msg(eid, pseudonym, presCond)
 remail_msg_v7 :: [(String, SqlType)]
 remail_msg_v7 =   [ ("eid", TInt32) 
-	              , ("psuedonym",  TString)
+	              , ("pseudonym",  TString)
 	              ]
 
 -- filter_msg(eid, suffix, presCond)
