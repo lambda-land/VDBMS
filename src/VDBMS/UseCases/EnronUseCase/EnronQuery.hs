@@ -65,6 +65,26 @@ join_msg_rec_emp_remail = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlg
                       vemployee_eid     = qualifiedAttr v_employee "eid"
                       vremailmsg_eid = qualifiedAttr v_remail_msg "eid"
 
+-- | Query recipient's pseudonym from remailer for a certain message id.
+--  Proj_ pseudonym
+--   Sel_ mid = midValue 
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
+query_pseudonym_from_remailer :: C.Atom -> Algebra
+query_pseudonym_from_remailer  = Proj [trueAttr pseudonym] $ genRenameAlgebra $ 
+                                  Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                                    join_msg_rec_emp_remail
+
+-- | Query autoresponder's subject and body of recipient for a certain message id.
+-- Proj_ v_auto_msg.subject, v_auto_msg.body  
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+query_autoresponder_subject_body :: Algebra
+query_autoresponder_subject_body = 
+            Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
+            Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_auto
+        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
+              vautomsg_body    = qualifiedAttr v_auto_msg "body"
 -- FNE: The paper name: Fundamental Nonmodularity in Electronic Mail
 -- 
 -- 1. Interaction: Addressbook vs EncryptMessage 
@@ -422,19 +442,73 @@ i14_Q1 = Proj (map trueAttr [ is_from_remailer, vautomsg_subject, vautomsg_body]
 --  Sel_ mid = midValue
 --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
 i14_Q2 :: Algebra
-i14_Q2 = Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
-          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+i14_Q2 = query_autoresponder_subject_body
 
 -- Proj_ pseudonym
 --  Sel_ mid = midValue 
 --  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
 i14_Q3 :: Algebra
-i14_Q3 = Proj [trueAttr pseudonym] $ genRenameAlgebra $ 
+i14_Q3 = query_pseudonym_from_remailer
+
+--
+-- 15. Interaction: AutoResponder vs. RemailMessage (2)
+-- 
+-- * Feature: autoresponder vs. remailmsg
+-- * Situation: Suppose Bob has a remailer acocount, so he can send anonymously to rjh. 
+--              Suppose Bob goes on vacation and activates his autoresponder. 
+--              Now suppose rjh, having no reason to think Bob and the pseudonym address the same account,
+--              sends a "Happy New Year" message to both Bob and this pseudonym account. 
+--              Autoreponder of Bob, seeing both as from rjh, generates a totla of one response, 
+--              since it is designed not to send more than one copy of the response to any single correspondent.
+--              Thus, rjh is informed that Bob is on vacation, but thinks the pseudonym is just being rude in not replying.
+--              The autoresponder's function is defeated. 
+--   
+-- * Fix by FNE: Fix the remailer so that instead of needing to format the message body specilly in the anonymize direction, 
+--               the user encodes the address of the recipient in the remailer address.
+--               (make ) 
+-- 
+-- * Fix by VDB: Check if the message is both from remailer and also receipient's autoresponse is provisioned. 
+--               If so, then the recipient address should be in a new format (rjh%rjhhost@remailer.org).
+-- 
+--   autoresponder AND remailmsg  => Q1: query the is_from_remailer, receipitent's address, autoresponse's body and subject
+--   autoresponder AND (NOT remailmsg) => Q2. normal query about autoresponse's body and subject
+--   (NOT autoresponder AND remailmsg => Q3. normal query abot pseudonym form remailer    
+--   (NOT autoresponder) AND (NOT remailmsg) => Nothing 
+-- 
+-- * V-Query: autoresponder <remailmsg <Q1,Q2>, remailmsg<Q3, Empty>> 
+enronVQ15 :: Algebra
+enronVQ15 = AChc autoresponder (AChc remailmsg i15_Q1 i15_Q2) (AChc remailmsg i15_Q3 Empty) 
+
+-- | Query the is_from_remailer, receipitent's address, autoresponse's body and subject
+-- Proj_ is_from_remailer, v_auto_msg.subject, v_auto_msg.body  
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)i14_Q1 :: Algebra
+i15_Q1 :: Algebra
+i15_Q1 = Proj (map trueAttr [ is_from_remailer, rvalue, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_rec_emp_remail
+            join_msg_rec_emp_auto
+        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
+              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+
+-- | Normal query about autoresponse's body and subject
+i15_Q2 :: Algebra 
+i15_Q2 =  query_autoresponder_subject_body
+
+-- | Normal query abot pseudonym form remailer  
+i15_Q3 :: Algebra
+i15_Q3 = query_pseudonym_from_remailer
+
+--
+-- 16. Interaction: Autoresponder vs. FilterMessages
+-- 
+-- * Feature:  autoresponder vs. filtermsg
+-- * Situation: 
+-- 
+-- * Fix by FNE: 
+-- 
+-- * Fix by VDB:
+-- * V-Query: 
+
 
 --
 -- . Interaction: 
