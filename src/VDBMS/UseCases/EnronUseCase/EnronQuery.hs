@@ -559,6 +559,50 @@ i16_Q3 = query_recipient_filter_suffix
 
 
 --
+-- 17 . Interaction: AutoResponder vs. MailHost
+-- 
+-- * Feature: autoresponder vs. mailhost
+-- * Situation: Bob provisions an autoresponse. Then Bob sends a message to an unknow user. This generates
+--              a response from postmaster informing Bob of the problem. But this postmaster response is, in turn,
+--              autorespond and yet another message is sent from Bob to Postmaster containing Bob's autorespond.
+--              The latter one is extraneous.
+-- 
+-- * Fix by FNE: Autoreponder should not reply to Non-Delivery Notification generated ny MailHost feature.
+-- 
+-- * Fix by VDB: ??? Test if there is any message that is from sender's autoresponder and receiver is a mailhost  
+-- * V-Query: 
+--   autoresponder AND mailhost  => Q1: 
+--   autoresponder AND (NOT mailhost) => Q2. 
+--   (NOT autoresponder AND mailhost => Q3.
+--   (NOT autoresponder) AND (NOT mailhost) => Nothing 
+
+--
+-- 18. Interaction: ForwardMessages vs. ForwardMessages 
+-- 
+-- * Feature: forwardmsg vs. forwardmsg 
+-- * Situation: Bob provisions forwarding to rjh, rjh provisions forwarding to Bob. Loop exists in this case.
+-- 
+-- * Fix by FNE: fix ForwardMessages so that it adds "Received-by:" headers appropriately and terminates loop
+--               when it detectes that the message has been processed by it before.
+-- 
+-- * Fix by VDB: 
+--   fowardmsg => Q1: check if there is cycle of eid and forwardaddr in v_forward_msg 
+--   NOT fowardmsg => Nothing 
+-- 
+-- * V-Query: fowardmsg <Q1, Empty>
+enronVQ17 :: Algebra
+enronVQ17 = AChc forwardmsg i17_Q1 Empty
+
+-- | Check if there is cycle of eid and forwardaddr in v_forward_msg 
+-- Proj_ email_id, forwardaddr
+--  (v_employee Join_[eid = eid] v_forward_msg) 
+i17_Q1 :: Algebra
+i17_Q1 =Proj (map trueAttr [ email_id, forwardaddr]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            joinTwoRelation v_employee v_forward_msg "eid"
+
+
+--
 -- . Interaction: 
 -- 
 -- * Feature: 
