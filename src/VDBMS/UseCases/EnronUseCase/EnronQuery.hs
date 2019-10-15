@@ -71,6 +71,10 @@ join_msg_rec_emp_filter = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlg
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vfiltermsg_eid)
                       vemployee_eid     = qualifiedAttr v_employee "eid"
                       vfiltermsg_eid = qualifiedAttr v_filter_msg "eid"
+
+join_emp_forward_remail :: Algebra
+join_emp_forward_remail = joinThreeRelation v_employee v_forward_msg v_remail_msg "eid"
+
 -- | Query recipient's pseudonym from remailer for a certain message id.
 --  Proj_ pseudonym
 --   Sel_ mid = midValue 
@@ -590,17 +594,46 @@ i16_Q3 = query_recipient_filter_suffix
 --   NOT fowardmsg => Nothing 
 -- 
 -- * V-Query: fowardmsg <Q1, Empty>
-enronVQ17 :: Algebra
-enronVQ17 = AChc forwardmsg i17_Q1 Empty
+enronVQ18 :: Algebra
+enronVQ18 = AChc forwardmsg i18_Q1 Empty
 
 -- | Check if there is cycle of eid and forwardaddr in v_forward_msg 
 -- Proj_ email_id, forwardaddr
 --  (v_employee Join_[eid = eid] v_forward_msg) 
-i17_Q1 :: Algebra
-i17_Q1 =Proj (map trueAttr [ email_id, forwardaddr]) $ genRenameAlgebra $ 
+i18_Q1 :: Algebra
+i18_Q1 = Proj (map trueAttr [ email_id, forwardaddr]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             joinTwoRelation v_employee v_forward_msg "eid"
 
+--
+-- 19. Interaction: ForwardMessage vs. RemailMessage (1)
+-- 
+-- * Feature: forwardmsg vs. remailmsg
+-- * Situdation: Bob establishes a pseudonym on the remailer and 
+--   provisions FORWARDMESSAGES to send to that pseudonym. 
+--   Messages sent to Bob will be infinitely forwarded from Bob to remailer and back.
+-- 
+-- * Fix by FNE: This must be fixed at remailer, even if a ForwardMessage fix is done first.
+--               if the ForwardMessages feature is allowed to terminate the loop and send back a Non-Delivery
+--               Notification, then the headers will show that Bob and the pseudonym are connected, leaking
+--               identity. Thus, the fix must be for the remailer to detect the loop adn terminate it. It must
+--               also remove any header information that might leak the pseudonym prior tp generating the NDN.
+-- 
+-- * Fix by VDB: Detect the loop
+--   forwardmsg AND remailmsg => Q1: Query forwardAddr and psuedonym for each email_id (remailer detect the loop) 
+--   forwardmsg AND (NOT remailmsg) => Nothing    
+--   (NOT forwardmsg) AND remailmsg => Nothing 
+--   (NOT forwardmsg) AND (NOT remailmsg) => Nothing 
+-- 
+-- * V-Query: remailmsg AND forwardmsg <Q1, Empty>
+enronVQ19 :: Algebra
+enronVQ19 = AChc (remailmsg `F.And` forwardmsg) i19_Q1 Empty  
+
+-- | Query forwardAddr and psuedonym for each email_id (remailer detect the loop) 
+i19_Q1 :: Algebra
+i19_Q1 = Proj (map trueAttr [email_id, forwardaddr, pseudonym]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_emp_forward_remail
 
 --
 -- . Interaction: 
