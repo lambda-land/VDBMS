@@ -41,6 +41,7 @@ v_auto_msg      = N.Relation "v_auto_msg"
 v_referenceinfo = N.Relation "v_referenceinfo"
 v_forward_msg   = N.Relation "v_forward_msg"
 v_remail_msg    = N.Relation "v_remail_msg"
+v_filter_msg    = N.Relation "v_filter_msg"
 v_mailhost      = N.Relation "v_remail_msg"
 v_alias         = N.Relation "v_alias"
 --
@@ -61,8 +62,11 @@ forwardaddr = attr "forwardaddr"
 rvalue :: N.Attr 
 rvalue = attr "rvalue"
 
-pseudonym :: N.Attr 
+pseudonym, suffix :: N.Attr 
 pseudonym = attr "pseudonym"
+suffix = attr "suffix"
+
+
 -- vemployee_eid, vemployee_firstname, vemployee_lastname, vemployee_email_id :: N.Attr
 -- vemployee_folder,vemployee_status, vemployee_sign, vemployee_public_key,vemployee_did :: N.Attr 
 -- vemployee_eid       = qualifiedAttr v_employee (attr "eid") 

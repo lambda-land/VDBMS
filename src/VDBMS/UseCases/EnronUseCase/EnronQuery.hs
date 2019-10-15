@@ -59,23 +59,29 @@ join_msg_rec_emp_auto = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgeb
                       vemployee_eid     = qualifiedAttr v_employee "eid"
                       vautomsg_eid = qualifiedAttr v_auto_msg "eid"
 
+
 join_msg_rec_emp_remail :: Algebra
 join_msg_rec_emp_remail = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_remail_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vremailmsg_eid)
                       vemployee_eid     = qualifiedAttr v_employee "eid"
                       vremailmsg_eid = qualifiedAttr v_remail_msg "eid"
 
+join_msg_rec_emp_filter :: Algebra
+join_msg_rec_emp_filter = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_filter_msg)) cond 
+                where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vfiltermsg_eid)
+                      vemployee_eid     = qualifiedAttr v_employee "eid"
+                      vfiltermsg_eid = qualifiedAttr v_filter_msg "eid"
 -- | Query recipient's pseudonym from remailer for a certain message id.
 --  Proj_ pseudonym
 --   Sel_ mid = midValue 
 --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
-query_pseudonym_from_remailer :: C.Atom -> Algebra
+query_pseudonym_from_remailer :: Algebra
 query_pseudonym_from_remailer  = Proj [trueAttr pseudonym] $ genRenameAlgebra $ 
                                   Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
                                     join_msg_rec_emp_remail
 
--- | Query autoresponder's subject and body of recipient for a certain message id.
--- Proj_ v_auto_msg.subject, v_auto_msg.body  
+-- | Query autorespondse subject and body of recipient for a certain message id.
+-- Proj_ v_auto_mg.subject, v_auto_msg.body  
 --  Sel_ mid = midValue
 --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
 query_autoresponder_subject_body :: Algebra
@@ -85,6 +91,21 @@ query_autoresponder_subject_body =
             join_msg_rec_emp_auto
         where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
               vautomsg_body    = qualifiedAttr v_auto_msg "body"
+
+-- | Normal query abot reicipient's filter suffix 
+-- Proj_ suffix 
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_filter_msg)
+query_recipient_filter_suffix :: Algebra
+query_recipient_filter_suffix = 
+            Proj [ trueAttr suffix] $ genRenameAlgebra $ 
+            Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_filter 
+
+-- | Normal query about sender's filter suffix 
+query_sender_filter_suffix :: Algebra
+query_sender_filter_suffix = undefined
+
 -- FNE: The paper name: Fundamental Nonmodularity in Electronic Mail
 -- 
 -- 1. Interaction: Addressbook vs EncryptMessage 
@@ -502,12 +523,39 @@ i15_Q3 = query_pseudonym_from_remailer
 -- 16. Interaction: Autoresponder vs. FilterMessages
 -- 
 -- * Feature:  autoresponder vs. filtermsg
--- * Situation: 
+-- * Situation: The system adminitrator provisions FilterMessages to discard message from "research" domain.
+--              Bob, a user, sends a message to "hall@research" asking him to meet him tomorrow. hall@research's 
+--              autoresponse informing Bob that he is OOO is discard by filter. Thus, the filter ahs defeated
+--              the purpose of autoresponder. 
 -- 
--- * Fix by FNE: 
+-- * Fix by FNE: Making the filter recognize autoresponder-generated message and admitting them even when they
+--               would otherwise be filtered. 
 -- 
--- * Fix by VDB:
+-- * Fix by VDB: Test if the message is from autoresponder and the sender of autoresponse msg is in the receipient's
+--                filter suffix, the message would deliver or not 
+--   autoresponder AND filtermsg  => Q1: query sender's email address, autoresponder subject and body, recipient's filter suffix.
+--   autoresponder AND (NOT filtermsg) => Q2. normal query about autoresponse's subject and body
+--   (NOT autoresponder AND filtermsg => Q3.   normal query about filter suffix.
+--   (NOT autoresponder) AND (NOT filtermsg) => Nothing 
 -- * V-Query: 
+-- ??? sender vs recipient: 2 different join approach. Make sender/recipient query separate?
+enronVQ16 :: Algebra
+enronVQ16 = AChc autoresponder (AChc filtermsg i16_Q1 i16_Q2) (AChc filtermsg i16_Q3 Empty) 
+
+-- | Query the query sender's email address, autoresponder subject and body, recipient's filter suffix.
+-- Proj_ sender, suffix, v_auto_msg.subject, v_auto_msg.body  
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg [eid = eid] v_filter_msg)
+i16_Q1 :: Algebra
+i16_Q1 = undefined 
+
+-- | Normal query about autoresponse's body and subject
+i16_Q2 :: Algebra 
+i16_Q2 =  query_autoresponder_subject_body
+
+-- | Normal query abot filter suffix
+i16_Q3 :: Algebra
+i16_Q3 = query_recipient_filter_suffix
 
 
 --
