@@ -83,7 +83,7 @@ updateRCond l r c = undefined
 
 -- | update conditions.
 updateConds :: Name -> [SqlCond SqlSelect] -> [SqlCond SqlSelect]
-updateConds = undefined
+updateConds = undefined 
 
 -- | adds a join to closure. 
 addJoinToCls :: SqlRelation -> SqlRelation -> RCondition -> CteClosure -> CteClosure
@@ -96,7 +96,17 @@ addJoinToCls = undefined
 -- otherwise, it increments state, adds rename q to closure, updates atts and conds.
 updateSqlRel :: Rename SqlSelect -> CteClosure -> [SqlAttrExpr] -> [SqlCond SqlSelect]
              -> CteState (CteClosure, ([SqlAttrExpr], [SqlCond SqlSelect]))
-updateSqlRel = undefined
+updateSqlRel rq cls as cs = undefined
+  -- = do let q = thing rq
+  --          mn = name rq
+  --          temp = SqlTempRes cls q
+  --      cte <- updateCTE temp
+  --      let q' = query cte 
+  --          cls' = closure cte
+  --      case mn of 
+  --        (Just n) -> 
+  --          M.lookup 
+  --        Nothing -> 
 
 -- | update relation from a join.
 -- updates rcondition.
