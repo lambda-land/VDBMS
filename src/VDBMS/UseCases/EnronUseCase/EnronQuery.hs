@@ -765,7 +765,7 @@ i24_Q1 = Proj (map trueAttr [ is_signed, rvalue]) $ genRenameAlgebra $
 --               that are devoid of information that might leak the identity of the user. 
 -- 
 -- * Fix by VDB:
--- * V-Query: 
+-- * V-Query: d
 
 --
 -- 26. Interaction: FilterMessages vs. MailHost
