@@ -697,18 +697,113 @@ i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_emp_filter
 
+--
+-- 22. Interaction: ForwardMessages vs. MailHost
+-- 
+-- * Feature: fowardmsg vs. mailhost
+-- * Situation: Bob accidentally sets forwarding to a nonexistent user at his host.
+--              Any subsequent message to Bob results in an infinite sequence of progreesively 
+--              longer error message as MailHost attempts to inform Bob that the user is unknown and 
+--              keep receiving its error messages forward back to the same non-existent user.
+-- 
+-- * Fix by FNE:  MailHost detect the loop and terminate it. 
+-- 
+-- * Fix by VDB:
+--   forwardmsg AND mailhost =>  Q1: 
+--   forwardmsg AND (NOT mailhost) =>  Nothing 
+--   (NOT forwardmsg) AND mailhost =>  Nothing 
+--   (NOT forwardmsg) AND (NOT mailhost) =>  Nothing 
+-- * V-Query: 
 
 
 --
--- . Interaction: 
+-- 23. Interaction: RemailMessages vs. FilterMessages
 -- 
--- * Feature: 
+-- * Feature: remailmsg vs. filtermsg
 -- * Situation: 
 -- 
 -- * Fix by FNE: 
 -- 
 -- * Fix by VDB:
 -- * V-Query: 
+
+--
+-- 24. Interaction: RemailMessage vs. VerifySignature
+-- 
+-- * Feature: remailmsg vs. signature
+-- * Situation: 
+-- 
+-- * Fix by FNE: same fix with interaction 15.
+-- 
+-- * Fix by VDB: Check if receipient's signature is provisioned in PostOffice . 
+--               If so, then the recipient address should be in a new format (rjh%rjhhost@remailer.org).
+-- 
+--   remailmsg AND signature =>  Q1: query is_signed, recipient's address 
+--   remailmsg AND (NOT signature) =>  Nothing 
+--   (NOT remailmsg) AND signature =>  Nothing 
+--   (NOT remailmsg) AND (NOT signature) =>  Nothing 
+-- * V-Query: remailmsg AND signature <Q1, Empty>
+enronVQ24 :: Algebra
+enronVQ24 = AChc (remailmsg `F.And` signature) i24_Q1 Empty
+
+-- | Query the is_signed, recipient's address
+-- Proj_ is_signed, rvalue 
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo)
+i24_Q1 :: Algebra
+i24_Q1 = Proj (map trueAttr [ is_signed, rvalue]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            joinTwoRelation v_message v_recipientinfo "mid"
+
+--
+-- 25. Interaction: RemailMessage vs. MailHost
+-- 
+-- * Feature: remailmsg vs. mailhost
+-- * Situation: 
+-- 
+-- * Fix by FNE: Alter MailHost so that it detects remailed messages and generates Non-Delivery notification
+--               that are devoid of information that might leak the identity of the user. 
+-- 
+-- * Fix by VDB:
+-- * V-Query: 
+
+--
+-- 26. Interaction: FilterMessages vs. MailHost
+-- 
+-- * Feature: filtermsg vs. mailhost
+-- * Situation: We provision FilterMessage to discard all messages from "research" domain. Bob then sends a message
+--              to "non-user@research" which is not a valid user name in that domain. The MailHost instance
+--              in "research" generate a message from "postmaster@research" to Bob to notify him no such user.
+--              FilterMessages discard the postmaster message. This defeats the goal of MailHost feature which
+--              is to either deliver a message or notify the sender of its inability to do so.
+-- 
+-- * Fix by FNE: Alter FilterMessages so that it recognizes Non-Delivery Notification and passes them throught when
+--               they are in reponse to a known prior ourbound message.
+-- 
+-- * Fix by VDB:
+-- * V-Query: 
+
+
+
+--
+-- 27. Interaction: VerifySignature vs. ForwardMessages
+-- 
+-- * Feature: signature vs. forwardmsg
+-- * Situdation: Bob sent a signed message to Jack's old email address which automatically forward 
+--               message to new email address (hall@research). The signed message may be altered 
+--               during the transition from old to new. 
+-- 
+-- * Fix by FNE: Alter the sign/verify feature to add a "Verify-At:" header giving the host where the 
+--               verification was done, the time, and the identity whose signature whose signature was 
+--               verified. 
+-- 
+-- * Fix by VDB:
+--   - signautre AND forwardmsg =>
+--   - signautre AND (NOT forwardmsg) => 
+--   - (NOT signautre) AND forwardmsg => 
+--   - (NOT signautre) AND (NOT forwardmsg) => 
+-- * V-Query: 
+
 
 
 
