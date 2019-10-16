@@ -85,3 +85,12 @@ constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( relName, (F.Lit T
 -- | contruct rowType based on a list of [(Attribute, SqlType)]
 constructRowType ::  [(N.Attribute,SqlType)]  -> RowType
 constructRowType attrTypeList  = M.fromList  $ map (\(a, t) -> (a, (F.Lit True, t))) attrTypeList
+
+-- | contruct plain Schema without tag assigned based on a list of [(Relation, [Attribute, Sqltype])] 
+constructOptRelMap :: [(F.FeatureExpr, N.Relation, [(F.FeatureExpr, N.Attribute, SqlType)])] -> M.Map N.Relation (Opt RowType) 
+constructOptRelMap nrlist = M.fromList $ map (\(f , relName, rt) -> ( relName, (f, constructOptRowType rt))) nrlist
+
+-- | contruct rowType based on a list of [(Attribute, SqlType)]
+constructOptRowType ::  [(F.FeatureExpr, N.Attribute,SqlType)]  -> RowType
+constructOptRowType attrTypeList  = M.fromList  $ map (\(f, a, t) -> (a, (f, t))) attrTypeList
+
