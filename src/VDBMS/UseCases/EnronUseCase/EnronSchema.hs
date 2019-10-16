@@ -33,7 +33,7 @@ auto_forward_mhost = autoresponder `And` forwardmsg `And` mailhost
 -- * Relations 
 -- 
 v_employee, v_message, v_recipientinfo, v_auto_msg, v_referenceinfo, v_forward_msg :: N.Relation
-v_remail_msg, v_mailhost, v_alias :: N.Relation
+v_remail_msg, v_filter_msg, v_mailhost, v_alias :: N.Relation
 v_employee      = N.Relation "v_employee"
 v_message       = N.Relation "v_message"
 v_recipientinfo = N.Relation "v_recipientinfo"
@@ -87,7 +87,7 @@ suffix = attr "suffix"
 -- vmessage_message_id   = qualifiedAttr v_message (attr "message_id") 
 -- vmessage_subject      = qualifiedAttr v_message (attr "subject") 
 -- vmessage_body         = qualifiedAttr v_message (attr "body") 
--- vmessage_folder  	  = qualifiedAttr v_message (attr "folder") 
+-- vmessage_folder        = qualifiedAttr v_message (attr "folder") 
 -- vmessage_is_signed    = qualifiedAttr v_message (attr "is_signed") 
 -- vmessage_is_encrypted = qualifiedAttr v_message (attr "is_encrypted")  
 
@@ -137,7 +137,7 @@ suffix = attr "suffix"
 
 enronSchema1 :: Schema 
 enronSchema1 = ( sign_addr_filter `Or` encryption `Or` auto_forward_mhost `Or` remailmsg, 
-								   constructRelMap [ ( "employeelist_v1",  employeelist_v1)
+                                   constructRelMap [ ( "employeelist_v1",  employeelist_v1)
                                                    , ( "message_v1",    message_v1)
                                                    , ( "recipientInfo_v1",  recipientInfo_v1)
                                                    , ( "referenceInfo_v1",  referenceInfo_v1)
@@ -155,83 +155,83 @@ enronSchema1 = ( sign_addr_filter `Or` encryption `Or` auto_forward_mhost `Or` r
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key, did, presCond)
 employeelist_v1 :: [(String, SqlType)]
 employeelist_v1 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("puclic_key", TString)
-	           , ("did", TInt32)
-	           ]
+                 ("firstname",  TString)
+               , ("lastname",  TString)
+               , ("email_id", TString)
+               , ("folder", TString)
+               , ("status", TString)
+               , ("sign", TString)
+               , ("puclic_key", TString)
+               , ("did", TInt32)
+               ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, is_encrypted, presCond)
 message_v1 :: [(String, SqlType)]
 message_v1 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           , ("is_encrypted", TBool)
-		           ]
+                   , ("sender",  TString)
+                   , ("date",  TString)
+                   , ("message_id", TInt32)
+                   , ("subject", TString)
+                   , ("body", TString)
+                   , ("folder", TString)
+                   , ("is_signed", TBool)
+                   , ("is_encrypted", TBool)
+                   ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
 recipientInfo_v1 :: [(String, SqlType)]
 recipientInfo_v1 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("rtype",  TString)
+                   , ("rvalue_email", TString)
+                   , ("rvalue_nickname", TString)
+                   ]
 -- referenceInfo(rfid, mid,reference, presCond)
 referenceInfo_v1 :: [(String, SqlType)]
 referenceInfo_v1 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("reference",  TString)
+                   ]
 
 
 -- auto_msg(eid, subject, body,presCond)
 auto_msg_v1 :: [(String, SqlType)]
 auto_msg_v1 =  [ ("eid", TInt32) 
-	           ,  ("subject",  TString)
-	           , ("body",  TString)
-	           ]
+               ,  ("subject",  TString)
+               , ("body",  TString)
+               ]
 
 -- forward_msg(eid,forwardaddr, presCond)
 forward_msg_v1 :: [(String, SqlType)]
 forward_msg_v1 =  [ ("eid", TInt32)
-	              , ("forwardaddr",  TString)
-	              ]
+                  , ("forwardaddr",  TString)
+                  ]
 
 -- remail_msg(eid, pseudonym, presCond)
 remail_msg_v1 :: [(String, SqlType)]
 remail_msg_v1 =   [ ("eid", TInt32) 
-	              , ("pseudonym",  TString)
-	              ]
+                  , ("pseudonym",  TString)
+                  ]
 
 -- filter_msg(eid, suffix, presCond)
 filter_msg_v1 :: [(String, SqlType)]
 filter_msg_v1 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+                , ("suffix",  TString)
+                ]
 
 -- mailhost(did, domain, presCond)
 mailhost_v1 :: [(String, SqlType)]
 mailhost_v1 = [ ("did", TInt32)
-	          , ("domain",  TString)
-	          ]
+              , ("domain",  TString)
+              ]
 
 -- alias(eid, email, nickname, presCond)
 alias_v1 :: [(String, SqlType)]
 alias_v1 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+           , ("email",  TString)
+           , ("nickname",  TString)
+           ]
 
 --
 -- ** schema 2
@@ -243,7 +243,7 @@ alias_v1 = [ ("eid", TInt32)
 
 enronSchema2 :: Schema 
 enronSchema2 = ( sign_addr_filter `Or` encryption `Or` auto_forward_mhost, 
-								   constructRelMap [ ( "employeelist_v2",  employeelist_v2)
+                                   constructRelMap [ ( "employeelist_v2",  employeelist_v2)
                                                    , ( "message_v2",    message_v2)
                                                    , ( "recipientInfo_v2",  recipientInfo_v2)
                                                    , ( "referenceInfo_v2",  referenceInfo_v2)
@@ -260,78 +260,78 @@ enronSchema2 = ( sign_addr_filter `Or` encryption `Or` auto_forward_mhost,
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key,did, presCond)
 employeelist_v2 :: [(String, SqlType)]
 employeelist_v2 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("did", TInt32)
-	           , ("puclic_key", TString)
-	           ]
+                 ("firstname",  TString)
+               , ("lastname",  TString)
+               , ("email_id", TString)
+               , ("folder", TString)
+               , ("status", TString)
+               , ("sign", TString)
+               , ("did", TInt32)
+               , ("puclic_key", TString)
+               ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, is_encrypted, presCond)
 message_v2 :: [(String, SqlType)]
 message_v2 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           , ("is_encrypted", TBool)
-		           ]
+                   , ("sender",  TString)
+                   , ("date",  TString)
+                   , ("message_id", TInt32)
+                   , ("subject", TString)
+                   , ("body", TString)
+                   , ("folder", TString)
+                   , ("is_signed", TBool)
+                   , ("is_encrypted", TBool)
+                   ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
 recipientInfo_v2 :: [(String, SqlType)]
 recipientInfo_v2 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("rtype",  TString)
+                   , ("rvalue_email", TString)
+                   , ("rvalue_nickname", TString)
+                   ]
 -- referenceInfo(rfid, mid,reference, presCond)
 referenceInfo_v2 :: [(String, SqlType)]
 referenceInfo_v2 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("reference",  TString)
+                   ]
 
 
 -- auto_msg(eid, subject, body,presCond)
 auto_msg_v2 :: [(String, SqlType)]
 auto_msg_v2 =  [ ("eid", TInt32) 
-	           ,  ("subject",  TString)
-	           , ("body",  TString)
-	           ]
+               ,  ("subject",  TString)
+               , ("body",  TString)
+               ]
 
 -- forward_msg(eid,forwardaddr, presCond)
 forward_msg_v2 :: [(String, SqlType)]
 forward_msg_v2 =  [ ("eid", TInt32)
-	              , ("forwardaddr",  TString)
-	              ]
+                  , ("forwardaddr",  TString)
+                  ]
 
 
 -- filter_msg(eid, suffix, presCond)
 filter_msg_v2 :: [(String, SqlType)]
 filter_msg_v2 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+                , ("suffix",  TString)
+                ]
 
 -- mailhost(did, domain, presCond)
 mailhost_v2 :: [(String, SqlType)]
 mailhost_v2 = [ ("did", TInt32)
-	          , ("domain",  TString)
-	          ]
+              , ("domain",  TString)
+              ]
 
 -- alias(eid, email, nickname, presCond)
 alias_v2 :: [(String, SqlType)]
 alias_v2 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+           , ("email",  TString)
+           , ("nickname",  TString)
+           ]
 
 
 --
@@ -344,7 +344,7 @@ alias_v2 = [ ("eid", TInt32)
 
 enronSchema3 :: Schema 
 enronSchema3 = ( sign_addr_filter `Or` encryption `Or` remail, 
-								   constructRelMap [ ( "employeelist_v3",  employeelist_v3)
+                                   constructRelMap [ ( "employeelist_v3",  employeelist_v3)
                                                    , ( "message_v3",    message_v3)
                                                    , ( "recipientInfo_v3",  recipientInfo_v3)
                                                    , ( "referenceInfo_v3",  referenceInfo_v3)
@@ -358,64 +358,64 @@ enronSchema3 = ( sign_addr_filter `Or` encryption `Or` remail,
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key, did, presCond)
 employeelist_v3 :: [(String, SqlType)]
 employeelist_v3 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("puclic_key", TString)
-	           ]
+                 ("firstname",  TString)
+               , ("lastname",  TString)
+               , ("email_id", TString)
+               , ("folder", TString)
+               , ("status", TString)
+               , ("sign", TString)
+               , ("puclic_key", TString)
+               ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, is_encrypted, presCond)
 message_v3 :: [(String, SqlType)]
 message_v3 =  [ ("mid", TInt32) 
-	           , ("sender",  TString)
-	           , ("date",  TString)
-	           , ("message_id", TInt32)
-	           , ("subject", TString)
-	           , ("body", TString)
-	           , ("folder", TString)
-	           , ("is_signed", TBool)
-	           , ("is_encrypted", TBool)
-	           ]
+               , ("sender",  TString)
+               , ("date",  TString)
+               , ("message_id", TInt32)
+               , ("subject", TString)
+               , ("body", TString)
+               , ("folder", TString)
+               , ("is_signed", TBool)
+               , ("is_encrypted", TBool)
+               ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
 recipientInfo_v3 :: [(String, SqlType)]
 recipientInfo_v3 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("rtype",  TString)
+                   , ("rvalue_email", TString)
+                   , ("rvalue_nickname", TString)
+                   ]
 -- referenceInfo(rfid, mid,reference, presCond)
 referenceInfo_v3 :: [(String, SqlType)]
 referenceInfo_v3 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("reference",  TString)
+                   ]
 
 
 -- remail_msg(eid, pseudonym, presCond)
 remail_msg_v3 :: [(String, SqlType)]
 remail_msg_v3 =   [ ("eid", TInt32) 
-	              , ("pseudonym",  TString)
-	              ]
+                  , ("pseudonym",  TString)
+                  ]
 
 -- filter_msg(eid, suffix, presCond)
 filter_msg_v3 :: [(String, SqlType)]
 filter_msg_v3 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+                , ("suffix",  TString)
+                ]
 
 
 -- alias(eid, email, nickname, presCond)
 alias_v3 :: [(String, SqlType)]
 alias_v3 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+           , ("email",  TString)
+           , ("nickname",  TString)
+           ]
 
 
 --
@@ -429,7 +429,7 @@ alias_v3 = [ ("eid", TInt32)
 
 enronSchema4 :: Schema 
 enronSchema4 = ( sign_addr_filter `Or` encryption, 
-								   constructRelMap [ ( "employeelist_v4",  employeelist_v4)
+                                   constructRelMap [ ( "employeelist_v4",  employeelist_v4)
                                                    , ( "message_v4",    message_v4)
                                                    , ( "recipientInfo_v4",  recipientInfo_v4)
                                                    , ( "referenceInfo_v4",  referenceInfo_v4)
@@ -442,58 +442,58 @@ enronSchema4 = ( sign_addr_filter `Or` encryption,
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign, puclic_key, did, presCond)
 employeelist_v4 :: [(String, SqlType)]
 employeelist_v4 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("puclic_key", TString)
-	           ]
+                 ("firstname",  TString)
+               , ("lastname",  TString)
+               , ("email_id", TString)
+               , ("folder", TString)
+               , ("status", TString)
+               , ("sign", TString)
+               , ("puclic_key", TString)
+               ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, is_encrypted, presCond)
 message_v4 :: [(String, SqlType)]
 message_v4 =  [ ("mid", TInt32) 
-	           , ("sender",  TString)
-	           , ("date",  TString)
-	           , ("message_id", TInt32)
-	           , ("subject", TString)
-	           , ("body", TString)
-	           , ("folder", TString)
-	           , ("is_signed", TBool)
-	           , ("is_encrypted", TBool)
-	           ]
+               , ("sender",  TString)
+               , ("date",  TString)
+               , ("message_id", TInt32)
+               , ("subject", TString)
+               , ("body", TString)
+               , ("folder", TString)
+               , ("is_signed", TBool)
+               , ("is_encrypted", TBool)
+               ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
 recipientInfo_v4 :: [(String, SqlType)]
 recipientInfo_v4 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("rtype",  TString)
+                   , ("rvalue_email", TString)
+                   , ("rvalue_nickname", TString)
+                   ]
 -- referenceInfo(rfid, mid,reference, presCond)
 referenceInfo_v4 :: [(String, SqlType)]
 referenceInfo_v4 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("reference",  TString)
+                   ]
 
 
 -- filter_msg(eid, suffix, presCond)
 filter_msg_v4 :: [(String, SqlType)]
 filter_msg_v4 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+                , ("suffix",  TString)
+                ]
 
 
 -- alias(eid, email, nickname, presCond)
 alias_v4 :: [(String, SqlType)]
 alias_v4 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+           , ("email",  TString)
+           , ("nickname",  TString)
+           ]
 
 
 --
@@ -507,7 +507,7 @@ alias_v4 = [ ("eid", TInt32)
 
 enronSchema5 :: Schema 
 enronSchema5 = ( sign_addr_filter `Or` auto_forward_mhost `Or` remail, 
-	                               constructRelMap [ ( "employeelist_v5",  employeelist_v5)
+                                   constructRelMap [ ( "employeelist_v5",  employeelist_v5)
                                                    , ( "message_v5",    message_v5)
                                                    , ( "recipientInfo_v5",  recipientInfo_v5)
                                                    , ( "referenceInfo_v5",  referenceInfo_v5)
@@ -524,82 +524,82 @@ enronSchema5 = ( sign_addr_filter `Or` auto_forward_mhost `Or` remail,
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign, did, presCond)
 employeelist_v5 :: [(String, SqlType)]
 employeelist_v5 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("did", TInt32)
-	           ]
+                 ("firstname",  TString)
+               , ("lastname",  TString)
+               , ("email_id", TString)
+               , ("folder", TString)
+               , ("status", TString)
+               , ("sign", TString)
+               , ("did", TInt32)
+               ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, presCond)
 message_v5 :: [(String, SqlType)]
 message_v5 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           ]
+                   , ("sender",  TString)
+                   , ("date",  TString)
+                   , ("message_id", TInt32)
+                   , ("subject", TString)
+                   , ("body", TString)
+                   , ("folder", TString)
+                   , ("is_signed", TBool)
+                   ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
 recipientInfo_v5 :: [(String, SqlType)]
 recipientInfo_v5 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("rtype",  TString)
+                   , ("rvalue_email", TString)
+                   , ("rvalue_nickname", TString)
+                   ]
 
 -- referenceInfo(rfid, mid,reference, presCond)
 referenceInfo_v5 :: [(String, SqlType)]
 referenceInfo_v5 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("reference",  TString)
+                   ]
 
 
 -- auto_msg(eid, subject, body,presCond)
 auto_msg_v5 :: [(String, SqlType)]
 auto_msg_v5 =  [ ("eid", TInt32) 
-	           ,  ("subject",  TString)
-	           , ("body",  TString)
-	           ]
+               ,  ("subject",  TString)
+               , ("body",  TString)
+               ]
 
 -- forward_msg(eid,forwardaddr, presCond)
 forward_msg_v5 :: [(String, SqlType)]
 forward_msg_v5 =  [ ("eid", TInt32)
-	              , ("forwardaddr",  TString)
-	              ]
+                  , ("forwardaddr",  TString)
+                  ]
 
 -- remail_msg(eid, pseudonym, presCond)
 remail_msg_v5 :: [(String, SqlType)]
 remail_msg_v5 =   [ ("eid", TInt32) 
-	              , ("pseudonym",  TString)
-	              ]
+                  , ("pseudonym",  TString)
+                  ]
 
 -- filter_msg(eid, suffix, presCond)
 filter_msg_v5 :: [(String, SqlType)]
 filter_msg_v5 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+                , ("suffix",  TString)
+                ]
 
 -- mailhost(did, domain, presCond)
 mailhost_v5 :: [(String, SqlType)]
 mailhost_v5 = [ ("did", TInt32)
-	          , ("domain",  TString)
-	          ]
+              , ("domain",  TString)
+              ]
 
 -- alias(eid, email, nickname, presCond)
 alias_v5 :: [(String, SqlType)]
 alias_v5 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+           , ("email",  TString)
+           , ("nickname",  TString)
+           ]
 
 --
 -- ** schema 6
@@ -613,7 +613,7 @@ alias_v5 = [ ("eid", TInt32)
 
 enronSchema6 :: Schema 
 enronSchema6 = ( sign_addr_filter `Or` auto_forward_mhost, 
-								   constructRelMap [ ( "employeelist_v6",  employeelist_v6)
+                                   constructRelMap [ ( "employeelist_v6",  employeelist_v6)
                                                    , ( "message_v6",    message_v6)
                                                    , ( "recipientInfo_v6",  recipientInfo_v6)
                                                    , ( "referenceInfo_v6",  referenceInfo_v6)
@@ -629,76 +629,76 @@ enronSchema6 = ( sign_addr_filter `Or` auto_forward_mhost,
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign, did, presCond)
 employeelist_v6 :: [(String, SqlType)]
 employeelist_v6 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           , ("did", TInt32)
-	           ]
+                 ("firstname",  TString)
+               , ("lastname",  TString)
+               , ("email_id", TString)
+               , ("folder", TString)
+               , ("status", TString)
+               , ("sign", TString)
+               , ("did", TInt32)
+               ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, presCond)
 message_v6 :: [(String, SqlType)]
 message_v6 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           ]
+                   , ("sender",  TString)
+                   , ("date",  TString)
+                   , ("message_id", TInt32)
+                   , ("subject", TString)
+                   , ("body", TString)
+                   , ("folder", TString)
+                   , ("is_signed", TBool)
+                   ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
 recipientInfo_v6 :: [(String, SqlType)]
 recipientInfo_v6 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("rtype",  TString)
+                   , ("rvalue_email", TString)
+                   , ("rvalue_nickname", TString)
+                   ]
 
 -- referenceInfo(rfid, mid,reference, presCond)
 referenceInfo_v6 :: [(String, SqlType)]
 referenceInfo_v6 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("reference",  TString)
+                   ]
 
 
 -- auto_msg(eid, subject, body,presCond)
 auto_msg_v6 :: [(String, SqlType)]
 auto_msg_v6 =  [ ("eid", TInt32) 
-	           ,  ("subject",  TString)
-	           , ("body",  TString)
-	           ]
+               ,  ("subject",  TString)
+               , ("body",  TString)
+               ]
 
 -- forward_msg(eid,forwardaddr, presCond)
 forward_msg_v6 :: [(String, SqlType)]
 forward_msg_v6 =  [ ("eid", TInt32)
-	              , ("forwardaddr",  TString)
-	              ]
+                  , ("forwardaddr",  TString)
+                  ]
 
 -- filter_msg(eid, suffix, presCond)
 filter_msg_v6 :: [(String, SqlType)]
 filter_msg_v6 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+                , ("suffix",  TString)
+                ]
 
 -- mailhost(did, domain, presCond)
 mailhost_v6 :: [(String, SqlType)]
 mailhost_v6 = [ ("did", TInt32)
-	          , ("domain",  TString)
-	          ]
+              , ("domain",  TString)
+              ]
 
 -- alias(eid, email, nickname, presCond)
 alias_v6 :: [(String, SqlType)]
 alias_v6 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+           , ("email",  TString)
+           , ("nickname",  TString)
+           ]
 
 --
 -- ** schema 7
@@ -711,7 +711,7 @@ alias_v6 = [ ("eid", TInt32)
 
 enronSchema7 :: Schema 
 enronSchema7 = (sign_addr_filter `Or` remail, 
-	                               constructRelMap [ ( "employeelist_v7",  employeelist_v7)
+                                   constructRelMap [ ( "employeelist_v7",  employeelist_v7)
                                                    , ( "message_v7",    message_v7)
                                                    , ( "recipientInfo_v7",  recipientInfo_v7)
                                                    , ( "referenceInfo_v7",  referenceInfo_v7)
@@ -725,63 +725,63 @@ enronSchema7 = (sign_addr_filter `Or` remail,
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign,  presCond)
 employeelist_v7 :: [(String, SqlType)]
 employeelist_v7 = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           ]
+                 ("firstname",  TString)
+               , ("lastname",  TString)
+               , ("email_id", TString)
+               , ("folder", TString)
+               , ("status", TString)
+               , ("sign", TString)
+               ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, presCond)
 message_v7 :: [(String, SqlType)]
 message_v7 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           ]
+                   , ("sender",  TString)
+                   , ("date",  TString)
+                   , ("message_id", TInt32)
+                   , ("subject", TString)
+                   , ("body", TString)
+                   , ("folder", TString)
+                   , ("is_signed", TBool)
+                   ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
 recipientInfo_v7 :: [(String, SqlType)]
 recipientInfo_v7 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("rtype",  TString)
+                   , ("rvalue_email", TString)
+                   , ("rvalue_nickname", TString)
+                   ]
 -- referenceInfo(rfid, mid,reference, presCond)
 referenceInfo_v7 :: [(String, SqlType)]
 referenceInfo_v7 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("reference",  TString)
+                   ]
 
 
 
 -- remail_msg(eid, pseudonym, presCond)
 remail_msg_v7 :: [(String, SqlType)]
 remail_msg_v7 =   [ ("eid", TInt32) 
-	              , ("pseudonym",  TString)
-	              ]
+                  , ("pseudonym",  TString)
+                  ]
 
 -- filter_msg(eid, suffix, presCond)
 filter_msg_v7 :: [(String, SqlType)]
 filter_msg_v7 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+                , ("suffix",  TString)
+                ]
 
 
 -- alias(eid, email, nickname, presCond)
 alias_v7 :: [(String, SqlType)]
 alias_v7 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+           , ("email",  TString)
+           , ("nickname",  TString)
+           ]
 
 --
 -- ** schema 8
@@ -807,55 +807,55 @@ enronSchema8 = ( sign_addr_filter, constructRelMap [ ( "employeelist_v8",  emplo
 -- employeelist(eid, firstname, lastname, email_id, folder, status, sign,  presCond)
 employeelist_v8 :: [(String, SqlType)]
 employeelist_v8  = [ ("eid", TInt32), 
-	             ("firstname",  TString)
-	           , ("lastname",  TString)
-	           , ("email_id", TString)
-	           , ("folder", TString)
-	           , ("status", TString)
-	           , ("sign", TString)
-	           ]
+                 ("firstname",  TString)
+               , ("lastname",  TString)
+               , ("email_id", TString)
+               , ("folder", TString)
+               , ("status", TString)
+               , ("sign", TString)
+               ]
 
 
 -- message(mid, sender, date, message_id, subject, body, folder, is_signed, presCond)
 message_v8 :: [(String, SqlType)]
 message_v8 =  [ ("mid", TInt32) 
-		           , ("sender",  TString)
-		           , ("date",  TString)
-		           , ("message_id", TInt32)
-		           , ("subject", TString)
-		           , ("body", TString)
-		           , ("folder", TString)
-		           , ("is_signed", TBool)
-		           ]
+                   , ("sender",  TString)
+                   , ("date",  TString)
+                   , ("message_id", TInt32)
+                   , ("subject", TString)
+                   , ("body", TString)
+                   , ("folder", TString)
+                   , ("is_signed", TBool)
+                   ]
 
 -- recipientInfo(rid, mid, rtype. rvalue_email, rvalue_nickname, presCond)
 recipientInfo_v8 :: [(String, SqlType)]
 recipientInfo_v8 = [ ("rid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("rtype",  TString)
-		           , ("rvalue_email", TString)
-		           , ("rvalue_nickname", TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("rtype",  TString)
+                   , ("rvalue_email", TString)
+                   , ("rvalue_nickname", TString)
+                   ]
 -- referenceInfo(rfid, mid,reference, presCond)
 referenceInfo_v8 :: [(String, SqlType)]
 referenceInfo_v8 = [ ("rfid", TInt32)
-		           , ("mid",  TInt32)
-		           , ("reference",  TString)
-		           ]
+                   , ("mid",  TInt32)
+                   , ("reference",  TString)
+                   ]
 
 
 
 -- filter_msg(eid, suffix, presCond)
 filter_msg_v8 :: [(String, SqlType)]
 filter_msg_v8 = [ ("eid", TInt32) 
-	            , ("suffix",  TString)
-	            ]
+                , ("suffix",  TString)
+                ]
 
 
 -- alias(eid, email, nickname, presCond)
 alias_v8 :: [(String, SqlType)]
 alias_v8 = [ ("eid", TInt32)
-	       , ("email",  TString)
-	       , ("nickname",  TString)
-	       ]
+           , ("email",  TString)
+           , ("nickname",  TString)
+           ]
 -}

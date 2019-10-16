@@ -60,7 +60,7 @@ qualifiedAttr :: N.Relation -> N.Name -> N.Attr
 qualifiedAttr rel a = N.Attr (N.attribute (attr a)) (Just (N.RelQualifier rel))
 
 genQualifiedAttrList :: [(N.Relation, N.Name)] -> [N.Attr] 
-genQualifiedAttrList = map $ \(rel,attrName) -> qualifiedAttr rel attrName
+genQualifiedAttrList = map $ \(rel,a) -> qualifiedAttr rel a
 
 -- | Generate Rename Attr
 genRenameAttr :: N.Attr -> N.Rename N.Attr
@@ -76,7 +76,7 @@ genQualifiedRenameAttr rel att = N.Rename Nothing $ N.Attr (N.attribute att) (Ju
 
 -- | Genrate Rename Attrs with qualifier
 genQualifiedRenameAttrList :: [(N.Name, N.Attr)] -> [N.Rename N.Attr]
-genQualifiedRenameAttrList = map $ \(rel,attr) -> genQualifiedRenameAttr rel attr
+genQualifiedRenameAttrList = map $ \(rel,a) -> genQualifiedRenameAttr rel a
 
 -- | contruct plain Schema without tag assigned based on a list of [(Relation, [Attribute, Sqltype])] 
 constructRelMap :: [(N.Relation, [(N.Attribute, SqlType)])] -> M.Map N.Relation (Opt RowType) 
@@ -84,4 +84,4 @@ constructRelMap nrlist = M.fromList $ map (\(relName, rt) -> ( relName, (F.Lit T
 
 -- | contruct rowType based on a list of [(Attribute, SqlType)]
 constructRowType ::  [(N.Attribute,SqlType)]  -> RowType
-constructRowType attrTypeList  = M.fromList  $ map (\(attrName, t) -> (attrName, (F.Lit True, t))) attrTypeList
+constructRowType attrTypeList  = M.fromList  $ map (\(a, t) -> (a, (F.Lit True, t))) attrTypeList

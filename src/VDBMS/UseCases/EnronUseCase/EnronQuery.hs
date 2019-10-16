@@ -47,6 +47,11 @@ join_msg_rec_emp = Join (genRenameAlgebra join_msg_rec) (genRenameAlgebra (tRef 
                 where join_msg_rec = joinTwoRelation v_message v_recipientinfo "mid"
                       cond = C.Comp EQ (C.Att rvalue) (C.Att email_id)
 
+-- | v_message Join_[sender = email_id] v_employee
+join_msg_emp :: Algebra
+join_msg_emp = Join (genRenameAlgebra (tRef v_message)) (genRenameAlgebra (tRef v_employee)) join_cond
+                where join_cond = C.Comp EQ (C.Att sender) (C.Att email_id)
+
 join_msg_rec_emp_foward :: Algebra
 join_msg_rec_emp_foward = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_forward_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
@@ -68,6 +73,13 @@ join_msg_rec_emp_remail = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlg
 
 join_msg_rec_emp_filter :: Algebra
 join_msg_rec_emp_filter = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_filter_msg)) cond 
+                where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vfiltermsg_eid)
+                      vemployee_eid     = qualifiedAttr v_employee "eid"
+                      vfiltermsg_eid = qualifiedAttr v_filter_msg "eid"
+
+-- | v_message Join_[sender = email_id] v_employee Join _[eid = eid] v_filrter_msg
+join_msg_emp_filter :: Algebra
+join_msg_emp_filter = Join (genRenameAlgebra join_msg_emp) (genRenameAlgebra (tRef v_filter_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vfiltermsg_eid)
                       vemployee_eid     = qualifiedAttr v_employee "eid"
                       vfiltermsg_eid = qualifiedAttr v_filter_msg "eid"
@@ -107,8 +119,14 @@ query_recipient_filter_suffix =
             join_msg_rec_emp_filter 
 
 -- | Normal query about sender's filter suffix 
+-- Proj_ suffix 
+--  Sel_ mid = midValue
+--   (v_message join_[sender = email_id] v_employee [eid = eid] v_filter_msg)
 query_sender_filter_suffix :: Algebra
-query_sender_filter_suffix = undefined
+query_sender_filter_suffix = 
+            Proj [ trueAttr suffix] $ genRenameAlgebra $ 
+            Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_filter 
 
 -- FNE: The paper name: Fundamental Nonmodularity in Electronic Mail
 -- 
@@ -634,6 +652,52 @@ i19_Q1 :: Algebra
 i19_Q1 = Proj (map trueAttr [email_id, forwardaddr, pseudonym]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_emp_forward_remail
+
+--
+-- 20. Interaction: ForwardMessage vs. RemailMessage (2)
+-- 
+-- * Feature: forwardmsg vs. remailmsg
+-- * Situation: Bob doesn't establish a pseudonym on the remailer; 
+--              Bob provisions ForwardMessages to send to "remail-mail@remailer".
+--              Any message sent to Bob will result in an error message from remailer to Bob which will
+--              be again forward back to the remailer, resulting in another error message. 
+-- 
+-- * Fix by FNE: DNI.
+-- 
+-- * Fix by VDB: DNI
+-- * V-Query: 
+
+--
+-- 21. Interaction: ForwardMessages vs. FilterMessages
+-- 
+-- * Feature: forwardmsg vs. filtermsg
+-- * Situation: Bob sets forwarding to rjh@host. Unbeknownst to Bob, host's admin runs a filter that discards all 
+--              mail from Bob's domain. All of Bob's mail silently disappears from then on.
+-- 
+-- * Fix by FNE: When ForwardMessages is first provisioned by Bob, ForwardMessages can send a simple test message,
+--               to the forward address, notifying Bob that he should observe whether it gets there. 
+--               The fix is to observe whehter it gets there. 
+-- 
+-- * Fix by VDB: Test the notification works or not. Check sender's domain and forwardaddr's filter suffix.
+--   forwardmsg AND filtermsg =>  Q1: Query sender's domain and forwardaddr's filter suffix.
+--   forwardmsg AND (NOT filtermsg) =>  Nothing 
+--   (NOT forwardmsg) AND filtermsg =>  Nothing 
+--   (NOT forwardmsg) AND (NOT filtermsg) =>  Nothing 
+--   
+-- * V-Query: forwardmsg AND filtermsg <Q1, Empty>
+enronVQ21 :: Algebra
+enronVQ21 = AChc (forwardmsg `F.And` filtermsg) i21_Q1 Empty
+
+
+-- Proj_ sender, forwardaddr, suffix
+--   Sel_ mid = midValue
+--    v_message Join_[sender = email_id] v_employee Join _[eid = eid] v_filrter_msg 
+i21_Q1 :: Algebra
+i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_emp_filter
+
+
 
 --
 -- . Interaction: 
