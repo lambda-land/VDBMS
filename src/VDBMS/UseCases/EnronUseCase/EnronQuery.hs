@@ -718,7 +718,7 @@ i19_Q1 = Proj (map trueAttr [email_id, forwardaddr, pseudonym]) $ genRenameAlgeb
 --               to the forward address, notifying Bob that he should observe whether it gets there. 
 --               The fix is to observe whehter it gets there. 
 -- 
--- * Fix by VDB: Test the notification works or not. Check sender's domain and forwardaddr's filter suffix.
+-- * Fix by VDB: Test the notification works or not. Query sender's domain and sender forwardaddr's filter suffix.
 --   forwardmsg AND filtermsg =>  Q1: Query sender's domain and forwardaddr's filter suffix.
 --   forwardmsg AND (NOT filtermsg) =>  Nothing 
 --   (NOT forwardmsg) AND filtermsg =>  Nothing 
@@ -731,13 +731,14 @@ enronVQ21 = AChc (forwardmsg `F.And` filtermsg) i21_Q1 Empty
 
 -- Proj_ sender, forwardaddr, suffix
 --   Sel_ mid = midValue
---    v_message Join_[sender = email_id] v_employee Join _[eid = eid] v_filrter_msg 
+--    (v_message Join_[sender = email_id] v_employee Join_[eid = eid] v_filter_msg Join_[eid = eid] v_forward_msg)
 i21_Q1 :: Algebra
-i21_Q1 = undefined
--- i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $ 
---           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---             join_msg_emp_filter
-
+i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+             Join ( genRenameAlgebra join_msg_emp_filter) (genRenameAlgebra (tRef v_forward_msg)) cond 
+              where  cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
+                     vemployee_eid = qualifiedAttr v_employee "eid"
+                     vforwardmsg_eid = qualifiedAttr v_forward_msg "eid"
 --
 -- 22. Interaction: ForwardMessages vs. MailHost
 -- 
@@ -752,7 +753,7 @@ i21_Q1 = undefined
 -- * Fix by VDB: Check in MailHost that if the sender of this forward msg has set a non-user as forwardaddr. 
 --               If so, then check the original message in message body to see if the address in "FROM:" is the 
 --               mailhost it self. 
---   forwardmsg AND mailhost =>  Q1: Query about is_forward_msg, sender, sender's forwardaddr, recipient address, v_message.body 
+--   forwardmsg AND mailhost =>  Q1: Query about is_forward_msg, sender, sender's forwardaddr, recipient address, reference 
 --   forwardmsg AND (NOT mailhost) =>  Nothing 
 --   (NOT forwardmsg) AND mailhost =>  Nothing 
 --   (NOT forwardmsg) AND (NOT mailhost) =>  Nothing 
@@ -762,14 +763,13 @@ enronVQ22 = AChc (forwardmsg `F.And` mailhost) i22_Q1 Empty
 
 -- Proj_ is_forward_msg, sender, forwardaddr, rvalue, reference
 --   Sel_ mid = midValue
---    (v_message Join_[mid = mid] v_recipient Join_[rvalue = email_id] v_employee) 
+--    (v_message Join_[mid = mid] v_recipientinfo Join_[mid = mid ] v_referenceinfo Join_[rvalue = email_id] v_employee) 
 --    Union_
 --    (v_message Join_[sender = email_id] v_employee Join_[eid = eid] v_forward_msg) 
 i22_Q1 :: Algebra
 i22_Q1 = Proj (map trueAttr [sender, forwardaddr, rvalue, reference]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
              SetOp Union join_msg_rec_emp_reference join_msg_emp_forward 
-
 
 --
 -- 23. Interaction: RemailMessages vs. FilterMessages
