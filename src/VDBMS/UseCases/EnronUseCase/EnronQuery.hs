@@ -47,6 +47,11 @@ join_msg_rec_emp = Join (genRenameAlgebra join_msg_rec) (genRenameAlgebra (tRef 
                 where join_msg_rec = joinTwoRelation v_message v_recipientinfo "mid"
                       cond = C.Comp EQ (C.Att rvalue) (C.Att email_id)
 
+join_msg_rec_emp_reference :: Algebra
+join_msg_rec_emp_reference = Join  (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_referenceinfo)) cond 
+                        where cond = C.Comp EQ (C.Att vrecipientinfo_mid) (C.Att vreferenceinfo_mid)
+                              vrecipientinfo_mid = qualifiedAttr v_recipientinfo "eid"
+                              vreferenceinfo_mid = qualifiedAttr v_referenceinfo "eid"
 -- | v_message Join_[sender = email_id] v_employee
 join_msg_emp :: Algebra
 join_msg_emp = Join (genRenameAlgebra (tRef v_message)) (genRenameAlgebra (tRef v_employee)) join_cond
@@ -71,6 +76,8 @@ join_msg_rec_emp_remail = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlg
                       vemployee_eid     = qualifiedAttr v_employee "eid"
                       vremailmsg_eid = qualifiedAttr v_remail_msg "eid"
 
+-- | Join 4 tables based on recipient suffix 
+--  v_message Join_[mid = mid] v_recipient Join _[rvalue = email_id] v_employee [eid = eid]v_filrter_msg
 join_msg_rec_emp_filter :: Algebra
 join_msg_rec_emp_filter = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_filter_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vfiltermsg_eid)
@@ -83,6 +90,13 @@ join_msg_emp_filter = Join (genRenameAlgebra join_msg_emp) (genRenameAlgebra (tR
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vfiltermsg_eid)
                       vemployee_eid     = qualifiedAttr v_employee "eid"
                       vfiltermsg_eid = qualifiedAttr v_filter_msg "eid"
+
+join_msg_emp_forward :: Algebra
+join_msg_emp_forward = Join (genRenameAlgebra join_msg_emp) (genRenameAlgebra (tRef v_forward_msg)) cond 
+                where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
+                      vemployee_eid     = qualifiedAttr v_employee "eid"
+                      vforwardmsg_eid = qualifiedAttr v_forward_msg "eid"
+
 
 join_emp_forward_remail :: Algebra
 join_emp_forward_remail = joinThreeRelation v_employee v_forward_msg v_remail_msg "eid"
@@ -128,6 +142,21 @@ query_sender_filter_suffix =
             Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_filter 
 
+-- | Normal query about recipient's forwardaddr 
+-- Proj_ forwardaddr 
+--  Sel_ mid = midValue 
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
+query_recipient_forwardaddr :: Algebra
+query_recipient_forwardaddr = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
+                                Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                                  join_msg_rec_emp_foward
+
+-- | Normal query for is_signed
+query_is_signed :: Algebra
+query_is_signed = Proj [trueAttr is_signed] $ genRenameAlgebra $ 
+                    Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                      tRef v_message
+
 -- FNE: The paper name: Fundamental Nonmodularity in Electronic Mail
 -- 
 -- 1. Interaction: Addressbook vs EncryptMessage 
@@ -162,11 +191,12 @@ query_sender_filter_suffix =
 --
 -- 4. Interaction: SignMessage vs ForwardMessages 
 -- 
--- * Feature: signature vs forward
+-- * Feature: signature vs. forwardmsg
 -- * Situation: Suppose Bob sends a signed message to rjh, who has no signkey provisioned, yet who forwards
 --   the message to a third party, THe message will arrive there signed, but not by the sender(rjh), 
 --   but by the originator(Bob), since the verification is defined to determine whether the message 
 --   was signed by the sender of the message. 
+--
 -- * Fix by FNE: change the ForwardMessages so that it doens't alter the "Sender: " header of the message.
 -- * Fix in VDB: Check if the receiver of msg is in forwardlist and the sender's is_signed is true, 
 --               if so, the forwardmsg will not alter the sender in the header. 
@@ -189,19 +219,14 @@ i4_Q1 = Proj [trueAttr forwardaddr, trueAttr is_signed] $ genRenameAlgebra $
 
 -- Proj_ is_signed Sel_ mid = midValue (v_message)
 i4_Q2 :: Algebra
-i4_Q2 = Proj [trueAttr is_signed] $ genRenameAlgebra $ 
-          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            tRef v_message
+i4_Q2 = query_is_signed
 
 
 -- Proj_ forwardaddr 
 --  Sel_ mid = midValue and rtype == "To" 
 --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
 i4_Q3 :: Algebra
-i4_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
-          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_rec_emp_foward
-
+i4_Q3 = query_recipient_forwardaddr
 
 --
 -- 5. Interaction: SignMessage vs RemailMessage 
@@ -554,22 +579,23 @@ i15_Q3 = query_pseudonym_from_remailer
 --               would otherwise be filtered. 
 -- 
 -- * Fix by VDB: Test if the message is from autoresponder and the sender of autoresponse msg is in the receipient's
---                filter suffix, the message would deliver or not 
---   autoresponder AND filtermsg  => Q1: query sender's email address, autoresponder subject and body, recipient's filter suffix.
+--               filter suffix, the message deliver or not 
+--   autoresponder AND filtermsg  => Q1: query sender's email address, is_autoresponse, recipient's filter suffix.
 --   autoresponder AND (NOT filtermsg) => Q2. normal query about autoresponse's subject and body
---   (NOT autoresponder AND filtermsg => Q3.   normal query about filter suffix.
+--   (NOT autoresponder AND filtermsg => Q3. normal query about filter suffix.
 --   (NOT autoresponder) AND (NOT filtermsg) => Nothing 
--- * V-Query: 
--- ??? sender vs recipient: 2 different join approach. Make sender/recipient query separate?
+-- * V-Query:  autoresponder <filtermsg <Q1, Q2>, filterMsg <Q3, Empty>>
 enronVQ16 :: Algebra
 enronVQ16 = AChc autoresponder (AChc filtermsg i16_Q1 i16_Q2) (AChc filtermsg i16_Q3 Empty) 
 
--- | Query the query sender's email address, autoresponder subject and body, recipient's filter suffix.
--- Proj_ sender, suffix, v_auto_msg.subject, v_auto_msg.body  
+-- |Query sender's email address, is_autoresponse, recipient's filter suffix.
+-- Proj_ sender, is_autoresponse, suffix
 --  Sel_ mid = midValue
 --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg [eid = eid] v_filter_msg)
 i16_Q1 :: Algebra
-i16_Q1 = undefined 
+i16_Q1 = Proj (map trueAttr [sender, is_autoresponse, suffix]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_filter
 
 -- | Normal query about autoresponse's body and subject
 i16_Q2 :: Algebra 
@@ -581,7 +607,7 @@ i16_Q3 = query_recipient_filter_suffix
 
 
 --
--- 17 . Interaction: AutoResponder vs. MailHost
+-- 17. Interaction: AutoResponder vs. MailHost
 -- 
 -- * Feature: autoresponder vs. mailhost
 -- * Situation: Bob provisions an autoresponse. Then Bob sends a message to an unknow user. This generates
@@ -591,12 +617,26 @@ i16_Q3 = query_recipient_filter_suffix
 -- 
 -- * Fix by FNE: Autoreponder should not reply to Non-Delivery Notification generated ny MailHost feature.
 -- 
--- * Fix by VDB: ??? Test if there is any message that is from sender's autoresponder and receiver is a mailhost  
+-- * Fix by VDB: Test if the autoresponder generate a reponse when there is a Non-Delivery Message from MailhHost, 
+--                 
 -- * V-Query: 
---   autoresponder AND mailhost  => Q1: 
---   autoresponder AND (NOT mailhost) => Q2. 
---   (NOT autoresponder AND mailhost => Q3.
+--   autoresponder AND mailhost  => Q1: Query is_system_notification, recipient's autoresponder subject and body
+--   autoresponder AND (NOT mailhost) =>  Nothing 
+--   (NOT autoresponder AND mailhost => Nothing 
 --   (NOT autoresponder) AND (NOT mailhost) => Nothing 
+enronVQ17 :: Algebra
+enronVQ17 = AChc (autoresponder `F.And` mailhost) i17_Q1 Empty
+
+-- | Query is_system_notification, recipient's autoresponder subject and body
+-- Proj_ is_system_notification, v_auto_msg.subject, v_auto_msg.body
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+i17_Q1 :: Algebra
+i17_Q1 = Proj (map trueAttr [is_system_notification, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_auto
+        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
+              vautomsg_body    = qualifiedAttr v_auto_msg "body"
 
 --
 -- 18. Interaction: ForwardMessages vs. ForwardMessages 
@@ -693,9 +733,10 @@ enronVQ21 = AChc (forwardmsg `F.And` filtermsg) i21_Q1 Empty
 --   Sel_ mid = midValue
 --    v_message Join_[sender = email_id] v_employee Join _[eid = eid] v_filrter_msg 
 i21_Q1 :: Algebra
-i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $ 
-          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_emp_filter
+i21_Q1 = undefined
+-- i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $ 
+--           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+--             join_msg_emp_filter
 
 --
 -- 22. Interaction: ForwardMessages vs. MailHost
@@ -708,24 +749,38 @@ i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $
 -- 
 -- * Fix by FNE:  MailHost detect the loop and terminate it. 
 -- 
--- * Fix by VDB:
---   forwardmsg AND mailhost =>  Q1: 
+-- * Fix by VDB: Check in MailHost that if the sender of this forward msg has set a non-user as forwardaddr. 
+--               If so, then check the original message in message body to see if the address in "FROM:" is the 
+--               mailhost it self. 
+--   forwardmsg AND mailhost =>  Q1: Query about is_forward_msg, sender, sender's forwardaddr, recipient address, v_message.body 
 --   forwardmsg AND (NOT mailhost) =>  Nothing 
 --   (NOT forwardmsg) AND mailhost =>  Nothing 
 --   (NOT forwardmsg) AND (NOT mailhost) =>  Nothing 
--- * V-Query: 
+-- * V-Query: forwardmsg AND mailhost <Q1, Empty>
+enronVQ22 :: Algebra
+enronVQ22 = AChc (forwardmsg `F.And` mailhost) i22_Q1 Empty
+
+-- Proj_ is_forward_msg, sender, forwardaddr, rvalue, reference
+--   Sel_ mid = midValue
+--    (v_message Join_[mid = mid] v_recipient Join_[rvalue = email_id] v_employee) 
+--    Union_
+--    (v_message Join_[sender = email_id] v_employee Join_[eid = eid] v_forward_msg) 
+i22_Q1 :: Algebra
+i22_Q1 = Proj (map trueAttr [sender, forwardaddr, rvalue, reference]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+             SetOp Union join_msg_rec_emp_reference join_msg_emp_forward 
 
 
 --
 -- 23. Interaction: RemailMessages vs. FilterMessages
 -- 
 -- * Feature: remailmsg vs. filtermsg
--- * Situation: 
+-- * Situation: We provision FilterMessages to discard all message from the domain "research".
+--              However, the third party from within "research" obtains a RemailMessage pseudonym 
+--              and sends a message to Bob. Because RemailMessage sets the sender of the message 
+--              to <pseudonym>@remailer, it is not filter and is instead deliver to Bob
 -- 
--- * Fix by FNE: 
--- 
--- * Fix by VDB:
--- * V-Query: 
+-- * Fix by FNE: NO FIX.
 
 --
 -- 24. Interaction: RemailMessage vs. VerifySignature
@@ -751,7 +806,7 @@ enronVQ24 = AChc (remailmsg `F.And` signature) i24_Q1 Empty
 --  Sel_ mid = midValue
 --   (v_message join_[mid == mid] v_recipientinfo)
 i24_Q1 :: Algebra
-i24_Q1 = Proj (map trueAttr [ is_signed, rvalue]) $ genRenameAlgebra $ 
+i24_Q1 = Proj (map trueAttr [is_signed, rvalue]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             joinTwoRelation v_message v_recipientinfo "mid"
 
@@ -759,13 +814,31 @@ i24_Q1 = Proj (map trueAttr [ is_signed, rvalue]) $ genRenameAlgebra $
 -- 25. Interaction: RemailMessage vs. MailHost
 -- 
 -- * Feature: remailmsg vs. mailhost
--- * Situation: 
+-- * Situation: Bob at host sets up and uses a remailer pseudonym to send embarrasing mail to rjh.
+--              Bob then abandon his host account forgeeting to deactivate the remailer pseudonym.
+--              Rjh then replies to the pseudonym and gets a bound message from the host the reveals
+--              Bob's identity to rjh.
 -- 
 -- * Fix by FNE: Alter MailHost so that it detects remailed messages and generates Non-Delivery notification
 --               that are devoid of information that might leak the identity of the user. 
 -- 
--- * Fix by VDB:
--- * V-Query: d
+-- * Fix by VDB: Check in MailHost that if the message is from remailer. 
+-- * V-Query: 
+--   remailmsg AND mailhost =>  Q1: query is_from_remailer
+--   remailmsg AND (NOT mailhost) =>  Nothing 
+--   (NOT remailmsg) AND mailhost =>  Nothing 
+--   (NOT remailmsg) AND (NOT mailhost) =>  Nothing 
+-- * V-Query: remailmsg AND mailhost <Q1, Empty>
+enronVQ25 :: Algebra
+enronVQ25 = AChc (remailmsg `F.And` mailhost) i25_Q1 Empty
+
+-- | Proj_ is_from_remailer,
+--    Sel mid = midValue
+--     (v_message)
+i25_Q1 :: Algebra
+i25_Q1 = Proj [trueAttr is_from_remailer] $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            tRef v_message
 
 --
 -- 26. Interaction: FilterMessages vs. MailHost
@@ -777,13 +850,26 @@ i24_Q1 = Proj (map trueAttr [ is_signed, rvalue]) $ genRenameAlgebra $
 --              FilterMessages discard the postmaster message. This defeats the goal of MailHost feature which
 --              is to either deliver a message or notify the sender of its inability to do so.
 -- 
--- * Fix by FNE: Alter FilterMessages so that it recognizes Non-Delivery Notification and passes them throught when
---               they are in reponse to a known prior ourbound message.
+-- * Fix by FNE: Alter FilterMessages so that it recognizes Non-Delivery Notification and passes them through when
+--               they are in response to a known prior ourbound message.
 -- 
--- * Fix by VDB:
--- * V-Query: 
+-- * Fix by VDB: Check if the message is a Non-Delivery Notification and the sender's address is in the suffix of recipient.
+--   filtermsg AND mailhost =>  Q1: query is_system_notification, sender, sender's filter suffix, recipient's address
+--   filtermsg AND (NOT mailhost) =>  Nothing 
+--   (NOT filtermsg) AND mailhost =>  Nothing 
+--   (NOT filtermsg) AND (NOT mailhost) =>  Nothing 
+-- * V-Query: filtermsg AND mailhost <Q1, Empty>
+enronVQ26 :: Algebra
+enronVQ26 = AChc (filtermsg `F.And` mailhost) i26_Q1 Empty
 
-
+-- | query is_system_notification, sender, receipient's filter suffix and address
+-- Proj_ is_system_notification, sender, rvalue, suffix
+--  Sel_ mid = midValue
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_filter_msg)
+i26_Q1 :: Algebra
+i26_Q1 = Proj (map trueAttr [is_system_notification, sender, rvalue, suffix]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_filter
 
 --
 -- 27. Interaction: VerifySignature vs. ForwardMessages
@@ -798,14 +884,36 @@ i24_Q1 = Proj (map trueAttr [ is_signed, rvalue]) $ genRenameAlgebra $
 --               verified. 
 -- 
 -- * Fix by VDB:
---   - signautre AND forwardmsg =>
---   - signautre AND (NOT forwardmsg) => 
---   - (NOT signautre) AND forwardmsg => 
---   - (NOT signautre) AND (NOT forwardmsg) => 
--- * V-Query: 
+--   - signature AND forwardmsg => Q1: query the forward address for receiver of msg and the sender's is_signed
+--   - signature AND (NOT forwardmsg) => Q2. the sender's is_signed
+--   - (NOT signature) AND forwardmsg => Q3. the forward address for receiver of msg
+--   - (NOT signature) AND (NOT forwardmsg) => Empty
+-- * V-Query:  (Same query with interaciton 4 SignMessage vs ForwardMessages ),
+--   signature <forwardmsg<Q1, Q2>, forwardmsg <Q3, empty>>
 
+enronVQ27 :: Algebra
+enronVQ27 = AChc signature (AChc forwardmsg i4_Q1 i4_Q2) (AChc forwardmsg i4_Q3 Empty)
 
+-- | same with i4_Q1
+-- Proj_ forwardaddr, is_signed
+--  Sel_ mid = midValue and rtype == "To" 
+--  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)  
+i27_Q1 :: Algebra 
+i27_Q1 = Proj [trueAttr forwardaddr, trueAttr is_signed] $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            join_msg_rec_emp_foward 
 
+-- | same with i4_Q2
+-- Proj_ is_signed Sel_ mid = midValue (v_message)
+i27_Q2 :: Algebra
+i27_Q2 = query_is_signed
+
+-- | same with i4_Q3
+-- Proj_ forwardaddr 
+--  Sel_ mid = midValue and rtype == "To" 
+--   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
+i27_Q3 :: Algebra
+i27_Q3 = query_recipient_forwardaddr
 
 
 

@@ -56,11 +56,17 @@ sender = attr "sender"
 is_signed = attr "is_signed"
 is_encrypted = attr "is_encrypted"
 is_from_remailer = attr "is_from_remailer"
+is_autoresponse = attr "is_autoresponse"
+is_forward_msg = attr "is_forward_msg"
+is_system_notification = attr "is_system_notification"
 forwardaddr :: N.Attr 
 forwardaddr = attr "forwardaddr"
 
 rvalue :: N.Attr 
 rvalue = attr "rvalue"
+
+reference :: N.Attr
+reference = attr "reference"
 
 pseudonym, suffix :: N.Attr 
 pseudonym = attr "pseudonym"

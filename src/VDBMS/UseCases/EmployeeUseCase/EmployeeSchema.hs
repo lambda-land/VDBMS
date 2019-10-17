@@ -94,7 +94,7 @@ otherpersonnel_vschema = [ (Lit True, empno_, TInt32)
                          , (Lit True, title_,  TString)
                          , (Lit True, deptname_, TString)
                          ] 
-empacct_vschema=  [ (Lit True, empno_,    TInt32)
+empacct_vschema = [ (Lit True, empno_,    TInt32)
                   , (empv2 `Or` empv3, name_,     TString)
                   , (Lit True, hiredate_, TUTCTime)
                   , (Lit True, title_,    TString)
@@ -102,13 +102,13 @@ empacct_vschema=  [ (Lit True, empno_,    TInt32)
                   , (empv3 `Or` empv4 `Or` empv5, deptno_,  TInt32)
                   , (empv5, salary_,    TInt32)
                   ] 
-job_vschema=  [ (Lit True, title_, TString)
+job_vschema = [ (Lit True, title_, TString)
               , (Lit True, salary_,  TInt32)
               ] 
-dept_vschema= [ (Lit True, deptname_, TString)
-              , (Lit True, deptno_,   TInt32)
-              , (Lit True, managerno_,TInt32)
-              ]
+dept_vschema = [ (Lit True, deptname_, TString)
+               , (Lit True, deptno_,   TInt32)
+               , (Lit True, managerno_,TInt32)
+               ]
  
 empbio_vschema=  [ (Lit True, empno_,     TInt32)
                  , (Lit True, sex_,      TString)
