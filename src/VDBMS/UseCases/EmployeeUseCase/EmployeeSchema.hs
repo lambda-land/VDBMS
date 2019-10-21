@@ -77,7 +77,7 @@ empVSchema :: Schema
 empVSchema = (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vschema)
                                                        , (empv1, otherpersonnel, otherpersonnel_vschema)
                                                        , (empv2 `And` empv3 `And` empv4 `And` empv5, empacct, empacct_vschema)
-                                                       , (empv2 `And` empv3 `And` empv4, job, job_vschema)
+                                                       , (empv1 `And` empv2 `And` empv3 `And` empv4, job, job_vschema)
                                                        , (empv3 `And` empv4 `And` empv5, dept, dept_vschema)
                                                        , (empv4 `And` empv5, empbio, empbio_vschema)])
 
