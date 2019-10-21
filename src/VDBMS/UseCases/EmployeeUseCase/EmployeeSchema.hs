@@ -65,7 +65,7 @@ birthdate_ = N.Attribute "birthdate"
 -- 
 -- Employee v-schema 
 --
---  
+
 employeeFeatureModel :: FeatureExpr
 employeeFeatureModel =  (empv1 `And` (Not empv2) `And` (Not empv3) `And` (Not empv4) `And` (Not empv5)) `Or` 
                         ((Not empv1) `And` empv2 `And` (Not empv3) `And` (Not empv4) `And` (Not empv5)) `Or` 
@@ -118,6 +118,7 @@ empbio_vschema=  [ (Lit True, empno_,     TInt32)
                  , (empv5, lastname_,  TString)
                  ] 
 
+--
 --  ** schema for verison 1 
 --  
 empSchema1 :: Schema 

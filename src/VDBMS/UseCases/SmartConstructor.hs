@@ -94,3 +94,5 @@ constructOptRelMap nrlist = M.fromList $ map (\(f , relName, rt) -> ( relName, (
 constructOptRowType ::  [(F.FeatureExpr, N.Attribute,SqlType)]  -> RowType
 constructOptRowType attrTypeList  = M.fromList  $ map (\(f, a, t) -> (a, (f, t))) attrTypeList
 
+constructAllTrueRelSchema :: [(String, SqlType)] -> [(F.FeatureExpr, N.Attribute, SqlType)] 
+constructAllTrueRelSchema  =  map (\ (a, t) -> (F.Lit True, N.Attribute a, t))
