@@ -166,8 +166,8 @@ data Algebra
    | Proj  OptAttributes (Rename Algebra)
    | Sel   VsqlCond (Rename Algebra)
    | AChc  F.FeatureExpr Algebra Algebra
-   | Join (Rename Algebra) (Rename Algebra) Condition
-   | Prod (Rename Algebra) (Rename Algebra)
+   | Join  (Rename Algebra) (Rename Algebra) Condition
+   | Prod  (Rename Algebra) (Rename Algebra)
    | TRef  (Rename Relation)
    | Empty 
   deriving (Data,Eq,Show,Typeable)
