@@ -39,5 +39,13 @@ relSchToOptAtts = undefined
 
 -- | pushes schema to vsqlcond.
 pushSchToCond :: Schema -> VsqlCond -> VsqlCond
-pushSchToCond = undefined
+pushSchToCond _ cnd@(VsqlCond _) = cnd
+pushSchToCond s (VsqlIn a q) = VsqlIn a (pushSchToQ s q)
+pushSchToCond s (VsqlNot c)    = VsqlNot (pushSchToCond s c)
+pushSchToCond s (VsqlOr l r) 
+  = VsqlOr (pushSchToCond s l) (pushSchToCond s r)
+pushSchToCond s (VsqlAnd l r) 
+  = VsqlAnd (pushSchToCond s l) (pushSchToCond s r)
+pushSchToCond s (VsqlCChc f l r) 
+  = VsqlCChc f (pushSchToCond s l) (pushSchToCond s r)
 
