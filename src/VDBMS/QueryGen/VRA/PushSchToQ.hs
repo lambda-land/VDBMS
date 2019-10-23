@@ -12,6 +12,8 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
 
+import Data.Maybe (isJust)
+
 -- | pushes the schema onto the vq after type checking 
 --   the query. in order for the commuting diagram to
 --   hold.
@@ -37,7 +39,9 @@ pushSchToQ s Empty = Empty
 --   the list of optattributes of the relationschema
 --   in the schema. 
 relSchToOptAtts :: Relation -> Schema -> OptAttributes
-relSchToOptAtts = undefined
+relSchToOptAtts r s 
+  | isJust (lookupTableSch r s) = undefined
+  | otherwise = error "q has been type checked! not possible! relSchToOptAtts func in PushSchToQ!"
 
 -- | 
 pushSchToOptAtts :: Schema -> OptAttributes -> OptAttributes
