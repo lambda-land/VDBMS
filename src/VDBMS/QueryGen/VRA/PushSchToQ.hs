@@ -16,7 +16,8 @@ import VDBMS.VDB.GenName
 --   the query. in order for the commuting diagram to
 --   hold.
 pushSchToQ :: Schema -> Algebra -> Algebra
-pushSchToQ s (SetOp o l r) = undefined
+pushSchToQ s (SetOp o l r) 
+  = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
 pushSchToQ s (Proj as rq) = undefined
 pushSchToQ s (Sel c rq) 
   = Sel (pushSchToCond s c) (renameMap (pushSchToQ s) rq)
