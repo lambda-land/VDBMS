@@ -11,6 +11,8 @@ import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
+import VDBMS.Variational.Opt (getFexp, getObj)
+import VDBMS.Features.FeatureExpr.FeatureExpr
 
 import Data.Maybe (isJust)
 
@@ -32,16 +34,29 @@ pushSchToQ s (Prod rl rr)
   = Prod (renameMap (pushSchToQ s) rl) (renameMap (pushSchToQ s) rr)
 pushSchToQ s q@(TRef rr) 
   = Proj (relSchToOptAtts (thing rr) s) (renameNothing q)
-pushSchToQ s Empty = Empty
+pushSchToQ _ Empty = Empty
 
 
 -- | takes a relation and schema and generates
 --   the list of optattributes of the relationschema
 --   in the schema. 
 relSchToOptAtts :: Relation -> Schema -> OptAttributes
-relSchToOptAtts r s 
-  | isJust (lookupTableSch r s) = undefined
-  | otherwise = error "q has been type checked! not possible! relSchToOptAtts func in PushSchToQ!"
+relSchToOptAtts r s =
+  case (lookupTableSch r s) of
+    (Just tsch) -> tsch2optAtts fm tsch
+    _ -> error "q has been type checked! not possible! relSchToOptAtts func in PushSchToQ!"
+  where 
+    fm = featureModel s
+
+-- type OptAttribute = Opt (Rename Attr)
+-- | takes the feature model and table schema and 
+--   produces the opt attribute list from them.
+tsch2optAtts :: FeatureExpr -> TableSchema -> OptAttributes
+tsch2optAtts fm tsch = undefined
+  where
+    rf = getFexp tsch
+    sch = getObj tsch
+
 
 -- | 
 pushSchToOptAtts :: Schema -> OptAttributes -> OptAttributes
