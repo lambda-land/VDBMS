@@ -12,6 +12,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , attrAlias
         , vsqlCondEq
         , configureAlgebra_
+        , pushFexp2OptAtts
         
 
 ) where
@@ -145,6 +146,10 @@ instance Boolean VsqlCond where
 -- | Optional attribute.
 type OptAttribute = Opt (Rename Attr)
 
+-- | conjuncts a feature expr with attribute's pc.
+pushFexp2OptAtt :: F.FeatureExpr -> OptAttribute -> OptAttribute
+pushFexp2OptAtt f = applyFuncFexp (F.And f) 
+
 -- | Gets the original attribute out of optattr.
 attrOfOptAttr :: OptAttribute -> Attribute 
 attrOfOptAttr = attribute . thing . getObj
@@ -159,6 +164,10 @@ attrAlias = name . getObj
 
 -- | Optional attributes.
 type OptAttributes = [OptAttribute]
+
+-- | pushes a fexp to all optatts in the list.
+pushFexp2OptAtts :: F.FeatureExpr -> OptAttributes -> OptAttributes
+pushFexp2OptAtts f = map (pushFexp2OptAtt f)
 
 -- | More expressive variational relational algebra.
 data Algebra

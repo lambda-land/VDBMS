@@ -12,7 +12,7 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
 import VDBMS.Variational.Opt (getFexp, getObj)
-import VDBMS.Features.FeatureExpr.FeatureExpr
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 
 -- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -26,7 +26,7 @@ pushSchToQ :: Schema -> Algebra -> Algebra
 pushSchToQ s (SetOp o l r) 
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
 pushSchToQ s (Proj as rq) 
-  = Proj (intersectOptAtts (outerMostOptAttQ subq) as) subq 
+  = Proj (intersectOptAtts (outerMostOptAttQ (thing subq)) as) subq 
   where subq = renameMap (pushSchToQ s) rq
   -- = Proj (pushSchToOptAtts s as) (renameMap (pushSchToQ s) rq)
 pushSchToQ s (Sel c rq) 
@@ -57,24 +57,41 @@ relSchToOptAtts rr s =
 --   produces the opt attribute list from them.
 --   Note that it qualifies all attributes by the relation name or 
 --   the alias if available.
-tsch2optAtts :: Rename Relation -> FeatureExpr -> TableSchema -> OptAttributes
+tsch2optAtts :: Rename Relation -> F.FeatureExpr -> TableSchema -> OptAttributes
 tsch2optAtts rr fm tsch = case name rr of 
-  Just n -> map (\(a,f) -> (conjFexp [fm,rf,f], 
+  Just n -> map (\(a,f) -> (F.conjFexp [fm,rf,f], 
                             renameNothing (Attr a (Just (SubqueryQualifier n)))))
             $ M.toList $ M.map getFexp row  
   _ -> oas
   where
     rf = getFexp tsch
     row = getObj tsch
-    oas = map (\(a,f) -> (conjFexp [fm,rf,f], 
+    oas = map (\(a,f) -> (F.conjFexp [fm,rf,f], 
                           renameNothing (Attr a (Just (RelQualifier (thing rr))))))
       $ M.toList $ M.map getFexp row  
 
--- |
-outerMostOptAttQ :: Rename Algebra -> OptAttributes
-outerMostOptAttQ = undefined
+-- | returns the outermost opt atts of a query, 
+--   knowing that the passed query definitely has a projected list
+--   and it is type correct.
+outerMostOptAttQ :: Algebra -> OptAttributes
+outerMostOptAttQ (SetOp _ l _) = outerMostOptAttQ l
+outerMostOptAttQ (Proj as _) = as 
+outerMostOptAttQ (Sel _ rq) = outerMostOptAttQ $ thing rq
+outerMostOptAttQ (AChc f l r) 
+  = pushFexp2OptAtts f (outerMostOptAttQ l) 
+  ++ pushFexp2OptAtts (F.Not f) (outerMostOptAttQ r)
+outerMostOptAttQ (Join rl rr _) 
+  = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
+outerMostOptAttQ (Prod rl rr)
+  = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
+outerMostOptAttQ _ = error "doesnt have a list of projected atts"
 
--- |
+-- type OptAttribute = Opt (Rename Attr)
+
+-- | intersects two opt atts. the first list subsumes the second one,
+--   checked by the type system. it returns attributes in the subsumed
+--   list with their fexp conjuncted with the correspondent fexp in the
+--   bigger list (the first one) with the correct qualifier.
 intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
 intersectOptAtts subsumes isSubsumed = undefined
 
