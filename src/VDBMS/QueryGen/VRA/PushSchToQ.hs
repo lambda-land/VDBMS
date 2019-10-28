@@ -51,9 +51,9 @@ relSchToOptAtts r s =
   where 
     fm = featureModel s
 
--- type OptAttribute = Opt (Rename Attr)
--- | takes the feature model and table schema and 
+-- | takes a relation, the feature model and table schema and 
 --   produces the opt attribute list from them.
+--   Note that it qualifies all attributes by the relation name.
 tsch2optAtts :: Relation -> FeatureExpr -> TableSchema -> OptAttributes
 tsch2optAtts r fm tsch = oas
   where
@@ -62,10 +62,6 @@ tsch2optAtts r fm tsch = oas
     oas = map (\(a,f) -> (conjFexp [fm,rf,f], 
                           renameNothing (Attr a (Just (RelQualifier r)))))
       $ M.toList $ M.map getFexp row  
-    -- rowtype2optatts :: Relation -> RowType -> OptAttributes
-    -- rowtype2optatts rel rt = 
-      -- map 
-
 
 -- | 
 pushSchToOptAtts :: Schema -> OptAttributes -> OptAttributes
