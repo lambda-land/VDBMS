@@ -25,8 +25,8 @@ import Data.Maybe (isJust)
 pushSchToQ :: Schema -> Algebra -> Algebra
 pushSchToQ s (SetOp o l r) 
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
-pushSchToQ s (Proj as rq) = undefined
-  -- = Proj () (renameMap (pushSchToQ s) rq)
+pushSchToQ s (Proj as rq) 
+  = Proj (pushSchToOptAtts s as) (renameMap (pushSchToQ s) rq)
 pushSchToQ s (Sel c rq) 
   = Sel (pushSchToCond s c) (renameMap (pushSchToQ s) rq)
 pushSchToQ s (AChc f l r) 
@@ -45,8 +45,8 @@ pushSchToQ _ Empty = Empty
 --   in the schema. 
 relSchToOptAtts :: Relation -> Schema -> OptAttributes
 relSchToOptAtts r s =
-  case (lookupTableSch r s) of
-    (Just tsch) -> tsch2optAtts r fm tsch
+  case lookupTableSch r s of
+    Just tsch -> tsch2optAtts r fm tsch
     _ -> error "q has been type checked! not possible! relSchToOptAtts func in PushSchToQ!"
   where 
     fm = featureModel s
