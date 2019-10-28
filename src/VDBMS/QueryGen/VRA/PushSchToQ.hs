@@ -26,7 +26,9 @@ pushSchToQ :: Schema -> Algebra -> Algebra
 pushSchToQ s (SetOp o l r) 
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
 pushSchToQ s (Proj as rq) 
-  = Proj (pushSchToOptAtts s as) (renameMap (pushSchToQ s) rq)
+  = Proj (intersectOptAtts (outerMostOptAttQ subq) as) subq 
+  where subq = renameMap (pushSchToQ s) rq
+  -- = Proj (pushSchToOptAtts s as) (renameMap (pushSchToQ s) rq)
 pushSchToQ s (Sel c rq) 
   = Sel (pushSchToCond s c) (renameMap (pushSchToQ s) rq)
 pushSchToQ s (AChc f l r) 
@@ -68,14 +70,13 @@ tsch2optAtts rr fm tsch = case name rr of
                           renameNothing (Attr a (Just (RelQualifier (thing rr))))))
       $ M.toList $ M.map getFexp row  
 
+-- |
+outerMostOptAttQ :: Rename Algebra -> OptAttributes
+outerMostOptAttQ = undefined
 
--- | pushes the schema into the projected list of attributes,
---   knowing that the query is type correct so none of the 
---   attributes in the list are going to be omitted because
---   of conjuncting the attribute's pc from schema with its
---   pc from the list. 
-pushSchToOptAtts :: Schema -> OptAttributes -> OptAttributes
-pushSchToOptAtts s oas = undefined
+-- |
+intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
+intersectOptAtts subsumes isSubsumed = undefined
 
 
 -- | pushes schema to vsqlcond which pushes the schema into the
