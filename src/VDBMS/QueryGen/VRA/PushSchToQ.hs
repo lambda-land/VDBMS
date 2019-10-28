@@ -36,17 +36,17 @@ pushSchToQ s (Join rl rr c)
 pushSchToQ s (Prod rl rr) 
   = Prod (renameMap (pushSchToQ s) rl) (renameMap (pushSchToQ s) rr)
 pushSchToQ s q@(TRef rr) 
-  = Proj (relSchToOptAtts (thing rr) s) (renameNothing q)
+  = Proj (relSchToOptAtts rr s) (renameNothing q)
 pushSchToQ _ Empty = Empty
 
 
 -- | takes a relation and schema and generates
 --   the list of optattributes of the relationschema
 --   in the schema. 
-relSchToOptAtts :: Relation -> Schema -> OptAttributes
-relSchToOptAtts r s =
-  case lookupTableSch r s of
-    Just tsch -> tsch2optAtts r fm tsch
+relSchToOptAtts :: Rename Relation -> Schema -> OptAttributes
+relSchToOptAtts rr s =
+  case lookupTableSch (thing rr) s of
+    Just tsch -> tsch2optAtts rr fm tsch
     _ -> error "q has been type checked! not possible! relSchToOptAtts func in PushSchToQ!"
   where 
     fm = featureModel s
@@ -54,20 +54,34 @@ relSchToOptAtts r s =
 -- | takes a relation, the feature model and table schema and 
 --   produces the opt attribute list from them.
 --   Note that it qualifies all attributes by the relation name.
-tsch2optAtts :: Relation -> FeatureExpr -> TableSchema -> OptAttributes
-tsch2optAtts r fm tsch = oas
+tsch2optAtts :: Rename Relation -> FeatureExpr -> TableSchema -> OptAttributes
+tsch2optAtts rr fm tsch = case name rr of 
+  Just n -> map (\(a,f) -> (conjFexp [fm,rf,f], 
+                            renameNothing (Attr a (Just (SubqueryQualifier n)))))
+            $ M.toList $ M.map getFexp row  
+  _ -> oas
   where
     rf = getFexp tsch
     row = getObj tsch
     oas = map (\(a,f) -> (conjFexp [fm,rf,f], 
-                          renameNothing (Attr a (Just (RelQualifier r)))))
+                          renameNothing (Attr a (Just (RelQualifier (thing rr))))))
       $ M.toList $ M.map getFexp row  
+    -- oas' = map (\(a,f) -> (conjFexp [fm,rf,f], 
+    --                       renameNothing (Attr a (Just (SubqueryQualifier (name rr))))))
+    --   $ M.toList $ M.map getFexp row  
 
--- | 
+
+-- | pushes the schema into the projected list of attributes,
+--   knowing that the query is type correct so none of the 
+--   attributes in the list are going to be omitted because
+--   of conjuncting the attribute's pc from schema with its
+--   pc from the list. 
 pushSchToOptAtts :: Schema -> OptAttributes -> OptAttributes
-pushSchToOptAtts = undefined
+pushSchToOptAtts s oas = undefined
 
--- | pushes schema to vsqlcond.
+
+-- | pushes schema to vsqlcond which pushes the schema into the
+--   query used in sqlin condition.
 pushSchToCond :: Schema -> VsqlCond -> VsqlCond
 pushSchToCond _ cnd@(VsqlCond _) = cnd
 pushSchToCond s (VsqlIn a q)     = VsqlIn a (pushSchToQ s q)
