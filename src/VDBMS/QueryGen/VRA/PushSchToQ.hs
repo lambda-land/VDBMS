@@ -14,6 +14,9 @@ import VDBMS.VDB.GenName
 import VDBMS.Variational.Opt (getFexp, getObj)
 import VDBMS.Features.FeatureExpr.FeatureExpr
 
+-- import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
+
 import Data.Maybe (isJust)
 
 -- | pushes the schema onto the vq after type checking 
@@ -43,7 +46,7 @@ pushSchToQ _ Empty = Empty
 relSchToOptAtts :: Relation -> Schema -> OptAttributes
 relSchToOptAtts r s =
   case (lookupTableSch r s) of
-    (Just tsch) -> tsch2optAtts fm tsch
+    (Just tsch) -> tsch2optAtts r fm tsch
     _ -> error "q has been type checked! not possible! relSchToOptAtts func in PushSchToQ!"
   where 
     fm = featureModel s
@@ -51,11 +54,17 @@ relSchToOptAtts r s =
 -- type OptAttribute = Opt (Rename Attr)
 -- | takes the feature model and table schema and 
 --   produces the opt attribute list from them.
-tsch2optAtts :: FeatureExpr -> TableSchema -> OptAttributes
-tsch2optAtts fm tsch = undefined
+tsch2optAtts :: Relation -> FeatureExpr -> TableSchema -> OptAttributes
+tsch2optAtts r fm tsch = oas
   where
     rf = getFexp tsch
-    sch = getObj tsch
+    row = getObj tsch
+    oas = map (\(a,f) -> (conjFexp [fm,rf,f], 
+                          renameNothing (Attr a (Just (RelQualifier r)))))
+      $ M.toList $ M.map getFexp row  
+    -- rowtype2optatts :: Relation -> RowType -> OptAttributes
+    -- rowtype2optatts rel rt = 
+      -- map 
 
 
 -- | 

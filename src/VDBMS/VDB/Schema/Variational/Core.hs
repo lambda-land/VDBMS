@@ -14,7 +14,7 @@ module VDBMS.VDB.Schema.Variational.Core (
         , shrinkFexRowType
         , combineTableSchema
         , rowTypeUnion
-        , dropAttTypeFromRwoType
+        , dropAttTypeFromRowType
 
 ) where
 
@@ -138,5 +138,5 @@ rowTypeUnion e e' = StrictM.merge
         _    -> Nothing)
 
 -- | takes a rowtype and drops sqltype and returns a list of opt att.
-dropAttTypeFromRwoType :: RowType -> [Opt Attribute]
-dropAttTypeFromRwoType r = map (\(l,r) -> (r,l)) $ M.toList $ M.map getFexp r 
+dropAttTypeFromRowType :: RowType -> [Opt Attribute]
+dropAttTypeFromRowType r = map (\(l,r) -> (r,l)) $ M.toList $ M.map getFexp r 
