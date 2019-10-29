@@ -75,8 +75,8 @@ tsch2optAtts rr fm tsch = case name rr of
 --   and it is type correct.
 outerMostOptAttQ :: Algebra -> OptAttributes
 outerMostOptAttQ (SetOp _ l _) = outerMostOptAttQ l
-outerMostOptAttQ (Proj as _) = as 
-outerMostOptAttQ (Sel _ rq) = outerMostOptAttQ $ thing rq
+outerMostOptAttQ (Proj as _)   = as 
+outerMostOptAttQ (Sel _ rq)    = outerMostOptAttQ $ thing rq
 outerMostOptAttQ (AChc f l r) 
   = pushFexp2OptAtts f (outerMostOptAttQ l) 
   ++ pushFexp2OptAtts (F.Not f) (outerMostOptAttQ r)
@@ -84,7 +84,8 @@ outerMostOptAttQ (Join rl rr _)
   = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
 outerMostOptAttQ (Prod rl rr)
   = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
-outerMostOptAttQ _ = error "doesnt have a list of projected atts"
+outerMostOptAttQ _
+  = error "doesnt have a list of projected atts"
 
 -- type OptAttribute = Opt (Rename Attr)
 
@@ -92,8 +93,14 @@ outerMostOptAttQ _ = error "doesnt have a list of projected atts"
 --   checked by the type system. it returns attributes in the subsumed
 --   list with their fexp conjuncted with the correspondent fexp in the
 --   bigger list (the first one) with the correct qualifier.
+--   Note it needs to look into the first list completely and if
+--   an attribute exists more than once then drop its qualifiers and
+--   disjunct the fexps.
+--                  subsumes      -> isSubsumed    -> intersection
 intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
-intersectOptAtts subsumes isSubsumed = undefined
+intersectOptAtts big small = undefined
+  -- where
+  --   .
 
 
 -- | pushes schema to vsqlcond which pushes the schema into the
