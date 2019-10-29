@@ -78,8 +78,10 @@ outerMostOptAttQ (SetOp _ l _) = outerMostOptAttQ l
 outerMostOptAttQ (Proj as _)   = as 
 outerMostOptAttQ (Sel _ rq)    = outerMostOptAttQ $ thing rq
 outerMostOptAttQ (AChc f l r) 
-  = pushFexp2OptAtts f (outerMostOptAttQ l) 
-  ++ pushFexp2OptAtts (F.Not f) (outerMostOptAttQ r)
+  = unionOptAtts oal oar
+    where
+      oal = pushFexp2OptAtts f (outerMostOptAttQ l) 
+      oar = pushFexp2OptAtts (F.Not f) (outerMostOptAttQ r)
 outerMostOptAttQ (Join rl rr _) 
   = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
 outerMostOptAttQ (Prod rl rr)
@@ -88,6 +90,12 @@ outerMostOptAttQ _
   = error "doesnt have a list of projected atts"
 
 -- type OptAttribute = Opt (Rename Attr)
+
+-- | unions two opt atts. if an att exists in both, it checks
+--   their quailifier, if not the same eliminates the qualifier
+--   and disjuncts the fexps.
+unionOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
+unionOptAtts = undefined
 
 -- | intersects two opt atts. the first list subsumes the second one,
 --   checked by the type system. it returns attributes in the subsumed
