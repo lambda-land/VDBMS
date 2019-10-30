@@ -13,6 +13,9 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , vsqlCondEq
         , configureAlgebra_
         , pushFexp2OptAtts
+        , disjFexpOptAttr
+        , qualOfOptAttr
+        , conjFexpOptAttr
         
 
 ) where
@@ -147,8 +150,12 @@ instance Boolean VsqlCond where
 type OptAttribute = Opt (Rename Attr)
 
 -- | conjuncts a feature expr with attribute's pc.
-pushFexp2OptAtt :: F.FeatureExpr -> OptAttribute -> OptAttribute
-pushFexp2OptAtt f = applyFuncFexp (F.And f) 
+conjFexpOptAttr :: F.FeatureExpr -> OptAttribute -> OptAttribute
+conjFexpOptAttr f = applyFuncFexp (F.And f) 
+
+-- | disjuncts a feature expr with attribute's pc.
+disjFexpOptAttr :: F.FeatureExpr -> OptAttribute -> OptAttribute
+disjFexpOptAttr f = applyFuncFexp (F.Or f)
 
 -- | Gets the original attribute out of optattr.
 attrOfOptAttr :: OptAttribute -> Attribute 
@@ -162,12 +169,16 @@ attrName = attributeName . attrOfOptAttr
 attrAlias :: OptAttribute -> Alias
 attrAlias = name . getObj 
 
+-- | opt attr qualifier. 
+qualOfOptAttr :: OptAttribute -> Maybe Qualifier 
+qualOfOptAttr = qualifier . thing . getObj
+
 -- | Optional attributes.
 type OptAttributes = [OptAttribute]
 
 -- | pushes a fexp to all optatts in the list.
 pushFexp2OptAtts :: F.FeatureExpr -> OptAttributes -> OptAttributes
-pushFexp2OptAtts f = map (pushFexp2OptAtt f)
+pushFexp2OptAtts f = map (conjFexpOptAttr f)
 
 -- | More expressive variational relational algebra.
 data Algebra

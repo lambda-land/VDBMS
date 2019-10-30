@@ -91,25 +91,35 @@ outerMostOptAttQ _
 
 -- type OptAttribute = Opt (Rename Attr)
 
--- | unions two opt atts. if an att exists in both, it checks
---   their quailifier, if not the same eliminates the qualifier
---   and disjuncts the fexps.
+-- | unions two opt atts. 
 unionOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
-unionOptAtts = undefined
+unionOptAtts = (++)
 
 -- | intersects two opt atts. the first list subsumes the second one,
 --   checked by the type system. it returns attributes in the subsumed
---   list with their fexp conjuncted with the correspondent fexp in the
---   bigger list (the first one) with the correct qualifier.
---   Note it needs to look into the first list completely and if
---   an attribute exists more than once then drop its qualifiers and
---   disjunct the fexps.
+--   list with their fexp conjuncted with the correspondent fexps 
+--   (disjuncted if more than one) in the
+--   bigger list (the first one). if the attr has qualifier in the 
+--   subsumed list it is only matched with attributes with the same
+--   qualifier, otherwise it is matched with all attributes with 
+--   the same name. 
+--   Note it needs to look into the first list completely
 --                  subsumes      -> isSubsumed    -> intersection
 intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
-intersectOptAtts big small = undefined
-  -- where
-  --   .
-
+intersectOptAtts big small = map (restrictOptAtt big) small
+  where
+    restrictOptAtt :: OptAttributes -> OptAttribute -> OptAttribute
+    restrictOptAtt oas oa = conjFexpOptAttr (genFexp oasFiltered) oa
+      where 
+        att = attrOfOptAttr oa 
+        qual = qualOfOptAttr oa 
+        oasFiltered = filter check oas 
+        check a = case qual of 
+          Just aq -> qual == qualOfOptAttr a && att == attrOfOptAttr a 
+          _ -> att == attrOfOptAttr a
+        genFexp :: OptAttributes -> F.FeatureExpr
+        genFexp [] = error "shouldnt be getting empty list. func: intersectOptAtts in PushSchToQ"
+        genFexp (x:xs) = foldl (\f at -> F.Or f (getFexp at)) (getFexp x) xs
 
 -- | pushes schema to vsqlcond which pushes the schema into the
 --   query used in sqlin condition.
