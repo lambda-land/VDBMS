@@ -28,7 +28,6 @@ pushSchToQ s (SetOp o l r)
 pushSchToQ s (Proj as rq) 
   = Proj (intersectOptAtts (outerMostOptAttQ (thing subq)) as) subq 
   where subq = renameMap (pushSchToQ s) rq
-  -- = Proj (pushSchToOptAtts s as) (renameMap (pushSchToQ s) rq)
 pushSchToQ s (Sel c rq) 
   = Sel (pushSchToCond s c) (renameMap (pushSchToQ s) rq)
 pushSchToQ s (AChc f l r) 
@@ -88,8 +87,6 @@ outerMostOptAttQ (Prod rl rr)
   = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
 outerMostOptAttQ _
   = error "doesnt have a list of projected atts"
-
--- type OptAttribute = Opt (Rename Attr)
 
 -- | unions two opt atts. 
 unionOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
