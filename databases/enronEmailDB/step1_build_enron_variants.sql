@@ -79,10 +79,10 @@ where (eid > 30 AND eid <= 60) OR (eid > 90 AND eid <= 120)
 order by eid;
 
 -- ##########
--- # filter_view(eid, suffix)
+-- # filter_msg_view(eid, suffix)
 -- ##########
-CREATE OR REPLACE view filter_view as
-SELECT 1 as eid , "pgn.com" as suffix
+CREATE OR REPLACE view filter_msg_view as
+SELECT 1 as eid , "pgn.com" as suffix;
 
 -- ##########
 -- # v_mailhost(eid, username, mailhost, presCond)
@@ -154,9 +154,9 @@ order by eid;
 
 -- # create a view for p1_message for prodcut focusing on daily usage(forward filter). alter
 # SELECT count(mid) -- 19103
-# p1_message(mid, sender, date, message_id, subject, body, folder, is_system_notification) 
+# p1_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_forward_msg) 
 CREATE OR REPLACE view p1_message_view AS 
-SELECT msg.*,  false as is_system_notification
+SELECT msg.*,  false as is_system_notification, false as is_forward_msg
 FROM message msg 
 inner join p1_employee_view emp on msg.sender = emp.email_id;
 

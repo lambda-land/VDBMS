@@ -4,45 +4,44 @@
 --
 
 DROP TABLE IF EXISTS `v_employee`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
- SET character_set_client = utf8mb4 ;
+SET character_set_client = utf8mb4 ;
 CREATE TABLE `v_employee` (
   `eid` int(10) unsigned NOT NULL DEFAULT '0',
-  `firstName` varchar(31) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `lastName` varchar(31) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `Email_id` varchar(31) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `folder` varchar(31) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `status` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `firstName` varchar(31) NOT NULL DEFAULT '',
+  `lastName` varchar(31) NOT NULL DEFAULT '',
+  `email_id` varchar(31) NOT NULL DEFAULT '',
+  `folder` varchar(31) NOT NULL DEFAULT '',
+  `status` varchar(50)  DEFAULT NULL,
   `sign` text,
   `public_key` varchar(31) DEFAULT NULL,
-  `presCond` text,
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `presCond` text
+);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
 SELECT eid, firstname, lastname, email_id, folder, status, NULL, NULL, 
 "forwardmsg AND filtermsg AND NOT (addressbook OR encrypt OR remailmsg OR autoresponder OR signature OR mailhost)"
-FROM p1_employee_view
+FROM p1_employee_view;
 
 INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
 SELECT eid, firstname, lastname, email_id, folder, status, sign, public_key, 
 "signature AND encrypt AND remailmsg AND NOT (addressbook OR filtermsg OR autoresponder OR forwardmsg OR mailhost)"
-FROM p2_employee_view 
+FROM p2_employee_view;
 
 INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
-SELECT eid, firstname, lastname, email_id, folder, status, NULL, NULL 
+SELECT eid, firstname, lastname, email_id, folder, status, NULL, NULL,
 "addressbook AND autoresponder AND mailhost AND NOT (forwardmsg OR encrypt OR remailmsg OR filtermsg OR signature)"
-FROM p3_employee_view 
+FROM p3_employee_view ;
 
 INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
 SELECT eid, firstname, lastname, email_id, folder, status, sign, public_key,
 "signature AND addressbook AND filtermsg AND autoresponder AND forwardmsg AND mailhost AND encrypt AND remailmsg"
-FROM p4_employee_view 
+FROM p4_employee_view ;
 
 INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
 SELECT eid, firstname, lastname, email_id, folder, status, NULL, NULL,
 "(NOT signature) AND (NOT addressbook) AND (NOT filtermsg) AND (NOT autoresponder) AND (NOT forwardmsg) AND (NOT mailhost) AND (NOT encrypt) AND (NOT remailmsg)"
-FROM p5_employee_view 
+FROM p5_employee_view ;
 
 
 --
@@ -55,45 +54,45 @@ DROP TABLE IF EXISTS `v_message`;
  SET character_set_client = utf8mb4 ;
 CREATE TABLE `v_message` (
   `mid` int(10) NOT NULL DEFAULT '0',
-  `sender` varchar(127) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `sender` varchar(127)  NOT NULL DEFAULT '',
   `date` datetime DEFAULT NULL,
-  `message_id` varchar(127) CHARACTER SET utf8 DEFAULT NULL,
-  `subject` text CHARACTER SET utf8,
-  `body` text CHARACTER SET utf8,
-  `folder` varchar(127) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `message_id` varchar(127)  DEFAULT NULL,
+  `subject` text,
+  `body` text ,
+  `folder` varchar(127) NOT NULL DEFAULT '',
   `is_system_notification` int(1) DEFAULT NULL,
   `is_signed` int(1) DEFAULT NULL,
   `is_encrypted` int(1) DEFAULT NULL,
   `is_from_remailer` int(1) DEFAULT NULL,
-  `is_autoresponse` int(11) DEFAULT NULL,
-  `is_forward_msg` int(11) DEFAULT NULL,
-  `presCond` text,
+  `is_autoresponse` int(1) DEFAULT NULL,
+  `is_forward_msg` int(1) DEFAULT NULL,
+  `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, NULL, is_forward_msg, 
 "forwardmsg AND filtermsg AND NOT (addressbook OR encrypt OR remailmsg OR autoresponder OR signature OR mailhost)"
-FROM p1_message_view
+FROM p1_message_view;
 
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, NULL, NULL,
 "signature AND encrypt AND remailmsg AND NOT (addressbook OR filtermsg OR autoresponder OR forwardmsg OR mailhost)"
-FROM p2_message_view
+FROM p2_message_view;
 
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, is_autoresponse, NULL, 
 "addressbook AND autoresponder AND mailhost AND NOT (forwardmsg OR encrypt OR remailmsg OR filtermsg OR signature)"
-FROM p3_message_view
+FROM p3_message_view;
 
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg,
 "signature AND addressbook AND filtermsg AND autoresponder AND forwardmsg AND mailhost AND encrypt AND remailmsg"
-FROM p4_message_view
+FROM p4_message_view;
 
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, NULL, NULL, 
 "(NOT signature) AND (NOT addressbook) AND (NOT filtermsg) AND (NOT autoresponder) AND (NOT forwardmsg) AND (NOT mailhost) AND (NOT encrypt) AND (NOT remailmsg)"
-FROM p5_message_view
+FROM p5_message_view;
 
 --
 -- Table structure for table `v_recipientinfo`
@@ -106,8 +105,8 @@ DROP TABLE IF EXISTS `v_recipientinfo`;
 CREATE TABLE `v_recipientinfo` (
   `rid` int(10) NOT NULL DEFAULT '0',
   `mid` int(10) unsigned NOT NULL DEFAULT '0',
-  `rtype` enum('TO','CC','BCC') CHARACTER SET utf8 DEFAULT NULL,
-  `rvalue` varchar(127) CHARACTER SET utf8 DEFAULT NULL,
+  `rtype` enum('TO','CC','BCC') DEFAULT NULL,
+  `rvalue` varchar(127) DEFAULT NULL,
   `dater` datetime DEFAULT NULL,
   `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -124,7 +123,7 @@ DROP TABLE IF EXISTS `v_referenceinfo`;
 CREATE TABLE `v_referenceinfo` (
   `rfid` int(10) NOT NULL DEFAULT '0',
   `mid` int(10) NOT NULL DEFAULT '0',
-  `reference` text CHARACTER SET utf8,
+  `reference` text,
   `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -147,7 +146,7 @@ CREATE TABLE `v_auto_msg` (
 INSERT INTO v_auto_msg(eid, subject, body, presCond)
 SELECT eid, subject, body, 
 "TRUE"
-FROM auto_msg_view
+FROM auto_msg_view;
 
 --
 -- Table structure for table `v_forward_msg`
@@ -159,7 +158,7 @@ DROP TABLE IF EXISTS `v_forward_msg`;
  SET character_set_client = utf8mb4 ;
 CREATE TABLE `v_forward_msg` (
   `eid` int(10) unsigned NOT NULL DEFAULT '0',
-  `forwardAddr` varchar(31) CHARACTER SET utf8 DEFAULT NULL,
+  `forwardAddr` varchar(31)  DEFAULT NULL,
   `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -167,7 +166,7 @@ CREATE TABLE `v_forward_msg` (
 INSERT INTO v_forward_msg(eid, forwardaddr, presCond)
 SELECT eid, forwardaddr,
 "TRUE"
-FROM forward_msg_view
+FROM forward_msg_view;
 
 --
 -- Table structure for table `v_remail_msg`
@@ -184,9 +183,10 @@ CREATE TABLE `v_remail_msg` (
   `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
 INSERT INTO v_remail_msg(eid, pseudonym, presCond)
-SELCT  eid, pseudonym, "TRUE"
-FROM remail_msg_view
+SELECT  eid, pseudonym, "TRUE"
+FROM remail_msg_view;
 
 --
 -- Table structure for table `v_filter_msg`
@@ -204,7 +204,7 @@ CREATE TABLE `v_filter_msg` (
 
 INSERT INTO v_filter_msg(eid, suffix, presCond)
 SELECT eid, suffix, "TRUE"
-FROM filter_msg_view
+FROM filter_msg_view;
 
 
 --
@@ -216,16 +216,16 @@ DROP TABLE IF EXISTS `v_mailhost`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
  SET character_set_client = utf8mb4 ;
 CREATE TABLE `v_mailhost` (
-  `did` int(11) NOT NULL AUTO_INCREMENT,
+  `eid` int(10) unsigned NOT NULL DEFAULT '0',	
   `username` varchar(31) DEFAULT NULL,
-  `presCond` text,
-  PRIMARY KEY (`did`)
+  `mailhost` varchar(31) DEFAULT NULL,
+  `presCond` text
 ) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 INSERT INTO v_mailhost(eid, username, mailhost, presCond)
 SELECT eid, username, mailhost, "TRUE"
-FROM mailhost_view
+FROM mailhost_view;
 
 --
 -- Table structure for table `v_alias`
@@ -236,12 +236,12 @@ DROP TABLE IF EXISTS `v_alias`;
  SET character_set_client = utf8mb4 ;
 CREATE TABLE `v_alias` (
   `eid` int(10) unsigned NOT NULL DEFAULT '0',
-  `email` varchar(127) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `nickname` varchar(127) CHARACTER SET utf8 DEFAULT NULL,
+  `email_id` varchar(127)   DEFAULT NULL,
+  `nickname` varchar(127)  DEFAULT NULL,
   `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-INSERT INTO v_alias(eid, email, nickname, presCond)
-SELECT eid, email, nickname, "TRUE"
-FROM alias_view 
+INSERT INTO v_alias(eid, email_id, nickname, presCond)
+SELECT eid, email_id, nickname, "TRUE"
+FROM alias_view;
