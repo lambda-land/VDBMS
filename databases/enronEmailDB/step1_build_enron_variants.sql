@@ -79,8 +79,10 @@ where (eid > 30 AND eid <= 60) OR (eid > 90 AND eid <= 120)
 order by eid;
 
 -- ##########
--- # v_filter_msg(eid, suffix, presCond)
+-- # filter_view(eid, suffix)
 -- ##########
+CREATE OR REPLACE view filter_view as
+SELECT 1 as eid , "pgn.com" as suffix
 
 -- ##########
 -- # v_mailhost(eid, username, mailhost, presCond)
