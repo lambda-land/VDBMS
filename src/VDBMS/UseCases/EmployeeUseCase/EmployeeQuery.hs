@@ -67,7 +67,6 @@ departno_value = SqlString "d001"
 -- first set of quesries:
 -- taken from the prima paper, adjusted to the employee database. 
 -- e.g. instead of year 2003, we have year 1991, etc. 
--- can be used for comparison in terms of expressiveness and brevity.
 -- 
 
 -- intent: return the salary value of the emp 10004
@@ -75,8 +74,7 @@ departno_value = SqlString "d001"
 -- query: 
 -- prj_salary 
 --    (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01)
---            prj_(empno, hiredate, salary) 
---                empacct join_(title=title) job)
+--                (empacct join_(title=title) job)
 --
 -- the variatonal query of empQ1:
 -- * v-query considering 5 versions
@@ -109,7 +107,7 @@ empVQ1 = AChc empv3 empQ1 Empty
 --   v3 <empQ2, empty>
 -- plain query(empQ2):
 -- prj_managerno (sel_(1991-01-01<hiredate<1992-01-01 and deptno = d001)
---                 empacct join_(managerno=empno) dept)
+--                 empacct join_(empno = managerno) dept)
 -- Note:
 -- 1. Attribute deptno only exist in v3,v4,v5.
 empQ2T :: QueryT
@@ -135,8 +133,8 @@ empVQ2 = AChc empv3 empQ2 Empty
 --   v3 <empQ3, empty>
 --
 -- plain query(empQ3):
--- prj_managerno (dept join_(deptno=deptno) 
---                prj_deptno (sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01) empacct))
+-- prj_managerno sel_(empNo=10004, 1991-01-01<hiredate<1992-01-01) 
+--        (dept join_(deptno=deptno) empacct)
 -- note:
 -- the naive and manually optimized queries are basically the same.
 empQ3T :: QueryT
@@ -199,7 +197,12 @@ empVQ4 = AChc empv4 empQ4 Empty
 --       (SELECT deptno 
 --       FROM empacct
 --       where empno = 10004 and 1991-01-01<hiredate<1992-01-01 )
-
+--  =>
+--       SELECT managerno
+--       FROM  
+--       (SELECT * 
+--       FROM empacct natural join dept 
+--       where empno = 10004 and 1991-01-01<hiredate<1992-01-01 ) 
 empQ5 :: Algebra
 empQ5 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
           Sel (VsqlIn deptno sub) $ genRenameAlgebra $ 
@@ -259,6 +262,9 @@ empVQ7 = AChc empv3 empQ7 Empty
 -- 
 -- * variational queries:
 -- * plain queries for each version:
+--      SELECT name, deptname 
+--      from emppact join dept on empno = managerno 
+--      where 1991-01-01<hiredate<1992-01-01
 -- Note: Two worked during same period, we consider it as two people hire at the same hiredate.
 empQ8 :: Algebra
 empQ8 = Proj [trueAttr name, trueAttr deptname] $ genRenameAlgebra $ 
@@ -287,10 +293,7 @@ empVQ8 = AChc empv3 empQ8 Empty
 -- * v-query considering 5 versions
 --   (v3 or v4) < q1_v3v4, v5< q1_v5, empty>>>
 -- * plain queries for each versiton 
---   q1_v1:  prj_salary 
---          (sel_(empNo=10004,hiredate>1991-01-01))
---          (job join_(title=title) engineerpersonnel) join_(tiltle=tiltle) otherpersonnel)
---   q1_v2v3v4:
+--   q1_v3v4:
 --     prj_salary 
 --     (sel_(empNo=10004, hiredate>1991-01-01>))
 --     (empacct join_(title=title) job)
@@ -298,6 +301,8 @@ empVQ8 = AChc empv3 empQ8 Empty
 --      prj_salary
 --     (sel_(empNo=10004, hiredate>1991-01-01))
 --     empacct 
+-- Variational query:
+-- v3 or v4 <empQ9_v3v4, v5<empQ9_v5, empty> >
 empQ9T :: QueryT
 empQ9T = QueryT $ 
   "SELECT salary" ++
@@ -346,8 +351,8 @@ empVQ10 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ10 Empty
 -- variational query:
 --   v3 or v4 or v5 <q, empty>
 -- query:
---   prj_managerno (dept join_(deptno=deptno) 
---                  prj_deptno (sel_(empNo=10004, hiredate>1991-01-01) empacct))
+--   prj_managerno (sel_(empNo=10004, hiredate>1991-01-01) 
+--             (dept join_(deptno=deptno) empacct))
 empQ11T :: QueryT
 empQ11T = QueryT $
   "SELECT managerno" ++
@@ -378,7 +383,7 @@ empVQ11 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ10 Empty
 --   * for v5:
 --    prj_(managerno, salary) 
 --     sel_(hiredate>1991-01-01) 
---       (empacct join_(managerno = empno) dept)      
+--       (empacct join_( empno = managerno) dept)      
 -- note: 
 -- check to see if the join only occurs for valid variants!!
 -- i.e. ... join dept is only valid for v3, v4, and v5. 
@@ -462,7 +467,11 @@ empVQ14 = empVQ12
 --      where managerno in 
 --      (SELECT managerno 
 --      FROM v3_empacct JOIN dept ON v3_empacct.deptno = dept.deptno
---      where empno = 10004 and hiredate>1991-01-01 ) 
+--      where empno = 10004 and hiredate>1991-01-01 )
+-- =>  
+--      SELECT deptname 
+--      FROM v3_empacct JOIN dept ON v3_empacct.deptno = dept.deptno
+--      where empno = 10004 and hiredate>1991-01-01 )
 --     ** subquery here is the same with empQ11
 empQ15 :: Algebra
 empQ15 = Proj [trueAttr deptname] $ genRenameAlgebra $ 

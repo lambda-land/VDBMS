@@ -1,6 +1,6 @@
 # create a view for engineerpersonnel in version 1
 # SELECT count(emp.emp_no) -- 42247 
-Create view v1_engineerpersonnel_view AS 
+CREATE OR REPLACE view v1_engineerpersonnel_view AS 
 SELECT emp.emp_no as empno, concat(first_name, " ", last_name) as name, hire_date as hiredate, title, dept_name as deptname
 FROM employees emp 
 JOIN dept_emp de on emp.emp_no = de.emp_no 
@@ -10,7 +10,7 @@ WHERE hire_date < '1988-01-01' and title in ('Engineer', 'Senior Engineer', 'Ass
 
 # create a view for otherpersonnel in version 1
 # SELECT count(emp.emp_no) -- 41568 
-CREATE view v1_otherpersonnel_view AS 
+CREATE OR REPLACE view v1_otherpersonnel_view AS 
 SELECT emp.emp_no as empno, concat(first_name, " ", last_name) as name, hire_date as hiredate, title, dept_name as deptname
 FROM employees emp 
 JOIN dept_emp de on emp.emp_no = de.emp_no 
@@ -20,7 +20,7 @@ WHERE hire_date < '1988-01-01' and title not in ('Engineer', 'Senior Engineer', 
 
 # create a view for empacct of version 2 : 
 # SELECT count(emp.emp_no) -- 152216
-Create OR REPLACE view v2_empacct_view AS 
+CREATE OR REPLACE view v2_empacct_view AS 
 SELECT emp.emp_no as empno, concat(first_name, " ", last_name) as name, hire_date as hiredate, title, dept_name as deptname
 FROM employees emp 
 JOIN dept_emp de on emp.emp_no = de.emp_no 
