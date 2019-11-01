@@ -52,11 +52,6 @@
 -- WHERE  eid > 120 AND eid <= 1500;
 
 ##########
-# v_message 
-##########
-
-
-##########
 # v_forward_msg(eid, forwardaddr)
 ##########
 -- CREATE OR REPLACE view forward_msg_view as
@@ -133,6 +128,18 @@
 -- WHERE  eid > 60 AND eid <= 120
 -- order by eid
 
+##########
+# v_message(mid, sender, date, message_id, subject, body, folder, 
+#                    is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg) 
+# is_system_notification is true, if 
+# is_signed is true, if  sender is in p2 and p4
+# is_encrypted is true, if  sender is in p2 and p4
+# is_from_remailer is true,  ??? the first line is recipient....
+# is_autoresponse is true,  if  message is OOO, and sender is in P3 and P4
+# is_forward_msg is true, if the message's subject is FWD and sender is in p1 and p4
+##########
+-- # create a view for p1_message for prodcut focusing on daily usage. 
+-- CREATE OR REPLACE view p1_message_view AS 
 
 
 
