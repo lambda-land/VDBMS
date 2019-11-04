@@ -404,13 +404,15 @@ typeRel :: MonadThrow m
         -> m TypeEnv
 typeRel rr ctx s = 
   do tsch <- lookupTableSch (thing rr) s 
-     let t = tableSch2TypeEnv rr tsch 
+     let t = tableSch2TypeEnv rr tsch s
      appCtxtToEnv ctx t
 
--- | Generates a type env from a table schema.
-tableSch2TypeEnv :: Rename Relation -> TableSchema -> TypeEnv 
-tableSch2TypeEnv rr tsch = 
-  updateOptObj (SM.map (optSqlType2AttInfo rr) (getObj tsch)) tsch 
+-- | Generates a type env from a table schema and updates the pc
+--   of the table by conjuncting it with schema's feature model.
+tableSch2TypeEnv :: Rename Relation -> TableSchema -> Schema -> TypeEnv 
+tableSch2TypeEnv rr tsch s = 
+  updateOptObj (SM.map (optSqlType2AttInfo rr) (getObj tsch)) 
+             $ applyFuncFexp (F.And (featureModel s)) tsch 
   where 
     optSqlType2AttInfo r ot = pure $ AttrInfo (getFexp ot) (getObj ot) 
       $ maybe (RelQualifier (thing r))
