@@ -418,15 +418,19 @@ tableSch2TypeEnv rr tsch =
               (name r)
 
 -- | Applies a variational ctxt to a type and drops the elements 
---   that their pc is unsatisfiable.
-appCtxtToEnv_ :: VariationalContext -> TypeEnv -> TypeEnv
-appCtxtToEnv_ ctx t 
-    | satisfiable f = mkOpt f $ appCtxtToMap f (getObj t)
-    | otherwise = mkOpt (F.Lit False) SM.empty
-  where 
-    f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
-    appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
-    appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
+--   that their pc is unsatisfiable. This is based on theory that
+--   applying a ctxt to env if f is unsat results in an empty env.
+--   However, in practice, this should be distinguishable from
+--   the case where env is empty itself and it exists. so when
+--   the pc of env is false we preferably return an error.
+-- appCtxtToEnv_ :: VariationalContext -> TypeEnv -> TypeEnv
+-- appCtxtToEnv_ ctx t 
+--     | satisfiable f = mkOpt f $ appCtxtToMap f (getObj t)
+--     | otherwise = mkOpt (F.Lit False) SM.empty
+--   where 
+--     f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
+--     appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
+--     appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
