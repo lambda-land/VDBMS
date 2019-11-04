@@ -417,8 +417,18 @@ tableSch2TypeEnv rr tsch =
               (\n -> RelQualifier (Relation n)) 
               (name r)
 
--- | Applies a variational ctxt to a type. 
---   Don't forget the empty env!!
+-- | Applies a variational ctxt to a type and drops the elements 
+--   that their pc is unsatisfiable.
+appCtxtToEnv_ :: VariationalContext -> TypeEnv -> TypeEnv
+appCtxtToEnv_ ctx t 
+    | satisfiable f = mkOpt f $ appCtxtToMap f (getObj t)
+    | otherwise = mkOpt (F.Lit False) SM.empty
+  where 
+    f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
+    appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
+    appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
+
+-- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
 appCtxtToEnv ctx t 
     | satisfiable f = return $ mkOpt f $ appCtxtToMap f (getObj t)
