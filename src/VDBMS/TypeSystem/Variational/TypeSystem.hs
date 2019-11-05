@@ -207,8 +207,19 @@ typeProj oas rq ctx s
   | null oas = throwM $ EmptyAttrList oas rq 
   | otherwise = 
     do t <- typeOfQuery (thing rq) ctx s 
-       t' <- projOptAttrs oas t
-       appCtxtToEnv ctx t' 
+       isSubType oas t 
+       -- t' <- projOptAttrs oas t
+       let t' = optAtts2TypeEnv oas
+       appCtxtToTypeMap (getFexp t) (intersectTypeMaps (getObj t') (getObj t))
+       -- appCtxtToEnv ctx t' 
+
+-- | determines if a set of attributes is subsumed by type env.
+isSubType :: MonadThrow m => OptAttributes -> TypeEnv -> m ()
+isSubType = undefined
+
+-- | 
+optAtts2TypeEnv :: OptAttributes -> TypeEnv
+optAtts2TypeEnv = undefined
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
 projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
