@@ -174,7 +174,6 @@ sameType lt rt
   | otherwise = throwM $ NotEquiveEnv lt rt  
 
 -- | compares two types with the given functions over each field of attr info.
--- TODO: push pc of type env to all attributes. 
 compTypes :: (F.FeatureExpr -> F.FeatureExpr -> Bool)
           -> (SqlType -> SqlType -> Bool) 
           -> (Qualifier -> Qualifier -> Bool)
@@ -185,7 +184,9 @@ compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
   where
     rObj = getObj rt
     lObj = getObj lt
-    tfexpEq = ff (getFexp lt) (getFexp rt)
+    lfexp = getFexp lt 
+    rfexp = getFexp rt 
+    tfexpEq = ff lfexp rfexp
     envsEq = SM.isSubmapOfBy (eqAttInfo ff tf qf) lObj rObj 
           && SM.isSubmapOfBy (eqAttInfo ff tf qf) rObj lObj
     -- eqAttInfo :: AttrInformation -> AttrInformation -> Bool
@@ -196,7 +197,7 @@ compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
       where 
         lqs = fmap attrQual lis
         rqs = fmap attrQual ris
-        res = [ t (attrType li) (attrType ri) && f (attrFexp li) (attrFexp ri) 
+        res = [ t (attrType li) (attrType ri) && f (F.And (attrFexp li) lfexp) (F.And (attrFexp ri) rfexp)
                 | li <- lis, ri <- ris, q (attrQual li) (attrQual ri) ]
 
 -- | Type of a projection query.
