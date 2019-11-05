@@ -67,6 +67,7 @@ data TypeError
   | EmptyAttrList OptAttributes (Rename Algebra)
   | TypeEnvIntersectNotEmpty TypeEnv TypeEnv
   | UnsatFexAppliedToTypeMap F.FeatureExpr TypeMap
+  | UnsatFexpsTypeInetersect F.FeatureExpr
     deriving (Data,Eq,Generic,Show,Typeable)
 
 instance Exception TypeError  
@@ -368,7 +369,7 @@ unionTypes t t' =
 
 -- | union type maps.
 unionTypeMaps :: TypeMap -> TypeMap -> TypeMap
-unionTypeMaps l r = SM.unionWith (++) l r
+unionTypeMaps l r = SM.unionWith (appendAttrInfos_ F.Or (\_ _ -> True) (==)) l r
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
@@ -424,11 +425,37 @@ uniqueRelAlias tl tr
 
 -- | intersects two types. 
 intersectTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
-intersectTypes l r = undefined
+intersectTypes l r 
+  | satisfiable f = return $ mkOpt f $ intersectTypeMaps (getObj l) (getObj r)
+  | otherwise = throwM $ UnsatFexpsTypeInetersect f
+  where
+    f = F.And (getFexp l) (getFexp r)
 
 -- | intersect type maps. 
 intersectTypeMaps :: TypeMap -> TypeMap -> TypeMap
-intersectTypeMaps l r = undefined
+intersectTypeMaps l r = SM.intersectionWith (appendAttrInfos F.And (\_ _ -> True) (==)) l r
+
+-- | appends two attr informations based on given functions over 
+--   quals and types for checking if they're the same attr and 
+--   another function for fexps to combine the same attr
+--   from two lists. checks for satisfiability of generated
+--   fexps in order to include the element in attr information.
+appendAttrInfos :: (F.FeatureExpr -> F.FeatureExpr -> F.FeatureExpr)
+                -> (SqlType -> SqlType -> Bool)
+                -> (Qualifier -> Qualifier -> Bool)
+                -> AttrInformation -> AttrInformation 
+                -> AttrInformation
+appendAttrInfos = undefined
+
+-- | appends two attr infor without checking for satisfiability.
+--   because the ff function used already knows the result is 
+--   satisfiable.
+appendAttrInfos_ :: (F.FeatureExpr -> F.FeatureExpr -> F.FeatureExpr)
+                 -> (SqlType -> SqlType -> Bool)
+                 -> (Qualifier -> Qualifier -> Bool)
+                 -> AttrInformation -> AttrInformation 
+                 -> AttrInformation
+appendAttrInfos_ = undefined
 
 -- | Returns the type of a rename relation.
 typeRel :: MonadThrow m 
