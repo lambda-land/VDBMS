@@ -385,12 +385,15 @@ typeProd rl rr ctx s =
      uniqueRelAlias tl tr 
      common <- intersectTypes tl tr
      if SM.null (getObj common)
-     then prodTypes tl tr 
+     then return $ prodTypes tl tr 
      else throwM $ TypeEnvIntersectNotEmpty tl tr
      
--- |
-prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
-prodTypes tl tr = undefined
+-- | products two types, i.e., unions their map and 
+--   then applies the conjunction of their fexps to them.
+prodTypes :: TypeEnv -> TypeEnv -> TypeEnv
+prodTypes l r = appCtxtToTypeMap (F.And (getFexp l) (getFexp r)) 
+                             (unionTypeMaps (getObj l) (getObj r))
+
 
 -- | Products a list of types.
 -- prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
@@ -460,12 +463,18 @@ tableSch2TypeEnv rr tsch s =
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
 appCtxtToEnv ctx t 
-    | satisfiable f = return $ mkOpt f $ appCtxtToMap f (getObj t)
+    | satisfiable f = return $ appCtxtToTypeMap f (getObj t) 
     | otherwise = throwM $ CtxUnsatOverEnv ctx t
   where 
     f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
-    appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
-    appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
+    -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
+    -- appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
+-- | applies a fexp to type map.
+appCtxtToTypeMap :: F.FeatureExpr -> TypeMap -> TypeEnv
+appCtxtToTypeMap f m = mkOpt f $ SM.filter null (SM.map (appCtxtToAttInfo f) m)
+  where 
+    -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
+    appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
 
