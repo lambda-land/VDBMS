@@ -45,8 +45,9 @@ data AttrInfo
 --   type env.
 type AttrInformation = [AttrInfo]
 
--- | Variational type env.
-type TypeEnv = Opt (M.Map Attribute AttrInformation)
+-- | Variational type map and type env.
+type TypeMap = M.Map Attribute AttrInformation
+type TypeEnv = Opt TypeMap
 
 -- | Possible typing errors.
 data TypeError 
@@ -63,6 +64,7 @@ data TypeError
   | NotEquiveEnv TypeEnv TypeEnv
   | CompInvalid Atom Atom TypeEnv
   | EmptyAttrList OptAttributes (Rename Algebra)
+  | TypeEnvIntersectNotEmpty TypeEnv TypeEnv
     deriving (Data,Eq,Generic,Show,Typeable)
 
 instance Exception TypeError  
@@ -146,7 +148,7 @@ typeOfQuery (Sel c rq)       ctx s = typeSel c rq ctx s
 typeOfQuery (AChc f l r)     ctx s = 
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
-     return $ typeUnion tl tr
+     return $ unionTypes tl tr
 typeOfQuery (Join rl rr c)   ctx s = typeJoin rl rr c ctx s 
 typeOfQuery (Prod rl rr)     ctx s = typeProd rl rr ctx s 
 typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
@@ -170,6 +172,7 @@ sameType lt rt
   | otherwise = throwM $ NotEquiveEnv lt rt  
 
 -- | compares two types with the given functions over each field of attr info.
+-- TODO: push pc of type env to all attributes. 
 compTypes :: (F.FeatureExpr -> F.FeatureExpr -> Bool)
           -> (SqlType -> SqlType -> Bool) 
           -> (Qualifier -> Qualifier -> Bool)
@@ -257,7 +260,8 @@ typeSel :: MonadThrow m
          => VsqlCond -> Rename Algebra -> VariationalContext -> Schema
          -> m TypeEnv
 typeSel c rq ctx s =
-  do validSubQ rq --ctx s 
+  do 
+     -- validSubQ rq --ctx s 
      t <- typeOfQuery (thing rq) ctx s
      let t' = updateType (name rq) t 
      typeVsqlCond c ctx s t'
@@ -265,11 +269,12 @@ typeSel c rq ctx s =
 
 -- | Checks if a subquery is valid within a seleciton or projection.
 --   Assumption: optimizations has applied before this.
--- TODO: Come back to this after opt rules are done!
-validSubQ :: MonadThrow m => Rename Algebra -> m ()
-validSubQ rq@(Rename a (SetOp _ _ _)) =
-  maybe (throwM $ MissingAlias rq) (\_ -> return ()) a 
-validSubQ _ = return ()
+-- NOTE: we don't need this since sql queries will be 
+--       generated s.t. they don't violate this.
+-- validSubQ :: MonadThrow m => Rename Algebra -> m ()
+-- validSubQ rq@(Rename a (SetOp _ _ _)) =
+--   maybe (throwM $ MissingAlias rq) (\_ -> return ()) a 
+-- validSubQ _ = return ()
 
 -- | updates a type env with a new name.
 updateType :: Alias -> TypeEnv -> TypeEnv
@@ -350,10 +355,14 @@ typeComp a@(Att l) a'@(Att r) t =
      else throwM $ CompInvalid a a' t
 
 -- | Unions two type envs for a choice query.
-typeUnion ::  TypeEnv -> TypeEnv -> TypeEnv
-typeUnion t t' = 
+unionTypes :: TypeEnv -> TypeEnv -> TypeEnv
+unionTypes t t' = 
   mkOpt (F.Or (getFexp t) (getFexp t'))
-        (SM.unionWith (++) (getObj t) (getObj t'))
+        (unionTypeMaps (getObj t) (getObj t'))
+
+-- | union type maps.
+unionTypeMaps :: TypeMap -> TypeMap -> TypeMap
+unionTypeMaps l r = SM.unionWith (++) l r
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
@@ -374,18 +383,25 @@ typeProd rl rr ctx s =
   do tl <- typeOfQuery (thing rl) ctx s 
      tr <- typeOfQuery (thing rr) ctx s 
      uniqueRelAlias tl tr 
-     prodTypes tl tr 
+     common <- intersectTypes tl tr
+     if SM.null (getObj common)
+     then prodTypes tl tr 
+     else throwM $ TypeEnvIntersectNotEmpty tl tr
+     
+-- |
+prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
+prodTypes tl tr = undefined
 
 -- | Products a list of types.
-prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
-prodTypes tl tr 
-  | satisfiable f = appCtxtToEnv f prodTypeMaps
-  | otherwise = throwM $ UnsatFexpsInProduct f
-    where 
-      f  = F.And fl fr 
-      fl = getFexp tl
-      fr = getFexp tr
-      prodTypeMaps = mkOpt f (SM.unionWith (++) (getObj tl) (getObj tr))
+-- prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
+-- prodTypes tl tr 
+--   | satisfiable f = appCtxtToEnv f prodTypeMaps
+--   | otherwise = throwM $ UnsatFexpsInProduct f
+--     where 
+--       f  = F.And fl fr 
+--       fl = getFexp tl
+--       fr = getFexp tr
+--       prodTypeMaps = mkOpt f (SM.unionWith (++) (getObj tl) (getObj tr))
 
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
@@ -397,6 +413,13 @@ uniqueRelAlias tl tr
       relNs = relNames (getObj tl) `intersect` relNames (getObj tr)
       relNames envObj = nub $ fmap (qualName . attrQual) $ concatMap snd $ SM.toList envObj
 
+-- | intersects two types. 
+intersectTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
+intersectTypes l r = undefined
+
+-- | intersect type maps. 
+intersectTypeMaps :: TypeMap -> TypeMap -> TypeMap
+intersectTypeMaps l r = undefined
 
 -- | Returns the type of a rename relation.
 typeRel :: MonadThrow m 
