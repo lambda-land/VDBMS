@@ -51,8 +51,9 @@ type TypeEnv = Opt TypeMap
 
 -- | Possible typing errors.
 data TypeError 
-  = CtxUnsatOverEnv VariationalContext TypeEnv
-  | NotUniqueRelAlias TypeEnv TypeEnv
+  = 
+  -- CtxUnsatOverEnv VariationalContext TypeEnv
+    NotUniqueRelAlias TypeEnv TypeEnv
   | UnsatFexpsInProduct F.FeatureExpr 
   | InOpMustContainOneClm TypeEnv
   | UnsatAttPCandEnv OptAttribute TypeEnv
@@ -65,6 +66,7 @@ data TypeError
   | CompInvalid Atom Atom TypeEnv
   | EmptyAttrList OptAttributes (Rename Algebra)
   | TypeEnvIntersectNotEmpty TypeEnv TypeEnv
+  | UnsatFexAppliedToTypeMap F.FeatureExpr TypeMap
     deriving (Data,Eq,Generic,Show,Typeable)
 
 instance Exception TypeError  
@@ -385,12 +387,12 @@ typeProd rl rr ctx s =
      uniqueRelAlias tl tr 
      common <- intersectTypes tl tr
      if SM.null (getObj common)
-     then return $ prodTypes tl tr 
+     then prodTypes tl tr 
      else throwM $ TypeEnvIntersectNotEmpty tl tr
      
 -- | products two types, i.e., unions their map and 
 --   then applies the conjunction of their fexps to them.
-prodTypes :: TypeEnv -> TypeEnv -> TypeEnv
+prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
 prodTypes l r = appCtxtToTypeMap (F.And (getFexp l) (getFexp r)) 
                              (unionTypeMaps (getObj l) (getObj r))
 
@@ -462,17 +464,19 @@ tableSch2TypeEnv rr tsch s =
 
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
-appCtxtToEnv ctx t 
-    | satisfiable f = return $ appCtxtToTypeMap f (getObj t) 
-    | otherwise = throwM $ CtxUnsatOverEnv ctx t
+appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t) 
+    -- | satisfiable f 
+    -- | otherwise = throwM $ CtxUnsatOverEnv ctx t
   where 
     f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
     -- appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
 -- | applies a fexp to type map.
-appCtxtToTypeMap :: F.FeatureExpr -> TypeMap -> TypeEnv
-appCtxtToTypeMap f m = mkOpt f $ SM.filter null (SM.map (appCtxtToAttInfo f) m)
+appCtxtToTypeMap :: MonadThrow m => F.FeatureExpr -> TypeMap -> m TypeEnv
+appCtxtToTypeMap f m 
+  | satisfiable f = return $ mkOpt f $ SM.filter null (SM.map (appCtxtToAttInfo f) m)
+  | otherwise = throwM $ UnsatFexAppliedToTypeMap f m
   where 
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
     appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
