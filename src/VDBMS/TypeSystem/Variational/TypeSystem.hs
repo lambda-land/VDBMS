@@ -118,7 +118,7 @@ lookupAttrFexpInEnv :: MonadThrow m => Attr -> TypeEnv -> m F.FeatureExpr
 lookupAttrFexpInEnv a t = 
   do i <- nonAmbiguousAttr a t 
      attrConsistentWithType a t
-     return $ attrFexp i  
+     return $ F.And (getFexp t) (attrFexp i)
 
 -- | checks if the attribute is ambigusous or not.
 nonAmbiguousAttr :: MonadThrow m => Attr -> TypeEnv -> m AttrInfo
@@ -207,21 +207,11 @@ typeProj oas rq ctx s
   | null oas = throwM $ EmptyAttrList oas rq 
   | otherwise = 
     do t <- typeOfQuery (thing rq) ctx s 
-       isSubType oas t 
-       -- t' <- projOptAttrs oas t
-       let t' = optAtts2TypeEnv oas
-       appCtxtToTypeMap (getFexp t) (intersectTypeMaps (getObj t') (getObj t))
-       -- appCtxtToEnv ctx t' 
-
--- | determines if a set of attributes is subsumed by type env.
-isSubType :: MonadThrow m => OptAttributes -> TypeEnv -> m ()
-isSubType = undefined
-
--- | 
-optAtts2TypeEnv :: OptAttributes -> TypeEnv
-optAtts2TypeEnv = undefined
+       t' <- projOptAttrs oas t
+       appCtxtToEnv ctx t' 
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
+-- note that it's checking subsumption too.
 projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
 projOptAtt ora t = 
   do let aObj = getObj ora
@@ -236,14 +226,14 @@ projOptAtt ora t =
          iSqlT = attrType i
          iPC = attrFexp i
      pc <- lookupAttrFexpInEnv attr t 
-     maybe (if F.satAnds (F.And pc aPC) tPC
+     maybe (if F.satAnds pc aPC
             then return $ maybe
                             (attr2env tPC a iPC aPC iSqlT iQual)
                             (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
                             aName
             else throwM $ UnsatAttPCandEnv ora t)
            (\q -> if q == attrQual i
-                  then if F.satAnds (F.And pc aPC) (getFexp t)
+                  then if F.satAnds pc aPC
                        then return $ maybe
                                       (attr2env tPC a iPC aPC iSqlT iQual)
                                       (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
