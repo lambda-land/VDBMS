@@ -267,7 +267,8 @@ typeSel c rq ctx s =
      t <- typeOfQuery (thing rq) ctx s
      let t' = updateType (name rq) t 
      typeVsqlCond c ctx s t'
-     appCtxtToEnv ctx t'
+     -- appCtxtToEnv ctx t'
+     return t'
 
 -- | Checks if a subquery is valid within a seleciton or projection.
 --   Assumption: optimizations has applied before this.
@@ -287,7 +288,6 @@ updateType a t = updateOptObj updatedTypeObj t
     appName :: String -> AttrInformation -> AttrInformation
     appName n = fmap (updateQual (SubqueryQualifier n))
     updateQual q (AttrInfo af at _) = AttrInfo af at q 
-
 
 -- | Type checks variational sql conditions.
 typeVsqlCond :: MonadThrow m 
@@ -320,7 +320,7 @@ typeCondition :: MonadThrow m
               => Condition -> VariationalContext -> TypeEnv
               -> m ()
 typeCondition (Lit _)      _   _ = return ()
-typeCondition (Comp _ l r) _   t = typeComp l r t
+typeCondition (Comp _ l r) ctx t = typeComp l r ctx t
 typeCondition (Not c)      ctx t = typeCondition c ctx t
 typeCondition (Or l r)     ctx t = typeCondition l ctx t >> typeCondition r ctx t
 typeCondition (And l r)    ctx t = typeCondition l ctx t >> typeCondition r ctx t
@@ -332,27 +332,29 @@ typeCondition (CChc f l r) ctx t =
 
 -- | Type checks a comparison.
 typeComp :: MonadThrow m 
-         => Atom -> Atom -> TypeEnv 
+         => Atom -> Atom -> VariationalContext -> TypeEnv 
          -> m ()
-typeComp a@(Val l)  a'@(Val r)  t 
+typeComp a@(Val l)  a'@(Val r) _ t 
   | typeOf l == typeOf r = return ()
   | otherwise = throwM $ CompInvalid a a' t 
-typeComp a@(Val l)  a'@(Att r) t = 
+typeComp a@(Val l)  a'@(Att r) c t = 
   do at <- lookupAttrTypeInEnv r t
-     if typeOf l == at 
+     af <- lookupAttrFexpInEnv r t
+     if typeOf l == at && F.tautImplyFexps af c
      then return () 
      else throwM $ CompInvalid a a' t
-typeComp a@(Att l) a'@(Val r)  t = 
+typeComp a@(Att l) a'@(Val r)  c t = 
   do at <- lookupAttrTypeInEnv l t
-     if typeOf r == at 
+     af <- lookupAttrFexpInEnv l t
+     if typeOf r == at && F.tautImplyFexps af c
      then return () 
      else throwM $ CompInvalid a a' t
-typeComp a@(Att l) a'@(Att r) t = 
+typeComp a@(Att l) a'@(Att r)  c t = 
   do lt <- lookupAttrTypeInEnv l t
      lf <- lookupAttrFexpInEnv l t
      rt <- lookupAttrTypeInEnv r t
      rf <- lookupAttrFexpInEnv r t
-     if lt == rt && F.satAnds lf rf
+     if lt == rt && F.tautImplyFexps lf c && F.tautImplyFexps rf c
      then return ()
      else throwM $ CompInvalid a a' t
 
