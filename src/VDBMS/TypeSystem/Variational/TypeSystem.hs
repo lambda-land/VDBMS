@@ -369,7 +369,7 @@ unionTypes t t' =
 
 -- | union type maps.
 unionTypeMaps :: TypeMap -> TypeMap -> TypeMap
-unionTypeMaps l r = SM.unionWith (appendAttrInfos_ F.Or (\_ _ -> True) (==)) l r
+unionTypeMaps l r = SM.unionWith (appendAttrInfos_ F.Or) l r
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
@@ -433,29 +433,38 @@ intersectTypes l r
 
 -- | intersect type maps. 
 intersectTypeMaps :: TypeMap -> TypeMap -> TypeMap
-intersectTypeMaps l r = SM.intersectionWith (appendAttrInfos F.And (\_ _ -> True) (==)) l r
+intersectTypeMaps l r = SM.intersectionWith (appendAttrInfos F.And) l r
 
--- | appends two attr informations based on given functions over 
---   quals and types for checking if they're the same attr and 
---   another function for fexps to combine the same attr
---   from two lists. checks for satisfiability of generated
+-- | appends two attr informations based on equality of quals.
+--   if they're the same attr  
+--   a given function is used to combine their fexps.
+--   checks for satisfiability of generated
 --   fexps in order to include the element in attr information.
 appendAttrInfos :: (F.FeatureExpr -> F.FeatureExpr -> F.FeatureExpr)
-                -> (SqlType -> SqlType -> Bool)
-                -> (Qualifier -> Qualifier -> Bool)
+                -- -> (SqlType -> SqlType -> Bool)
+                -- -> (Qualifier -> Qualifier -> Bool)
                 -> AttrInformation -> AttrInformation 
                 -> AttrInformation
-appendAttrInfos = undefined
+appendAttrInfos ff l r = shared ++ unshared
+  where 
+    shared = [AttrInfo f (attrType al) (attrQual al) 
+            | al <- l, ar <- r, attrQual al == attrQual ar, 
+              let f = ff (attrFexp al) (attrFexp ar), satisfiable f]
+    unshared = filter (\a -> not ((elem . attrQual) a (fmap attrQual shared))) (l ++ r)
 
 -- | appends two attr infor without checking for satisfiability.
 --   because the ff function used already knows the result is 
 --   satisfiable.
 appendAttrInfos_ :: (F.FeatureExpr -> F.FeatureExpr -> F.FeatureExpr)
-                 -> (SqlType -> SqlType -> Bool)
-                 -> (Qualifier -> Qualifier -> Bool)
+                 -- -> (SqlType -> SqlType -> Bool)
+                 -- -> (Qualifier -> Qualifier -> Bool)
                  -> AttrInformation -> AttrInformation 
                  -> AttrInformation
-appendAttrInfos_ = undefined
+appendAttrInfos_ ff l r = shared ++ unshared
+  where 
+    shared = [AttrInfo (ff (attrFexp al) (attrFexp ar)) (attrType al) (attrQual al) 
+            | al <- l, ar <- r, attrQual al == attrQual ar]
+    unshared = filter (\a -> not ((elem . attrQual) a (fmap attrQual shared))) (l ++ r)
 
 -- | Returns the type of a rename relation.
 typeRel :: MonadThrow m 
