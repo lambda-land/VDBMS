@@ -51,11 +51,14 @@ updateCTE cte =
   let cls = closure cte in 
   case query cte of 
     (SqlSelect as ts cs) ->
-      case null ts of 
+      case length ts == 1 of 
         True -> 
-          do num <- get 
-             let t = SqlSubQuery (Rename Nothing (SqlTRef (Relation ("temp" ++ show num))))
-             return $ SqlCTE cls (SqlSelect as [t] cs)
+          -- you may need to update atts conds and tables (check the closure and see if you need 
+          -- to update the names and remove a query written before!)
+          return cte
+          -- do num <- get 
+          --    let t = SqlSubQuery (Rename Nothing (SqlTRef (Relation ("temp" ++ show num))))
+          --    return $ SqlCTE cls (SqlSelect as [t] cs)
         False -> 
           do let t = head ts
              case t of 
