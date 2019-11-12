@@ -372,25 +372,32 @@ i9_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $
 -- * Fix by FNE: This can be fixed by altering the encrypt/decrypt feature to notice when the message is addressed 
 --               to the remailer and take apporopriate action. For examle encrypt/decrypt could remove the sender
 --               address from the header lines itself prior to encryption.
--- * Fix by VDB: 
---   - encrypt AND remailmsg => Q1: query the is_encrypted and pseudonym for the sender.
+-- * Fix by VDB: Check if the sender is removed when email is encrypted and is sending to a remailer.
+--   - encrypt AND remailmsg => Q1: query the is_encrypted and recipient address .
 --                              (remove the sender's address from header line before encrypt, and do not give pseudonym)
 --   - encrypt AND (NOT remailmsg) => Nothing 
 --   - (NOT encrypt) AND remailmsg => Nothing 
 --   - (NOT encrypt) AND (NOT remailmsg) => Nothing 
 --
--- * V-Query: encrypt <remail <Q1,Q2>, remailmsg<Q3,Q4>>
+-- * V-Query: encrypt <remail <Q1,Q2>, remailmsg<Q3,Empty>>
 enronVQ10 :: Algebra
 enronVQ10 = AChc encrypt i10_Q1 Empty
 
-
--- Proj_ is_encrypted, pseudonym
+-- Proj_ is_encrypted, rvalue
 --  Sel_ mid = midValue 
---  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
+--  (v_message join_[mid == mid] v_recipientinfo)  
 i10_Q1 :: Algebra 
-i10_Q1 = Proj [trueAttr is_encrypted, trueAttr pseudonym] $ genRenameAlgebra $ 
+i10_Q1 = Proj [trueAttr is_encrypted, trueAttr rvalue] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_rec_emp_remail 
+            joinTwoRelation v_message v_recipientinfo "mid"
+
+-- -- Proj_ is_encrypted, pseudonym
+-- --  Sel_ mid = midValue 
+-- --  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
+-- i10_Q1 :: Algebra 
+-- i10_Q1 = Proj [trueAttr is_encrypted, trueAttr pseudonym] $ genRenameAlgebra $ 
+--           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+--             join_msg_rec_emp_remail 
 
 --
 -- 11. Interaction: DecryptMessage vs. AutoResponder
@@ -588,15 +595,26 @@ i15_Q3 = query_pseudonym_from_remailer
 enronVQ16 :: Algebra
 enronVQ16 = AChc autoresponder (AChc filtermsg i16_Q1 i16_Q2) (AChc filtermsg i16_Q3 Empty) 
 
--- |Query sender's email address, is_autoresponse, recipient's filter suffix.
+-- -- |Query sender's email address, is_autoresponse, recipient's filter suffix.
+-- -- Proj_ sender, is_autoresponse, suffix
+-- --  Sel_ mid = midValue
+-- --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg [eid = eid] v_filter_msg)
+-- i16_Q1 :: Algebra
+-- i16_Q1 = Proj (map trueAttr [sender, is_autoresponse, suffix]) $ genRenameAlgebra $ 
+--           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+--             join_msg_rec_emp_filter
+
+-- |Query message's subject, autoresponse's subject sender's email address, recipient's filter suffix.
 -- Proj_ sender, is_autoresponse, suffix
 --  Sel_ mid = midValue
 --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg [eid = eid] v_filter_msg)
 i16_Q1 :: Algebra
 i16_Q1 = Proj (map trueAttr [sender, is_autoresponse, suffix]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_rec_emp_filter
-
+             Join ( genRenameAlgebra join_msg_emp_filter) (genRenameAlgebra (tRef v_auto_msg)) cond 
+              where  cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
+                     vemployee_eid = qualifiedAttr v_employee "eid"
+                     vautomsg_eid = qualifiedAttr v_auto_msg "eid"
 -- | Normal query about autoresponse's body and subject
 i16_Q2 :: Algebra 
 i16_Q2 =  query_autoresponder_subject_body
@@ -635,8 +653,8 @@ i17_Q1 :: Algebra
 i17_Q1 = Proj (map trueAttr [is_system_notification, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+        -- where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
+        --       vautomsg_body    = qualifiedAttr v_auto_msg "body"
 
 --
 -- 18. Interaction: ForwardMessages vs. ForwardMessages 
