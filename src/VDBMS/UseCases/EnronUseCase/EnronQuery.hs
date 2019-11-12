@@ -681,7 +681,7 @@ enronVQ18 = AChc forwardmsg i18_Q1 Empty
 -- Proj_ email_id, forwardaddr
 --  (v_employee Join_[eid = eid] v_forward_msg) 
 i18_Q1 :: Algebra
-i18_Q1 = Proj (map trueAttr [ email_id, forwardaddr]) $ genRenameAlgebra $ 
+i18_Q1 = Proj (map trueAttr [ subject, email_id, forwardaddr]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             joinTwoRelation v_employee v_forward_msg "eid"
 

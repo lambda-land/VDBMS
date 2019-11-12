@@ -50,10 +50,11 @@ v_alias         = N.Relation "v_alias"
 email_id :: N.Attr 
 email_id = attr "email_id"
 
-mid, sender, is_signed, is_encrypted, is_from_remailer :: N.Attr 
+mid, sender, subject, is_signed, is_encrypted, is_from_remailer :: N.Attr 
 is_autoresponse, is_forward_msg, is_system_notification:: N.Attr 
 mid = attr "mid"
 sender = attr "sender"
+subject = attr "subject"
 is_signed = attr "is_signed"
 is_encrypted = attr "is_encrypted"
 is_from_remailer = attr "is_from_remailer"
