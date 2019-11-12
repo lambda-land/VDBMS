@@ -612,7 +612,7 @@ i16_Q1 :: Algebra
 i16_Q1 = Proj (map trueAttr [sender, is_autoresponse, suffix]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
              Join ( genRenameAlgebra join_msg_emp_filter) (genRenameAlgebra (tRef v_auto_msg)) cond 
-              where  cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
+              where  cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vautomsg_eid)
                      vemployee_eid = qualifiedAttr v_employee "eid"
                      vautomsg_eid = qualifiedAttr v_auto_msg "eid"
 -- | Normal query about autoresponse's body and subject
@@ -635,7 +635,7 @@ i16_Q3 = query_recipient_filter_suffix
 -- 
 -- * Fix by FNE: Autoreponder should not reply to Non-Delivery Notification generated ny MailHost feature.
 -- 
--- * Fix by VDB: Test if the autoresponder generate a reponse when there is a Non-Delivery Message from MailhHost, 
+-- * Fix by VDB: Test if the autoresponder generate a response when there is a Non-Delivery Message from MailhHost, 
 --                 
 -- * V-Query: 
 --   autoresponder AND mailhost  => Q1: Query is_system_notification, recipient's autoresponder subject and body
@@ -645,14 +645,18 @@ i16_Q3 = query_recipient_filter_suffix
 enronVQ17 :: Algebra
 enronVQ17 = AChc (autoresponder `F.And` mailhost) i17_Q1 Empty
 
+i17_Q1 :: Algebra
+i17_Q1 = Proj (map trueAttr [is_system_notification]) $ genRenameAlgebra $ 
+          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+            (tRef v_message)
 -- | Query is_system_notification, recipient's autoresponder subject and body
 -- Proj_ is_system_notification, v_auto_msg.subject, v_auto_msg.body
 --  Sel_ mid = midValue
 --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
-i17_Q1 :: Algebra
-i17_Q1 = Proj (map trueAttr [is_system_notification, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
-          Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_rec_emp_auto
+-- i17_Q1 :: Algebra
+-- i17_Q1 = Proj (map trueAttr [is_system_notification, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
+--           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+--             join_msg_rec_emp_auto
         -- where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
         --       vautomsg_body    = qualifiedAttr v_auto_msg "body"
 
