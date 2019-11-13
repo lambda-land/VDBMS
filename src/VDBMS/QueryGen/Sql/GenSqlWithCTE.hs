@@ -47,50 +47,69 @@ initCTE SqlEmpty            = SqlCTE M.empty SqlEmpty
 
 -- | updates a sql temp res one relation at the time.
 updateCTE :: SqlTempRes -> CteState SqlTempRes
-updateCTE cte = 
-  let cls = closure cte in 
-  case query cte of 
-    (SqlSelect as ts cs) ->
-      case length ts == 1 of 
-        True -> 
-          -- you may need to update atts conds and tables (check the closure and see if you need 
-          -- to update the names and remove a query written before!)
-          return cte
-          -- do num <- get 
-          --    let t = SqlSubQuery (Rename Nothing (SqlTRef (Relation ("temp" ++ show num))))
-          --    return $ SqlCTE cls (SqlSelect as [t] cs)
-        False -> 
-          do let t = head ts
-             case t of 
-               (SqlSubQuery rq) -> 
-                 do (cls', (as', cs')) <- updateSqlRel rq cls as cs 
-                    updateCTE $ SqlCTE cls' (SqlSelect as' (tail ts) cs')
-               (SqlInnerJoin l r c) ->
-                 do (lcls, (as', cs'), c') <- updateJoinRel l cls c as cs
-                    (rcls, (as'', cs''), c'') <- updateJoinRel r (getClosure lcls) c as' cs'
-                    let cls' = addJoinToCls (getThing lcls) (getThing rcls) c'' (getClosure rcls)
-                    updateCTE $ SqlCTE cls' (SqlSelect as'' (tail ts) cs'')
-    (SqlBin o l r) -> 
-      do cte' <- updateCTE (SqlCTE cls l)
-         cte'' <- updateCTE (SqlCTE (closure cte') r)
-         return $ SqlCTE (closure cte'') (SqlBin o (query cte') (query cte''))
-    q -> return cte
+updateCTE (SqlCTE cls (SqlSelect as ts cs)) = undefined
+  -- | null ts = error "sql select should have relations in from clause!!"
+  -- | otherwise = updateRels cls as ts cs 
+updateCTE (SqlCTE cls (SqlBin o q1 q2)) 
+  = case (isQueryInCls q1 cls, isQueryInCls q2 cls) of 
+      (Just t1, Just t2) -> return $ SqlCTE cls (SqlBin o (sqlRel t1) (sqlRel t2))
+      (Just t1, Nothing) -> 
+        do cte2 <- updateCTE (SqlCTE cls q2)
+           return $ SqlCTE (closure cte2) (SqlBin o (sqlRel t1) (query cte2))
+      (Nothing, Just t2) -> 
+        do cte1 <- updateCTE (SqlCTE cls q1)
+           return $ SqlCTE (closure cte1) (SqlBin o (query cte1) (sqlRel t2))
+      (Nothing, Nothing) -> 
+        do cte1 <- updateCTE (SqlCTE cls q1)
+           cte2 <- updateCTE (SqlCTE (closure cte1) q2)
+           return $ SqlCTE (closure cte2) (SqlBin o (query cte1) (query cte2))
+updateCTE cte@(SqlCTE _ (SqlTRef _)) = return cte
+updateCTE cte@(SqlCTE _ SqlEmpty) = return cte 
+-- updateCTE cte = 
+--   let cls = closure cte in 
+--   case query cte of 
+--     (SqlSelect as ts cs) ->
+--       case length ts == 1 of 
+--         True -> 
+--           -- you may need to update atts conds and tables (check the closure and see if you need 
+--           -- to update the names and remove a query written before!)
+--           return cte
+--           -- do num <- get 
+--           --    let t = SqlSubQuery (Rename Nothing (SqlTRef (Relation ("temp" ++ show num))))
+--           --    return $ SqlCTE cls (SqlSelect as [t] cs)
+--         False -> 
+--           do let t = head ts
+--              case t of 
+--                (SqlSubQuery rq) -> 
+--                  do queryInClosure
+--                     (cls', (as', cs')) <- updateSqlRel rq cls as cs 
+--                     updateCTE $ SqlCTE cls' (SqlSelect as' (tail ts) cs')
+--                (SqlInnerJoin l r c) ->
+--                  do (lcls, (as', cs'), c') <- updateJoinRel l cls c as cs
+--                     (rcls, (as'', cs''), c'') <- updateJoinRel r (getClosure lcls) c as' cs'
+--                     let cls' = addJoinToCls (getThing lcls) (getThing rcls) c'' (getClosure rcls)
+--                     updateCTE $ SqlCTE cls' (SqlSelect as'' (tail ts) cs'')
+--     (SqlBin o l r) -> 
+--       do cte' <- updateCTE (SqlCTE cls l)
+--          cte'' <- updateCTE (SqlCTE (closure cte') r)
+--          return $ SqlCTE (closure cte'') (SqlBin o (query cte') (query cte''))
+--     q -> return cte
 
--- | update attribute expressions.
-updateAtts :: Name -> [SqlAttrExpr] -> [SqlAttrExpr]
-updateAtts = undefined
+-- |
+-- updateRels :: CteClosure -> [SqlAttrExpr] -> [SqlRelation] -> [SqlCond SqlSelect]
+--            -> 
 
--- | update relational condition.
-updateRCond :: Name -> Name -> RCondition -> RCondition
-updateRCond l r c = undefined
+-- |
+isQueryInCls :: SqlSelect -> CteClosure -> Maybe Name 
+isQueryInCls = undefined
 
--- | update conditions.
-updateConds :: Name -> [SqlCond SqlSelect] -> [SqlCond SqlSelect]
-updateConds = undefined 
+-- |
+isSqlRelInCls :: SqlRelation -> CteClosure -> Maybe Name
+isSqlRelInCls = undefined
 
--- | adds a join to closure. 
-addJoinToCls :: SqlRelation -> SqlRelation -> RCondition -> CteClosure -> CteClosure
-addJoinToCls = undefined
+-- |
+sqlRel :: Name -> SqlSelect
+sqlRel = SqlTRef . Relation
 
 -- | update a sql rel.
 -- gets a rename q. checks to see if it exists in closure.
@@ -110,6 +129,23 @@ updateSqlRel rq cls as cs = undefined
   --        (Just n) -> 
   --          M.lookup 
   --        Nothing -> 
+
+-- | update attribute expressions.
+updateAtts :: Name -> [SqlAttrExpr] -> [SqlAttrExpr]
+updateAtts = undefined
+
+-- | update relational condition.
+updateRCond :: Name -> Name -> RCondition -> RCondition
+updateRCond l r c = undefined
+
+-- | update conditions.
+updateConds :: Name -> [SqlCond SqlSelect] -> [SqlCond SqlSelect]
+updateConds = undefined 
+
+-- | adds a join to closure. 
+addJoinToCls :: SqlRelation -> SqlRelation -> RCondition -> CteClosure -> CteClosure
+addJoinToCls = undefined
+
 
 -- | update relation from a join.
 -- updates rcondition.
