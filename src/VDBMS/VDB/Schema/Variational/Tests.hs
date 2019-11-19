@@ -35,12 +35,16 @@ isVschValid s = undefined
 -- | checks if the feature model is satisfiable. 
 satFM :: MonadThrow m => Schema -> m Bool 
 satFM s
-  | (satisfiable . featureModel) s == True = return True
+  | (satisfiable . featureModel) s = return True
   | otherwise = throwM $ FMunsat (featureModel s)
 
 -- | checks if a relation pc is satisfiable. 
 satRPC :: MonadThrow m => FeatureExpr -> (Relation, TableSchema) -> m Bool 
-satRPC = undefined
+satRPC fm (r, tsch) 
+  | satisfiable f = return True
+  | otherwise = throwM $ RelPCunsat r f
+  where 
+    f = And fm (getFexp tsch)
 
 -- | checks all relations in a schema to see if
 --   their pc is satisfiable.
