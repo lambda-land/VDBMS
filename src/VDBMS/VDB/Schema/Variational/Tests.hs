@@ -30,7 +30,7 @@ instance Exception SchValErr
 -- | checks 1) if fm is sat, 2) if all relations
 --   pc are sat, and 3) if all atts pc are sat.
 isVschValid :: MonadThrow m => Schema -> m Bool 
-isVschValid s = undefined
+isVschValid s = satFM s >> satRsPC s >> satAsPC s
 
 -- | checks if the feature model is satisfiable. 
 satFM :: MonadThrow m => Schema -> m Bool 
