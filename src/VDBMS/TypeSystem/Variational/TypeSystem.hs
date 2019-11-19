@@ -148,6 +148,10 @@ typeOfQuery :: MonadThrow m
 typeOfQuery (SetOp _ l r)    ctx s = typeSetOp l r ctx s 
 typeOfQuery (Proj oas rq)    ctx s = typeProj oas rq ctx s
 typeOfQuery (Sel c rq)       ctx s = typeSel c rq ctx s
+-- note that achc doesn't need to app ctxt to type because
+-- it's been applied already in tl and tr and the new pc is
+-- more general. so if an attribute belongs to tl or tr it
+-- also belongs to the final type.
 typeOfQuery (AChc f l r)     ctx s = 
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
