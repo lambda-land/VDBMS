@@ -2,6 +2,7 @@
 module VDBMS.VDB.Schema.Variational.Tests (
 
         isVschValid
+        , areConfsCorrect
 
 ) where
 
@@ -10,6 +11,8 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt 
+import VDBMS.Variational.Variational
+import VDBMS.VDB.Schema.Relational.Types
 
 import Control.Monad.Catch 
 import Data.Data (Data, Typeable)
@@ -23,6 +26,7 @@ data SchValErr
   = FMunsat FeatureExpr
   | RelPCunsat Relation FeatureExpr
   | AttPCunsat Attribute Relation FeatureExpr
+  | ConfedIsWrong RSchema
   deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception SchValErr
@@ -80,4 +84,18 @@ satAsPC s = foldM (\f p -> satRelAsPc fm p >>= (return . (&&) f)) True sList
   where 
     sList = (toList . getObj) s 
     fm = featureModel s
+
+-- | checks whether the configured vsch is the same as the 
+--   given relational schema provided by the user for a 
+--   list of configs.
+areConfsCorrect :: MonadThrow m => Schema -> [Variant Schema] -> m Bool 
+areConfsCorrect s rss = foldM (\b r -> isConfCorr s r >>= return . ((&&) b)) True rss
+  where
+    isConfCorr :: MonadThrow m => Schema -> Variant Schema -> m Bool
+    isConfCorr s rs 
+      | configure (fst rs) s == (snd rs) = return True
+      | otherwise = throwM $ ConfedIsWrong (snd rs)
+
+
+
 
