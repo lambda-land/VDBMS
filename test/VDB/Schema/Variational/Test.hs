@@ -2,12 +2,15 @@ module VDB.Schema.Variational.Test where
 
 -- import Databases.Schemas.Test1
 
+import VDBMS.Features.SAT
+import VDBMS.VDB.Schema.Variational.Schema
+
 -- import VDBMS.VDB.Variational.Schema
 -- import VDB.Variant 
 -- import VDB.Config 
 
--- import Test.Tasty
--- -- import Test.Tasty.SmallCheck as SC
+import Test.Tasty
+import Test.Tasty.SmallCheck 
 -- import Test.Tasty.QuickCheck as QC
 -- import Test.Tasty.HUnit
 
@@ -17,6 +20,44 @@ module VDB.Schema.Variational.Test where
 
 -- import Data.List
 -- import Data.Ord
+
+vschemaTests :: TestTree
+vschemaTests = testGroup "Variational Schema Tests:"
+  [props]
+
+
+props :: TestTree
+props = testGroup "Property checks:" []
+  -- [ satFM]
+  -- , satRPC
+  -- , satAPC]
+
+-- satFM :: TestTree
+-- satFM = testProperty "satisfiable . featureModel =?= True " $ 
+--   \s -> satisfiable (featureModel s) == True 
+-- error:
+--  • No instance for (smallcheck-1.1.5:Test.SmallCheck.Series.Serial
+--                          IO (Data.Map.Internal.Map VDBMS.VDB.Name.Relation TableSchema))
+--         arising from a use of ‘testProperty’
+--     • In the expression:
+--         testProperty "satisfiable  featureModel  True "
+--       In the expression:
+--         testProperty "satisfiable  featureModel  True "
+--           $ \ s -> satisfiable (featureModel s) == True
+--       In an equation for ‘satFM’:
+--           satFM
+--             = testProperty "satisfiable  featureModel  True "
+--                 $ \ s -> satisfiable (featureModel s) == True
+--    |        
+-- 36 | satFM = testProperty "satisfiable  featureModel  True " $ 
+--    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+satFM :: Schema -> Bool
+satFM = satisfiable . featureModel
+
+
+-- satRPC :: Schema -> Bool 
+
 
 -- main = defaultMain tests
 

@@ -101,5 +101,6 @@ tests:
     - vdbms
     - tasty
     - tasty-quickcheck
+    - tasty-smallcheck
     - tasty-hunit
     - QuickCheck

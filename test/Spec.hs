@@ -2,6 +2,7 @@ import Test.Tasty
 
 import TypeSystem.Relational.Test0
 
+import VDB.Schema.Variational.Test
 -- import qualified Schema.Test as S
 
 -- import TestParser 
@@ -13,7 +14,8 @@ import TypeSystem.Relational.Test0
 
 main :: IO ()
 main = defaultMain $ testGroup "top level" 
-  [trtypesys]
+  [ vschemaTests
+  , trtypesys]
 
 -- main = defaultMain $ testGroup ""
 --         [ -- testTwoOptionExample

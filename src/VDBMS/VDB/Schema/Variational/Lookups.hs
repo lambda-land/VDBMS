@@ -61,7 +61,8 @@ lookupTableSch r (_,m) = maybe (throwM $ MissingRelation r) return $ M.lookup r 
 
 -- | Get the feature expression of a relation in a database.
 lookupRelationFexp :: MonadThrow m => Relation -> Schema -> m FeatureExpr
-lookupRelationFexp r s = lookupTableSch r s >>= return . fst
+lookupRelationFexp r s = lookupTableSch r s 
+  >>= return . (\t -> And (fst t) (featureModel s))
 
 -- | Get the row type of a relation in a database.
 lookupRel :: MonadThrow m => Relation -> Schema -> m RowType
