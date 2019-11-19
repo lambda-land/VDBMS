@@ -8,11 +8,15 @@ module VDBMS.VDB.Schema.Variational.Tests (
 import VDBMS.Features.SAT
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.VDB.Name 
+import VDBMS.VDB.Name
+import VDBMS.Variational.Opt 
 
 import Control.Monad.Catch 
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
+
+import Data.Map.Strict (toList)
+import Control.Monad (foldM)
 
 -- | Errors for schema validity checks.
 data SchValErr 
@@ -35,11 +39,16 @@ satFM s
   | otherwise = throwM $ FMunsat (featureModel s)
 
 -- | checks if a relation pc is satisfiable. 
--- satRPC :: Schema -> Bool 
+satRPC :: MonadThrow m => FeatureExpr -> (Relation, TableSchema) -> m Bool 
+satRPC = undefined
 
 -- | checks all relations in a schema to see if
 --   their pc is satisfiable.
-
+satRsPC :: MonadThrow m => Schema -> m Bool 
+satRsPC s = foldM (\f p -> satRPC fm p >>= return . ((&&) f)) True sList
+  where
+    sList = (toList . getObj) s 
+    fm = featureModel s
 
 -- | checks if an attribute pc is satisfiable.
 
