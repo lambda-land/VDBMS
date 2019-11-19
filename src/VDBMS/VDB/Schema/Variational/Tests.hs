@@ -22,7 +22,7 @@ import Control.Monad (foldM)
 data SchValErr 
   = FMunsat FeatureExpr
   | RelPCunsat Relation FeatureExpr
-  | AttPCunsat Attribute FeatureExpr
+  | AttPCunsat Attribute Relation FeatureExpr
   deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception SchValErr
@@ -55,10 +55,29 @@ satRsPC s = foldM (\f p -> satRPC fm p >>= return . ((&&) f)) True sList
     fm = featureModel s
 
 -- | checks if an attribute pc is satisfiable.
-
+satAPC :: MonadThrow m => FeatureExpr 
+                       -> Relation -> FeatureExpr 
+                       -> (Attribute, FeatureExpr)
+                       -> m Bool
+satAPC fm r rpc (a, pc) 
+  | satisfiable f = return True
+  | otherwise = throwM $ AttPCunsat a r f 
+  where 
+    f = fm `And` rpc `And` pc 
 
 -- | checks if all attributes of a relation have 
 --   satisfiable pc.
+satRelAsPc :: MonadThrow m => FeatureExpr -> (Relation, TableSchema) -> m Bool
+satRelAsPc fm (r, tsch) 
+  = foldM (\f p -> satAPC fm r (getFexp tsch) p >>= return . ((&&) f)) 
+          True 
+          (map (\(a,(f,t)) -> (a,f)) (toList $ getObj tsch))
 
 -- | check if all attributes of all relations of 
 --   the schema have satisfiable pc.
+satAsPC :: MonadThrow m => Schema -> m Bool
+satAsPC s = foldM (\f p -> satRelAsPc fm p >>= (return . (&&) f)) True sList
+  where 
+    sList = (toList . getObj) s 
+    fm = featureModel s
+
