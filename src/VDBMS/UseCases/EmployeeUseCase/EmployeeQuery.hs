@@ -237,13 +237,20 @@ empVQ6 = empVQ4
 -- * variational queries:
 --   v3  <empQ7, empty>
 -- * plain queries for each version:
---      SELECT deptname 
+--      SELECT managerno(***), deptname 
 --      from dept 
 --      where managerno in 
 --      (SELECT managerno 
 --      FROM v3_empacct JOIN dept ON v3_empacct.deptno = dept.deptno
 --      where empno = 10004 and 1991-01-01<hiredate<1992-01-01 ) 
 --     ** subquery here is the same with empQ3
+--    =>SELECT deptname 
+--      FROM (
+--       SELECT * 
+--       FROM dept nature join empacct
+--       WHERE empno = 10004 and 1991-01-01<hiredate<1992-01-01
+--      
+
 empQ7 :: Algebra
 empQ7 = Proj [trueAttr deptname] $ genRenameAlgebra $ 
           Sel (VsqlIn managerno empQ3) $ genRenameAlgebra $ 

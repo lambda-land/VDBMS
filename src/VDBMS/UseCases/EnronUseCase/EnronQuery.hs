@@ -921,7 +921,7 @@ enronVQ27 = AChc signature (AChc forwardmsg i4_Q1 i4_Q2) (AChc forwardmsg i4_Q3 
 --  Sel_ mid = midValue and rtype == "To" 
 --  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)  
 i27_Q1 :: Algebra 
-i27_Q1 = Proj [trueAttr forwardaddr, trueAttr is_signed] $ genRenameAlgebra $ 
+i27_Q1 = Proj [trueAttr forwardaddr, trueAttr is_signed, trueAttr subject] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_foward 
 
