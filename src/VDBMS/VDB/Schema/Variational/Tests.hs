@@ -37,12 +37,14 @@ isVschValid :: MonadThrow m => Schema -> m Bool
 isVschValid s = satFM s >> satRsPC s >> satAsPC s
 
 -- | checks if the feature model is satisfiable. 
+-- sat fm =?= true
 satFM :: MonadThrow m => Schema -> m Bool 
 satFM s
   | (satisfiable . featureModel) s = return True
   | otherwise = throwM $ FMunsat (featureModel s)
 
 -- | checks if a relation pc is satisfiable. 
+-- sat (fm ∧ pcᵣ) =?= true
 satRPC :: MonadThrow m => FeatureExpr -> (Relation, TableSchema) -> m Bool 
 satRPC fm (r, tsch) 
   | satisfiable f = return True
@@ -52,6 +54,7 @@ satRPC fm (r, tsch)
 
 -- | checks all relations in a schema to see if
 --   their pc is satisfiable.
+-- ∀ r ∈ S : sat (fm ∧ pcᵣ)
 satRsPC :: MonadThrow m => Schema -> m Bool 
 satRsPC s = foldM (\f p -> satRPC fm p >>= return . ((&&) f)) True sList
   where
@@ -59,6 +62,7 @@ satRsPC s = foldM (\f p -> satRPC fm p >>= return . ((&&) f)) True sList
     fm = featureModel s
 
 -- | checks if an attribute pc is satisfiable.
+-- sat (fm ∧ pcᵣ ∧ pcₐ) =?= true
 satAPC :: MonadThrow m => FeatureExpr 
                        -> Relation -> FeatureExpr 
                        -> (Attribute, FeatureExpr)
@@ -71,6 +75,7 @@ satAPC fm r rpc (a, pc)
 
 -- | checks if all attributes of a relation have 
 --   satisfiable pc.
+-- ∀ a ∈ r : sat (fm ∧ pcᵣ ∧ pcₐ)
 satRelAsPc :: MonadThrow m => FeatureExpr -> (Relation, TableSchema) -> m Bool
 satRelAsPc fm (r, tsch) 
   = foldM (\f p -> satAPC fm r (getFexp tsch) p >>= return . ((&&) f)) 
@@ -79,6 +84,7 @@ satRelAsPc fm (r, tsch)
 
 -- | check if all attributes of all relations of 
 --   the schema have satisfiable pc.
+-- ∀ r ∈ S, ∀ a ∈ r: sat (fm ∧ pcᵣ ∧ pcₐ)
 satAsPC :: MonadThrow m => Schema -> m Bool
 satAsPC s = foldM (\f p -> satRelAsPc fm p >>= (return . (&&) f)) True sList
   where 
@@ -88,6 +94,7 @@ satAsPC s = foldM (\f p -> satRelAsPc fm p >>= (return . (&&) f)) True sList
 -- | checks whether the configured vsch is the same as the 
 --   given relational schema provided by the user for a 
 --   list of configs.
+-- ∀ c ∈ C: [[S]]\_c =?= S\_c 
 areConfsCorrect :: MonadThrow m => Schema -> [Variant Schema] -> m Bool 
 areConfsCorrect s rss = foldM (\b r -> isConfCorr s r >>= return . ((&&) b)) True rss
   where
