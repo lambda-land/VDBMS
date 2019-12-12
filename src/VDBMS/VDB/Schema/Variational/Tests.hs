@@ -36,6 +36,18 @@ instance Exception SchValErr
 isVschValid :: MonadThrow m => Schema -> m Bool 
 isVschValid s = satFM s >> satRsPC s >> satAsPC s
 
+-- | checks whether the configured vsch is the same as the 
+--   given relational schema provided by the user for a 
+--   list of configs.
+-- ∀ c ∈ C: [[S]]\_c =?= S\_c 
+areConfsCorrect :: MonadThrow m => Schema -> [Variant Schema] -> m Bool 
+areConfsCorrect s rss = foldM (\b r -> isConfCorr s r >>= return . ((&&) b)) True rss
+  where
+    isConfCorr :: MonadThrow m => Schema -> Variant Schema -> m Bool
+    isConfCorr s rs 
+      | configure (fst rs) s == (snd rs) = return True
+      | otherwise = throwM $ ConfedIsWrong (snd rs)
+
 -- | checks if the feature model is satisfiable. 
 -- sat fm =?= true
 satFM :: MonadThrow m => Schema -> m Bool 
@@ -90,18 +102,6 @@ satAsPC s = foldM (\f p -> satRelAsPc fm p >>= (return . (&&) f)) True sList
   where 
     sList = (toList . getObj) s 
     fm = featureModel s
-
--- | checks whether the configured vsch is the same as the 
---   given relational schema provided by the user for a 
---   list of configs.
--- ∀ c ∈ C: [[S]]\_c =?= S\_c 
-areConfsCorrect :: MonadThrow m => Schema -> [Variant Schema] -> m Bool 
-areConfsCorrect s rss = foldM (\b r -> isConfCorr s r >>= return . ((&&) b)) True rss
-  where
-    isConfCorr :: MonadThrow m => Schema -> Variant Schema -> m Bool
-    isConfCorr s rs 
-      | configure (fst rs) s == (snd rs) = return True
-      | otherwise = throwM $ ConfedIsWrong (snd rs)
 
 
 
