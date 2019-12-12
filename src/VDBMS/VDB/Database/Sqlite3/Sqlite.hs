@@ -1,4 +1,10 @@
 -- | Sqlite database.
+-- the database type class cannot be instantiated for the
+-- database.sqlite3.sqlite because this library does not
+-- provide any method to get the table returned by a query,
+-- it only provides the exec and execPrint functions which
+-- execute a query and the latter one prints result rows to
+-- stdout.
 module VDBMS.VDB.Database.Sqlite3.Sqlite where
 
 import VDBMS.VDB.Schema.Variational.Schema
@@ -24,7 +30,9 @@ instance Database Sqlite3 where
   
   presCond (Sqlite3 p _ _) = p
   
-  runQ = undefined
+  fetchQRows = undefined
+
+  fetchQRows' = undefined
 
 
 -- ex1 = Sqlite3 "../../../databases/testDB/test1.db" 

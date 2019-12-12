@@ -23,7 +23,9 @@ instance Database PostgresHDBC where
   
   presCond (PostgresHDBC p _ _) = p 
   
-  runQ (PostgresHDBC _ _ _) = undefined
+  fetchQRows (PostgresHDBC _ _ _) = undefined
+
+  fetchQRows' (PostgresHDBC _ _ _) = undefined
 
 
 -- ex1 = PostgresHDBC "../../../databases/testDB/test1.db" 

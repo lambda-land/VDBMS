@@ -23,7 +23,9 @@ instance Database SqliteHDBC where
   
   presCond (SqliteHDBC p _ _) = p
   
-  runQ = undefined
+  fetchQRows = undefined
+
+  fetchQRows' = undefined
 
 
 

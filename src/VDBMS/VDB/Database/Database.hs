@@ -24,7 +24,8 @@ class Database conn where
   disconnect :: conn -> IO ()
   schema :: conn -> Schema
   presCond :: conn -> PCatt
-  runQ :: conn -> Query -> IO Table
+  fetchQRows :: conn -> Query -> IO Table
+  fetchQRows' :: conn -> Query -> IO Table -- strict version
   -- | Gets all valid configuration of a vdb.
   getAllConfig :: conn -> [Config Bool]
   getAllConfig c = validConfsOfFexp $ featureModel $ schema c
