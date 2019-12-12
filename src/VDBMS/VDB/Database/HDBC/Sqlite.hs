@@ -4,6 +4,7 @@ module VDBMS.VDB.Database.HDBC.Sqlite where
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.Database.Database
+import VDBMS.VDB.Database.HDBC.Fetch
 
 import qualified Database.HDBC as H
 import qualified Database.HDBC.Sqlite3 as S
@@ -23,9 +24,9 @@ instance Database SqliteHDBC where
   
   presCond (SqliteHDBC p _ _) = p
   
-  fetchQRows = undefined
+  fetchQRows (SqliteHDBC _ _ c) = fetch c
 
-  fetchQRows' = undefined
+  fetchQRows' (SqliteHDBC _ _ c) = fetch' c
 
 
 

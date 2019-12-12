@@ -4,6 +4,7 @@ module VDBMS.VDB.Database.HDBC.PostgreSQL where
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.Database.Database
+import VDBMS.VDB.Database.HDBC.Fetch 
 
 import qualified Database.HDBC as H
 import qualified Database.HDBC.PostgreSQL as P
@@ -23,9 +24,9 @@ instance Database PostgresHDBC where
   
   presCond (PostgresHDBC p _ _) = p 
   
-  fetchQRows (PostgresHDBC _ _ _) = undefined
+  fetchQRows (PostgresHDBC _ _ c) = fetch c 
 
-  fetchQRows' (PostgresHDBC _ _ _) = undefined
+  fetchQRows' (PostgresHDBC _ _ c) = fetch' c
 
 
 -- ex1 = PostgresHDBC "../../../databases/testDB/test1.db" 
