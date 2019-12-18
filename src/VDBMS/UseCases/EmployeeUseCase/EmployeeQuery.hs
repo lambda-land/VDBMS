@@ -170,7 +170,7 @@ empVQ5 = AChc empv5 empQ5 Empty
 -- \end{align*} 
 empQ6 :: Algebra
 empQ6 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
-  Sel (VsqlCond (C.Comp EQ (C.Att empno) (C.Val empno_value))) $ genRenameAlgebra $ 
+         Sel (VsqlCond empCond) $ genRenameAlgebra $ 
     joinTwoRelation empacct dept "deptno" 
 
 empVQ6 :: Algebra
@@ -222,6 +222,7 @@ empVQ8 = AChc (empv3 `F.Or` empv4) empQ7 $ AChc empv5 empQ8 Empty
 -- \end{align*} 
 empQ9 :: Algebra
 empQ9 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
+
           Join temp (genRenameAlgebra (tRef dept)) join_cond 
           where temp = genSubquery "temp" $ Proj [trueAttr managerno] $ genRenameAlgebra $ tRef empacct 
                 join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "temp" "deptno")) (C.Att (qualifiedAttr dept "deptno"))
@@ -229,12 +230,37 @@ empQ9 = Proj [trueAttr managerno] $ genRenameAlgebra $
 empVQ9 :: Algebra
 empVQ9 = AChc empv3 empQ9 Empty
 
-
+-- 10.intent: Find the historical managers of department where the employee 10004 worked, in all history, for VDB variants \vThree\ to \vFive.
 --
 -- Queries in LaTex: 
+-- \begin{align*} 
+-- \temp{} = & \sigma_{\empno=10004} \empacct \\ 
+-- \pQ = & \pi_{\managerno} (\temp{} \bowtie_{\temp{}.\deptno = \dept.\deptno} \dept  )\\
+-- \vQ = & \chc[(\vThree \vee \vFour \vee \vFive)]{\pQ, \empRel}
+-- \end{align*} 
+empVQ10 :: Algebra
+empVQ10 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ9 Empty
 
+-- 11.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
+--            find all the departments that the manager managed, for VDB variant \vThree. 
 --
 -- Queries in LaTex: 
+-- \begin{align*} 
+-- \temp{} =  & \pi_{(\managerno, \deptno)} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\deptno = \empacct.\deptno} \dept))\\
+-- \pQ = & \pi_{(\dept.\managerno, \dept.\deptno)} (\temp{} \bowtie_{\temp.\managerno = \dept.\managerno} \dept) \\
+-- \vQ = & \chc[\vThree]{\pQ, \empRel}
+-- \end{align*}
+empQ11 :: Algebra
+empQ11 = Proj (map trueAttr qualifiedAttrList)$ genRenameAlgebra $ 
+          Join temp (genRenameAlgebra (tRef dept)) join_cond 
+          where qualifiedAttrList = genQualifiedAttrList [(dept, "managerno"), (dept, "deptno")]
+                temp = genSubquery "temp" $ Proj [trueAttr managerno, trueAttr deptno] $ genRenameAlgebra $ 
+                        Sel (VsqlCond empCond) $ genRenameAlgebra $ 
+                          joinTwoRelation empacct dept "deptno"
+                join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "temp" "managerno")) (C.Att (qualifiedAttr dept "managerno"))
+
+empVQ11 :: Algebra
+empVQ11 = AChc empv3 empQ11 Empty
 
 --
 -- Queries in LaTex: 
