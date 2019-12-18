@@ -73,28 +73,29 @@ employeeFeatureModel =  (empv1 `And` (Not empv2) `And` (Not empv3) `And` (Not em
                         ((Not empv1) `And` (Not empv2) `And` (Not empv3) `And` empv4 `And` (Not empv5)) `Or` 
                         ((Not empv1) `And` (Not empv2) `And` (Not empv3) `And` (Not empv4) `And` empv5)  
 
+-- | V-Schema for Employee Evolution
 empVSchema :: Schema 
-empVSchema = (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vschema)
-                                                       , (empv1, otherpersonnel, otherpersonnel_vschema)
-                                                       , (empv2 `And` empv3 `And` empv4 `And` empv5, empacct, empacct_vschema)
-                                                       , (empv1 `And` empv2 `And` empv3 `And` empv4, job, job_vschema)
-                                                       , (empv3 `And` empv4 `And` empv5, dept, dept_vschema)
-                                                       , (empv4 `And` empv5, empbio, empbio_vschema)])
+empVSchema = (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vrelation)
+                                                       , (empv1, otherpersonnel, otherpersonnel_vrelation)
+                                                       , (empv2 `And` empv3 `And` empv4 `And` empv5, empacct, empacct_vrelation)
+                                                       , (empv1 `And` empv2 `And` empv3 `And` empv4, job, job_vrelation)
+                                                       , (empv3 `And` empv4 `And` empv5, dept, dept_vrelation)
+                                                       , (empv4 `And` empv5, empbio, empbio_vrelation)])
 
-engineerpersonnel_vschema, otherpersonnel_vschema, empacct_vschema, job_vschema, dept_vschema, empbio_vschema :: [(FeatureExpr, N.Attribute, SqlType)] 
-engineerpersonnel_vschema =  [ (Lit True, empno_, TInt32)
+engineerpersonnel_vrelation, otherpersonnel_vrelation, empacct_vrelation, job_vrelation, dept_vrelation, empbio_vrelation :: [(FeatureExpr, N.Attribute, SqlType)] 
+engineerpersonnel_vrelation =  [ (Lit True, empno_, TInt32)
                              , (Lit True, name_,  TString)
                              , (Lit True, hiredate_, TUTCTime)
                              , (Lit True, title_,  TString)
                              , (Lit True, deptname_, TString)
                              ] 
-otherpersonnel_vschema = [ (Lit True, empno_, TInt32)
+otherpersonnel_vrelation = [ (Lit True, empno_, TInt32)
                          , (Lit True, name_,  TString)
                          , (Lit True, hiredate_, TUTCTime)
                          , (Lit True, title_,  TString)
                          , (Lit True, deptname_, TString)
                          ] 
-empacct_vschema = [ (Lit True, empno_,    TInt32)
+empacct_vrelation = [ (Lit True, empno_,    TInt32)
                   , (empv2 `Or` empv3, name_,     TString)
                   , (Lit True, hiredate_, TUTCTime)
                   , (Lit True, title_,    TString)
@@ -102,21 +103,21 @@ empacct_vschema = [ (Lit True, empno_,    TInt32)
                   , (empv3 `Or` empv4 `Or` empv5, deptno_,  TInt32)
                   , (empv5, salary_,    TInt32)
                   ] 
-job_vschema = [ (Lit True, title_, TString)
-              , (Lit True, salary_,  TInt32)
-              ] 
-dept_vschema = [ (Lit True, deptname_, TString)
-               , (Lit True, deptno_,   TInt32)
-               , (Lit True, managerno_,TInt32)
-               ]
+job_vrelation = [ (Lit True, title_, TString)
+                , (Lit True, salary_,  TInt32)
+                ] 
+dept_vrelation = [ (Lit True, deptname_, TString)
+                 , (Lit True, deptno_,   TInt32)
+                 , (Lit True, managerno_,TInt32)
+                 ]
  
-empbio_vschema=  [ (Lit True, empno_,     TInt32)
-                 , (Lit True, sex_,      TString)
-                 , (Lit True, birthdate_, TUTCTime)
-                 , (empv4, name_,     TString)
-                 , (empv5, firstname_, TString)
-                 , (empv5, lastname_,  TString)
-                 ] 
+empbio_vrelation=  [ (Lit True, empno_,     TInt32)
+                   , (Lit True, sex_,      TString)
+                   , (Lit True, birthdate_, TUTCTime)
+                   , (empv4, name_,     TString)
+                   , (empv5, firstname_, TString)
+                   , (empv5, lastname_,  TString)
+                   ] 
 
 --
 --  ** schema for verison 1 
