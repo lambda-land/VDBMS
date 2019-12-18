@@ -120,7 +120,7 @@ empbio_vrelation=  [ (Lit True, empno_,     TInt32)
                    ] 
 
 --
---  ** schema for verison 1 
+--  ** Schema Variant 1 (S1)
 --  
 empSchema1 :: Schema 
 empSchema1 = ( empv1, constructRelMap [ ( engineerpersonnel,  engineerpersonnel_v1)

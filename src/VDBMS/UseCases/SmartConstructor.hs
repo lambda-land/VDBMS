@@ -24,18 +24,29 @@ newtype QueryT = QueryT String
 trueAttr :: Attr -> OptAttribute
 trueAttr a = (F.Lit True, genRenameAttr a)
 
-genRenameAlgebra :: Algebra -> Rename Algebra
-genRenameAlgebra alg = Rename Nothing alg
-
 genRenameRelation :: Relation -> Rename Relation
 genRenameRelation rel = Rename Nothing rel
 
 tRef :: Relation -> Algebra 
 tRef rel = TRef $ Rename Nothing rel 
 
+
+-- | Gaven a alias and algebra and generate a algebra with alias 
+genSubquery :: N.Name -> Algebra ->  N.Rename Algebra
+genSubquery alias algebra  =  N.Rename (Just alias) algebra
+
+-- | join two realtiaon based on their common attribute
 joinTwoRelation :: Relation -> Relation -> N.Name -> Algebra
 joinTwoRelation rel1 rel2 commonAttr = Join (genRenameAlgebra (tRef rel1)) (genRenameAlgebra (tRef rel2)) join_cond
   where join_cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel2 commonAttr))
+
+-- | generate subquery 
+genRenameAlgebra :: Algebra -> Rename Algebra
+genRenameAlgebra alg = Rename Nothing alg
+
+-- | Gaven a attribute name (a) and return a Attr with Qualifier (rel)
+subqueryQualifiedAttr :: N.Name -> N.Name -> N.Attr
+subqueryQualifiedAttr subq a = N.Attr (N.attribute (attr a)) (Just (N.SubqueryQualifier subq))
 
 -- | Join three relation(a,b,c) based on commonAttr. 
 --   (rel1 join(rel1.commonAttr = rel2.commonAttr) rel2) join(rel1.commonAttr = rel3.commonAttr) rel3
