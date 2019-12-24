@@ -12,7 +12,10 @@ import Database.HDBC
 -- | fetchs result of a query in a table for any 
 --   instance of IConnection.
 fetch :: IConnection conn => conn -> Query -> IO Table
-fetch = undefined
+fetch c q = undefined
+  -- do s <- prepare c q
+  --    t <- fetchAllRowsMap s 
+     
 
 -- | stirct version of fetch.
 fetch' :: IConnection conn => conn -> Query -> IO Table
