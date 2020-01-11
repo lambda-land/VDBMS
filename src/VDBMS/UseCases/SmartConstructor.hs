@@ -12,6 +12,7 @@ import VDBMS.DBMS.Value.Value
 import VDBMS.Variational.Opt
 import qualified VDBMS.VDB.Name as N
 import VDBMS.VDB.Schema.Variational.Schema
+import VDBMS.VDB.Schema.Relational.Types
 
 newtype QueryT = QueryT String
   deriving (Show, Eq)
@@ -107,3 +108,10 @@ constructOptRowType attrTypeList  = M.fromList  $ map (\(f, a, t) -> (a, (f, t))
 
 constructAllTrueRelSchema :: [(String, SqlType)] -> [(F.FeatureExpr, N.Attribute, SqlType)] 
 constructAllTrueRelSchema  =  map (\ (a, t) -> (F.Lit True, N.Attribute a, t))
+
+-- | Smart Constructor For Pure Relational Schema
+constructRTable :: [(N.Attribute, SqlType)] -> RTableSchema
+constructRTable = M.fromList  
+
+constructRSchema ::  [(N.Relation, [(N.Attribute, SqlType)])] -> RSchema
+constructRSchema nrlist = M.fromList $ map (\(relName, at) -> ( relName, constructRTable at)) nrlist

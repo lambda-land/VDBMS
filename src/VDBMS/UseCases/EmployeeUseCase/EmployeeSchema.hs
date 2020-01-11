@@ -7,6 +7,7 @@ import qualified VDBMS.VDB.Name as N
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.UseCases.SmartConstructor
+import VDBMS.VDB.Schema.Relational.Types
 
 -- 
 -- Features
@@ -62,10 +63,141 @@ firstname_ = N.Attribute "firstname"
 lastname_  = N.Attribute "lastname"
 birthdate_ = N.Attribute "birthdate"
 
--- 
--- Employee v-schema 
+--
+-- Pure Relational Schemas For Employee Evolution 
 --
 
+--  ** Schema Variant 1 (S1)
+empSchema1 :: RSchema 
+empSchema1 = constructRSchema  [ ( engineerpersonnel,  engineerpersonnel_v1)
+                               , ( otherpersonnel,    otherpersonnel_v1)
+                               , ( job,  job_v1234)
+                               ]
+
+-- | engineerpersonnel(empno_, name_, hiredate_, title_, deptname_) 
+engineerpersonnel_v1 :: [(N.Attribute, SqlType)]
+engineerpersonnel_v1 = [ (empno_, TInt32), 
+                         (name_,  TString)
+                       , (hiredate_, TUTCTime)
+                       , (title_,  TString)
+                       , (deptname_, TString)
+                       ]
+
+-- | otherpersonnel(empno_, name_, hiredate_, title_, deptname_) 
+otherpersonnel_v1 :: [(N.Attribute,SqlType)]
+otherpersonnel_v1 =  [ (empno_,TInt32)
+                     , (name_, TString)
+                     , (hiredate_, TUTCTime)
+                     , (title_, TString)
+                     , (deptname_, TString)
+                     ]
+
+-- | job(title_, salary_)
+job_v1234 ::[(N.Attribute,SqlType)]
+job_v1234 = [ (title_, TString)
+            , (salary_,  TInt32)
+            ]
+
+-- ** schema Variant 2 (S2)
+
+empSchema2 :: RSchema 
+empSchema2 = constructRSchema [ ( empacct, empacct_v2)
+                              , (job,  job_v1234)
+                              ] 
+            
+
+
+-- |  empacct (empno_, name_, hiredate_, title_, deptname_) 
+empacct_v2 :: [(N.Attribute,SqlType)]
+empacct_v2 =  [ (empno_,    TInt32)
+              , (name_,     TString)
+              , (hiredate_, TUTCTime)
+              , (title_,    TString)
+              , (deptname_, TString)
+              ]
+
+--
+--  ** schema Variant 3 (S3)
+-- 
+empSchema3 :: RSchema
+empSchema3 = constructRSchema [ (empacct,  empacct_v3)
+                              , ( job,  job_v1234)
+                              , ( dept,  dept_v345)
+                              ]
+
+-- | empacct (empno_, name_, hiredate_, title_, deptno_) 
+empacct_v3 :: [(N.Attribute,SqlType)]
+empacct_v3 =  [ (empno_,   TInt32)
+              , (name_,    TString)
+              , (hiredate_,TUTCTime)
+              , (title_,   TString)
+              , (deptno_,  TInt32)
+              ]
+
+-- | dept (deptname_, deptno_, managerno_)
+dept_v345 :: [(N.Attribute,SqlType)]
+dept_v345 =   [ (deptname_, TString)
+              , (deptno_,   TInt32)
+              , (managerno_,TInt32)
+              ]
+
+-- 
+-- ** schema Variant 4 (S4)
+--
+empSchema4 :: RSchema 
+empSchema4 = constructRSchema  [ ( empacct, empacct_v4)
+                               , ( job, job_v1234)
+                               , ( dept,  dept_v345)
+                               , ( empbio,  empbio_v4)
+                               ]
+    
+
+-- | empacct (empno_, hiredate_, title_, deptno_) 
+empacct_v4 :: [(N.Attribute,SqlType)]
+empacct_v4 =   [ (empno_,    TInt32)
+               , (hiredate_, TUTCTime)
+               , (title_,    TString)
+               , (deptno_,   TInt32)
+               ]
+
+-- | empbio (empno_, sex_, birthdate_, name_)
+empbio_v4 :: [(N.Attribute,SqlType)]
+empbio_v4 =  [ (empno_,    TInt32)
+             , (sex_,      TString)
+             , (birthdate_,TUTCTime)
+             , (name_,     TString)
+             ]
+
+-- 
+-- ** schema Variant 5 (S5)
+-- 
+empSchema5 :: RSchema 
+empSchema5 = constructRSchema [ ( empacct,  empacct_v5)
+                              , (dept,  dept_v345)
+                              , (empbio,  empbio_v5)
+                              ]
+             
+-- | empacct (empno_, hiredate_, title_, deptno_, salary_) 
+empacct_v5 :: [(N.Attribute,SqlType)]
+empacct_v5 =   [ (empno_,     TInt32)
+               , (hiredate_,  TUTCTime)
+               , (title_,     TString)
+               , (deptno_,    TInt32)
+               , (salary_,    TInt32)
+               ]
+
+-- | empbio (empno_, sex_, birthdate_, firstname_, lastname_)
+empbio_v5 :: [(N.Attribute,SqlType)]
+empbio_v5 =  [ (empno_,     TInt32)
+             , (sex_,      TString)
+             , (birthdate_, TUTCTime)
+             , (firstname_, TString)
+             , (lastname_,  TString)
+             ]
+
+-- 
+-- Employee VDB Feature Model
+--
 employeeFeatureModel :: FeatureExpr
 employeeFeatureModel =  (empv1 `And` (Not empv2) `And` (Not empv3) `And` (Not empv4) `And` (Not empv5)) `Or` 
                         ((Not empv1) `And` empv2 `And` (Not empv3) `And` (Not empv4) `And` (Not empv5)) `Or` 
@@ -73,7 +205,9 @@ employeeFeatureModel =  (empv1 `And` (Not empv2) `And` (Not empv3) `And` (Not em
                         ((Not empv1) `And` (Not empv2) `And` (Not empv3) `And` empv4 `And` (Not empv5)) `Or` 
                         ((Not empv1) `And` (Not empv2) `And` (Not empv3) `And` (Not empv4) `And` empv5)  
 
--- | V-Schema for Employee Evolution
+-- 
+-- Employee V-Schema for Employee Evolution
+--
 empVSchema :: Schema 
 empVSchema = (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vrelation)
                                                        , (empv1, otherpersonnel, otherpersonnel_vrelation)
@@ -119,137 +253,137 @@ empbio_vrelation=  [ (Lit True, empno_,     TInt32)
                    , (empv5, lastname_,  TString)
                    ] 
 
---
---  ** Schema Variant 1 (S1)
---  
-empSchema1 :: Schema 
-empSchema1 = ( empv1, constructRelMap [ ( engineerpersonnel,  engineerpersonnel_v1)
-                                      , ( otherpersonnel,    otherpersonnel_v1)
-                                      , ( job,  job_v1234)
-                                      ]
-             )
+-- --
+-- --  ** Schema Variant 1 (S1)
+-- --  
+-- empSchema1 :: Schema 
+-- empSchema1 = ( empv1, constructRelMap [ ( engineerpersonnel,  engineerpersonnel_v1)
+--                                       , ( otherpersonnel,    otherpersonnel_v1)
+--                                       , ( job,  job_v1234)
+--                                       ]
+--              )
 
--- |  engineerpersonnel(empno_, name_, hiredate_, title_, deptname_) 
-engineerpersonnel_v1 :: [(N.Attribute, SqlType)]
-engineerpersonnel_v1 = [ (empno_, TInt32), 
-                         (name_,  TString)
-                       , (hiredate_, TUTCTime)
-                       , (title_,  TString)
-                       , (deptname_, TString)
-                       ]
+-- -- |  engineerpersonnel(empno_, name_, hiredate_, title_, deptname_) 
+-- engineerpersonnel_v1 :: [(N.Attribute, SqlType)]
+-- engineerpersonnel_v1 = [ (empno_, TInt32), 
+--                          (name_,  TString)
+--                        , (hiredate_, TUTCTime)
+--                        , (title_,  TString)
+--                        , (deptname_, TString)
+--                        ]
 
--- | otherpersonnel(empno_, name_, hiredate_, title_, deptname_) 
-otherpersonnel_v1 :: [(N.Attribute,SqlType)]
-otherpersonnel_v1 =  [ (empno_,TInt32)
-                     , (name_, TString)
-                     , (hiredate_, TUTCTime)
-                     , (title_, TString)
-                     , (deptname_, TString)
-                     ]
+-- -- | otherpersonnel(empno_, name_, hiredate_, title_, deptname_) 
+-- otherpersonnel_v1 :: [(N.Attribute,SqlType)]
+-- otherpersonnel_v1 =  [ (empno_,TInt32)
+--                      , (name_, TString)
+--                      , (hiredate_, TUTCTime)
+--                      , (title_, TString)
+--                      , (deptname_, TString)
+--                      ]
 
--- | job(title_, salary_)
-job_v1234 ::[(N.Attribute,SqlType)]
-job_v1234 = [ (title_, TString)
-            , (salary_,  TInt32)
-            ]
+-- -- | job(title_, salary_)
+-- job_v1234 ::[(N.Attribute,SqlType)]
+-- job_v1234 = [ (title_, TString)
+--             , (salary_,  TInt32)
+--             ]
 
--- 
--- ** schema version 2 
--- 
+-- -- 
+-- -- ** schema version 2 
+-- -- 
 
-empSchema2 :: Schema 
-empSchema2 = (empv2, constructRelMap [ ( empacct, empacct_v2)
-                                     , (job,  job_v1234)
-                                     ] 
-              )
+-- empSchema2 :: Schema 
+-- empSchema2 = (empv2, constructRelMap [ ( empacct, empacct_v2)
+--                                      , (job,  job_v1234)
+--                                      ] 
+--               )
 
 
--- |  empacct (empno_, name_, hiredate_, title_, deptname_) 
-empacct_v2 :: [(N.Attribute,SqlType)]
-empacct_v2 =  [ (empno_,    TInt32)
-              , (name_,     TString)
-              , (hiredate_, TUTCTime)
-              , (title_,    TString)
-              , (deptname_, TString)
-              ]
+-- -- |  empacct (empno_, name_, hiredate_, title_, deptname_) 
+-- empacct_v2 :: [(N.Attribute,SqlType)]
+-- empacct_v2 =  [ (empno_,    TInt32)
+--               , (name_,     TString)
+--               , (hiredate_, TUTCTime)
+--               , (title_,    TString)
+--               , (deptname_, TString)
+--               ]
 
---
---  ** schema version 3 
--- 
-empSchema3 :: Schema
-empSchema3 = (empv3,  constructRelMap  [ (empacct,  empacct_v3)
-                                       , ( job,  job_v1234)
-                                       , ( dept,  dept_v345)
-                                       ]
-              )
+-- --
+-- --  ** schema version 3 
+-- -- 
+-- empSchema3 :: Schema
+-- empSchema3 = (empv3,  constructRelMap  [ (empacct,  empacct_v3)
+--                                        , ( job,  job_v1234)
+--                                        , ( dept,  dept_v345)
+--                                        ]
+--               )
 
--- | empacct (empno_, name_, hiredate_, title_, deptno_) 
-empacct_v3 :: [(N.Attribute,SqlType)]
-empacct_v3 =  [ (empno_,   TInt32)
-              , (name_,    TString)
-              , (hiredate_,TUTCTime)
-              , (title_,   TString)
-              , (deptno_,  TInt32)
-              ]
+-- -- | empacct (empno_, name_, hiredate_, title_, deptno_) 
+-- empacct_v3 :: [(N.Attribute,SqlType)]
+-- empacct_v3 =  [ (empno_,   TInt32)
+--               , (name_,    TString)
+--               , (hiredate_,TUTCTime)
+--               , (title_,   TString)
+--               , (deptno_,  TInt32)
+--               ]
 
--- | dept (deptname_, deptno_, managerno_)
-dept_v345 :: [(N.Attribute,SqlType)]
-dept_v345 =   [ (deptname_, TString)
-              , (deptno_,   TInt32)
-              , (managerno_,TInt32)
-              ]
+-- -- | dept (deptname_, deptno_, managerno_)
+-- dept_v345 :: [(N.Attribute,SqlType)]
+-- dept_v345 =   [ (deptname_, TString)
+--               , (deptno_,   TInt32)
+--               , (managerno_,TInt32)
+--               ]
 
--- 
--- ** schema version 4 
---
-empSchema4 :: Schema 
-empSchema4 = (empv4, constructRelMap [ ( empacct, empacct_v4)
-                                     , ( job, job_v1234)
-                                     , ( dept,  dept_v345)
-                                     , ( empbio,  empbio_v4)
-                                     ]
-                    )
+-- -- 
+-- -- ** schema version 4 
+-- --
+-- empSchema4 :: Schema 
+-- empSchema4 = (empv4, constructRelMap [ ( empacct, empacct_v4)
+--                                      , ( job, job_v1234)
+--                                      , ( dept,  dept_v345)
+--                                      , ( empbio,  empbio_v4)
+--                                      ]
+--                     )
 
--- | empacct (empno_, hiredate_, title_, deptno_) 
-empacct_v4 :: [(N.Attribute,SqlType)]
-empacct_v4 =   [ (empno_,    TInt32)
-               , (hiredate_, TUTCTime)
-               , (title_,    TString)
-               , (deptno_,   TInt32)
-               ]
+-- -- | empacct (empno_, hiredate_, title_, deptno_) 
+-- empacct_v4 :: [(N.Attribute,SqlType)]
+-- empacct_v4 =   [ (empno_,    TInt32)
+--                , (hiredate_, TUTCTime)
+--                , (title_,    TString)
+--                , (deptno_,   TInt32)
+--                ]
 
--- | empbio (empno_, sex_, birthdate_, name_)
-empbio_v4 :: [(N.Attribute,SqlType)]
-empbio_v4 =  [ (empno_,    TInt32)
-             , (sex_,      TString)
-             , (birthdate_,TUTCTime)
-             , (name_,     TString)
-             ]
+-- -- | empbio (empno_, sex_, birthdate_, name_)
+-- empbio_v4 :: [(N.Attribute,SqlType)]
+-- empbio_v4 =  [ (empno_,    TInt32)
+--              , (sex_,      TString)
+--              , (birthdate_,TUTCTime)
+--              , (name_,     TString)
+--              ]
 
--- 
--- ** schema version 5
--- 
-empSchema5 :: Schema 
-empSchema5 = ( empv5, constructRelMap [ ( empacct,  empacct_v5)
-                                      , (dept,  dept_v345)
-                                      , (empbio,  empbio_v5)
-                                      ]
-             )
+-- -- 
+-- -- ** schema version 5
+-- -- 
+-- empSchema5 :: Schema 
+-- empSchema5 = ( empv5, constructRelMap [ ( empacct,  empacct_v5)
+--                                       , (dept,  dept_v345)
+--                                       , (empbio,  empbio_v5)
+--                                       ]
+--              )
 
--- | empacct (empno_, hiredate_, title_, deptno_, salary_) 
-empacct_v5 :: [(N.Attribute,SqlType)]
-empacct_v5 =   [ (empno_,     TInt32)
-               , (hiredate_,  TUTCTime)
-               , (title_,     TString)
-               , (deptno_,    TInt32)
-               , (salary_,    TInt32)
-               ]
+-- -- | empacct (empno_, hiredate_, title_, deptno_, salary_) 
+-- empacct_v5 :: [(N.Attribute,SqlType)]
+-- empacct_v5 =   [ (empno_,     TInt32)
+--                , (hiredate_,  TUTCTime)
+--                , (title_,     TString)
+--                , (deptno_,    TInt32)
+--                , (salary_,    TInt32)
+--                ]
 
--- | empbio (empno_, sex_, birthdate_, firstname_, lastname_)
-empbio_v5 :: [(N.Attribute,SqlType)]
-empbio_v5 =  [ (empno_,     TInt32)
-             , (sex_,      TString)
-             , (birthdate_, TUTCTime)
-             , (firstname_, TString)
-             , (lastname_,  TString)
-             ]
+-- -- | empbio (empno_, sex_, birthdate_, firstname_, lastname_)
+-- empbio_v5 :: [(N.Attribute,SqlType)]
+-- empbio_v5 =  [ (empno_,     TInt32)
+--              , (sex_,      TString)
+--              , (birthdate_, TUTCTime)
+--              , (firstname_, TString)
+--              , (lastname_,  TString)
+--              ]
