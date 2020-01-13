@@ -1,0 +1,147 @@
+(* Feature *)
+Set Warnings "-notation-overridden,-parsing".
+Require Import Bool.
+Require Import String.
+Require Import Relations.Relation_Definitions.
+Require Import Classes.Morphisms.
+Require Import Setoids.Setoid.
+From Coq Require Import Logic.Classical_Pred_Type.
+
+Module Feature.
+
+(** Feature Exression Generic Object *)
+
+Definition fname := string.
+
+(** Feature Exression Syntax. *)
+Inductive fexp : Type :=
+  | litB : bool -> fexp
+  | litF : fname -> fexp
+  | comp : fexp -> fexp
+  | meet : fexp -> fexp -> fexp
+  | join : fexp -> fexp -> fexp.
+
+Notation "~(F) f" := (comp f) (at level 75, right associativity).
+Infix "/\(F)" := meet (at level 80, right associativity).
+Infix "\/(F)" := join (at level 85, right associativity).
+
+(** Configurations. *)
+Definition config := fname -> bool.
+
+(** Feature Exression Semantics. *)
+
+Fixpoint semE (e : fexp) (c : config) : bool :=
+  match e with
+  | litB b   => b
+  | litF f   => c f
+  | ~(F) e      => negb (semE e c)
+  | e1 \/(F) e2 => (semE e1 c) || (semE e2 c)
+  | e1 /\(F) e2 => (semE e1 c) && (semE e2 c)
+  end.
+
+Notation "E[[ e ]] c" := (semE e c) (at level 99, left associativity).
+
+(** Feature Expression Equivalemce *)
+Definition equivE : relation fexp :=
+  fun e e' => forall c, (semE e c) = (semE e' c).
+
+Infix "=e=" := equivE (at level 70) : type_scope.
+
+(** Feature Equivalence is an Equivalence *)
+
+(** Feature equivalence is reflexive. *)
+Remark equivE_refl : Reflexive equivE.
+Proof.
+  intros x c.
+  reflexivity.
+Qed.
+
+(** Feature equivalence is symmetric. *)
+Remark equivE_sym : Symmetric equivE.
+Proof.
+  intros x y H c.
+  symmetry.
+  apply H.
+Qed.
+
+(** Feature equivalence is transitive. *)
+Remark equivE_trans : Transitive equivE.
+Proof.
+  intros x y z H1 H2 c.
+  transitivity (semE y c).
+    apply H1.
+    apply H2.
+Qed.
+
+(** Feature equivalence is an equivalence relation. *)
+Instance eqE : Equivalence equivE.
+Proof.
+  split.
+    apply equivE_refl.
+    apply equivE_sym.
+    apply equivE_trans.
+Qed.
+
+(** Function over feature expression *)
+
+Definition sat (e:fexp): Prop :=
+  exists c, semE e c = true.
+
+Definition taut (e:fexp): Prop :=
+  forall c, semE e c = true.
+
+Definition not_sat (e:fexp): Prop :=
+  forall c, semE e c = false.
+
+Definition implies (e1 e2:fexp) (c:config): Prop :=
+  semE e1 c = true -> semE e2 c = true.
+
+Theorem ex_falso_quodlibet : forall (P:Prop),
+  False -> P.
+Proof.
+  intros P contra.
+  inversion contra. Qed.
+ 
+Theorem dist_not_exists : forall (X:Type) (Q : X -> Prop),
+  (forall x, ~Q x) <-> ~(exists x, Q x).
+Proof. 
+  intros. split. 
+  - apply all_not_not_ex.
+  - apply not_ex_all_not.
+Qed.
+
+Lemma not_sat_not_prop : forall e, (~ sat e) <-> not_sat e.
+Proof. 
+ split. 
+ - unfold sat, not_sat. intros. 
+   rewrite <- dist_not_exists in H. 
+   specialize H with c. rewrite not_true_iff_false in H. 
+   assumption. 
+ - unfold sat, not_sat. intros. rewrite <- dist_not_exists. intros. 
+   rewrite not_true_iff_false. apply H.
+Qed.
+
+Theorem sat_taut_comp : forall e1 e2, 
+           (forall c, semE e1 c = true -> semE e2 c = true) 
+                  <-> not_sat (e1 /\(F) ~(F)e2).
+Proof. 
+  split.
+  + intros. unfold not_sat. intros. 
+    simpl. destruct (E[[ e1]] c) eqn: E.
+    ++ apply H in E. rewrite E. simpl. reflexivity.
+    ++ reflexivity.
+  + intros. unfold not_sat in H. simpl in H. 
+    specialize H with c.  rewrite H0 in H. simpl in H. 
+    symmetry in H. apply negb_sym in H. simpl in H. 
+    assumption.
+Qed.
+    
+Example sat_or: sat (litB true \/(F) litB false).
+Proof. intros. unfold sat. exists (fun _ => true). 
+simpl. reflexivity. Qed.
+
+Example taut_or: taut (litB true \/(F) litB false).
+Proof. intros. unfold taut. 
+intros. simpl. reflexivity. Qed.
+
+End Feature.
