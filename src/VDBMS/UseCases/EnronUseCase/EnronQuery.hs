@@ -40,92 +40,92 @@ falseValue :: C.Atom
 falseValue = C.Val (SqlBool False)
 
 midCondition :: C.Condition
-midCondition = C.Comp EQ (C.Att (qualifiedAttr v_message  "mid")) midValue
+midCondition = C.Comp EQ (C.Att (qualifiedAttr messages  "mid")) midValue
 
 join_msg_rec_emp :: Algebra
-join_msg_rec_emp = Join (genRenameAlgebra join_msg_rec) (genRenameAlgebra (tRef v_employee)) cond 
-                where join_msg_rec = joinTwoRelation v_message v_recipientinfo "mid"
+join_msg_rec_emp = Join (genRenameAlgebra join_msg_rec) (genRenameAlgebra (tRef employeelist)) cond 
+                where join_msg_rec = joinTwoRelation messages recipientinfo "mid"
                       cond = C.Comp EQ (C.Att rvalue) (C.Att email_id)
 
 join_msg_rec_emp_reference :: Algebra
-join_msg_rec_emp_reference = Join  (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_referenceinfo)) cond 
+join_msg_rec_emp_reference = Join  (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef referenceinfo)) cond 
                         where cond = C.Comp EQ (C.Att vrecipientinfo_mid) (C.Att vreferenceinfo_mid)
-                              vrecipientinfo_mid = qualifiedAttr v_recipientinfo "eid"
-                              vreferenceinfo_mid = qualifiedAttr v_referenceinfo "eid"
--- | v_message Join_[sender = email_id] v_employee
+                              vrecipientinfo_mid = qualifiedAttr recipientinfo "eid"
+                              vreferenceinfo_mid = qualifiedAttr referenceinfo "eid"
+-- | messages Join_[sender = email_id] employeelist
 join_msg_emp :: Algebra
-join_msg_emp = Join (genRenameAlgebra (tRef v_message)) (genRenameAlgebra (tRef v_employee)) join_cond
+join_msg_emp = Join (genRenameAlgebra (tRef messages)) (genRenameAlgebra (tRef employeelist)) join_cond
                 where join_cond = C.Comp EQ (C.Att sender) (C.Att email_id)
 
 join_msg_rec_emp_foward :: Algebra
-join_msg_rec_emp_foward = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_forward_msg)) cond 
+join_msg_rec_emp_foward = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef forward_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
-                      vemployee_eid     = qualifiedAttr v_employee "eid"
-                      vforwardmsg_eid = qualifiedAttr v_forward_msg "eid"
+                      vemployee_eid     = qualifiedAttr employeelist "eid"
+                      vforwardmsg_eid = qualifiedAttr forward_msg "eid"
 
 join_msg_rec_emp_auto :: Algebra
-join_msg_rec_emp_auto = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_auto_msg)) cond 
+join_msg_rec_emp_auto = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef auto_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vautomsg_eid)
-                      vemployee_eid     = qualifiedAttr v_employee "eid"
-                      vautomsg_eid = qualifiedAttr v_auto_msg "eid"
+                      vemployee_eid     = qualifiedAttr employeelist "eid"
+                      vautomsg_eid = qualifiedAttr auto_msg "eid"
 
 
 join_msg_rec_emp_remail :: Algebra
-join_msg_rec_emp_remail = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_remail_msg)) cond 
+join_msg_rec_emp_remail = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef remail_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vremailmsg_eid)
-                      vemployee_eid     = qualifiedAttr v_employee "eid"
-                      vremailmsg_eid = qualifiedAttr v_remail_msg "eid"
+                      vemployee_eid     = qualifiedAttr employeelist "eid"
+                      vremailmsg_eid = qualifiedAttr remail_msg "eid"
 
 -- | Join 4 tables based on recipient suffix 
---  v_message Join_[mid = mid] v_recipient Join _[rvalue = email_id] v_employee [eid = eid]v_filrter_msg
+--  messages Join_[mid = mid] v_recipient Join _[rvalue = email_id] employeelist [eid = eid]v_filrter_msg
 join_msg_rec_emp_filter :: Algebra
-join_msg_rec_emp_filter = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef v_filter_msg)) cond 
+join_msg_rec_emp_filter = Join (genRenameAlgebra join_msg_rec_emp) (genRenameAlgebra (tRef filter_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vfiltermsg_eid)
-                      vemployee_eid     = qualifiedAttr v_employee "eid"
-                      vfiltermsg_eid = qualifiedAttr v_filter_msg "eid"
+                      vemployee_eid     = qualifiedAttr employeelist "eid"
+                      vfiltermsg_eid = qualifiedAttr filter_msg "eid"
 
--- | v_message Join_[sender = email_id] v_employee Join _[eid = eid] v_filrter_msg
+-- | messages Join_[sender = email_id] employeelist Join _[eid = eid] v_filrter_msg
 join_msg_emp_filter :: Algebra
-join_msg_emp_filter = Join (genRenameAlgebra join_msg_emp) (genRenameAlgebra (tRef v_filter_msg)) cond 
+join_msg_emp_filter = Join (genRenameAlgebra join_msg_emp) (genRenameAlgebra (tRef filter_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vfiltermsg_eid)
-                      vemployee_eid     = qualifiedAttr v_employee "eid"
-                      vfiltermsg_eid = qualifiedAttr v_filter_msg "eid"
+                      vemployee_eid     = qualifiedAttr employeelist "eid"
+                      vfiltermsg_eid = qualifiedAttr filter_msg "eid"
 
 join_msg_emp_forward :: Algebra
-join_msg_emp_forward = Join (genRenameAlgebra join_msg_emp) (genRenameAlgebra (tRef v_forward_msg)) cond 
+join_msg_emp_forward = Join (genRenameAlgebra join_msg_emp) (genRenameAlgebra (tRef forward_msg)) cond 
                 where cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
-                      vemployee_eid     = qualifiedAttr v_employee "eid"
-                      vforwardmsg_eid = qualifiedAttr v_forward_msg "eid"
+                      vemployee_eid     = qualifiedAttr employeelist "eid"
+                      vforwardmsg_eid = qualifiedAttr forward_msg "eid"
 
 
 join_emp_forward_remail :: Algebra
-join_emp_forward_remail = joinThreeRelation v_employee v_forward_msg v_remail_msg "eid"
+join_emp_forward_remail = joinThreeRelation employeelist forward_msg remail_msg "eid"
 
 -- | Query recipient's pseudonym from remailer for a certain message id.
 --  Proj_ pseudonym
 --   Sel_ mid = midValue 
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] remail_msg)  
 query_pseudonym_from_remailer :: Algebra
 query_pseudonym_from_remailer  = Proj [trueAttr pseudonym] $ genRenameAlgebra $ 
                                   Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
                                     join_msg_rec_emp_remail
 
 -- | Query autorespondse subject and body of recipient for a certain message id.
--- Proj_ v_auto_mg.subject, v_auto_msg.body  
+-- Proj_ v_auto_mg.subject, auto_msg.body  
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)
 query_autoresponder_subject_body :: Algebra
 query_autoresponder_subject_body = 
             Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
             Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+        where vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
 
 -- | Normal query abot reicipient's filter suffix 
 -- Proj_ suffix 
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_filter_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] filter_msg)
 query_recipient_filter_suffix :: Algebra
 query_recipient_filter_suffix = 
             Proj [ trueAttr suffix] $ genRenameAlgebra $ 
@@ -135,7 +135,7 @@ query_recipient_filter_suffix =
 -- | Normal query about sender's filter suffix 
 -- Proj_ suffix 
 --  Sel_ mid = midValue
---   (v_message join_[sender = email_id] v_employee [eid = eid] v_filter_msg)
+--   (messages join_[sender = email_id] employeelist [eid = eid] filter_msg)
 query_sender_filter_suffix :: Algebra
 query_sender_filter_suffix = 
             Proj [ trueAttr suffix] $ genRenameAlgebra $ 
@@ -145,7 +145,7 @@ query_sender_filter_suffix =
 -- | Normal query about recipient's forwardaddr 
 -- Proj_ forwardaddr 
 --  Sel_ mid = midValue 
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] forward_msg)
 query_recipient_forwardaddr :: Algebra
 query_recipient_forwardaddr = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
                                 Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
@@ -155,7 +155,7 @@ query_recipient_forwardaddr = Proj [trueAttr forwardaddr] $ genRenameAlgebra $
 query_is_signed :: Algebra
 query_is_signed = Proj [trueAttr is_signed] $ genRenameAlgebra $ 
                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-                      tRef v_message
+                      tRef messages
 
 -- FNE: The paper name: Fundamental Nonmodularity in Electronic Mail
 -- 
@@ -206,25 +206,25 @@ query_is_signed = Proj [trueAttr is_signed] $ genRenameAlgebra $
 --   - (NOT signature) AND (NOT forwardmsg) => Empty
 -- * V-Query: signature <forwardmsg<Q1, Q2>, forwardmsg <Q3, empty>>
 enronVQ4 :: Algebra
-enronVQ4 = AChc signature (AChc forwardmsg i4_Q1 i4_Q2) (AChc forwardmsg i4_Q3 Empty)
+enronVQ4 = AChc signature (AChc forwardmessages i4_Q1 i4_Q2) (AChc forwardmessages i4_Q3 Empty)
 
 
 -- Proj_ forwardaddr, is_signed
 --  Sel_ mid = midValue and rtype == "To" 
---  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)  
+--  (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] forward_msg)  
 i4_Q1 :: Algebra 
 i4_Q1 = Proj [trueAttr forwardaddr, trueAttr is_signed] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_foward 
 
--- Proj_ is_signed Sel_ mid = midValue (v_message)
+-- Proj_ is_signed Sel_ mid = midValue (messages)
 i4_Q2 :: Algebra
 i4_Q2 = query_is_signed
 
 
 -- Proj_ forwardaddr 
 --  Sel_ mid = midValue and rtype == "To" 
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] forward_msg)
 i4_Q3 :: Algebra
 i4_Q3 = query_recipient_forwardaddr
 
@@ -242,13 +242,13 @@ i4_Q3 = query_recipient_forwardaddr
 --   - (NOT signature) AND (NOT remailmsg) => Empty
 -- * V-Query: signature AND remailmsg <Q1, Empty>
 enronVQ5 :: Algebra
-enronVQ5 = AChc (signature `F.And` remailmsg) i5_Q1 Empty 
+enronVQ5 = AChc (signature `F.And` remailmessage) i5_Q1 Empty 
 
--- Proj_ is_signed, rvalue Sel_ mid = midValue (v_message join_[mid = mid] v_recipientinfo)
+-- Proj_ is_signed, rvalue Sel_ mid = midValue (messages join_[mid = mid] recipientinfo)
 i5_Q1 :: Algebra
 i5_Q1 = Proj [trueAttr is_signed, trueAttr rvalue] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-           joinTwoRelation v_message v_recipientinfo "mid"
+           joinTwoRelation messages recipientinfo "mid"
 
 
 --
@@ -290,33 +290,33 @@ i5_Q1 = Proj [trueAttr is_signed, trueAttr rvalue] $ genRenameAlgebra $
 --   - (NOT encrypt) AND (NOT autoresponder) => Nothing
 -- * V-Query:  encrypt <autoresponder<Q1, Q2>, autoresponder <Q3, empty>>
 enronVQ8 :: Algebra
-enronVQ8 = AChc encrypt (AChc autoresponder i8_Q1 i8_Q2) (AChc autoresponder i8_Q3 Empty)
+enronVQ8 = AChc encryption (AChc autoresponder i8_Q1 i8_Q2) (AChc autoresponder i8_Q3 Empty)
 
--- Proj_ is_encrypted, v_auto_msg.subject, v_auto_msg.body  
+-- Proj_ is_encrypted, auto_msg.subject, auto_msg.body  
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)
 i8_Q1 :: Algebra
 i8_Q1  = Proj (map trueAttr [is_encrypted, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body" 
+        where vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body" 
 
--- Proj_ is_encrypted Sel_ mid = midValue (v_message)
+-- Proj_ is_encrypted Sel_ mid = midValue (messages)
 i8_Q2 :: Algebra 
 i8_Q2 = Proj [trueAttr is_encrypted] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            tRef v_message
+            tRef messages
 
--- Proj_ v_auto_msg.subject, v_auto_msg.body  
+-- Proj_ auto_msg.subject, auto_msg.body  
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)
 i8_Q3 :: Algebra 
 i8_Q3 = Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+        where vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
 
 --
 -- 9. Interaction: EncryptMessage vs. ForwardMessages
@@ -335,27 +335,27 @@ i8_Q3 = Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlg
 --
 -- * V-Query: encrypt <forwardmsg<Q1, Q2>, forwardmsg <Q3, empty>>
 enronVQ9 :: Algebra
-enronVQ9 = AChc encrypt (AChc forwardmsg i9_Q1 i9_Q2) (AChc forwardmsg i9_Q3 Empty)
+enronVQ9 = AChc encryption (AChc forwardmessages i9_Q1 i9_Q2) (AChc forwardmessages i9_Q3 Empty)
 
 
 -- Proj_ is_encrypted, forwardaddr, 
 --  Sel_ mid = midValue and rtype == "To" 
---  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)  
+--  (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] forward_msg)  
 i9_Q1 :: Algebra 
 i9_Q1 = Proj [trueAttr is_encrypted, trueAttr forwardaddr] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_foward 
 
--- Proj_ is_encrypted Sel_ mid = midValue (v_message)
+-- Proj_ is_encrypted Sel_ mid = midValue (messages)
 i9_Q2 :: Algebra
 i9_Q2 = Proj [trueAttr is_encrypted] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            tRef v_message
+            tRef messages
 
 
 -- Proj_ forwardaddr 
 --  Sel_ mid = midValue and rtype == "To" 
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] forward_msg)
 i9_Q3 :: Algebra
 i9_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
@@ -364,7 +364,7 @@ i9_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $
 --
 -- 10. Interaction: EncryptMessage vs. RemailMessage  
 -- 
--- * Feature: encrypt vs. remailmsg
+-- * Feature: encrypt vs. remailmessage
 -- * Situation: The remailer's normal function rewrites the sender's address in the message headers, replaceing 
 --              such occurrences with the pseudonym. If the message is encrypted, these are not visible, so will 
 --              not be rewritten. Thus, the aninymity goal of the remailer is defeated. 
@@ -373,27 +373,27 @@ i9_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $
 --               to the remailer and take apporopriate action. For examle encrypt/decrypt could remove the sender
 --               address from the header lines itself prior to encryption.
 -- * Fix by VDB: Check if the sender is removed when email is encrypted and is sending to a remailer.
---   - encrypt AND remailmsg => Q1: query the is_encrypted and recipient address .
---                              (remove the sender's address from header line before encrypt, and do not give pseudonym)
---   - encrypt AND (NOT remailmsg) => Nothing 
---   - (NOT encrypt) AND remailmsg => Nothing 
---   - (NOT encrypt) AND (NOT remailmsg) => Nothing 
+--   - encrypt AND remailmessage => Q1: query the is_encrypted and recipient address .
+--                              (remove the sender's address from header line before encryption, and do not give pseudonym)
+--   - encrypt AND (NOT remailmessage) => Nothing 
+--   - (NOT encryption) AND remailmessage => Nothing 
+--   - (NOT encryption) AND (NOT remailmessage) => Nothing 
 --
--- * V-Query: encrypt <remail <Q1,Q2>, remailmsg<Q3,Empty>>
+-- * V-Query: encryption <remail <Q1,Q2>, remailmessage<Q3,Empty>>
 enronVQ10 :: Algebra
-enronVQ10 = AChc encrypt i10_Q1 Empty
+enronVQ10 = AChc encryption i10_Q1 Empty
 
 -- Proj_ is_encrypted, rvalue
 --  Sel_ mid = midValue 
---  (v_message join_[mid == mid] v_recipientinfo)  
+--  (messages join_[mid == mid] recipientinfo)  
 i10_Q1 :: Algebra 
 i10_Q1 = Proj [trueAttr is_encrypted, trueAttr rvalue] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            joinTwoRelation v_message v_recipientinfo "mid"
+            joinTwoRelation messages recipientinfo "mid"
 
 -- -- Proj_ is_encrypted, pseudonym
 -- --  Sel_ mid = midValue 
--- --  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
+-- --  (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] remail_msg)  
 -- i10_Q1 :: Algebra 
 -- i10_Q1 = Proj [trueAttr is_encrypted, trueAttr pseudonym] $ genRenameAlgebra $ 
 --           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
@@ -415,7 +415,7 @@ i10_Q1 = Proj [trueAttr is_encrypted, trueAttr rvalue] $ genRenameAlgebra $
 -- 12. Interaction: VerifySignature vs. RemailMessage 
 --                  (second half of interaction 5 "SignMessage vs RemailMessage" which is controled by own side UI)
 --  
--- * Feature:  signature vs. remailmsg 
+-- * Feature:  signature vs. remailmessage 
 -- * Situation: A signed message sent through the remailer will be signed by the actual originator, but the RemailMessage
 --              has altered the header fields by changing the originator to the pseudonym. Thus, the verifyMessage will fail
 --              when applied to the message, notifying the recipient of the failure. But the clever recipient being informed
@@ -445,36 +445,36 @@ enronVQ12 = enronVQ5
 --   - (NOT autoresponder) AND forwardmsg => Q3. normal query with forwardmsg (forwardAddr)
 --   - (NOT autoresponder) AND (NOT forwardmsg) => Nothing
 --   
--- * V-Query: autoresponder <forwardmsg <Q1,Q2>, forwardmsg<Q3, Empty>>
+-- * V-Query: autoresponder <forwardmessages <Q1,Q2>, forwardmessages<Q3, Empty>>
 enronVQ13 :: Algebra
-enronVQ13 =  AChc autoresponder (AChc forwardmsg i13_Q1 i13_Q2) (AChc forwardmsg i13_Q3 Empty) 
+enronVQ13 =  AChc autoresponder (AChc forwardmessages i13_Q1 i13_Q2) (AChc forwardmessages i13_Q3 Empty) 
 
--- Proj_ sender, forwardaddr, v_auto_msg.subject, v_auto_msg.body  
+-- Proj_ sender, forwardaddr, auto_msg.subject, auto_msg.body  
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg [eid = eid] v_forward_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg [eid = eid] forward_msg)
 i13_Q1 :: Algebra
 i13_Q1 = Proj (map trueAttr [sender, forwardaddr, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            Join (genRenameAlgebra join_msg_rec_emp_auto) (genRenameAlgebra (tRef v_forward_msg)) cond    
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body"
-              vforwardmsg_eid  = qualifiedAttr v_forward_msg "eid"
-              vemployee_eid    = qualifiedAttr v_employee "eid"
+            Join (genRenameAlgebra join_msg_rec_emp_auto) (genRenameAlgebra (tRef forward_msg)) cond    
+        where vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
+              vforwardmsg_eid  = qualifiedAttr forward_msg "eid"
+              vemployee_eid    = qualifiedAttr employeelist "eid"
               cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
 
--- Proj_ v_auto_msg.subject, v_auto_msg.body  
+-- Proj_ auto_msg.subject, auto_msg.body  
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)
 i13_Q2 :: Algebra
 i13_Q2 = Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+        where vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
 
 -- Proj_ forwardaddr 
 --  Sel_ mid = midValue and rtype == "To" 
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] forward_msg)
 i13_Q3 :: Algebra
 i13_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
@@ -501,27 +501,27 @@ i13_Q3 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $
 --   (NOT autoresponder) AND (NOT remailmsg) => Nothing 
 -- * V-Query: autoresponder <remailmsg <Q1,Q2>, remailmsg<Q3, Empty>> 
 enronVQ14 :: Algebra
-enronVQ14 = AChc autoresponder (AChc remailmsg i14_Q1 i14_Q2) (AChc remailmsg i14_Q3 Empty) 
+enronVQ14 = AChc autoresponder (AChc remailmessage i14_Q1 i14_Q2) (AChc remailmessage i14_Q3 Empty) 
 
--- Proj_ is_from_remailer, v_auto_msg.subject, v_auto_msg.body  
+-- Proj_ is_from_remailer, auto_msg.subject, auto_msg.body  
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)i14_Q1 :: Algebra
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)i14_Q1 :: Algebra
 i14_Q1 :: Algebra
 i14_Q1 = Proj (map trueAttr [ is_from_remailer, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+        where vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
 
--- Proj_ v_auto_msg.subject, v_auto_msg.body  
+-- Proj_ auto_msg.subject, auto_msg.body  
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)
 i14_Q2 :: Algebra
 i14_Q2 = query_autoresponder_subject_body
 
 -- Proj_ pseudonym
 --  Sel_ mid = midValue 
---  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_remail_msg)  
+--  (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] remail_msg)  
 i14_Q3 :: Algebra
 i14_Q3 = query_pseudonym_from_remailer
 
@@ -552,18 +552,18 @@ i14_Q3 = query_pseudonym_from_remailer
 -- 
 -- * V-Query: autoresponder <remailmsg <Q1,Q2>, remailmsg<Q3, Empty>> 
 enronVQ15 :: Algebra
-enronVQ15 = AChc autoresponder (AChc remailmsg i15_Q1 i15_Q2) (AChc remailmsg i15_Q3 Empty) 
+enronVQ15 = AChc autoresponder (AChc remailmessage i15_Q1 i15_Q2) (AChc remailmessage i15_Q3 Empty) 
 
 -- | Query the is_from_remailer, receipitent's address, autoresponse's body and subject
--- Proj_ is_from_remailer, v_auto_msg.subject, v_auto_msg.body  
+-- Proj_ is_from_remailer, auto_msg.subject, auto_msg.body  
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)i14_Q1 :: Algebra
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)i14_Q1 :: Algebra
 i15_Q1 :: Algebra
 i15_Q1 = Proj (map trueAttr [ is_from_remailer, rvalue, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-              vautomsg_body    = qualifiedAttr v_auto_msg "body"
+        where vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
 
 -- | Normal query about autoresponse's body and subject
 i15_Q2 :: Algebra 
@@ -593,12 +593,12 @@ i15_Q3 = query_pseudonym_from_remailer
 --   (NOT autoresponder) AND (NOT filtermsg) => Nothing 
 -- * V-Query:  autoresponder <filtermsg <Q1, Q2>, filterMsg <Q3, Empty>>
 enronVQ16 :: Algebra
-enronVQ16 = AChc autoresponder (AChc filtermsg i16_Q1 i16_Q2) (AChc filtermsg i16_Q3 Empty) 
+enronVQ16 = AChc autoresponder (AChc filtermessages i16_Q1 i16_Q2) (AChc filtermessages i16_Q3 Empty) 
 
 -- -- |Query sender's email address, is_autoresponse, recipient's filter suffix.
 -- -- Proj_ sender, is_autoresponse, suffix
 -- --  Sel_ mid = midValue
--- --   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg [eid = eid] v_filter_msg)
+-- --   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg [eid = eid] filter_msg)
 -- i16_Q1 :: Algebra
 -- i16_Q1 = Proj (map trueAttr [sender, is_autoresponse, suffix]) $ genRenameAlgebra $ 
 --           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
@@ -607,14 +607,14 @@ enronVQ16 = AChc autoresponder (AChc filtermsg i16_Q1 i16_Q2) (AChc filtermsg i1
 -- |Query message's subject, autoresponse's subject sender's email address, recipient's filter suffix.
 -- Proj_ sender, is_autoresponse, suffix
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg [eid = eid] v_filter_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg [eid = eid] filter_msg)
 i16_Q1 :: Algebra
 i16_Q1 = Proj (map trueAttr [sender, is_autoresponse, suffix]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-             Join ( genRenameAlgebra join_msg_emp_filter) (genRenameAlgebra (tRef v_auto_msg)) cond 
+             Join ( genRenameAlgebra join_msg_emp_filter) (genRenameAlgebra (tRef auto_msg)) cond 
               where  cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vautomsg_eid)
-                     vemployee_eid = qualifiedAttr v_employee "eid"
-                     vautomsg_eid = qualifiedAttr v_auto_msg "eid"
+                     vemployee_eid = qualifiedAttr employeelist "eid"
+                     vautomsg_eid = qualifiedAttr auto_msg "eid"
 -- | Normal query about autoresponse's body and subject
 i16_Q2 :: Algebra 
 i16_Q2 =  query_autoresponder_subject_body
@@ -648,17 +648,17 @@ enronVQ17 = AChc (autoresponder `F.And` mailhost) i17_Q1 Empty
 i17_Q1 :: Algebra
 i17_Q1 = Proj (map trueAttr [is_system_notification]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            (tRef v_message)
+            (tRef messages)
 -- | Query is_system_notification, recipient's autoresponder subject and body
--- Proj_ is_system_notification, v_auto_msg.subject, v_auto_msg.body
+-- Proj_ is_system_notification, auto_msg.subject, auto_msg.body
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_auto_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)
 -- i17_Q1 :: Algebra
 -- i17_Q1 = Proj (map trueAttr [is_system_notification, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
 --           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
 --             join_msg_rec_emp_auto
-        -- where vautomsg_subject = qualifiedAttr v_auto_msg "subject"
-        --       vautomsg_body    = qualifiedAttr v_auto_msg "body"
+        -- where vautomsg_subject = qualifiedAttr auto_msg "subject"
+        --       vautomsg_body    = qualifiedAttr auto_msg "body"
 
 --
 -- 18. Interaction: ForwardMessages vs. ForwardMessages 
@@ -670,20 +670,20 @@ i17_Q1 = Proj (map trueAttr [is_system_notification]) $ genRenameAlgebra $
 --               when it detectes that the message has been processed by it before.
 -- 
 -- * Fix by VDB: 
---   fowardmsg => Q1: check if there is cycle of eid and forwardaddr in v_forward_msg 
+--   fowardmsg => Q1: check if there is cycle of eid and forwardaddr in forward_msg 
 --   NOT fowardmsg => Nothing 
 -- 
 -- * V-Query: fowardmsg <Q1, Empty>
 enronVQ18 :: Algebra
-enronVQ18 = AChc forwardmsg i18_Q1 Empty
+enronVQ18 = AChc forwardmessages i18_Q1 Empty
 
--- | Check if there is cycle of eid and forwardaddr in v_forward_msg 
+-- | Check if there is cycle of eid and forwardaddr in forward_msg 
 -- Proj_ email_id, forwardaddr
---  (v_employee Join_[eid = eid] v_forward_msg) 
+--  (employeelist Join_[eid = eid] forward_msg) 
 i18_Q1 :: Algebra
 i18_Q1 = Proj (map trueAttr [ subject, email_id, forwardaddr]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            joinTwoRelation v_employee v_forward_msg "eid"
+            joinTwoRelation employeelist forward_msg "eid"
 
 --
 -- 19. Interaction: ForwardMessage vs. RemailMessage (1)
@@ -707,7 +707,7 @@ i18_Q1 = Proj (map trueAttr [ subject, email_id, forwardaddr]) $ genRenameAlgebr
 -- 
 -- * V-Query: remailmsg AND forwardmsg <Q1, Empty>
 enronVQ19 :: Algebra
-enronVQ19 = AChc (remailmsg `F.And` forwardmsg) i19_Q1 Empty  
+enronVQ19 = AChc (remailmessage `F.And` forwardmessages) i19_Q1 Empty  
 
 -- | Query forwardAddr and psuedonym for each email_id (remailer detect the loop) 
 i19_Q1 :: Algebra
@@ -748,19 +748,19 @@ i19_Q1 = Proj (map trueAttr [email_id, forwardaddr, pseudonym]) $ genRenameAlgeb
 --   
 -- * V-Query: forwardmsg AND filtermsg <Q1, Empty>
 enronVQ21 :: Algebra
-enronVQ21 = AChc (forwardmsg `F.And` filtermsg) i21_Q1 Empty
+enronVQ21 = AChc (forwardmessages `F.And` filtermessages) i21_Q1 Empty
 
 
 -- Proj_ sender, forwardaddr, suffix
 --   Sel_ mid = midValue
---    (v_message Join_[sender = email_id] v_employee Join_[eid = eid] v_filter_msg Join_[eid = eid] v_forward_msg)
+--    (messages Join_[sender = email_id] employeelist Join_[eid = eid] filter_msg Join_[eid = eid] forward_msg)
 i21_Q1 :: Algebra
 i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-             Join ( genRenameAlgebra join_msg_emp_filter) (genRenameAlgebra (tRef v_forward_msg)) cond 
+             Join ( genRenameAlgebra join_msg_emp_filter) (genRenameAlgebra (tRef forward_msg)) cond 
               where  cond = C.Comp EQ (C.Att vemployee_eid) (C.Att vforwardmsg_eid)
-                     vemployee_eid = qualifiedAttr v_employee "eid"
-                     vforwardmsg_eid = qualifiedAttr v_forward_msg "eid"
+                     vemployee_eid = qualifiedAttr employeelist "eid"
+                     vforwardmsg_eid = qualifiedAttr forward_msg "eid"
 --
 -- 22. Interaction: ForwardMessages vs. MailHost
 -- 
@@ -781,13 +781,13 @@ i21_Q1 = Proj (map trueAttr [sender, forwardaddr, suffix]) $ genRenameAlgebra $
 --   (NOT forwardmsg) AND (NOT mailhost) =>  Nothing 
 -- * V-Query: forwardmsg AND mailhost <Q1, Empty>
 enronVQ22 :: Algebra
-enronVQ22 = AChc (forwardmsg `F.And` mailhost) i22_Q1 Empty
+enronVQ22 = AChc (forwardmessages `F.And` mailhost) i22_Q1 Empty
 
 -- Proj_ is_forward_msg, sender, forwardaddr, rvalue, reference
 --   Sel_ mid = midValue
---    (v_message Join_[mid = mid] v_recipientinfo Join_[mid = mid ] v_referenceinfo Join_[rvalue = email_id] v_employee) 
+--    (messages Join_[mid = mid] recipientinfo Join_[mid = mid ] referenceinfo Join_[rvalue = email_id] employeelist) 
 --    Union_
---    (v_message Join_[sender = email_id] v_employee Join_[eid = eid] v_forward_msg) 
+--    (messages Join_[sender = email_id] employeelist Join_[eid = eid] forward_msg) 
 i22_Q1 :: Algebra
 i22_Q1 = Proj (map trueAttr [sender, forwardaddr, rvalue, reference]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
@@ -819,18 +819,18 @@ i22_Q1 = Proj (map trueAttr [sender, forwardaddr, rvalue, reference]) $ genRenam
 --   remailmsg AND (NOT signature) =>  Nothing 
 --   (NOT remailmsg) AND signature =>  Nothing 
 --   (NOT remailmsg) AND (NOT signature) =>  Nothing 
--- * V-Query: remailmsg AND signature <Q1, Empty>
+-- * V-Query: remailmessage AND signature <Q1, Empty>
 enronVQ24 :: Algebra
-enronVQ24 = AChc (remailmsg `F.And` signature) i24_Q1 Empty
+enronVQ24 = AChc (remailmessage `F.And` signature) i24_Q1 Empty
 
 -- | Query the is_signed, recipient's address
 -- Proj_ is_signed, rvalue 
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo)
+--   (messages join_[mid == mid] recipientinfo)
 i24_Q1 :: Algebra
 i24_Q1 = Proj (map trueAttr [is_signed, rvalue]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            joinTwoRelation v_message v_recipientinfo "mid"
+            joinTwoRelation messages recipientinfo "mid"
 
 --
 -- 25. Interaction: RemailMessage vs. MailHost
@@ -852,15 +852,15 @@ i24_Q1 = Proj (map trueAttr [is_signed, rvalue]) $ genRenameAlgebra $
 --   (NOT remailmsg) AND (NOT mailhost) =>  Nothing 
 -- * V-Query: remailmsg AND mailhost <Q1, Empty>
 enronVQ25 :: Algebra
-enronVQ25 = AChc (remailmsg `F.And` mailhost) i25_Q1 Empty
+enronVQ25 = AChc (remailmessage `F.And` mailhost) i25_Q1 Empty
 
 -- | Proj_ is_from_remailer,
 --    Sel mid = midValue
---     (v_message)
+--     (messages)
 i25_Q1 :: Algebra
 i25_Q1 = Proj [trueAttr is_from_remailer] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            tRef v_message
+            tRef messages
 
 --
 -- 26. Interaction: FilterMessages vs. MailHost
@@ -882,12 +882,12 @@ i25_Q1 = Proj [trueAttr is_from_remailer] $ genRenameAlgebra $
 --   (NOT filtermsg) AND (NOT mailhost) =>  Nothing 
 -- * V-Query: filtermsg AND mailhost <Q1, Empty>
 enronVQ26 :: Algebra
-enronVQ26 = AChc (filtermsg `F.And` mailhost) i26_Q1 Empty
+enronVQ26 = AChc (filtermessages `F.And` mailhost) i26_Q1 Empty
 
 -- | query is_system_notification, sender, receipient's filter suffix and address
 -- Proj_ is_system_notification, sender, rvalue, suffix
 --  Sel_ mid = midValue
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_filter_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] filter_msg)
 i26_Q1 :: Algebra
 i26_Q1 = Proj (map trueAttr [is_system_notification, sender, rvalue, suffix]) $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
@@ -914,26 +914,26 @@ i26_Q1 = Proj (map trueAttr [is_system_notification, sender, rvalue, suffix]) $ 
 --   signature <forwardmsg<Q1, Q2>, forwardmsg <Q3, empty>>
 
 enronVQ27 :: Algebra
-enronVQ27 = AChc signature (AChc forwardmsg i4_Q1 i4_Q2) (AChc forwardmsg i4_Q3 Empty)
+enronVQ27 = AChc signature (AChc forwardmessages i4_Q1 i4_Q2) (AChc forwardmessages i4_Q3 Empty)
 
 -- | same with i4_Q1
 -- Proj_ forwardaddr, is_signed
 --  Sel_ mid = midValue and rtype == "To" 
---  (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)  
+--  (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] forward_msg)  
 i27_Q1 :: Algebra 
 i27_Q1 = Proj [trueAttr forwardaddr, trueAttr is_signed, trueAttr subject] $ genRenameAlgebra $ 
           Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_foward 
 
 -- | same with i4_Q2
--- Proj_ is_signed Sel_ mid = midValue (v_message)
+-- Proj_ is_signed Sel_ mid = midValue (messages)
 i27_Q2 :: Algebra
 i27_Q2 = query_is_signed
 
 -- | same with i4_Q3
 -- Proj_ forwardaddr 
 --  Sel_ mid = midValue and rtype == "To" 
---   (v_message join_[mid == mid] v_recipientinfo [rvalue = email_id] v_employee [eid = eid] v_forward_msg)
+--   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] forward_msg)
 i27_Q3 :: Algebra
 i27_Q3 = query_recipient_forwardaddr
 

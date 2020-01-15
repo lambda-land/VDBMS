@@ -92,7 +92,8 @@ otherpersonnel_v1 =  [ (empno_,TInt32)
                      , (deptname_, TString)
                      ]
 
--- | job(title_, salary_)
+-- | job(title_, salary_) 
+--   (will be used in version 1,2,3,4)
 job_v1234 ::[(N.Attribute,SqlType)]
 job_v1234 = [ (title_, TString)
             , (salary_,  TInt32)
@@ -102,7 +103,7 @@ job_v1234 = [ (title_, TString)
 
 empSchema2 :: RSchema 
 empSchema2 = constructRSchema [ ( empacct, empacct_v2)
-                              , (job,  job_v1234)
+                              , ( job,  job_v1234)
                               ] 
             
 
