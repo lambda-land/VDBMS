@@ -9,6 +9,7 @@ import VDBMS.UseCases.SmartConstructor
 import VDBMS.DBMS.Value.CompOp
 import Prelude hiding (Ordering(..))
 import Database.HDBC 
+import VDBMS.VDB.Name
 
 -- the purpose of the email database is to showcase 
 -- the testing step and the use of databases in this
@@ -114,13 +115,7 @@ query_pseudonym_from_remailer  = Proj [trueAttr pseudonym] $ genRenameAlgebra $
 -- Proj_ v_auto_mg.subject, auto_msg.body  
 --  Sel_ mid = midValue
 --   (messages join_[mid == mid] recipientinfo [rvalue = email_id] employeelist [eid = eid] auto_msg)
-query_autoresponder_subject_body :: Algebra
-query_autoresponder_subject_body = 
-            Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
-            Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_rec_emp_auto
-        where vautomsg_subject = qualifiedAttr auto_msg "subject"
-              vautomsg_body    = qualifiedAttr auto_msg "body"
+
 
 -- | Normal query abot reicipient's filter suffix 
 -- Proj_ suffix 
@@ -132,15 +127,6 @@ query_recipient_filter_suffix =
             Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
             join_msg_rec_emp_filter 
 
--- | Normal query about sender's filter suffix 
--- Proj_ suffix 
---  Sel_ mid = midValue
---   (messages join_[sender = email_id] employeelist [eid = eid] filter_msg)
-query_sender_filter_suffix :: Algebra
-query_sender_filter_suffix = 
-            Proj [ trueAttr suffix] $ genRenameAlgebra $ 
-            Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
-            join_msg_rec_emp_filter 
 
 -- | Normal query about recipient's forwardaddr 
 -- Proj_ forwardaddr 
@@ -151,12 +137,161 @@ query_recipient_forwardaddr = Proj [trueAttr forwardaddr] $ genRenameAlgebra $
                                 Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
                                   join_msg_rec_emp_foward
 
--- | Normal query for is_signed
-query_is_signed :: Algebra
-query_is_signed = Proj [trueAttr is_signed] $ genRenameAlgebra $ 
+
+--
+-- V-Queires for Features
+--
+
+-- 1. Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
+--
+-- Queries in LaTex:
+-- \begin{align*} 
+-- \receid = & \pi_{(\eid, \rvalue, \midatt)} ((\sigma_{\midatt=\midvalue} \vrecipientinfo) \\
+-- & \bowtie_{\rvalue = \emailid} \vemployees) \\
+-- \pQ_{\addressbookf} =& \pi_{(\rvalue, \nickname)} (\receid \\
+-- & \bowtie_{\receid.\eid = \valias.\eid} \valias ) \\
+-- \vQ_{\addressbookf} = & \chc[\addressbookf]{\pQ_{\addressbookf}, \empRel } 
+-- \end{align*} 
+q_rec_eid :: Rename Algebra
+q_rec_eid = genSubquery "q_rec_eid" $ Proj (map trueAttr [eid, rvalue, mid]) $ genRenameAlgebra $ 
+                    Join (genRenameAlgebra (Sel (VsqlCond midCondition)  $ genRenameAlgebra $ 
+                            tRef recipientinfo )) 
+                         (genRenameAlgebra (tRef employeelist)) cond 
+          where cond = C.Comp EQ (C.Att rvalue) (C.Att email_id)
+
+q_addressbook :: Algebra
+q_addressbook = Proj [trueAttr rvalue, trueAttr nickname] $ genRenameAlgebra $ 
+                  Join q_rec_eid (genRenameAlgebra (tRef alias)) join_cond
+                where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_rec_eid" "eid")) (C.Att (qualifiedAttr alias "eid"))
+
+vq_addressbook :: Algebra
+vq_addressbook = AChc addressbook q_addressbook Empty
+
+-- 2. Intent: Check if the message X is signed in feature SIGNATURE.
+-- 
+-- Queries in LaTex:
+-- \begin{align*}  
+-- \pQ_{\signaturef}=  &\pi_{\issigned} (\sigma_{\midatt=\midvalue} \vmessages) \\
+-- \vQ_{\signaturef} = & \chc[\signaturef]{\pQ_{\signaturef}, \empRel } 
+-- \end{align*} 
+q_signature :: Algebra
+q_signature = Proj [trueAttr is_signed] $ genRenameAlgebra $ 
                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
                       tRef messages
 
+vq_signature :: Algebra
+vq_signature = AChc signature q_signature Empty             
+
+-- 3. Intent: Check if the message X is encrypted in feature ENCRYPTION.
+--
+-- Queries in LaTex:
+-- \begin{align*}  
+-- \pQ_{\encryptionf}=  &\pi_{\isencrypted} (\sigma_{\midatt=\midvalue} \vmessages) \\
+-- \vQ_{\encryptionf} = & \chc[\encryptionf]{\pQ_{\encryptionf}, \empRel }
+-- \end{align*} 
+q_encryption :: Algebra
+q_encryption = Proj [trueAttr is_encrypted] $ genRenameAlgebra $ 
+                    Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                      tRef messages
+vq_encryption :: Algebra
+vq_encryption = AChc encryption q_encryption Empty     
+
+-- 4. Intent: Given a message X, return the recipient's autoresponder email in the feature AUTORESPONDER.        
+--
+-- Queries in LaTex:
+-- \begin{align*}  
+-- \pQ_{\autoresponderf}= & \pi_{(\vautomsg.\subject, \vautomsg.\body)} (\receid \\
+-- & \bowtie_{\receid.\eid = \vautomsg.\eid} \vautomsg ) \\
+-- \vQ_{\autoresponderf} = & \chc[\autoresponderf]{\pQ_{\autoresponderf}, \empRel } 
+-- \end{align*} 
+q_autoresponder :: Algebra
+q_autoresponder = 
+            Proj [ trueAttr vautomsg_subject, trueAttr vautomsg_body] $ genRenameAlgebra $ 
+            Join q_rec_eid (genRenameAlgebra (tRef auto_msg)) join_cond
+        where vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
+              join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_rec_eid" "eid")) (C.Att (qualifiedAttr auto_msg "eid"))
+
+vq_autoresponder :: Algebra
+vq_autoresponder = AChc autoresponder q_autoresponder Empty    
+
+-- 5. Intent: Given a message X, return the recipient's forward address in the feature FORWARDMESSAGES.
+-- 
+-- Queries in LaTex:
+-- \begin{align*} 
+-- \pQ_{\forwardmsgf}= & \pi_{\forwardaddr} (\receid \\
+-- & \bowtie_{\receid.\eid = \vforwardmsg.\eid} \vforwardmsg ) \\ 
+-- \vQ_{\forwardmsgf} = & \chc[\forwardmsgf]{\pQ_{\forwardmsgf}, \empRel } 
+-- \end{align*}  
+q_forwardmessages :: Algebra
+q_forwardmessages =             
+            Proj [ trueAttr forwardaddr] $ genRenameAlgebra $ 
+            Join q_rec_eid (genRenameAlgebra (tRef forward_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_rec_eid" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
+
+vq_forwardmessages :: Algebra
+vq_forwardmessages = AChc forwardmessages q_forwardmessages Empty    
+
+-- 6. Intent: Given a message X, return the sender's pseudonym in the feature REMAILMESSAGE.
+-- 
+-- Queries in LaTex:
+-- \begin{align*} 
+-- \sendereid = & \pi_{(\eid, \sender, \midatt)} ((\sigma_{\midatt=\midvalue} \vmessages) \\
+-- & \bowtie_{\sender = \emailid} \vemployees) \\
+-- \pQ_{\remailmsgf}= & \pi_{(\sender, \pseudonym)} (\sendereid \\
+-- & \bowtie_{\sendereid.\eid = \vremailmsg.\eid} \vremailmsg ) \\
+-- \vQ_{\remailmsgf}= & \chc[\remailmsgf]{\pQ_{\remailmsgf}, \empRel } 
+-- \end{align*} 
+q_sender_eid :: Rename Algebra
+q_sender_eid = genSubquery "q_sender_eid" $ Proj (map trueAttr [eid, sender, mid]) $ genRenameAlgebra $ 
+                    Join (genRenameAlgebra (Sel (VsqlCond midCondition)  $ genRenameAlgebra $ 
+                            tRef messages )) 
+                         (genRenameAlgebra (tRef employeelist)) cond 
+          where cond = C.Comp EQ (C.Att sender) (C.Att email_id)
+
+q_remailmessage :: Algebra
+q_remailmessage = 
+            Proj [ trueAttr sender, trueAttr pseudonym] $ genRenameAlgebra $ 
+            Join q_sender_eid (genRenameAlgebra (tRef remail_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_sender_eid" "eid")) (C.Att (qualifiedAttr remail_msg "eid"))
+
+vq_remailmessage :: Algebra
+vq_remailmessage = AChc remailmessage q_remailmessage Empty  
+
+-- 7. Intent: Given the email message X, return the recipient's filter suffix in the feature FILTERMESSAGES.
+-- 
+-- Queries in LaTex:
+-- \begin{align*}
+-- \pQ_{\filtermsgf}=  & \pi_{\sender, \suffix} (\receid \\
+-- &\bowtie_{\receid.\eid = \vfiltermsg.\eid} \vfiltermsg )\\
+-- \vQ_{\filtermsgf} = & \chc[\filtermsgf]{\pQ_{\filtermsgf}, \empRel }  
+-- \end{align*} 
+q_filtermessages :: Algebra 
+q_filtermessages = 
+            Proj [ trueAttr sender, trueAttr suffix] $ genRenameAlgebra $ 
+            Join q_rec_eid (genRenameAlgebra (tRef filter_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_rec_eid" "eid")) (C.Att (qualifiedAttr filter_msg "eid"))
+
+vq_filtermessages :: Algebra
+vq_filtermessages = AChc filtermessages q_filtermessages Empty  
+
+-- 8. Intent: Given the email message X, return the user-name of the recipient in the feature MAILHOST.
+-- 
+-- Queries in LaTex:
+-- \begin{align*} 
+-- \pQ_{\mailhostf}= & \pi_{(\rvalue, \username, \mailhost)} (\receid \\
+-- & \bowtie_{\receid.\eid = \vmailhost.\eid} \vmailhost ) \\ 
+-- \vQ_{\mailhostf} = & \chc[\mailhostf]{\pQ_{\mailhostf}, \empRel } 
+-- \end{align*}  
+q_mailhost :: Algebra
+q_mailhost = 
+            Proj (map trueAttr [rvalue, username, mailhost_attr]) $ genRenameAlgebra $ 
+            Join q_rec_eid (genRenameAlgebra (tRef mail_host)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_rec_eid" "eid")) (C.Att (qualifiedAttr mail_host "eid"))
+
+vq_mailhost :: Algebra
+vq_mailhost = AChc mailhost q_mailhost Empty  
+{-
 -- FNE: The paper name: Fundamental Nonmodularity in Electronic Mail
 -- 
 -- 1. Interaction: Addressbook vs EncryptMessage 
@@ -937,7 +1072,7 @@ i27_Q2 = query_is_signed
 i27_Q3 :: Algebra
 i27_Q3 = query_recipient_forwardaddr
 
-
+-}
 
 
 

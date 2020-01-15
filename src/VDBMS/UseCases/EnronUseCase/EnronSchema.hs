@@ -54,6 +54,7 @@ email_id = attr "email_id"
 mid, sender, subject, is_signed, is_encrypted, is_from_remailer :: N.Attr 
 is_autoresponse, is_forward_msg, is_system_notification:: N.Attr 
 mid = attr "mid"
+eid = attr "eid"
 sender = attr "sender"
 subject = attr "subject"
 is_signed = attr "is_signed"
@@ -62,6 +63,9 @@ is_from_remailer = attr "is_from_remailer"
 is_autoresponse = attr "is_autoresponse"
 is_forward_msg = attr "is_forward_msg"
 is_system_notification = attr "is_system_notification"
+nickname = attr "nickname"
+username = attr "username"
+mailhost_attr = attr "mailhost"
 
 forwardaddr :: N.Attr 
 forwardaddr = attr "forwardaddr"
