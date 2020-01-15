@@ -2,49 +2,48 @@
 -- # v_employee 
 -- ##########
 
--- # create a view for p1_employee for prodcut focusing on daily usage. 
+-- # create a view for p1_employee for product focusing on daily usage. (enhanced email) 
 -- # SELECT count(eid) -- 30
 CREATE OR REPLACE view p1_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status
 FROM employeelist emp 
 WHERE eid <= 30;
 
--- # create a view for p2_employee for prodcut focusing on pivacy. 
+-- # create a view for p2_employee for prodcut focusing on pivacy. (privacy-focus email)
 -- # create signature and public_key
 -- # SELECT count(eid) -- 30
+-- CASE    
+-- WHEN  status is NULL THEN  concat(firstname, " ", lastname)
+-- WHEN status = "N/A" THEN concat(firstname, " ", lastname)
+-- WHEN  status is not NULL THEN concat(firstname, " ", lastname, '    |    ', status, "   ", email_id)
+-- END AS sign, 
 CREATE OR REPLACE view p2_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status, 
-CASE    
-WHEN  status is NULL THEN  concat(firstname, " ", lastname)
-WHEN status = "N/A" THEN concat(firstname, " ", lastname)
-WHEN  status is not NULL THEN concat(firstname, " ", lastname, '    |    ', status, "   ", email_id)
-END AS sign, 
+conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
 conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE eid > 30 AND eid <= 60;
 
--- # create a view for p3_employee for prodcut focusing on group usage. 
+-- # create a view for p3_employee for prodcut focusing on group usage. (group email)
 -- # SELECT count(eid) -- 30
 CREATE OR REPLACE view p3_employee_view AS 
-SELECT eid, firstname, lastname, email_id, folder, status
+SELECT eid, firstname, lastname, email_id, folder, status,
+conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
+conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE  eid > 60 AND eid <= 90;
 
--- # create a view for p4_employee for prodcut with all feature enabled. 
+-- # create a view for p4_employee for prodcut with all feature enabled. (premium email)
 -- # create signature and public_key
 -- # SELECT count(eid) -- 30
 CREATE OR REPLACE view p4_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status, 
-CASE    
-WHEN  status is NULL THEN  concat(firstname, " ", lastname)
-WHEN status = "N/A" THEN concat(firstname, " ", lastname)
-WHEN  status is not NULL THEN concat(firstname, " ", lastname, '    |    ', status, "   ", email_id)
-END AS sign, 
+conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
 conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE eid > 90 AND eid <= 120;
 
--- # create a view for p3_employee for prodcut with all feature disabled. 
+-- # create a view for p3_employee for prodcut with all feature disabled. (basic email)
 -- SELECT count(eid) -- 29
 CREATE OR REPLACE view p5_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status
@@ -58,7 +57,7 @@ CREATE OR REPLACE view forward_msg_view as
 SELECT eid, email2 AS forwardaddr
 FROM employeelist
 WHERE eid <= 30 or (eid > 90 AND eid <= 120 )
-order by eid ;
+order by eid;
 
 
 -- ##########
