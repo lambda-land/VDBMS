@@ -291,6 +291,46 @@ q_mailhost =
 
 vq_mailhost :: Algebra
 vq_mailhost = AChc mailhost q_mailhost Empty  
+
+--
+-- ** V-Queries for Feature Interactions
+--
+
+-- 1. Intent: Fix interaction SIGNATURE vs. FORWARDMESSAGES (1).
+q_join_rec_emp_msg :: Rename Algebra
+q_join_rec_emp_msg = genSubquery "q_join_rec_emp_msg" $ Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                    Join (genRenameAlgebra (joinTwoRelation messages recipientinfo "mid"))
+                         (genRenameAlgebra (tRef employeelist)) join_cond
+          where join_cond = C.Comp EQ (C.Att sender) (C.Att email_id)
+
+enronQ1 :: Algebra
+enronQ1 = Proj (map trueAttr [sender, rvalue, forwardaddr, is_signed]) $ genRenameAlgebra $ 
+            Join q_join_rec_emp_msg (genRenameAlgebra (tRef forward_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
+
+enronVQ1 :: Algebra
+enronVQ1 = AChc signature (AChc forwardmessages enronQ1 q_signature) q_forwardmessages
+
+-- 2. Intent: Fix interaction SIGNATURE vs. REMAILMESSAGE.
+enronQ2 :: Algebra
+enronQ2 = Proj [trueAttr is_signed, trueAttr rvalue] $ genRenameAlgebra $ 
+                    Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                      joinTwoRelation messages recipientinfo "mid"
+
+enronVQ2 :: Algebra
+enronVQ2 = AChc (signature `F.Or` remailmessage) enronQ2 Empty
+
+-- 3. Intent: Fix interaction ENCRYPTION vs. AUTORESPONDER
+enronQ3 :: Algebra
+enronQ3 = Proj (map trueAttr [is_encrypted, rvalue, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
+            Join q_join_rec_emp_msg (genRenameAlgebra (tRef auto_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr auto_msg "eid"))
+              vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
+
+enronVQ3 :: Algebra
+enronVQ3 = AChc encryption (AChc autoresponder enronQ1 q_encryption) q_autoresponder
+
 {-
 -- FNE: The paper name: Fundamental Nonmodularity in Electronic Mail
 -- 
