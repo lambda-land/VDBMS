@@ -329,7 +329,130 @@ enronQ3 = Proj (map trueAttr [is_encrypted, rvalue, vautomsg_subject, vautomsg_b
               vautomsg_body    = qualifiedAttr auto_msg "body"
 
 enronVQ3 :: Algebra
-enronVQ3 = AChc encryption (AChc autoresponder enronQ1 q_encryption) q_autoresponder
+enronVQ3 = AChc encryption (AChc autoresponder enronQ4 q_encryption) q_autoresponder
+
+-- 4. Intent: Fix interaction ENCRYPTION vs. FORWARDMESSAGES.
+enronQ4 :: Algebra
+enronQ4 = Proj (map trueAttr [is_encrypted, rvalue, forwardaddr]) $ genRenameAlgebra $ 
+            Join q_join_rec_emp_msg (genRenameAlgebra (tRef forward_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
+
+enronVQ4 :: Algebra
+enronVQ4 = AChc encryption (AChc forwardmessages enronQ4 q_encryption) q_forwardmessages
+
+-- 5. Intent: Fix interaction ENCRYPTION vs. REMAILMESSAGE.
+enronQ5 :: Algebra
+enronQ5 = Proj (map trueAttr [is_encrypted, sender, rvalue]) $ genRenameAlgebra $ 
+                    Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                      joinTwoRelation messages recipientinfo "mid"
+
+enronVQ5 :: Algebra
+enronVQ5 = AChc encryption (AChc remailmessage enronQ5 q_encryption) q_remailmessage
+
+-- 6. Intent: Fix interaction AUTORESPONDER vs. FORWARDMESSAGES.
+enronQ6 :: Algebra
+enronQ6 = Proj (map trueAttr [sender, rvalue, forwardaddr, vautomsg_eid, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
+            Join (genRenameAlgebra (Join q_join_rec_emp_msg (genRenameAlgebra (tRef auto_msg)) join_cond1))
+                 (genRenameAlgebra (tRef forward_msg)) join_cond2
+        where join_cond1 = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr auto_msg "eid"))
+              join_cond2 = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
+              vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
+              vautomsg_eid     = qualifiedAttr auto_msg "eid"
+enronVQ6 :: Algebra
+enronVQ6 = AChc autoresponder (AChc forwardmessages enronQ6 q_autoresponder) q_forwardmessages
+
+-- 7. Intent: Fix interaction AUTORESPONDER vs. REMAILMESSAGE (1).
+enronQ7 :: Algebra
+enronQ7 = Proj (map trueAttr [sender, rvalue, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
+            Join q_join_rec_emp_msg (genRenameAlgebra (tRef auto_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr auto_msg "eid"))
+              vautomsg_subject = qualifiedAttr auto_msg "subject"
+              vautomsg_body    = qualifiedAttr auto_msg "body"
+
+enronVQ7 :: Algebra
+enronVQ7 = AChc autoresponder (AChc remailmessage enronQ7 q_autoresponder) q_remailmessage
+
+-- 8. Intent: Fix interaction AUTORESPONDER vs. FILTERMESSAGES.
+enronQ8 :: Algebra
+enronQ8 = Proj [trueAttr is_autoresponse] $ genRenameAlgebra $ 
+                    Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                      tRef messages
+enronVQ8 :: Algebra
+enronVQ8 = AChc autoresponder (AChc filtermessages enronQ8 q_autoresponder) q_filtermessages
+    
+-- 9. Intent: Fix interaction AUTORESPONDER vs. MAILHOST.   
+enronQ9 :: Algebra
+enronQ9 = Proj [trueAttr is_system_notification] $ genRenameAlgebra $ 
+                    Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                      tRef messages
+enronVQ9 :: Algebra
+enronVQ9 = AChc (autoresponder `F.And` mailhost) enronQ9 Empty
+         
+-- 10. Intent: Fix interaction FORWARDMESSAGES vs. FORWARDMESSAGES.
+enronQ10 :: Algebra
+enronQ10 = Proj (map trueAttr [sender, rvalue, forwardaddr]) $ genRenameAlgebra $ 
+            Join q_join_rec_emp_msg (genRenameAlgebra (tRef forward_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
+
+enronVQ10 :: Algebra
+enronVQ10 = AChc forwardmessages enronQ10 Empty
+     
+-- 11. Intent: Fix interaction FORWARDMESSAGES vs. REMAILMESSAGE (1).
+temp :: Rename Algebra
+temp = genSubquery "temp" $ joinTwoRelation employeelist forward_msg "eid"
+
+enronQ11 :: Algebra
+enronQ11 = Proj (map trueAttr [email_id, forwardaddr, pseudonym]) $ genRenameAlgebra $ 
+            Join temp (genRenameAlgebra (tRef remail_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "temp" "eid")) (C.Att (qualifiedAttr remail_msg "eid"))
+
+enronVQ11 :: Algebra
+enronVQ11 = AChc (remailmessage `F.Or` forwardmessages) enronQ11 Empty
+
+-- 12. Intent: Fix interaction FORWARDMESSAGES vs. FILTERMESSAGES.
+enronQ12 :: Algebra
+enronQ12 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
+            Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+              joinTwoRelation employeelist forward_msg "eid"
+
+enronVQ12 :: Algebra
+enronVQ12 = AChc (forwardmessages `F.Or` filtermessages ) enronQ12 Empty
+
+-- 13. Intent:Fix interaction FORWARDMESSAGES vs. MAILHOST.
+enronQ13 :: Algebra
+enronQ13 = Proj (map trueAttr [rvalue, username, is_forward_msg]) $ genRenameAlgebra $ 
+            Join q_join_rec_emp_msg (genRenameAlgebra (tRef mail_host)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr mail_host "eid"))
+
+enronVQ13 :: Algebra
+enronVQ13 = AChc (forwardmessages `F.Or` mailhost ) enronQ13 Empty
+
+-- 14. Intent:Fix interaction REMAILMESSAGE vs. MAILHOST
+enronQ14 :: Algebra
+enronQ14 = Proj [trueAttr sender] $ genRenameAlgebra $ 
+                    Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                      tRef messages
+enronVQ14 :: Algebra
+enronVQ14 = AChc (remailmessage `F.Or` mailhost ) enronQ14 Empty
+
+-- 15. Intent: Fix interaction FILTERMESSAGES vs. MAILHOST.
+enronQ15 :: Algebra
+enronQ15 = Proj [trueAttr is_system_notification, trueAttr sender] $ genRenameAlgebra $ 
+                    Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
+                      tRef messages
+
+enronVQ15 :: Algebra
+enronVQ15 = AChc (filtermessages `F.Or` mailhost ) enronQ14 Empty
+
+-- 16. Intent: Fix interaction SIGNATURE vs. FORWARDMESSAGES (2).
+enronQ16 :: Algebra
+enronQ16 =  Proj (map trueAttr [is_signed, rvalue, forwardaddr]) $ genRenameAlgebra $ 
+            Join q_join_rec_emp_msg (genRenameAlgebra (tRef forward_msg)) join_cond
+        where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
+
+enronVQ16 :: Algebra
+enronVQ16 =  AChc signature (AChc forwardmessages enronQ16 q_signature) q_forwardmessages
 
 {-
 -- FNE: The paper name: Fundamental Nonmodularity in Electronic Mail
