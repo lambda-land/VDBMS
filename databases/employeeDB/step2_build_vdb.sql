@@ -21,7 +21,7 @@ CREATE TABLE `v_otherpersonnel` (
   `title` varchar(50) NOT NULL,
   `deptname` varchar(40) NOT NULL,
   `presCond` varchar(31) DEFAULT NULL
-) ;
+);
 
 INSERT INTO v_otherpersonnel (empno, name, hiredate,title, deptname, presCond)
 SELECT empno, name,hiredate,title, deptname, "v1" FROM v1_otherpersonnel_view;
