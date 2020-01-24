@@ -21,6 +21,8 @@ Definition att : Type := string.
 Inductive op : Type :=
   | eq | GTE | LTE | GT | LT | neq.
 
+(*assumption: attributes' domain is nat. *)
+(* meet is and. join is or. *)
 Inductive cond : Type :=
   | litCB  : bool -> cond
   | relOPI : op -> att -> nat -> cond
@@ -60,6 +62,10 @@ Definition relS : Type := (r * atts) % type.
 
 Inductive setop : Type := union | inter | diff.
 
+(* @meeting: not sure about rel. should it get r or relS?? in RA is just the relation name,
+although for proving purposes consider it relation schema might not be a bad idea.
+still I'm not sure. same goes for vquery. this affects the typing relation since now we don't 
+need to pass the schema. SHOULD DISCUSS THIS!!*)
 Inductive query : Type :=
   | rel   : relS    -> query
   | sel   : cond    -> query -> query 
@@ -70,6 +76,8 @@ Inductive query : Type :=
 
 Definition vatt : Type := (att * fexp)%type. (*assuming always annotated; could've used option*)
                                               (*| AnnotAtt : att -> option fexp -> vatt.*)
+
+(* @Fariba: what is this lemma saying? *)
 Lemma vatt_dec : forall s1 s2 : vatt, {s1 = s2} + {s1 <> s2}.
 Proof. Admitted.
 
@@ -79,7 +87,7 @@ Definition vatts : Type := list vatt.
 Assuming variational attribute list from schema are also explicitly typed.
 Thus not looking up pc(rel(a)) *)
 
-(** A[]_c *)
+(** A[[.]]_c *)
 Fixpoint configVAttSet (vA : vatts) (c : config) : atts :=
   match vA with
   | nil                  => nil
@@ -186,6 +194,7 @@ Proof.
           rewrite <- IHA; simpl; rewrite E'; reflexivity.
 Qed. 
 
+(* vatts^fexp *)
 Fixpoint annot_dist_helper (v : vatts) (e: fexp) : vatts := 
  match v with
  | nil => nil
@@ -195,8 +204,10 @@ Fixpoint annot_dist_helper (v : vatts) (e: fexp) : vatts :=
 
 Definition annot_dist ( X : (vatts * fexp)) : vatts := annot_dist_helper (fst X) (snd X).
 
+(* @Fariba: I'm assuming that this isn't completed yet. *)
 Definition avatts_union (A A': (vatts * fexp)) : vatts := nil.
 
+(* @Fariba: I'm assuming that this isn't completed yet. *)
 Definition avatts_inter (A A': (vatts * fexp)) : vatts := nil.
 
 
@@ -251,6 +262,7 @@ Proof.
     
 Admitted.
 
+(* @Fariba: shouldn't forall c be moved to the right hand side of -> ? *)
 Lemma subsump_vq_to_q : forall X X' c, subsump_vqtype X X' -> 
                    (*~( exists c, ((E[[snd X]] c) &&  (negb (E[[snd X']] c)) ) = true )*)
                    ( (E[[snd X]] c) = true -> (E[[snd X']] c) = true )
@@ -295,6 +307,7 @@ Fixpoint equiv_qtype_bool (A A': qtype) : bool :=
                    end
     end.
 
+(* qtype1 = qtype1 *)
 Theorem equiv_qtype_bool_refl: forall A, equiv_qtype_bool A A = true.
 Proof.
   intros. induction A. 
@@ -309,6 +322,7 @@ Lemma or_dist_implies: forall (X: Type) (P Q R: X -> Prop),
 Proof.
 Admitted.
 
+(* @Fariba: shouldn't this be two sided, i.e., instead of -> shouldn't it be <_> ? *)
 Theorem equiv_prop_bool: forall A A', equiv_qtype A A' -> equiv_qtype_bool A A' = true.
 Proof.
  (*intros. unfold equiv_qtype in H. unfold equiv_qtype_bool. 
@@ -336,6 +350,9 @@ Admitted.
 Admitted.*)
 Search Set.
 Inductive Empty_set : Set := .
+
+(* @Fariba: shouldn't forall c be on the right hand side of implication? *)
+(* @Fariba: also shouldn't be <-> instead of _> ? *)
 Theorem equiv_vq_to_q : forall X X' c, equiv_vqtype X X' -> 
                    (E[[ snd X ]] c) = (E[[ snd X']] c)
                    /\ equiv_qtype_bool (configVQtype X c) (configVQtype X' c) = true.
@@ -389,7 +406,11 @@ Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
        avatts_inter (A1, e1) (A2, e2) = nil ->
        vtype e  (prod_v vq1 vq2) (avatts_union (A1, litB true) (A2, litB true) , (e1 /\(F) e2) ).
 
-
+(* @Fariba: this must take schema as input. I understand that you can write the typing rule
+withou passing the schema and that's because instead of referring to a relation name in the query
+language that you've defined you're referring to the relation name and its schema. I'm not sure how 
+I feel about this since it's getting further away from our written draft. *)
+(* @Fariba: you need to have a typing relation for conditions to be able to write the select_E rule. *)
 Inductive type : query -> qtype -> Prop :=
   | Relation_E : forall rn A,
        type (rel (rn, A)) A
@@ -423,9 +444,13 @@ Fixpoint type1 (q:query) : qtype :=
                           let A2 := type q2 in
                               if equiv_atts A1 A2 && *)
 
+(* @Fariba: just as a reminder. the initial context will be the schema presence condition. *)
 Definition empty_context := litB true.
 (** Variation Preservation*)
 
+(* @Fariba: I didn't go over this, I cannot even compile it yet and I don't have time to get into it this week.
+you need to prove variationa preserving for typing relation of conditions to be able to prove variation 
+preserving for the selection case. *)
 Theorem variation_preservation : forall vq T, 
        vtype (empty_context) vq T ->
        forall c, type1 (configVQuery vq c) = configVQtype T c.

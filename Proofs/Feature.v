@@ -1,5 +1,5 @@
 (* Feature *)
-Set Warnings "-notation-overridden,-parsing".
+Set Warnings "-notation-overridden,-parsing". 
 Require Import Bool.
 Require Import String.
 Require Import Relations.Relation_Definitions.
@@ -14,10 +14,11 @@ Module Feature.
 Definition fname := string.
 
 (** Feature Exression Syntax. *)
-Inductive fexp : Type :=
+(* comp is negation. meet is conjunction. join is disjunction.*)
+Inductive fexp : Type := 
   | litB : bool -> fexp
   | litF : fname -> fexp
-  | comp : fexp -> fexp
+  | comp : fexp -> fexp 
   | meet : fexp -> fexp -> fexp
   | join : fexp -> fexp -> fexp.
 
@@ -41,7 +42,7 @@ Fixpoint semE (e : fexp) (c : config) : bool :=
 
 Notation "E[[ e ]] c" := (semE e c) (at level 99, left associativity).
 
-(** Feature Expression Equivalemce *)
+(** Feature Expression Equivalence *)
 Definition equivE : relation fexp :=
   fun e e' => forall c, (semE e c) = (semE e' c).
 
@@ -50,6 +51,7 @@ Infix "=e=" := equivE (at level 70) : type_scope.
 (** Feature Equivalence is an Equivalence *)
 
 (** Feature equivalence is reflexive. *)
+(* e \equiv e *)
 Remark equivE_refl : Reflexive equivE.
 Proof.
   intros x c.
@@ -57,6 +59,7 @@ Proof.
 Qed.
 
 (** Feature equivalence is symmetric. *)
+(* e \equiv e' --> e' \equiv e *)
 Remark equivE_sym : Symmetric equivE.
 Proof.
   intros x y H c.
@@ -65,6 +68,7 @@ Proof.
 Qed.
 
 (** Feature equivalence is transitive. *)
+(* e \equiv e' and e' \equiv e'' --> e \equiv e'' *)
 Remark equivE_trans : Transitive equivE.
 Proof.
   intros x y z H1 H2 c.
@@ -90,9 +94,11 @@ Definition sat (e:fexp): Prop :=
 Definition taut (e:fexp): Prop :=
   forall c, semE e c = true.
 
+(* lemma not_sat_not_prop relates sat and not_sat with each other.*)
 Definition not_sat (e:fexp): Prop :=
   forall c, semE e c = false.
 
+(* @Fariba: not sure what you mean by implies and if you're defining it correctly. *)
 Definition implies (e1 e2:fexp) (c:config): Prop :=
   semE e1 c = true -> semE e2 c = true.
 
@@ -121,6 +127,7 @@ Proof.
    rewrite not_true_iff_false. apply H.
 Qed.
 
+(* not_sat (e1 /\(F) ~(F)e2) is saying that e2 is a subset of e1, i.e., e2 is more specific than e1. *)
 Theorem sat_taut_comp : forall e1 e2, 
            (forall c, semE e1 c = true -> semE e2 c = true) 
                   <-> not_sat (e1 /\(F) ~(F)e2).
