@@ -451,6 +451,8 @@ Definition empty_context := litB true.
 (* @Fariba: I didn't go over this, I cannot even compile it yet and I don't have time to get into it this week.
 you need to prove variationa preserving for typing relation of conditions to be able to prove variation 
 preserving for the selection case. *)
+(* @Fariba: the empty context must be schema's presence condition. that's another reason why you 
+need to pass the schema to the typing relation. *)
 Theorem variation_preservation : forall vq T, 
        vtype (empty_context) vq T ->
        forall c, type1 (configVQuery vq c) = configVQtype T c.
