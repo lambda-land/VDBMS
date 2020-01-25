@@ -8,6 +8,7 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.UseCases.SmartConstructor
 import VDBMS.VDB.Schema.Relational.Types
+import VDBMS.Features.Config (Config)
 
 -- 
 -- Features
@@ -18,6 +19,29 @@ empv2 = Ref (Feature "v2")
 empv3 = Ref (Feature "v3")
 empv4 = Ref (Feature "v4")
 empv5 = Ref (Feature "v5")
+
+-- 
+--  * Configuration of variants
+-- 
+empConfig1 :: Config Bool
+empConfig1 (Feature "v1") = True
+empConfig1 _              = False
+
+empConfig2 :: Config Bool
+empConfig2 (Feature "v2") = True
+empConfig2 _              = False
+
+empConfig3 :: Config Bool
+empConfig3 (Feature "v3") = True
+empConfig3 _              = False
+
+empConfig4 :: Config Bool
+empConfig4 (Feature "v4") = True
+empConfig4 _              = False
+
+empConfig5 :: Config Bool
+empConfig5 (Feature "v5") = True
+empConfig5 _              = False
 
 -- 
 -- Relations
@@ -42,7 +66,7 @@ title     = attr "title"
 deptname  = attr "deptname"
 salary    = attr "salary"
 deptno    = attr "deptno"
-managerno = attr"managerno"
+managerno = attr "managerno"
 sex       = attr "sex"
 firstname = attr "firstname"
 lastname  = attr "lastname"
@@ -66,8 +90,6 @@ birthdate_ = N.Attribute "birthdate"
 --
 -- Pure Relational Schemas For Employee Evolution 
 --
-
---  ** Schema Variant 1 (S1)
 empSchema1 :: RSchema 
 empSchema1 = constructRSchema  [ ( engineerpersonnel,  engineerpersonnel_v1)
                                , ( otherpersonnel,    otherpersonnel_v1)
@@ -212,10 +234,10 @@ employeeFeatureModel =  (empv1 `And` (Not empv2) `And` (Not empv3) `And` (Not em
 empVSchema :: Schema 
 empVSchema = (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vrelation)
                                                        , (empv1, otherpersonnel, otherpersonnel_vrelation)
-                                                       , (empv2 `And` empv3 `And` empv4 `And` empv5, empacct, empacct_vrelation)
-                                                       , (empv1 `And` empv2 `And` empv3 `And` empv4, job, job_vrelation)
-                                                       , (empv3 `And` empv4 `And` empv5, dept, dept_vrelation)
-                                                       , (empv4 `And` empv5, empbio, empbio_vrelation)])
+                                                       , (empv2 `Or` empv3 `Or` empv4 `Or` empv5, empacct, empacct_vrelation)
+                                                       , (empv1 `Or` empv2 `Or` empv3 `Or` empv4, job, job_vrelation)
+                                                       , (empv3 `Or` empv4 `Or` empv5, dept, dept_vrelation)
+                                                       , (empv4 `Or` empv5, empbio, empbio_vrelation)])
 
 engineerpersonnel_vrelation, otherpersonnel_vrelation, empacct_vrelation, job_vrelation, dept_vrelation, empbio_vrelation :: [(FeatureExpr, N.Attribute, SqlType)] 
 engineerpersonnel_vrelation =  [ (Lit True, empno_, TInt32)

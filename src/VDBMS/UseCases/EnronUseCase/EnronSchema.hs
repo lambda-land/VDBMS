@@ -7,19 +7,54 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.UseCases.SmartConstructor
 import VDBMS.VDB.Schema.Relational.Types
+import VDBMS.Features.Config (Config)
 
 -- 
 --  * Features
 -- 
 addressbook, signature, encryption, filtermessages, autoresponder, forwardmessages, mailhost, remailmessage :: FeatureExpr
-addressbook    = Ref (Feature "addressbook")
-signature      = Ref (Feature "signature")
-encryption     = Ref (Feature "encryption")
-filtermessages = Ref (Feature "filtermessages")
-autoresponder  = Ref (Feature "autoresponder")
+addressbook     = Ref (Feature "addressbook")
+signature       = Ref (Feature "signature")
+encryption      = Ref (Feature "encryption")
+filtermessages  = Ref (Feature "filtermessages")
+autoresponder   = Ref (Feature "autoresponder")
 forwardmessages = Ref (Feature "forwardmessages")
-remailmessage = Ref (Feature "remailmessage")
-mailhost      = Ref (Feature "mailhost")
+remailmessage   = Ref (Feature "remailmessage")
+mailhost        = Ref (Feature "mailhost")
+
+-- 
+--  * Configuration of variants
+-- 
+enronConfig1 :: Config Bool
+enronConfig1 (Feature "forwardmessages") = True
+enronConfig1 (Feature "filtermessages")  = True
+enronConfig1 _                           = False
+
+enronConfig2 :: Config Bool
+enronConfig2 (Feature "signature")     = True
+enronConfig2 (Feature "encryption")    = True
+enronConfig2 (Feature "remailmessage") = True
+enronConfig2 _                         = False
+
+enronConfig3 :: Config Bool
+enronConfig3 (Feature "addressbook")   = True
+enronConfig3 (Feature "autoresponder") = True
+enronConfig3 (Feature "mailhost")      = True
+enronConfig3 _                         = False
+
+enronConfig4 :: Config Bool
+enronConfig4 (Feature "forwardmessages") = True
+enronConfig4 (Feature "filtermessages")  = True
+enronConfig4 (Feature "signature")       = True
+enronConfig4 (Feature "encryption")      = True
+enronConfig4 (Feature "remailmessage")   = True
+enronConfig4 (Feature "addressbook")     = True
+enronConfig4 (Feature "autoresponder")   = True
+enronConfig4 (Feature "mailhost")        = True
+enronConfig4 _                           = False
+
+enronConfig5 :: Config Bool
+enronConfig5 _ = False
 
 -- | FeatureExpr for  (signature, addressbook, filtermessages)
 sign_addr_filter :: FeatureExpr
