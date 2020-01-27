@@ -1,6 +1,10 @@
 -- | pushs the vschema onto the query so that
 --   configuring a query without passing the schema
 --   would result in the correct relational query.
+-- Instead of defining new helpers, we could have
+-- used the type system.
+-- This is referred to as constraining the query 
+-- by schema in our vldb paper.
 module VDBMS.QueryGen.VRA.PushSchToQ (
 
        pushSchToQ
