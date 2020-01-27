@@ -1,4 +1,7 @@
 -- | generates sql queries with ctes given a sql query.
+-- Incomplete for now. After experiments if subqueries have 
+-- been used a lot in a query, I'll implement this.
+-- The theory is sitting on my desk though.
 module VDBMS.QueryGen.Sql.GenSqlWithCTE (
 
        evalCteState
