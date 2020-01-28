@@ -1,7 +1,11 @@
 -- | Variation minimization of variational relational queries.
 -- ASSUMPTION: queries have been type checked before being
 --             optimized!! 
-module VDBMS.QueryLang.RelAlg.Variational.Minimization where 
+module VDBMS.QueryLang.RelAlg.Variational.Minimization (
+
+       appMin
+       
+) where 
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra 
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F

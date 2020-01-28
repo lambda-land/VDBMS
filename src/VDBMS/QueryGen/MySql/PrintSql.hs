@@ -4,6 +4,7 @@ module VDBMS.QueryGen.MySql.PrintSql (
 
        ppSql
        , ppTemp
+       , ppSqlString
 
 ) where 
 
@@ -13,6 +14,10 @@ import VDBMS.VDB.Name
 import Prelude hiding ((<>), concat)
 import Text.PrettyPrint
 import Data.Maybe (isNothing, isJust, fromJust)
+
+-- | returns the string of sql select.
+ppSqlString :: SqlSelect -> String 
+ppSqlString = render . ppSql
 
 -- | prints sql select queries.
 ppSql :: SqlSelect -> Doc
