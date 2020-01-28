@@ -14,6 +14,7 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.SqlVtable
 import VDBMS.DBMS.Table.SqlVariantTable
 import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
+import VDBMS.Features.Feature (Feature)
 
 ------------------- construct vtable for approach1 -------------------
 
@@ -46,13 +47,13 @@ sqlVtables2VTable _ ts = mkVTable tabelSchema table
 --     4) union all res of 3
 --   NOTES: DOESN'T WORK RN DUE TO CONF2FEXP AND FEXP2CONF! 
 --          TODO: FIX AFTER SIGMOD SUBMISSION!!!!
-sqlVariantTables2VTable :: PCatt -> [SqlVariantTable] -> Table
-sqlVariantTables2VTable p ts = mkVTable tabelSchema table 
+sqlVariantTables2VTable :: [Feature] -> PCatt -> [SqlVariantTable] -> Table
+sqlVariantTables2VTable fs p ts = mkVTable tabelSchema table 
   where
-    tss         = map constructSchemaFromSqlVariantTable ts -- [TableSchema]
+    tss         = map (constructSchemaFromSqlVariantTable fs) ts -- [TableSchema]
     tabelSchema = combineTableSchema tss -- TableSchema
     ts'         = map (flip conformSqlVariantTableToSchema $ getObj tabelSchema) ts -- [SqlVariantTable]
-    ts''        = map (addTuplePresCond p) ts' -- [SqlTable]
+    ts''        = map (addTuplePresCond fs p) ts' -- [SqlTable]
     table       = concat ts''
 
 

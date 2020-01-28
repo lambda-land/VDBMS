@@ -22,6 +22,16 @@ forwardmessages = Ref (Feature "forwardmessages")
 remailmessage   = Ref (Feature "remailmessage")
 mailhost        = Ref (Feature "mailhost")
 
+enronFeatures :: [Feature]
+enronFeatures = [Feature "addressbook"
+               , Feature "signature"
+               , Feature "encryption"
+               , Feature "filtermessages"
+               , Feature "autoresponder"
+               , Feature "forwardmessages"
+               , Feature "remailmessage"
+               , Feature "mailhost"]
+
 -- 
 --  * Configuration of variants
 -- 
@@ -158,7 +168,7 @@ enronFeatureModel = Lit True
 -- * Enron V-Schema for Software Product Lines
 --
 enronVSchema :: Schema 
-enronVSchema = (enronFeatureModel, constructOptRelMap [ (Lit True, employeelist, employeelist_vrelation)
+enronVSchema = (enronFeatures, (enronFeatureModel, constructOptRelMap [ (Lit True, employeelist, employeelist_vrelation)
                                                       , (Lit True, messages, messages_vrelation)
                                                       , (Lit True, recipientinfo, recipientinfo_vrelation)
                                                       , (Lit True, referenceinfo, referenceinfo_vrelation)
@@ -168,7 +178,7 @@ enronVSchema = (enronFeatureModel, constructOptRelMap [ (Lit True, employeelist,
                                                       , (autoresponder, auto_msg, auto_msg_vrelation)
                                                       , (addressbook, alias, alias_vrelation)
                                                       , (mailhost, mail_host, mail_host_vrelation)
-                                                      ])
+                                                      ]))
 
 employeelist_vrelation, messages_vrelation, recipientinfo_vrelation, referenceinfo_vrelation, auto_msg_vrelation :: [(FeatureExpr, N.Attribute, SqlType)] 
 forward_msg_vrelation, remail_msg_vrelation, filter_msg_vrelation, mail_host_vrelation, alias_vrelation :: [(FeatureExpr, N.Attribute, SqlType)] 

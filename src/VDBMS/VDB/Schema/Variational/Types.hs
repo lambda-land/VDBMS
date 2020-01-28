@@ -10,6 +10,7 @@ module VDBMS.VDB.Schema.Variational.Types (
         , tschFexp
         , tschRowType
         , configSchema
+        , schFeatures
 
 ) where
 
@@ -42,7 +43,7 @@ type TableSchema = Opt RowType
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to
 --   the feature model, which defines the set of valid configurations.
-type Schema = Opt (Map Relation TableSchema)
+type Schema = ([Feature], Opt (Map Relation TableSchema))
 
 -- | Configures a variational schema and returns an empty 
 --   map if the configuration isn't valid.
@@ -146,15 +147,23 @@ instance Variational Schema where
 
   configure = configSchema_
 
-  optionalize_ s = optionalize (validConfsOfFexp (featureModel s)) s
+  optionalize_ s = optionalize (schFeatures s) (validConfsOfFexp (schFeatures s) (featureModel s)) s
+
+-- | All features.
+schFeatures :: Schema -> [Feature]
+schFeatures = fst
+
+-- | Schema.
+schema :: Schema -> Opt (Map Relation TableSchema)
+schema = snd
 
 -- | The feature model associated with a schema.
 featureModel :: Schema -> FeatureExpr
-featureModel = getFexp
+featureModel = getFexp . schema
 
 -- | Gets the structure of schema.
 schemaStrct :: Schema -> Map Relation TableSchema
-schemaStrct = getObj 
+schemaStrct = getObj . schema 
 
 -- | returns the table schema fexp.
 tschFexp :: TableSchema -> FeatureExpr

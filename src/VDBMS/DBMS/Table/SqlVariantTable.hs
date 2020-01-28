@@ -49,10 +49,10 @@ dropPresInVariantTable :: PCatt -> SqlVariantTable -> SqlVariantTable
 dropPresInVariantTable p t = updateVariant (dropPresInTable p (getVariant t)) t
 
 -- | generates the relation schema (rowtype) of a variant table.
-constructSchemaFromSqlVariantTable :: SqlVariantTable -> TableSchema
-constructSchemaFromSqlVariantTable t = (fexp, rowType)
+constructSchemaFromSqlVariantTable :: [Feature] -> SqlVariantTable -> TableSchema
+constructSchemaFromSqlVariantTable fs t = (fexp, rowType)
   where
-    fexp    = conf2fexp $ getConfig t 
+    fexp    = conf2fexp fs $ getConfig t 
     table   = getVariant t
     rowType = constRowTypeOfSqlTable fexp table
 -- constructSchemaFromSqlVariantTable :: SqlVariantTable -> TableSchema
@@ -81,10 +81,10 @@ conformSqlVariantTableToSchema t r = updateVariant
 --         attributes.
 -- DANGER: changed Attribute to (Attribute Nothing)
 -- MAY CAUSE PROBLEMS!!!
-addTuplePresCond :: PCatt -> SqlVariantTable -> SqlTable
-addTuplePresCond p vt = insertAttValToSqlTable (Attribute $ presCondAttName p) fexp t
+addTuplePresCond :: [Feature] -> PCatt -> SqlVariantTable -> SqlTable
+addTuplePresCond fs p vt = insertAttValToSqlTable (Attribute $ presCondAttName p) fexp t
   where 
-    fexp = fexp2sqlval $ conf2fexp $ getConfig vt
+    fexp = fexp2sqlval $ conf2fexp fs $ getConfig vt
     t    = getVariant vt
 
 

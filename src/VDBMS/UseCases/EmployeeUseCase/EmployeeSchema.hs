@@ -20,6 +20,13 @@ empv3 = Ref (Feature "v3")
 empv4 = Ref (Feature "v4")
 empv5 = Ref (Feature "v5")
 
+empFeatures :: [Feature]
+empFeatures = [Feature "v1"
+             , Feature "v2"
+             , Feature "v3"
+             , Feature "v4"
+             , Feature "v5"]
+
 -- 
 --  * Configuration of variants
 -- 
@@ -232,12 +239,12 @@ employeeFeatureModel =  (empv1 `And` (Not empv2) `And` (Not empv3) `And` (Not em
 -- Employee V-Schema for Employee Evolution
 --
 empVSchema :: Schema 
-empVSchema = (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vrelation)
+empVSchema = (empFeatures, (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vrelation)
                                                        , (empv1, otherpersonnel, otherpersonnel_vrelation)
                                                        , (empv2 `Or` empv3 `Or` empv4 `Or` empv5, empacct, empacct_vrelation)
                                                        , (empv1 `Or` empv2 `Or` empv3 `Or` empv4, job, job_vrelation)
                                                        , (empv3 `Or` empv4 `Or` empv5, dept, dept_vrelation)
-                                                       , (empv4 `Or` empv5, empbio, empbio_vrelation)])
+                                                       , (empv4 `Or` empv5, empbio, empbio_vrelation)]))
 
 engineerpersonnel_vrelation, otherpersonnel_vrelation, empacct_vrelation, job_vrelation, dept_vrelation, empbio_vrelation :: [(FeatureExpr, N.Attribute, SqlType)] 
 engineerpersonnel_vrelation =  [ (Lit True, empno_, TInt32)

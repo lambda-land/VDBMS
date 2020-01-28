@@ -28,6 +28,8 @@ instance Database SqliteHDBC where
 
   fetchQRows' (SqliteHDBC _ _ c) = fetch' c
 
+  runQ (SqliteHDBC _ _ _) = undefined
+
 
 
 -- ex1 = SqliteHDBC "../../../databases/testDB/test1.db" 

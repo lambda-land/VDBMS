@@ -28,5 +28,7 @@ instance Database PostgresHDBC where
 
   fetchQRows' (PostgresHDBC _ _ c) = fetch' c
 
+  runQ (PostgresHDBC _ _ _) = undefined
+
 
 -- ex1 = PostgresHDBC "../../../databases/testDB/test1.db" 

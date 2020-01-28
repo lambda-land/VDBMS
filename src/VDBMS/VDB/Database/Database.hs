@@ -2,10 +2,13 @@
 module VDBMS.VDB.Database.Database where
 
 import VDBMS.Features.Config
+import VDBMS.Features.Feature (Feature)
 import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Schema.Variational.Schema
-import VDBMS.VDB.Table.Table
+import VDBMS.VDB.Table.Table (Table)
+import VDBMS.DBMS.Table.Table (SqlTable)
 import VDBMS.VDB.Name (PCatt)
+import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 
 -- | A query sent to the db engine is just a string.
 type Query = String
@@ -24,10 +27,15 @@ class Database conn where
   disconnect :: conn -> IO ()
   schema :: conn -> Schema
   presCond :: conn -> PCatt
-  fetchQRows :: conn -> Query -> IO Table
-  fetchQRows' :: conn -> Query -> IO Table -- strict version
+  fetchQRows :: conn -> Query -> IO SqlTable
+  fetchQRows' :: conn -> Query -> IO SqlTable -- strict version
+  -- when you know which approach to use fill this in for instances.
+  runQ :: conn -> Algebra -> IO Table
+  -- | gets all features of VDB.
+  dbFeatures :: conn -> [Feature]
+  dbFeatures = schFeatures . schema
   -- | Gets all valid configuration of a vdb.
   getAllConfig :: conn -> [Config Bool]
-  getAllConfig c = validConfsOfFexp $ featureModel $ schema c
+  getAllConfig c = validConfsOfFexp (dbFeatures c) $ featureModel $ schema c
 
 

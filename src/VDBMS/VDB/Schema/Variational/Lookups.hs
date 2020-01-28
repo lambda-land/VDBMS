@@ -57,7 +57,7 @@ lookupAttFexpTypeInRowType a r =
 -- | Get the schema of a relation in the database, where 
 -- 	the relation schema is stored as a row type.
 lookupTableSch :: MonadThrow m => Relation -> Schema -> m TableSchema
-lookupTableSch r (_,m) = maybe (throwM $ MissingRelation r) return $ M.lookup r m
+lookupTableSch r s = maybe (throwM $ MissingRelation r) return $ M.lookup r (schemaStrct s)
 
 -- | Get the feature expression of a relation in a database.
 lookupRelationFexp :: MonadThrow m => Relation -> Schema -> m FeatureExpr

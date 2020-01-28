@@ -10,6 +10,7 @@ module VDBMS.Variational.Variational (
 import VDBMS.Features.Config 
 import VDBMS.Variational.Opt
 import VDBMS.Features.ConfFexp (confs2fexp)
+import VDBMS.Features.Feature (Feature)
 
 import Control.Arrow (first)
 import Data.List (groupBy)
@@ -52,9 +53,10 @@ class Variational a where
   -- | Groups the configurations of a vsem into a feature 
   --   expression and attaches it to the non-variational 
   --   thing.
+  -- confs2fexp hasn't been defined.
   optionalize :: Eq (NonVariational a)
-              => [Config Bool] -> a -> [VariantGroup a]
-  optionalize cs a = fmap (first confs2fexp) $ vsem_ cs a 
+              => [Feature] -> [Config Bool] -> a -> [VariantGroup a]
+  optionalize fs cs a = fmap (first (confs2fexp fs)) $ vsem_ cs a 
 
   -- | Optionalizes a variational thing in a more efficient manner.
   --   By generating a list of non-variational things with fexp 

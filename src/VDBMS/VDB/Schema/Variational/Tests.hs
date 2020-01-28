@@ -70,7 +70,7 @@ satRPC fm (r, tsch)
 satRsPC :: MonadThrow m => Schema -> m Bool 
 satRsPC s = foldM (\f p -> satRPC fm p >>= return . ((&&) f)) True sList
   where
-    sList = (toList . getObj) s 
+    sList = (toList . schemaStrct) s 
     fm = featureModel s
 
 -- | checks if an attribute pc is satisfiable.
@@ -100,7 +100,7 @@ satRelAsPc fm (r, tsch)
 satAsPC :: MonadThrow m => Schema -> m Bool
 satAsPC s = foldM (\f p -> satRelAsPc fm p >>= (return . (&&) f)) True sList
   where 
-    sList = (toList . getObj) s 
+    sList = (toList . schemaStrct) s 
     fm = featureModel s
 
 
