@@ -29,8 +29,10 @@ runQ0 conn vq =
      vq_type <- typeOfQuery vq vsch_pc vsch
      let vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
+         -- try removing opt
          ra_qs = map (\c -> (c, configure c vq_constrained_opt)) configs
          sql_qs = fmap (second (ppSqlString . genSql . transAlgebra2Sql)) ra_qs
+         -- try removing gensql
          sqlTables = fmap (second (fetchQRows conn)) sql_qs
      return undefined
 
