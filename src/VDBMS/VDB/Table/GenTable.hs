@@ -1,21 +1,68 @@
 -- | Generates vtables from results of quereis.
 module VDBMS.VDB.Table.GenTable (
 
-        sqlVtables2VTable,
-        sqlVariantTables2VTable,
-        adjustVTable2TableSch
+        -- sqlVtables2VTable,
+        -- sqlVariantTables2VTable,
+        -- adjustVTable2TableSch
+        varSqlTables2Table
 
 ) where 
 
-import VDBMS.VDB.Table.Core
+import VDBMS.VDB.Table.Core (Table, mkVTable)
 import VDBMS.VDB.Name (PCatt)
-import VDBMS.Variational.Opt
-import VDBMS.VDB.Schema.Variational.Schema
-import VDBMS.DBMS.Table.SqlVtable
-import VDBMS.DBMS.Table.SqlVariantTable
-import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
-import VDBMS.Features.Feature (Feature)
+-- import VDBMS.Variational.Opt
+import VDBMS.VDB.Schema.Variational.Schema (TableSchema)
+import VDBMS.Features.Variant (Variant)
+import VDBMS.DBMS.Table.SqlVtable (SqlVtable)
+import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
+-- import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
+import VDBMS.Features.FeatureExpr.FeatureExpr (Feature, FeatureExpr)
+import VDBMS.DBMS.Table.Table (SqlTable)
 
+
+-- 
+-- TODO: PUT FUNCS IN RIGHT FILES!!!!!!!!!
+-- 
+
+-- | drops tuples that given config in the variant
+--   their pres cond is unsat. the passed fexp is the
+--   presence condition of the entire table.
+dropUnsatTuples :: FeatureExpr -> SqlVariantTable -> SqlVariantTable
+dropUnsatTuples f t = undefined
+
+-- | drops the pc of tuples from a sqltable
+dropPCAttFromTable :: PCatt -> SqlTable -> SqlTable
+dropPCAttFromTable = undefined
+
+-- | drops the pc of tuples from a SqlVariantTable (which is variant sqltable).
+dropPCAttFromSqlTable :: PCatt -> SqlVariantTable -> SqlVariantTable
+dropPCAttFromSqlTable = undefined
+
+-- | takes the schema of a variational table (ie. tableschema)
+--   and adds the key value pairs of attributes that are missing
+--   from the variant table to it with the value NULL.
+adjustSqlTable2TableSch :: TableSchema -> SqlVariantTable -> SqlVariantTable
+adjustSqlTable2TableSch = undefined
+
+-- | turns a sqltable to a sqlvtable.
+-- type SqlVtable = Opt SqlTable
+sqlTable2SqlVTable :: [Feature] -> SqlVariantTable -> SqlVtable
+sqlTable2SqlVTable = undefined
+
+-- | combines a list of sqltables s.t. it disjuncts the pc 
+--   of the same tuple.
+combineSqlTables :: [SqlTable] -> SqlTable
+combineSqlTables = undefined
+
+-- | takes everything needed to combine a list of variant sqltables
+--   to a table.
+varSqlTables2Table :: [Feature] -> FeatureExpr -> PCatt 
+                   -> TableSchema 
+                   -> [SqlVariantTable]
+                   -> Table
+varSqlTables2Table fs t_pc pc t_sch ts = undefined
+
+{--
 ------------------- construct vtable for approach1 -------------------
 
 -- | constructs a vtable from a list sqlvtables.
@@ -64,6 +111,6 @@ sqlVariantTables2VTable fs p ts = mkVTable tabelSchema table
 adjustVTable2TableSch :: TableSchema -> Table -> Table
 adjustVTable2TableSch = undefined
 
-
+--}
 
 

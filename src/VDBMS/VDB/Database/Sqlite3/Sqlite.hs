@@ -34,5 +34,7 @@ instance Database Sqlite3 where
 
   fetchQRows' = undefined
 
+  runQ = undefined
+
 
 -- ex1 = Sqlite3 "../../../databases/testDB/test1.db" 

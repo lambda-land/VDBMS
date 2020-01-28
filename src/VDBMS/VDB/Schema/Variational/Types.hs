@@ -11,6 +11,7 @@ module VDBMS.VDB.Schema.Variational.Types (
         , tschRowType
         , configSchema
         , schFeatures
+        , tableSchAtts
 
 ) where
 
@@ -20,7 +21,7 @@ import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
 -- import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe, map, empty)
-import Data.Map.Strict (Map, mapMaybe, empty)
+import Data.Map.Strict (Map, mapMaybe, empty, keys)
 
 import Control.Monad.Catch 
 
@@ -172,6 +173,10 @@ tschFexp = getFexp
 -- | returns the row type of a table schema.
 tschRowType :: TableSchema -> RowType 
 tschRowType = getObj
+
+-- | returns attributes of a tableschema.
+tableSchAtts :: TableSchema -> [Attribute]
+tableSchAtts = keys . getObj
 
 -- | Errors querying schema.
 data SchemaError = MissingRelation Relation
