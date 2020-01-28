@@ -1,6 +1,7 @@
 (** Variational relational algebra *)
 Set Warnings "-notation-overridden,-parsing".
 Import Init.Datatypes.
+Import Coq.Init.Nat.
 Require Import Maps.
 Require Export List.
 (*Require Export Arith.
@@ -8,10 +9,11 @@ Require Export String.*)
 Require Export Logic.
 
 
-Load Feature.
-Import Feature. 
 
-Module VRA. 
+Load Feature.
+Import Feature.
+
+Module VRA.
 (** Variational Condition Syntax *)
 
 Definition att : Type := string.
@@ -21,8 +23,6 @@ Definition att : Type := string.
 Inductive op : Type :=
   | eq | GTE | LTE | GT | LT | neq.
 
-(*assumption: attributes' domain is nat. *)
-(* meet is and. join is or. *)
 Inductive cond : Type :=
   | litCB  : bool -> cond
   | relOPI : op -> att -> nat -> cond
@@ -62,6 +62,7 @@ Definition relS : Type := (r * atts) % type.
 
 Inductive setop : Type := union | inter | diff.
 
+
 (* @meeting: not sure about rel. should it get r or relS?? in RA is just the relation name,
 although for proving purposes consider it relation schema might not be a bad idea.
 still I'm not sure. same goes for vquery. this affects the typing relation since now we don't 
@@ -72,14 +73,9 @@ Inductive query : Type :=
   | proj  : atts    -> query -> query 
   | join  : cond    -> query -> query -> query 
   | prod  : query   -> query -> query 
-  | setU  : setop   -> query   -> query -> query.
+  | setU  : setop   -> query -> query -> query.
 
 Definition vatt : Type := (att * fexp)%type. (*assuming always annotated; could've used option*)
-                                              (*| AnnotAtt : att -> option fexp -> vatt.*)
-
-(* @Fariba: what is this lemma saying? *)
-Lemma vatt_dec : forall s1 s2 : vatt, {s1 = s2} + {s1 <> s2}.
-Proof. Admitted.
 
 Definition vatts : Type := list vatt.
 
@@ -87,7 +83,7 @@ Definition vatts : Type := list vatt.
 Assuming variational attribute list from schema are also explicitly typed.
 Thus not looking up pc(rel(a)) *)
 
-(** A[[.]]_c *)
+(** A[]_c *)
 Fixpoint configVAttSet (vA : vatts) (c : config) : atts :=
   match vA with
   | nil                  => nil
@@ -108,7 +104,7 @@ Inductive vquery : Type :=
   | chcQ    : fexp     -> vquery -> vquery -> vquery
   | join_v  : vcond    -> vquery -> vquery -> vquery 
   | prod_v  : vquery   -> vquery -> vquery 
-  | setU_v  : setop    -> vquery   -> vquery -> vquery.
+  | setU_v  : setop    -> vquery -> vquery -> vquery.
 
 (** Q[]_c *)
 Fixpoint configVQuery (vq : vquery) (c : config) : query :=
@@ -194,7 +190,6 @@ Proof.
           rewrite <- IHA; simpl; rewrite E'; reflexivity.
 Qed. 
 
-(* vatts^fexp *)
 Fixpoint annot_dist_helper (v : vatts) (e: fexp) : vatts := 
  match v with
  | nil => nil
@@ -204,12 +199,7 @@ Fixpoint annot_dist_helper (v : vatts) (e: fexp) : vatts :=
 
 Definition annot_dist ( X : (vatts * fexp)) : vatts := annot_dist_helper (fst X) (snd X).
 
-(* @Fariba: I'm assuming that this isn't completed yet. *)
-Definition avatts_union (A A': (vatts * fexp)) : vatts := nil.
-
-(* @Fariba: I'm assuming that this isn't completed yet. *)
 Definition avatts_inter (A A': (vatts * fexp)) : vatts := nil.
-
 
 Fixpoint findx (x : att) (A : atts) : bool :=
     match A with
@@ -236,58 +226,32 @@ Proof. intros. split.
             +++ left. rewrite eqb_string_true_iff in E. symmetry. assumption. +++ apply IHl in H. right. assumption.
 Qed.
 
-Definition subsump_vatts ( X X': vatts ) : Prop := forall a e1, In (a, e1) X -> 
-exists e1', (In (a, e1') X' /\ ~ sat ( (e1 /\(F) (~(F) e1') ) ) ).
+Fixpoint sublist (X X': list string): bool :=
+    match X with
+    | nil => match X' with 
+             | nil => true
+             | cons _ _ => false
+             end
+    | cons x xs => match X' with 
+                   | nil => false
+                   | cons x' xs' => if eqb_string x x' then sublist xs xs'
+                                         else sublist (x::xs) xs'
+                   end
+    end.
 
-Definition subsump_vqtype ( X X': vqtype ) : Prop := subsump_vatts (fst X) (fst X')
-/\ ~ sat ( (snd X) /\(F) (~(F) (snd X')) ).
+Definition subsump_vatts ( X X': vatts ) : Prop := forall c, 
+    sublist (configVAttSet X c) (configVAttSet X' c) = true.
+
+Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c, 
+    sublist (configVQtype X c) (configVQtype X' c) = true.
 
 Definition subsump ( X X': qtype ) : Prop := forall a, In a X -> In a X'.
 
-Fixpoint subsump_qtype_bool (A A': qtype) : bool :=
-   match A with
-   | nil       => true
-   | cons x xs => if findx x A' then subsump_qtype_bool xs A' 
-                                 else false
-   end.
+Definition subsump_qtype_bool (A A': qtype) : bool := sublist A A'.
 
 Definition subsump_qtype ( A A': qtype ) : Prop := forall a, In a A -> In a A'.
 
-Lemma subsump_prop_bool: forall A A', subsump_qtype A A' -> subsump_qtype_bool A A' = true.
-Proof.
-  intros. unfold subsump_qtype in H. unfold subsump_qtype_bool. 
-  (*unfold equiv_qtype_union. destruct (A++A').
-  + reflexivity. 
-  + specialize H with a. rewrite (In_findx_iff) in H. *)
-    
-Admitted.
-
-(* @Fariba: shouldn't forall c be moved to the right hand side of -> ? *)
-Lemma subsump_vq_to_q : forall X X' c, subsump_vqtype X X' -> 
-                   (*~( exists c, ((E[[snd X]] c) &&  (negb (E[[snd X']] c)) ) = true )*)
-                   ( (E[[snd X]] c) = true -> (E[[snd X']] c) = true )
-                   /\ subsump_qtype_bool (configVQtype X c) (configVQtype X' c) = true.
-Proof.
-  intros. unfold subsump_vqtype in H. destruct H as [H1 H2]. 
-  rewrite not_sat_not_prop in H2. rewrite <- sat_taut_comp in H2. 
-  split. 
-  - apply H2.
-  - apply subsump_prop_bool. unfold subsump_qtype. unfold subsump_vatts in H1. 
-    unfold configVQtype. destruct (E[[ snd X]] c) eqn: H.
-    + apply H2 in H. rewrite H. intros. 
-      rewrite <- config_det_plain in H0. 
-      destruct H0 as [e He]. destruct He as [He1 He2]. 
-      apply H1 in He1. destruct He1 as [e1 He1]. 
-      destruct He1 as [He11 He12].
-      rewrite not_sat_not_prop in He12. rewrite <- sat_taut_comp in He12.
-      apply He12 in He2. 
-      assert (He112: exists e, In (a, e) (fst X') /\ (E[[ e]] c) = true). 
-         { exists e1. split. apply He11. apply He2. }
-      rewrite (config_det_plain (fst X') a c) in He112. assumption.
-    + intros. simpl in H0. destruct H0.
-Qed.
-
-Definition atts_union (A A': atts) : atts := A ++ A'.
+(*Definition atts_union (A A': atts) : atts := A ++ A'.*)
 
 Definition equiv_vatts ( X X': vatts ) : Prop := forall c, configVAttSet X c = configVAttSet X' c.
 
@@ -307,7 +271,6 @@ Fixpoint equiv_qtype_bool (A A': qtype) : bool :=
                    end
     end.
 
-(* qtype1 = qtype1 *)
 Theorem equiv_qtype_bool_refl: forall A, equiv_qtype_bool A A = true.
 Proof.
   intros. induction A. 
@@ -317,70 +280,82 @@ Qed.
 
 Definition equiv_qtype ( A A': qtype ) : Prop := A = A'.
 
-Lemma or_dist_implies: forall (X: Type) (P Q R: X -> Prop), 
-       (forall a, ( P a \/ Q a -> R a)) <-> (forall a, (P a-> R a)/\(Q a-> R a) ).
-Proof.
-Admitted.
+(** WRONG!!!*)
 
-(* @Fariba: shouldn't this be two sided, i.e., instead of -> shouldn't it be <_> ? *)
-Theorem equiv_prop_bool: forall A A', equiv_qtype A A' -> equiv_qtype_bool A A' = true.
-Proof.
- (*intros. unfold equiv_qtype in H. unfold equiv_qtype_bool. 
+Fixpoint string_comp (s1 s2: string): nat :=
+   match s1, s2 with
+ | EmptyString, EmptyString => 0
+ | String c1 s1', String c2 s2' => 
+             match (compare (Ascii.nat_of_ascii c1) (Ascii.nat_of_ascii c2)) with
+             | Eq => string_comp s1' s2'
+             | Lt => S (S 0)
+             | Gt => S 0
+             end
+ | EmptyString,_ => (S (S 0))
+ | _, EmptyString => S 0
+ end.
 
- (* induction A.
-  + destruct A'. 
-    ++ reflexivity. 
-    ++ specialize H with a. simpl in H. 
-       apply ex_falso_quodlibet. *)
-  induction (A++A').
-  + reflexivity. 
-  + simpl. 
-    ++ destruct (findx a A) eqn: Ha.
-       +++ destruct (findx a A') eqn: Ha'.
-           ++++ simpl. apply IHl. *)
-Admitted.
-(*
-    simpl in H. 
-    rewrite or_dist_implies in H. destruct H. 
-    assert (I: a=a). { reflexivity. } apply H in I.
-    destruct I as [I1 I2]. rewrite (In_findx_iff) in I1.
-    rewrite (In_findx_iff) in I2. rewrite I1, I2. simpl.
-    apply IHl.
-  
-Admitted.*)
-Search Set.
-Inductive Empty_set : Set := .
+Fixpoint avatts_union (A A': vatts) : vatts :=
+  let fix merge_aux A' :=
+  match A, A' with
+  | [], _ => A'
+  | _, [] => A
+  |  (a, e) ::xs,  (a', e') ::xs' =>
+      match (string_comp a a') with
+          | 0 =>  (a, e \/(F) e') :: (avatts_union xs xs')
+          | S 0 =>  (a', e') :: merge_aux xs'
+          | S (S 0) => (a, e) :: (avatts_union xs A')
+          | _ => nil
+          end
+  end
+  in merge_aux A'.
 
-(* @Fariba: shouldn't forall c be on the right hand side of implication? *)
-(* @Fariba: also shouldn't be <-> instead of _> ? *)
-Theorem equiv_vq_to_q : forall X X' c, equiv_vqtype X X' -> 
-                   (E[[ snd X ]] c) = (E[[ snd X']] c)
-                   /\ equiv_qtype_bool (configVQtype X c) (configVQtype X' c) = true.
-Proof.
-  (*intros. unfold equiv_vqtype in H. destruct H as [H1 H2]. 
-  unfold equivE in H2. split. apply H2.
-  apply equiv_prop_bool. unfold equiv_qtype. unfold equiv_vatts in H1. unfold configVQtype.
-  destruct (E[[ snd X]] c) eqn: H.
-  + rewrite <- H2. rewrite H. intros. 
-    rewrite configVAttSet_app_dist in H0.  rewrite <- config_det_plain in H0. 
-    destruct H0 as [e He]. destruct He.
-    apply H1 in H0. unfold equivE in H0. destruct H0 as [e1 H0]. destruct H0 as [e2 H0].
-    destruct H0. destruct H4. destruct H5.
-    destruct (E[[ e1]] c) eqn: E. 
-    ++ assert (H0E: exists e, In (a, e) (fst X) /\ (E[[ e]] c) = true). 
-       { exists e1. split. apply H0. apply E. }
-       rewrite (config_det_plain (fst X) a c) in H0E.
-       assert (H4E: exists e, In (a, e) (fst X') /\ (E[[ e]] c) = true). 
-       { exists e2. split. apply H4. rewrite <- H5. apply E. }
-       rewrite (config_det_plain (fst X') a c) in H4E. 
-       split. assumption. assumption. 
-    ++ specialize H6 with c. rewrite H3 in H6. rewrite E in H6. discriminate H6.
-  + rewrite H2 in H. rewrite H. simpl. intros. destruct H0.*)
-Admitted.
+Fixpoint atts_union (A A': atts) : atts :=
+  let fix merge_aux A' :=
+  match A, A' with
+  | [], _ => A'
+  | _, [] => A
+  |  a ::xs,  a' ::xs' =>
+      match (string_comp a a') with
+          | 0 =>  a :: (atts_union xs xs')
+          | S 0 =>  a':: merge_aux xs'
+          | S (S 0) => a :: (atts_union xs A')
+          | _ => nil
+          end
+  end
+  in merge_aux A'.
+
+Lemma atts_union_nil_r: forall A, atts_union A [] = A.
+Proof. intros. destruct A. reflexivity. reflexivity. Qed.
+
+Lemma atts_union_nil_l: forall A, atts_union [] A = A.
+Proof. intros. simpl. destruct A. reflexivity. reflexivity. Qed.
+
+Fixpoint recurse_annot (A: vatts) (m: fexp) : (vatts):=
+  match A with
+  | nil => nil
+  | (x, e) :: xs => (x, e /\(F) m) :: recurse_annot xs m
+  end.
+
+Definition annoted (A: vqtype) : vatts := 
+   match A with 
+   | (nil, m) => nil
+   | (v , m)  => recurse_annot v m
+   end.
+
+Lemma configVQType_dist_avatts_union : forall A A' e c, configVQtype (avatts_union A A', e) c
+= atts_union (configVQtype (A, e) c) (configVQtype (A', e) c).
+Proof. Admitted.
+
+Lemma configVQType_recurse_anott : forall A e1 e2 c, 
+configVQtype (recurse_annot A e1, e2) c
+= configVQtype (A, e1 /\(F) e2) c.
+Proof. Admitted.
 
 Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
-  | Relation_vE_empty : forall rn A e',
-       vtype (litB true) (rel_v (rn, (A, e'))) (A, e')
+  | Relation_vE_fm : forall e rn A e',
+        ~ sat (  e'    /\(F)   (~(F) (e)) ) ->
+       vtype e (rel_v (rn, (A, e'))) (A, e') (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
   | Relation_vE : forall e rn A e',
        ~ sat (  e    /\(F)   (~(F) (e')) ) ->
        vtype e (rel_v (rn, (A, e'))) (A, e)
@@ -399,38 +374,16 @@ Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
   | Choice_vE: forall e e' vq1 vq2 A1 e1 A2 e2,
        vtype (e /\(F) e') vq1 (A1, e1) ->
        vtype (e /\(F) (~(F) e')) vq2 (A2, e2) ->
-       vtype e (chcQ e' vq1 vq2) (avatts_union (A1, e1) (A2, e2) , (e1 \/(F) e2) )
-  | Product_vE: forall e vq1 vq2 A1 e1 A2 e2 ,
+       vtype e (chcQ e' vq1 vq2) 
+        (avatts_union (recurse_annot A1 e1) (recurse_annot A2 e2) , litB true).
+            (*e1 and e2 can't be simultaneously true.*)
+  (*| Product_vE: forall e vq1 vq2 A1 e1 A2 e2 ,
        vtype e  vq1 (A1, e1) ->
        vtype e  vq2 (A2, e2) ->
        avatts_inter (A1, e1) (A2, e2) = nil ->
-       vtype e  (prod_v vq1 vq2) (avatts_union (A1, litB true) (A2, litB true) , (e1 /\(F) e2) ).
-
-(* @Fariba: this must take schema as input. I understand that you can write the typing rule
-withou passing the schema and that's because instead of referring to a relation name in the query
-language that you've defined you're referring to the relation name and its schema. I'm not sure how 
-I feel about this since it's getting further away from our written draft. *)
-(* @Fariba: you need to have a typing relation for conditions to be able to write the select_E rule. *)
-Inductive type : query -> qtype -> Prop :=
-  | Relation_E : forall rn A,
-       type (rel (rn, A)) A
-  | Project_E: forall q A' A,
-       type q A'  -> 
-       subsump A A' ->
-       type (proj A q) A
-  (*| Select_E: forall e S vq A e',
-       vtype e S vq (A, e') ->
-       vtype e S (sel_v c vq) (A, e'). *) 
-  | SetOp_E: forall q1 q2 A1 A2 op,
-       type q1 A1 ->
-       type q2 A2 ->
-       equiv A1 A2  ->
-       type (setU op q1 q2) A1
-  | Product_E: forall q1 q2 A1 A2,
-       type q1 A1 ->
-       type q2 A2 ->
-       atts_inter A1 A2 = nil ->
-       type (prod q1 q2) (atts_union A1 A2).
+       vtype e  (prod_v vq1 vq2) 
+   (avatts_union (recurse_annot A1 (litB true)) (recurse_annot A2 (litB true)), (e1 /\(F) e2) ).
+  *)
 
 Fixpoint type1 (q:query) : qtype :=
  match q with
@@ -444,41 +397,136 @@ Fixpoint type1 (q:query) : qtype :=
                           let A2 := type q2 in
                               if equiv_atts A1 A2 && *)
 
-(* @Fariba: just as a reminder. the initial context will be the schema presence condition. *)
-Definition empty_context := litB true.
-(** Variation Preservation*)
+(** Variation Preservation *)
+
+Theorem context_type_rel : forall e vq A' e',
+       vtype e vq (A', e') -> ~ sat (  e' /\(F) (~(F) (e)) ).
+Proof. Admitted.
+ (** (E[[ e']] c) = true -> (E[[ e]] c) = true.*)
+
 
 (* @Fariba: I didn't go over this, I cannot even compile it yet and I don't have time to get into it this week.
 you need to prove variationa preserving for typing relation of conditions to be able to prove variation 
 preserving for the selection case. *)
 (* @Fariba: the empty context must be schema's presence condition. that's another reason why you 
 need to pass the schema to the typing relation. *)
-Theorem variation_preservation : forall vq T, 
-       vtype (empty_context) vq T ->
-       forall c, type1 (configVQuery vq c) = configVQtype T c.
-Proof. intros. remember (empty_context) as e. induction H. 
+Theorem variation_preservation : forall e vq T, 
+       vtype e vq T ->
+       forall c, (E[[e]] c) = true ->
+           type1 (configVQuery vq c) = configVQtype T c.
+Proof. 
+  intros. induction H.
   - unfold configVQuery. unfold configVRelS. simpl. 
-    destruct (E[[e']] c) eqn: HsemE;
-      unfold configVQtype; simpl; rewrite HsemE;
-      reflexivity.
-  - unfold configVQuery. unfold configVRelS. simpl.  
+    rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
+    unfold configVQtype. simpl. destruct (E[[e']] c) eqn: HsemE.
+    + reflexivity.
+    + reflexivity. 
+  - unfold configVQuery. unfold configVRelS. unfold configVQtype. simpl. 
+    rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
+    rewrite H0. apply H in H0. rewrite H0. reflexivity.
+ - unfold subsump_vqtype, configVQtype in H1. simpl in H1.
+   unfold configVQtype in IHvtype. simpl in IHvtype. 
+   unfold configVQtype. simpl. 
+   destruct (E[[ e']] c) eqn: He'.
+     ++ rewrite IHvtype. simpl. unfold subsump_qtype_bool. 
+        specialize H1 with c. rewrite H0, He' in H1. rewrite H1. rewrite H0. 
+        reflexivity. assumption.
+     ++ rewrite IHvtype. simpl. unfold subsump_qtype_bool. 
+        specialize H1 with c. rewrite H0, He' in H1. 
+        destruct (configVAttSet A c). rewrite H0.
+        reflexivity. simpl in H1. discriminate H1. assumption.
+ - simpl in IHvtype1. simpl in IHvtype2. simpl. 
+   + simpl. rewrite IHvtype1. rewrite IHvtype2.
+     unfold configVQtype. simpl. 
+     destruct H2. simpl in H2. simpl in H3. unfold equiv_vatts in H2.
+     unfold equivE in H3. rewrite H2. rewrite H3. destruct (E[[ e2]] c) eqn: E'.
+     ++ rewrite (equiv_qtype_bool_refl (configVAttSet A2 c)). reflexivity.
+     ++ simpl. reflexivity. 
+     ++ assumption. ++ assumption.
+ - simpl in IHvtype1. simpl in IHvtype2. rewrite H0 in IHvtype1, IHvtype2.
+   rewrite configVQType_dist_avatts_union.
+   rewrite configVQType_recurse_anott. rewrite configVQType_recurse_anott. 
+   simpl. destruct (E[[ e']] c) eqn: E'.
+   + apply context_type_rel in H1.
+     rewrite not_sat_not_prop in H1. 
+     rewrite <- sat_taut_comp_inv in H1.
+     specialize H1 with c. 
+     simpl in H1. rewrite H0, E' in H1. simpl in H1. 
+     assert (Ihack: false = false). { reflexivity. } 
+     apply H1 in Ihack. unfold configVQtype at 2. simpl. rewrite Ihack.
+     rewrite atts_union_nil_r. 
+     unfold configVQtype. simpl. rewrite andb_true_r. 
+     unfold configVQtype in IHvtype1. apply IHvtype1. reflexivity.
+   + apply context_type_rel in H.
+     rewrite not_sat_not_prop in H. 
+     rewrite <- sat_taut_comp_inv in H.
+     specialize H with c. 
+     simpl in H. rewrite H0, E' in H. simpl in H. 
+     assert (Ihack: false = false). { reflexivity. } 
+     apply H in Ihack. unfold configVQtype at 1. simpl. rewrite Ihack.
+     simpl. destruct (configVQtype (A2, e2 /\(F) litB true) c) eqn: D;
+     unfold configVQtype in D; simpl in D; rewrite andb_true_r in D;
+     unfold configVQtype in IHvtype2; simpl in IHvtype2; rewrite D in IHvtype2;
+     apply IHvtype2;  reflexivity.
+Qed.
+
+
+
+
+(*Fixpoint avatts_union (A A': vatts) : vatts := 
+  match A, A' with
+  | nil, _ => A'
+  | _, nil => A
+  | cons (a, e) xs, cons (a', e') xs' =>
+          match (string_comp a a') with
+          | 0 => cons (a, e \/(F) e') (avatts_union xs xs')
+          | S 0 => cons (a', e') (avatts_union (cons (a, e) xs) xs')
+          | S (S 0) => cons (a, e) (avatts_union xs (cons (a', e') xs'))
+          | _ => nil
+          end
+  end.*)
+
+(* Theorem mutual_excl: forall e e' vq1 vq2 A1 e1 A2 e2,
+     vtype (e /\(F) e') vq1 (A1, e1) ->
+       vtype (e /\(F) (~(F) e')) vq2 (A2, e2) ->
+           ~ sat (  e1   /\(F)   e2 ) /\ taut (e1 \/(F) e2).
+   Proof. Admitted.
+*)
+(*- unfold configVQuery. unfold configVRelS. 
+    unfold configVQtype. simpl. destruct (E[[e]] c); 
+    reflexivity.*)
+
+(*- unfold configVQuery. unfold configVRelS. simpl. unfold configVQtype. simpl.
+    rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H.  
     destruct (E[[e']] c) eqn: HsemE'.
-    + unfold configVQtype. rewrite Heqe. simpl. reflexivity.
+    + unfold configVQtype. 
+      rewrite Heqe. simpl. reflexivity.
     + unfold sat in H. simpl in H. unfold not in H. apply ex_falso_quodlibet. 
-      apply H. exists c. rewrite HsemE'. rewrite Heqe. simpl. reflexivity.
-   (* destruct (E[[e']] c) eqn: HsemE. admit.
-    + unfold configVQtype. simpl. 
-      reflexivity.
-    + unfold configVQtype. simpl. unfold sat in H0.
-      simpl in H0. unfold not in  H0. apply ex_falso_quodlibet. 
-      apply H0. exists c. rewrite HsemE. simpl. reflexivity. *)
- - simpl. apply ( subsump_vq_to_q _ _ c) in H0. unfold configVQtype in H0.
-   simpl in H0. destruct H0. assert (He: (E[[ e]] c) = true). { rewrite Heqe. reflexivity. }
-   apply H0 in He as He'. rewrite He, He' in H1. rewrite IHvtype. unfold configVQtype.
-   simpl. rewrite He, He'. rewrite H1. reflexivity. apply Heqe.
- - simpl. rewrite IHvtype1. rewrite IHvtype2. unfold configVQtype. simpl. 
-   destruct H1. simpl in H1. simpl in H2. unfold equiv_vatts in H1.
-   unfold equivE in H2. rewrite H1. rewrite H2. destruct (E[[ e2]] c) eqn: E.
-   + rewrite (equiv_qtype_bool_refl (configVAttSet A2 c)). reflexivity.
-   + simpl. reflexivity.
-Admitted.
+      apply H. exists c. rewrite HsemE'. rewrite Heqe. simpl. reflexivity.*)
+
+(*simpl. simpl in IHvtype1. simpl in IHvtype2. 
+   apply (mutual_excl e e' vq1 vq2 A1 e1 A2 e2) in H.
+   destruct (E[[ e']] c) eqn: E'. 
+      ++  simpl in IHvtype1. simpl in IHvtype2. rewrite H0 in IHvtype1, IHvtype2.
+          rewrite configVQType_dist_avatts_union.
+          rewrite configVQType_recurse_anott. rewrite configVQType_recurse_anott.
+          destruct H. assert (I1: forall e, (e /\(F) (litB true)) =e= e  ). { admit. }
+          assert (I2: forall e1 e2 A c, e1 =e= e2 -> 
+          configVQtype (A, e1) c = configVQtype (A, e2) c). { admit. }
+          specialize I1 with e2 as I12.
+          apply (I2 _ _ A2 c) in I12.
+          specialize I1 with e1 as I11.
+          apply (I2 _ _ A1 c) in I11. rewrite I11. rewrite I12. 
+          inversion H1; subst.
+          +++ rewrite not_sat_not_prop in H6. rewrite <- sat_taut_comp_inv in H6.
+              specialize H6 with c. 
+              simpl in H6. rewrite H0, E' in H6. simpl in H6. 
+              assert (Ihack: false = false). { reflexivity. } 
+              apply H6 in Ihack. unfold configVQtype at 2. simpl. rewrite Ihack.
+              rewrite atts_union_nil_r. apply IHvtype1. reflexivity.
+          +++ unfold configVQtype at 2. simpl. rewrite H0, E'. simpl. 
+              rewrite atts_union_nil_r. apply IHvtype1. reflexivity.  
+          +++ unfold configVQtype at 2. simpl. rewrite H0, E'. simpl. 
+              rewrite atts_union_nil_r. apply IHvtype1. reflexivity. 
+          +++ *)  
+              

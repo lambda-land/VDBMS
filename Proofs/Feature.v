@@ -1,5 +1,5 @@
 (* Feature *)
-Set Warnings "-notation-overridden,-parsing". 
+Set Warnings "-notation-overridden,-parsing".
 Require Import Bool.
 Require Import String.
 Require Import Relations.Relation_Definitions.
@@ -15,10 +15,10 @@ Definition fname := string.
 
 (** Feature Exression Syntax. *)
 (* comp is negation. meet is conjunction. join is disjunction.*)
-Inductive fexp : Type := 
+Inductive fexp : Type :=
   | litB : bool -> fexp
   | litF : fname -> fexp
-  | comp : fexp -> fexp 
+  | comp : fexp -> fexp
   | meet : fexp -> fexp -> fexp
   | join : fexp -> fexp -> fexp.
 
@@ -42,7 +42,7 @@ Fixpoint semE (e : fexp) (c : config) : bool :=
 
 Notation "E[[ e ]] c" := (semE e c) (at level 99, left associativity).
 
-(** Feature Expression Equivalence *)
+(** Feature Expression Equivalemce *)
 Definition equivE : relation fexp :=
   fun e e' => forall c, (semE e c) = (semE e' c).
 
@@ -99,6 +99,7 @@ Definition not_sat (e:fexp): Prop :=
   forall c, semE e c = false.
 
 (* @Fariba: not sure what you mean by implies and if you're defining it correctly. *)
+(* @Parisa: never used it anywhre; not sure why I wrote this in the first place!! *)
 Definition implies (e1 e2:fexp) (c:config): Prop :=
   semE e1 c = true -> semE e2 c = true.
 
@@ -142,6 +143,21 @@ Proof.
     symmetry in H. apply negb_sym in H. simpl in H. 
     assumption.
 Qed.
+
+Theorem sat_taut_comp_inv : forall e1 e2, 
+           (forall c, semE e2 c = false -> semE e1 c = false) 
+                  <-> not_sat (e1 /\(F) ~(F)e2).
+Proof.
+ split.
+  + intros. unfold not_sat. intros. 
+    simpl. destruct (E[[ e2]] c) eqn: E.
+    ++ simpl. apply andb_false_r.
+    ++ apply H in E. rewrite E. simpl. reflexivity.
+  + intros. unfold not_sat in H. simpl in H. 
+    specialize H with c.  rewrite H0 in H. simpl in H. 
+    apply andb_false_iff in H. destruct H.  
+    assumption. discriminate H.
+  Qed.
     
 Example sat_or: sat (litB true \/(F) litB false).
 Proof. intros. unfold sat. exists (fun _ => true). 
