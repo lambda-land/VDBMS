@@ -2,7 +2,7 @@
 module VDBMS.Features.ConfFexp where
 
 import VDBMS.Features.Config
-import VDBMS.Features.FeatureExpr.Types (FeatureExpr)
+import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
 import VDBMS.Features.Feature (Feature)
 -- import VDBMS.Features.FeatureExpr.Core (features)
 
@@ -11,23 +11,20 @@ import VDBMS.Features.Feature (Feature)
 -- | generates a feature expression for the given configuration.
 conf2fexp :: [Feature] -> Config Bool -> FeatureExpr
 -- Feature -> Bool -> FeatureExpr
-conf2fexp = undefined
-  -- where 
-  --   v = (Ref f <=> Lit b)
+conf2fexp fs c = 
+  foldl (\fexp f -> if c f then (And fexp (Ref f)) 
+                           else (And fexp (Not (Ref f))))
+        (Lit True) 
+        fs
 
 -- | generates a feature expr for the given list of configs.
 confs2fexp :: [Feature] -> [Config Bool] -> FeatureExpr
-confs2fexp = undefined
--- foldl' Or (Lit False) $ conf2fexp cs
+confs2fexp fs cs = foldl (\fexp c -> Or fexp (conf2fexp fs c)) (Lit False) cs
 
 -- | extracts the valid configurations of a feature expr.
 validConfsOfFexp :: [Feature] -> FeatureExpr -> [Config Bool]
 validConfsOfFexp fs fexp = undefined
 
--- the following is wrong b/c i could have true as a fexp ...
--- validConfsOfFexp f = undefined
---   where
---     fs = features f 
 
 
 
