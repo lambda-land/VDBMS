@@ -18,7 +18,7 @@ import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
 -- import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
 import VDBMS.Features.FeatureExpr.FeatureExpr (Feature, FeatureExpr)
 import VDBMS.DBMS.Table.Table (SqlTable)
-
+import VDBMS.TypeSystem.Variational.TypeSystem (TypeEnv)
 
 -- 
 -- TODO: PUT FUNCS IN RIGHT FILES!!!!!!!!!
@@ -54,13 +54,17 @@ sqlTable2SqlVTable = undefined
 combineSqlTables :: [SqlTable] -> SqlTable
 combineSqlTables = undefined
 
+-- | turns a type env to table schema.
+typeenv2TableSchema :: TypeEnv -> TableSchema
+typeenv2TableSchema = undefined
+
 -- | takes everything needed to combine a list of variant sqltables
 --   to a table.
 varSqlTables2Table :: [Feature] -> FeatureExpr -> PCatt 
-                   -> TableSchema 
+                   -> TypeEnv 
                    -> [SqlVariantTable]
                    -> Table
-varSqlTables2Table fs t_pc pc t_sch ts = undefined
+varSqlTables2Table fs t_pc pc tenv ts = undefined
 
 {--
 ------------------- construct vtable for approach1 -------------------

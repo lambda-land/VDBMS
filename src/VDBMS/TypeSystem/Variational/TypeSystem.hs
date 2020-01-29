@@ -6,6 +6,7 @@ module VDBMS.TypeSystem.Variational.TypeSystem (
         , typeOfQuery
         , AttrInfo(..)
         , updateType
+        , typePC
 
 ) where 
 
@@ -48,6 +49,10 @@ type AttrInformation = [AttrInfo]
 -- | Variational type map and type env.
 type TypeMap = M.Map Attribute AttrInformation
 type TypeEnv = Opt TypeMap
+
+-- | presence condition of type.
+typePC :: TypeEnv -> F.FeatureExpr
+typePC = getFexp
 
 -- | Possible typing errors.
 data TypeError 
