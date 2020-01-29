@@ -11,7 +11,8 @@ module VDBMS.DBMS.Table.Table (
         dropPresInTable,
         applyConfTable,
         applyConfTables,
-        dropRows
+        dropRows,
+        dropUnsatTuples
 
 ) where
 
@@ -20,6 +21,9 @@ import qualified Data.Map.Strict as M
 import Data.Set (Set)
 import qualified Data.Set as S
 
+import Data.Maybe (fromJust)
+
+import VDBMS.Features.SAT (satisfiable)
 import VDBMS.VDB.Name
 import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
@@ -56,6 +60,15 @@ tableAttSet :: SqlTable -> Set Attribute
 tableAttSet [] = error "an empty table doesn't have any attributes"
 tableAttSet t  = rowAttSet (head t)
 
+-- | drops tuples that given config in the variant
+--   their pres cond is unsat. the passed fexp is the
+--   presence condition of the entire table.
+dropUnsatTuples :: FeatureExpr -> PCatt -> SqlTable -> SqlTable
+dropUnsatTuples f pc t = filter (satisfiable . tuple_pc) t
+  where
+    pcName = attributeName pc 
+    tuple_pc tuple = And f ((sqlval2fexp . fromJust) $ M.lookup pcName tuple)
+
 -- | construct the rowtype from a sqltable.
 --   NOTE: it takes the first row of the table. so if that row
 --         has a null value it may not be able to get the type 
@@ -86,6 +99,13 @@ conformSqlRowToRowType r t = M.union r r'
     rowTypeAtts = S.map attributeName $ getRowTypeAtts t 
     attDif      = rowTypeAtts S.\\ M.keysSet r 
     r'          = M.fromSet (\_ -> SqlNull) attDif
+
+-- | combines a list of sqltables s.t. it disjuncts the pc 
+--   of the same tuple.
+-- big assumption: the tables all have the same schema.
+combineSqlTables :: [SqlTable] -> SqlTable
+combineSqlTables = undefined
+
 
 -----------apply conf------------------
 

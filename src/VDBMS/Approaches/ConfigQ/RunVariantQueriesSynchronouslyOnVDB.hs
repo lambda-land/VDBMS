@@ -16,7 +16,7 @@ import VDBMS.QueryLang.RelAlg.Variational.Minimization (appMin)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
-import VDBMS.VDB.Table.GenTable (varSqlTables2Table)
+import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 
 import Control.Arrow (first, second, (***))

@@ -8,12 +8,16 @@ module VDBMS.DBMS.Table.SqlVariantTable (
         dropPresInVariantTable,
         constructSchemaFromSqlVariantTable,
         conformSqlVariantTableToSchema,
-        addTuplePresCond
+        addTuplePresCond,
+        dropUnsatTuples,
+        sqlVariantTable2SqlVTable
 
 ) where
 
 import Data.Set (Set)
 -- import qualified Data.Set as S
+
+import qualified Data.Map.Strict as M
 
 import VDBMS.Features.Variant 
 import VDBMS.VDB.Name
@@ -21,6 +25,8 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.ConfFexp
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.Table
+import VDBMS.DBMS.Table.SqlVtable
+import VDBMS.Variational.Opt
 
 type SqlVariantTable = Variant SqlTable Bool
 
@@ -73,12 +79,11 @@ constructSchemaFromSqlVariantTable fs t = (fexp, rowType)
 conformSqlVariantTableToSchema :: SqlVariantTable -> RowType -> SqlVariantTable
 conformSqlVariantTableToSchema t r = updateVariant 
   (map (flip conformSqlRowToRowType r) $ getVariant t) t
- --  where 
     
 -- | adds presence condition key and its value to each row
 --   of the sqlvarianttable and turns it into a vtable.
---   NOTE: sqlvarianttable shouldn't have pres cond in its
---         attributes.
+--   Assumption: sqlvarianttable shouldn't have pres cond in its
+--               attributes.
 -- DANGER: changed Attribute to (Attribute Nothing)
 -- MAY CAUSE PROBLEMS!!!
 addTuplePresCond :: [Feature] -> PCatt -> SqlVariantTable -> SqlTable
@@ -87,5 +92,7 @@ addTuplePresCond fs p vt = insertAttValToSqlTable (Attribute $ presCondAttName p
     fexp = fexp2sqlval $ conf2fexp fs $ getConfig vt
     t    = getVariant vt
 
-
-
+-- | turns a sqltable to a sqlvtable.
+sqlVariantTable2SqlVTable :: [Feature] -> SqlVariantTable -> SqlVtable
+sqlVariantTable2SqlVTable fs t 
+  = mkOpt (conf2fexp fs $ getConfig t) (getVariant t)
