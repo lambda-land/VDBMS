@@ -11,7 +11,7 @@ import VDBMS.Variational.Variational
 import VDBMS.VDB.Table.Table (Table)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
 import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typePC)
+import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typePC, typeEnv2tableSch)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (appMin)
@@ -24,8 +24,6 @@ import VDBMS.Features.Config (Config)
 
 -- import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
--- import Control.Monad (Identity)
--- import Data.Functor.Identity
 
 -- |
 runQ0 :: Database conn => conn -> Algebra -> IO Table
@@ -37,7 +35,7 @@ runQ0 conn vq =
          pc = presCond conn
      vq_type <- typeOfQuery vq vsch_pc vsch
      let type_pc = typePC vq_type
-         type_sch = undefined
+         type_sch = typeEnv2tableSch vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
          -- try removing opt
@@ -48,5 +46,4 @@ runQ0 conn vq =
          runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
      sqlTables <- mapM runq sql_qs
      return $ variantSqlTables2Table features pc type_sch sqlTables
-     -- return $ varSqlTables2Table features type_pc pc vq_type sqlTables
 

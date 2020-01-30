@@ -7,6 +7,7 @@ module VDBMS.TypeSystem.Variational.TypeSystem (
         , AttrInfo(..)
         , updateType
         , typePC
+        , typeEnv2tableSch
 
 ) where 
 
@@ -53,6 +54,14 @@ type TypeEnv = Opt TypeMap
 -- | presence condition of type.
 typePC :: TypeEnv -> F.FeatureExpr
 typePC = getFexp
+
+-- | turns a type env to table schema.
+typeEnv2tableSch :: TypeEnv -> TableSchema
+typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (M.toList (getObj t)))
+  where 
+    attrinfo :: (Attribute, AttrInformation) -> [(Attribute, Opt SqlType)]
+    attrinfo (a,ais) = map (\ai -> (Attribute $ (qualName . attrQual) ai ++ an, mkOpt (attrFexp ai) (attrType ai))) ais
+      where an = "." ++ attributeName a
 
 -- | Possible typing errors.
 data TypeError 
