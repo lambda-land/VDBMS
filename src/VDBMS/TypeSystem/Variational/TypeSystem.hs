@@ -8,6 +8,7 @@ module VDBMS.TypeSystem.Variational.TypeSystem (
         , updateType
         , typePC
         , typeEnv2tableSch
+        , typeAtts
 
 ) where 
 
@@ -62,6 +63,10 @@ typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (M.toLis
     attrinfo :: (Attribute, AttrInformation) -> [(Attribute, Opt SqlType)]
     attrinfo (a,ais) = map (\ai -> (Attribute $ (qualName . attrQual) ai ++ an, mkOpt (attrFexp ai) (attrType ai))) ais
       where an = "." ++ attributeName a
+
+-- | returns the attributes of type env.
+typeAtts :: TypeEnv -> [Attribute]
+typeAtts = undefined
 
 -- | Possible typing errors.
 data TypeError 

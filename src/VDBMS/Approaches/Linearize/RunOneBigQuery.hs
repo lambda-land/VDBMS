@@ -9,10 +9,11 @@ module VDBMS.Approaches.Linearize.RunOneBigQuery where
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 import VDBMS.Variational.Variational 
-import VDBMS.VDB.Table.Table (Table)
+import VDBMS.VDB.Table.Table (Table, mkVTable)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
-import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typePC, typeEnv2tableSch)
+-- import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
+import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeAtts, 
+  typeEnv2tableSch)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (appMin)
@@ -21,7 +22,8 @@ import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
-import VDBMS.Features.Config (Config)
+-- import VDBMS.Features.Config (Config)
+import VDBMS.QueryGen.Sql.GenSqlSameSch (optRAQs2Sql)
 
 -- import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
@@ -35,11 +37,17 @@ runQ3 conn vq =
          configs = getAllConfig conn
          pc = presCond conn
      vq_type <- typeOfQuery vq vsch_pc vsch
-     let type_pc = typePC vq_type
+     let 
+         -- type_pc = typePC vq_type
          type_sch = typeEnv2tableSch vq_type
+         type_as = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
          -- try removing opt
+         ra_qs = optionalize_ vq_constrained_opt
+         -- sql_qs = fmap (bimapDefault id (transAlgebra2Sql)) ra_qs
+         sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
+     sqlTab <- fetchQRows conn sql
      --     ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
      --     sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
      --     -- try removing gensql
@@ -47,5 +55,5 @@ runQ3 conn vq =
      --     runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
      -- sqlTables <- mapM runq sql_qs
      -- return $ variantSqlTables2Table features pc type_sch sqlTables
-     return undefined
+     return $ mkVTable type_sch sqlTab
 
