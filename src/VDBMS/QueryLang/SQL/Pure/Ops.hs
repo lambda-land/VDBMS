@@ -18,8 +18,11 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import Data.Maybe (fromJust)
 
 -- | gets attributes projected in a sqlselect query.
+--   queries are type correct.
 sqlQAtts :: SqlSelect -> [Attribute]
-sqlQAtts = undefined
+sqlQAtts (SqlSelect as _ _) = map aExprAtt as
+sqlQAtts (SqlBin _ l _) = sqlQAtts l
+sqlQAtts SqlEmpty = []
 
 -- | adjusts the schema  of a sql query wrt a given list of attribute.
 adjustQSch :: [Attribute] -> [Attribute] -> SqlSelect -> SqlSelect
