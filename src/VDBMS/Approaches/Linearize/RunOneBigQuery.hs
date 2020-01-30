@@ -45,15 +45,7 @@ runQ3 conn vq =
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
          -- try removing opt
          ra_qs = optionalize_ vq_constrained_opt
-         -- sql_qs = fmap (bimapDefault id (transAlgebra2Sql)) ra_qs
          sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
      sqlTab <- fetchQRows conn sql
-     --     ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
-     --     sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
-     --     -- try removing gensql
-     --     runq :: (String, Config Bool) -> IO SqlVariantTable
-     --     runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
-     -- sqlTables <- mapM runq sql_qs
-     -- return $ variantSqlTables2Table features pc type_sch sqlTables
      return $ mkVTable type_sch sqlTab
 
