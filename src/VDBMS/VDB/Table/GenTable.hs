@@ -11,25 +11,22 @@ module VDBMS.VDB.Table.GenTable (
 import VDBMS.VDB.Table.Core (Table, mkVTable)
 import VDBMS.VDB.Name (PCatt)
 -- import VDBMS.Variational.Opt
-import VDBMS.VDB.Schema.Variational.Schema (TableSchema, tschFexp)
+import VDBMS.VDB.Schema.Variational.Schema (TableSchema, tschFexp, tschRowType)
 import VDBMS.Features.Variant (Variant)
 import VDBMS.DBMS.Table.SqlVtable (SqlVtable)
 import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, 
-  dropUnsatTuples, dropPresInVariantTable, conformSqlVariantTableToSchema,
-  sqlVariantTable2SqlVTable)
+  applyConfVariantTables, conformSqlVariantTableToSchema,
+  sqlVariantTable2SqlVTable, combineSqlVariantTables)
 -- import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
 import VDBMS.Features.FeatureExpr.FeatureExpr (Feature, FeatureExpr)
 import VDBMS.DBMS.Table.Table (SqlTable)
 import VDBMS.TypeSystem.Variational.TypeSystem (TypeEnv)
 
--- 
--- TODO: PUT FUNCS IN RIGHT FILES!!!!!!!!!
--- 
 -- dropUnsatTuples :: FeatureExpr -> PCatt -> SqlVariantTable -> SqlVariantTable
 -- dropPresInVariantTable :: PCatt -> SqlVariantTable -> SqlVariantTable
 -- conformSqlVariantTableToSchema :: SqlVariantTable -> RowType -> SqlVariantTable
 -- sqlVariantTable2SqlVTable :: [Feature] -> SqlVariantTable -> SqlVtable
--- combineSqlTables :: [SqlTable] -> SqlTable
+-- combineSqlTables :: PCatt -> [SqlTable] -> SqlTable
 
 -- | turns a type env to table schema.
 -- typeenv2TableSchema :: TypeEnv -> TableSchema
@@ -42,10 +39,12 @@ variantSqlTables2Table :: [Feature] -> PCatt
                        -> [SqlVariantTable]
                        -> Table
 variantSqlTables2Table fs pc t_sch ts 
-  = undefined
-    -- where 
-    --   t_pc = tschFexp t_sch
-    --   ts_valid = map (dropUnsatTuples t_pc pc) ts
+  = mkVTable t_sch (combineSqlVariantTables pc ts_valid_sameSch)
+    where 
+      t_pc = tschFexp t_sch
+      rowtype = tschRowType t_sch
+      ts_valid = applyConfVariantTables pc t_pc ts
+      ts_valid_sameSch = map (flip conformSqlVariantTableToSchema rowtype) ts_valid
 
 {--
 ------------------- construct vtable for approach1 -------------------

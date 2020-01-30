@@ -4,13 +4,14 @@ module VDBMS.DBMS.Table.SqlVariantTable (
         SqlVariantTable,
         applyConfVariantTable,
         applyConfVariantTables,
-        dropRowsInVariantTable,
+        -- dropRowsInVariantTable,
         dropPresInVariantTable,
         constructSchemaFromSqlVariantTable,
         conformSqlVariantTableToSchema,
         addTuplePresCond,
         dropUnsatTuples,
-        sqlVariantTable2SqlVTable
+        sqlVariantTable2SqlVTable,
+        combineSqlVariantTables
 
 ) where
 
@@ -32,19 +33,20 @@ type SqlVariantTable = Variant SqlTable Bool
 
 ------------------- apply config ----------------------
 
--- | applies the variant config to the variant table.
-applyConfVariantTable :: PCatt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
-applyConfVariantTable p as t = updateVariant (applyConfTable c as p $ getVariant t) t
+-- | applies the variant config to the variant table and drops 
+--   the rows that applying conf to their pc resulted in false.
+applyConfVariantTable :: PCatt -> FeatureExpr -> SqlVariantTable -> SqlVariantTable
+applyConfVariantTable p f t = updateVariant (applyConfTable c p f $ getVariant t) t
   where c = getConfig t
 
--- | drops rows with false pres cond in a variant table.
-dropRowsInVariantTable :: PCatt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
-dropRowsInVariantTable p as t = updateVariant (dropRows p $ getVariant (applyConfVariantTable p as t)) t
+-- -- | drops rows with false pres cond in a variant table.
+-- dropRowsInVariantTable :: PCatt -> Set Attribute -> SqlVariantTable -> SqlVariantTable
+-- dropRowsInVariantTable p t = updateVariant (dropRows p $ getVariant (applyConfVariantTable p as t)) t
   -- where c = getConfig t
 
 -- | applies the variant config to variant tables.
-applyConfVariantTables :: PCatt -> Set Attribute -> [SqlVariantTable] -> [SqlVariantTable]
-applyConfVariantTables p as = fmap $ applyConfVariantTable p as
+applyConfVariantTables :: PCatt -> FeatureExpr -> [SqlVariantTable] -> [SqlVariantTable]
+applyConfVariantTables p f = fmap $ applyConfVariantTable p f
 
 -- | drops rows with false pres cond over a list of variant tables.
 -- dropRowsInVariantTables :: PCatt -> [SqlVariantTable] -> [SqlVariantTable]
@@ -76,6 +78,7 @@ constructSchemaFromSqlVariantTable fs t = (fexp, rowType)
 --   TODO and DISCUSS WITH ERIC: maybe we should insert some specific
 --                               value (like nothing) to specify that
 --                               this value doesn't actually exist!
+-- it is totally ok if tuples have presence condition attribute.
 conformSqlVariantTableToSchema :: SqlVariantTable -> RowType -> SqlVariantTable
 conformSqlVariantTableToSchema t r = updateVariant 
   (map (flip conformSqlRowToRowType r) $ getVariant t) t
@@ -96,3 +99,12 @@ addTuplePresCond fs p vt = insertAttValToSqlTable (Attribute $ presCondAttName p
 sqlVariantTable2SqlVTable :: [Feature] -> SqlVariantTable -> SqlVtable
 sqlVariantTable2SqlVTable fs t 
   = mkOpt (conf2fexp fs $ getConfig t) (getVariant t)
+
+
+-- | combines a list of sqltables. it just appends tables for now.
+-- TODO: s.t. it disjuncts the pc 
+--   of the same tuple.
+-- big assumption: the tables all have the same schema.
+-- unionWithKey :: Ord k => (k -> a -> a -> a) -> Map k a -> Map k a -> Map k a
+combineSqlVariantTables :: PCatt -> [SqlVariantTable] -> SqlTable
+combineSqlVariantTables _ = foldr ((++) . getVariant) []

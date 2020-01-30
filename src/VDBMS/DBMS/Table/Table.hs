@@ -12,7 +12,8 @@ module VDBMS.DBMS.Table.Table (
         applyConfTable,
         applyConfTables,
         dropRows,
-        dropUnsatTuples
+        dropUnsatTuples,
+        combineSqlTables
 
 ) where
 
@@ -92,7 +93,8 @@ insertAttValToSqlRow = M.insert . attributeName
 insertAttValToSqlTable :: Attribute -> SqlValue -> SqlTable -> SqlTable
 insertAttValToSqlTable a v = map $ insertAttValToSqlRow a v 
 
--- | forces a sqlrow to conform to a rowtype
+-- | forces a sqlrow to conform to a rowtype.
+-- it is totally ok if the sqlrow have presence condition attribute.
 conformSqlRowToRowType :: SqlRow -> RowType -> SqlRow
 conformSqlRowToRowType r t = M.union r r'
   where
@@ -100,11 +102,15 @@ conformSqlRowToRowType r t = M.union r r'
     attDif      = rowTypeAtts S.\\ M.keysSet r 
     r'          = M.fromSet (\_ -> SqlNull) attDif
 
--- | combines a list of sqltables s.t. it disjuncts the pc 
+-- | combines a list of sqltables. it just appends tables for now.
+-- TODO: s.t. it disjuncts the pc 
 --   of the same tuple.
 -- big assumption: the tables all have the same schema.
-combineSqlTables :: [SqlTable] -> SqlTable
-combineSqlTables = undefined
+-- unionWithKey :: Ord k => (k -> a -> a -> a) -> Map k a -> Map k a -> Map k a
+combineSqlTables :: PCatt -> [SqlTable] -> SqlTable
+combineSqlTables _ = foldr (++) []
+  -- where
+  --   unionTwoTables lt rt = 
 
 
 -----------apply conf------------------
@@ -136,23 +142,16 @@ dropPres p = M.delete (presCondAttName p)
 dropPresInTable :: PCatt -> SqlTable -> SqlTable
 dropPresInTable p = fmap $ dropPres p
 
--- | applies a config to a row.
-applyConfRow :: Config Bool -> Set Attribute -> PCatt -> SqlRow -> SqlRow 
-applyConfRow c as p r = M.adjust updatePres (presCondAttName p) r'
-  where 
-    -- pres = M.lookup p r 
-    updatePres :: SqlValue -> SqlValue
-    updatePres v = fexp2sqlval $ Lit $ evalFeatureExpr c (sqlval2fexp v)
-    r' = M.restrictKeys r $ S.insert (presCondAttName p) $ S.map attributeName as 
-    -- pres' = evalFeatureExpr c (sqlToFexp pres)
-
 -- | applies a config to a table.
-applyConfTable :: Config Bool -> Set Attribute -> PCatt -> SqlTable -> SqlTable
-applyConfTable c as p = fmap $ applyConfRow c as p
+applyConfTable :: Config Bool -> PCatt -> FeatureExpr -> SqlTable -> SqlTable
+applyConfTable c p f t = filter (evalFeatureExpr c . tuple_pc) t
+  where
+    tuple_pc tuple = And f ((sqlval2fexp . fromJust) $ M.lookup (attributeName p) tuple)
+
 
 -- | applies a config to tables.
-applyConfTables :: Config Bool -> Set Attribute -> PCatt -> [SqlTable] -> [SqlTable]
-applyConfTables c as p = fmap $ applyConfTable c as p
+applyConfTables :: Config Bool -> PCatt -> FeatureExpr -> [SqlTable] -> [SqlTable]
+applyConfTables c p f = fmap $ applyConfTable c p f 
 
 
 

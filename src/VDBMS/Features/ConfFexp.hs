@@ -26,10 +26,6 @@ conf2fexp fs c =
 confs2fexp :: [Feature] -> [Config Bool] -> FeatureExpr
 confs2fexp fs cs = foldl (\fexp c -> Or fexp (conf2fexp fs c)) (Lit False) cs
 
--- | extracts the valid configurations of a feature expr.
--- validConfsOfFexp :: [Feature] -> FeatureExpr -> [Config Bool]
--- validConfsOfFexp fs fexp = undefined
-
 
 
 
