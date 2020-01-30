@@ -149,7 +149,8 @@ instance Variational (Schema a) where
 
   configure = configSchema_
 
-  optionalize_ s = optionalize (schFeatures s) (schConfs s) s
+  optionalize_ s = undefined
+    -- optionalize (schFeatures s) (schConfs s) s
 
 -- | All features.
 schFeatures :: Schema a -> [Feature]

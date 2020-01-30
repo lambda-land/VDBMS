@@ -9,10 +9,12 @@ import VDBMS.VDB.Database.HDBC.Fetch
 import qualified Database.HDBC as H
 import qualified Database.HDBC.Sqlite3 as S
 
+import Data.SBV (Boolean) 
+
 -- | Sqlite DBMS with HDBC interface.
 data SqliteHDBC = SqliteHDBC PCatt (Schema Bool) S.Connection
 
-instance Database SqliteHDBC where
+instance Database SqliteHDBC Bool where
   
   type Path SqliteHDBC = FilePath
   

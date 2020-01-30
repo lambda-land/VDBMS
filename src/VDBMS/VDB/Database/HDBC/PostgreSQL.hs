@@ -12,7 +12,7 @@ import qualified Database.HDBC.PostgreSQL as P
 -- | Postgresql DBMS with HDBC interface.
 data PostgresHDBC = PostgresHDBC PCatt (Schema Bool) P.Connection
 
-instance Database PostgresHDBC where
+instance Database PostgresHDBC Bool where
   
   type Path PostgresHDBC = String 
 

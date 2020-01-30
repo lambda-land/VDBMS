@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 -- | Database.
 module VDBMS.VDB.Database.Database where
 
@@ -10,6 +11,8 @@ import VDBMS.DBMS.Table.Table (SqlTable)
 import VDBMS.VDB.Name (PCatt)
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 
+import Data.SBV (Boolean)
+
 -- | A query sent to the db engine is just a string.
 type Query = String
 
@@ -19,13 +22,14 @@ type Query = String
 --   attribute name. This is instantiated for each
 --   external library and db engine used to connect to
 --   and store the data.
-class Database conn where 
+class Boolean a => Database conn a | conn -> a where 
 
   type Path conn 
+  -- type DBconf a
 
-  connect :: Path conn -> PCatt -> Schema Bool -> IO conn 
+  connect :: Path conn -> PCatt -> Schema a -> IO conn 
   disconnect :: conn -> IO ()
-  schema :: conn -> Schema Bool
+  schema :: conn -> Schema a
   presCond :: conn -> PCatt
   fetchQRows :: conn -> Query -> IO SqlTable
   fetchQRows' :: conn -> Query -> IO SqlTable -- strict version
@@ -35,7 +39,7 @@ class Database conn where
   dbFeatures :: conn -> [Feature]
   dbFeatures = schFeatures . schema
   -- | Gets all valid configuration of a vdb.
-  getAllConfig :: conn -> [Config Bool]
+  getAllConfig :: conn -> [Config a]
   getAllConfig c = schConfs $ schema c
 
 
