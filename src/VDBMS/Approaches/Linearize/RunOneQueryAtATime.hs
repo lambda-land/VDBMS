@@ -27,8 +27,8 @@ import VDBMS.Features.Config (Config)
 import Data.Bitraversable (bitraverse, bimapDefault)
 
 -- |
-runQ1 :: Database conn => conn -> Algebra -> IO Table
-runQ1 conn vq = 
+runQ2 :: Database conn => conn -> Algebra -> IO Table
+runQ2 conn vq = 
   do let vsch = schema conn
          vsch_pc = featureModel vsch
          -- features = dbFeatures conn
