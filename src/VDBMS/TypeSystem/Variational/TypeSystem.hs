@@ -64,9 +64,10 @@ typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (M.toLis
     attrinfo (a,ais) = map (\ai -> (Attribute $ (qualName . attrQual) ai ++ an, mkOpt (attrFexp ai) (attrType ai))) ais
       where an = "." ++ attributeName a
 
--- | returns the attributes of type env.
+-- | returns the attributes of type env. 
+--   assumption: attributes are unique.
 typeAtts :: TypeEnv -> [Attribute]
-typeAtts = undefined
+typeAtts = Set.toList . M.keysSet . getObj
 
 -- | Possible typing errors.
 data TypeError 
