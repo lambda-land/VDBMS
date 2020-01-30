@@ -9,13 +9,16 @@ module VDBMS.DBMS.Table.SqlVtable (
         constVTuple,
         constVTuples,
         destVTuple,
-        destVTuples
+        destVTuples,
+        applyFexpToSqlVtable,
+        updateTuplesPCInSqlVtable
 
 ) where
 
 -- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.List (groupBy)
+import Data.Maybe (fromJust)
 
 import VDBMS.Variational.Opt 
 import VDBMS.VDB.Name
@@ -29,6 +32,20 @@ type SqlVtable = Opt SqlTable -- this is not correct!
 type VTuple = Opt SqlRow
 type VTuples = [VTuple]
 
+-- | applies a feature expression to tuples of a sqlvtable and
+--   drops the ones that are not valid, i.e., their pc is not
+--   satisfiable.
+applyFexpToSqlVtable :: FeatureExpr -> PCatt -> SqlVtable -> SqlVtable
+applyFexpToSqlVtable f pc t = applyFuncObj (filter (satisfiable . tuple_pc)) t
+  where 
+    pcName = attributeName pc
+    t_pc = getFexp t
+    -- tab = getObj t
+    tuple_pc tuple = And (And f t_pc) ((sqlval2fexp . fromJust) $ M.lookup pcName tuple)
+
+-- | updates tuples pc in a sqlvarianttable to the fexp of the conf.
+updateTuplesPCInSqlVtable :: PCatt -> SqlVtable -> SqlTable
+updateTuplesPCInSqlVtable pc t = updatePCInSqlTable pc (getFexp t) (getObj t)
 
 -- | removes tuples that have the same values except for pres
 --   cond, inserts only one such tuple and disjuncts all 

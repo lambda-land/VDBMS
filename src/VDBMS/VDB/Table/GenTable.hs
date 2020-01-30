@@ -14,13 +14,15 @@ import VDBMS.VDB.Name (PCatt)
 -- import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Variational.Schema (TableSchema, tschFexp, tschRowType)
 import VDBMS.Features.Variant (Variant)
-import VDBMS.DBMS.Table.SqlVtable (SqlVtable)
+import VDBMS.DBMS.Table.SqlVtable (SqlVtable, applyFexpToSqlVtable,
+  updateTuplesPCInSqlVtable)
 import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, 
-  applyConfVariantTables, conformSqlVariantTableToSchema,
+  applyConfVariantTables,
   updateTuplesPC)
 -- import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
 import VDBMS.Features.FeatureExpr.FeatureExpr (Feature, FeatureExpr)
-import VDBMS.DBMS.Table.Table (SqlTable, combineSqlTables)
+import VDBMS.DBMS.Table.Table (SqlTable, combineSqlTables, 
+  conformSqlTableToSchema)
 import VDBMS.TypeSystem.Variational.TypeSystem (TypeEnv)
 
 -- | takes everything needed to combine a list of variant sqltables
@@ -35,16 +37,17 @@ variantSqlTables2Table fs pc t_sch ts
       t_pc = tschFexp t_sch
       rowtype = tschRowType t_sch
       ts_valid = applyConfVariantTables pc t_pc ts
-      ts_sameSch_updatedPC = map ((updateTuplesPC fs pc) . (flip conformSqlVariantTableToSchema rowtype)) ts_valid
+      ts_sameSch_updatedPC = map ((flip conformSqlTableToSchema rowtype) . (updateTuplesPC fs pc)) ts_valid
 
 -- | takes everything neede to combine a list of opt sqltable
 --   to a table.
 sqlVtables2VTable :: PCatt -> TableSchema -> [SqlVtable] -> Table
-sqlVtables2VTable pc t_sch ts = mkVTable t_sch (combineSqlTables pc undefined)
+sqlVtables2VTable pc t_sch ts = mkVTable t_sch (combineSqlTables pc ts_sameSch_updatedPC)
   where
     t_pc = tschFexp t_sch
     rowtype = tschRowType t_sch
-    ts_valid = undefined
+    ts_valid = map (applyFexpToSqlVtable t_pc pc) ts 
+    ts_sameSch_updatedPC = map ((flip conformSqlTableToSchema rowtype) . (updateTuplesPCInSqlVtable pc)) ts_valid
 
 {--
 ------------------- construct vtable for approach1 -------------------

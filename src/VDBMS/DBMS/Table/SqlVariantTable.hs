@@ -7,7 +7,7 @@ module VDBMS.DBMS.Table.SqlVariantTable (
         -- dropRowsInVariantTable,
         dropPresInVariantTable,
         constructSchemaFromSqlVariantTable,
-        conformSqlVariantTableToSchema,
+        -- conformSqlVariantTableToSchema,
         addTuplePresCond,
         dropUnsatTuples,
         -- sqlVariantTable2SqlVTable,
@@ -73,16 +73,16 @@ constructSchemaFromSqlVariantTable fs t = (fexp, rowType)
 --     row'' = M.map typeOf row'
 --     rowType = M.map (\v -> (fexp,v)) row''
 
--- | forces a sqlvarianttable to conform to a table schema. i.e. 
---   it adds all attributes in the schema to the sqlvarianttable
---   with sqlnull.
---   TODO and DISCUSS WITH ERIC: maybe we should insert some specific
---                               value (like nothing) to specify that
---                               this value doesn't actually exist!
--- it is totally ok if tuples have presence condition attribute.
-conformSqlVariantTableToSchema :: SqlVariantTable -> RowType -> SqlVariantTable
-conformSqlVariantTableToSchema t r = updateVariant 
-  (map (flip conformSqlRowToRowType r) $ getVariant t) t
+-- -- | forces a sqlvarianttable to conform to a table schema. i.e. 
+-- --   it adds all attributes in the schema to the sqlvarianttable
+-- --   with sqlnull.
+-- --   TODO and DISCUSS WITH ERIC: maybe we should insert some specific
+-- --                               value (like nothing) to specify that
+-- --                               this value doesn't actually exist!
+-- -- it is totally ok if tuples have presence condition attribute.
+-- conformSqlVariantTableToSchema :: SqlVariantTable -> RowType -> SqlVariantTable
+-- conformSqlVariantTableToSchema t r = updateVariant 
+--   (map (flip conformSqlRowToRowType r) $ getVariant t) t
     
 -- | adds presence condition key and its value to each row
 --   of the sqlvarianttable and turns it into a vtable.
@@ -96,7 +96,7 @@ addTuplePresCond fs p vt = insertAttValToSqlTable (Attribute $ presCondAttName p
     fexp = fexp2sqlval $ conf2fexp fs $ getConfig vt
     t    = getVariant vt
 
--- |
+-- | updates tuples pc in a sqlvarianttable to the fexp of the conf.
 updateTuplesPC :: [Feature] -> PCatt -> SqlVariantTable -> SqlTable
 updateTuplesPC fs pc t = updatePCInSqlTable pc f tab
   where

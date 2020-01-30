@@ -14,7 +14,8 @@ module VDBMS.DBMS.Table.Table (
         dropRows,
         dropUnsatTuples,
         combineSqlTables,
-        updatePCInSqlTable
+        updatePCInSqlTable,
+        conformSqlTableToSchema
 
 ) where
 
@@ -70,6 +71,13 @@ dropUnsatTuples f pc t = filter (satisfiable . tuple_pc) t
   where
     pcName = attributeName pc 
     tuple_pc tuple = And f ((sqlval2fexp . fromJust) $ M.lookup pcName tuple)
+
+-- | forces a sqltable to conform to a table schema. i.e. 
+--   it adds all attributes in the schema to the sqlvarianttable
+--   with sqlnull.
+-- it is totally ok if tuples have presence condition attribute.
+conformSqlTableToSchema :: SqlTable -> RowType -> SqlTable
+conformSqlTableToSchema t r =  map (flip conformSqlRowToRowType r) t
 
 -- | construct the rowtype from a sqltable.
 --   NOTE: it takes the first row of the table. so if that row
