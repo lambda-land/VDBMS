@@ -13,7 +13,8 @@ module VDBMS.DBMS.Table.Table (
         applyConfTables,
         dropRows,
         dropUnsatTuples,
-        combineSqlTables
+        combineSqlTables,
+        updatePCInSqlTable
 
 ) where
 
@@ -92,6 +93,16 @@ insertAttValToSqlRow = M.insert . attributeName
 -- | inserts an attribute value pair into all rows of a sqltable.
 insertAttValToSqlTable :: Attribute -> SqlValue -> SqlTable -> SqlTable
 insertAttValToSqlTable a v = map $ insertAttValToSqlRow a v 
+
+-- | updates the pc of a tuple. 
+--   assumption: the tuple has pc.
+updatePCInSqlRow :: PCatt -> FeatureExpr -> SqlRow -> SqlRow
+updatePCInSqlRow pc f = M.adjust (\_ -> fexp2sqlval f) (attributeName pc)
+
+-- | updates the pc of a tuples in a table.
+--   assumption: the tuple has pc.
+updatePCInSqlTable :: PCatt -> FeatureExpr -> SqlTable -> SqlTable
+updatePCInSqlTable pc f = map (updatePCInSqlRow pc f)
 
 -- | forces a sqlrow to conform to a rowtype.
 -- it is totally ok if the sqlrow have presence condition attribute.

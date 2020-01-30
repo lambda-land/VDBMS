@@ -10,8 +10,9 @@ module VDBMS.DBMS.Table.SqlVariantTable (
         conformSqlVariantTableToSchema,
         addTuplePresCond,
         dropUnsatTuples,
-        sqlVariantTable2SqlVTable,
-        combineSqlVariantTables
+        -- sqlVariantTable2SqlVTable,
+        -- combineSqlVariantTables
+        updateTuplesPC
 
 ) where
 
@@ -95,10 +96,17 @@ addTuplePresCond fs p vt = insertAttValToSqlTable (Attribute $ presCondAttName p
     fexp = fexp2sqlval $ conf2fexp fs $ getConfig vt
     t    = getVariant vt
 
+-- |
+updateTuplesPC :: [Feature] -> PCatt -> SqlVariantTable -> SqlTable
+updateTuplesPC fs pc t = updatePCInSqlTable pc f tab
+  where
+    f = conf2fexp fs $ getConfig t
+    tab = getVariant t
+
 -- | turns a sqltable to a sqlvtable.
-sqlVariantTable2SqlVTable :: [Feature] -> SqlVariantTable -> SqlVtable
-sqlVariantTable2SqlVTable fs t 
-  = mkOpt (conf2fexp fs $ getConfig t) (getVariant t)
+-- sqlVariantTable2SqlVTable :: [Feature] -> SqlVariantTable -> SqlVtable
+-- sqlVariantTable2SqlVTable fs t 
+--   = mkOpt (conf2fexp fs $ getConfig t) (getVariant t)
 
 
 -- | combines a list of sqltables. it just appends tables for now.

@@ -16,10 +16,10 @@ import VDBMS.Features.Variant (Variant)
 import VDBMS.DBMS.Table.SqlVtable (SqlVtable)
 import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, 
   applyConfVariantTables, conformSqlVariantTableToSchema,
-  sqlVariantTable2SqlVTable, combineSqlVariantTables)
+  updateTuplesPC)
 -- import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
 import VDBMS.Features.FeatureExpr.FeatureExpr (Feature, FeatureExpr)
-import VDBMS.DBMS.Table.Table (SqlTable)
+import VDBMS.DBMS.Table.Table (SqlTable, combineSqlTables)
 import VDBMS.TypeSystem.Variational.TypeSystem (TypeEnv)
 
 -- dropUnsatTuples :: FeatureExpr -> PCatt -> SqlVariantTable -> SqlVariantTable
@@ -39,12 +39,15 @@ variantSqlTables2Table :: [Feature] -> PCatt
                        -> [SqlVariantTable]
                        -> Table
 variantSqlTables2Table fs pc t_sch ts 
-  = mkVTable t_sch (combineSqlVariantTables pc ts_valid_sameSch)
+  = mkVTable t_sch (combineSqlTables pc ts_sameSch_updatedPC)
     where 
       t_pc = tschFexp t_sch
       rowtype = tschRowType t_sch
       ts_valid = applyConfVariantTables pc t_pc ts
-      ts_valid_sameSch = map (flip conformSqlVariantTableToSchema rowtype) ts_valid
+      ts_sameSch_updatedPC = map ((updateTuplesPC fs pc) . (flip conformSqlVariantTableToSchema rowtype)) ts_valid
+
+-- |
+-- sqlVtables2VTable :: 
 
 {--
 ------------------- construct vtable for approach1 -------------------
