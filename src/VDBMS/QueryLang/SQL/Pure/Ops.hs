@@ -3,6 +3,7 @@ module VDBMS.QueryLang.SQL.Pure.Ops (
 
        adjustQSch
        , updatePC
+       , sqlQAtts
 
 ) where
 
@@ -15,6 +16,10 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 
 -- import Control.Monad.Catch 
 import Data.Maybe (fromJust)
+
+-- | gets attributes projected in a sqlselect query.
+sqlQAtts :: SqlSelect -> [Attribute]
+sqlQAtts = undefined
 
 -- | adjusts the schema  of a sql query wrt a given list of attribute.
 adjustQSch :: [Attribute] -> [Attribute] -> SqlSelect -> SqlSelect
