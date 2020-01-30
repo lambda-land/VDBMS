@@ -22,12 +22,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr (Feature, FeatureExpr)
 import VDBMS.DBMS.Table.Table (SqlTable, combineSqlTables)
 import VDBMS.TypeSystem.Variational.TypeSystem (TypeEnv)
 
--- dropUnsatTuples :: FeatureExpr -> PCatt -> SqlVariantTable -> SqlVariantTable
--- dropPresInVariantTable :: PCatt -> SqlVariantTable -> SqlVariantTable
--- conformSqlVariantTableToSchema :: SqlVariantTable -> RowType -> SqlVariantTable
--- sqlVariantTable2SqlVTable :: [Feature] -> SqlVariantTable -> SqlVtable
--- combineSqlTables :: PCatt -> [SqlTable] -> SqlTable
-
+-- PROBABLY STILL NEED THIS!! KNOW WHEN YOU IMPLEMENT THE RUNQ0 COMPLETELY!
 -- | turns a type env to table schema.
 -- typeenv2TableSchema :: TypeEnv -> TableSchema
 -- typeenv2TableSchema = undefined
