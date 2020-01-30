@@ -19,7 +19,7 @@ import Data.Maybe (catMaybes, fromJust)
 import Data.List (partition)
 
 -- | Applies the minimization rules until the query doesn't change.
-appMin :: Algebra -> VariationalContext -> Schema a -> Algebra
+appMin :: Algebra -> VariationalContext -> Schema -> Algebra
 appMin q ctx s
   | minVar q ctx s == q = q 
   | otherwise           = appMin (minVar q ctx s) ctx s
@@ -28,7 +28,7 @@ appMin q ctx s
 -- Note: not sure which side is more optimized. We can determine that by
 --       running some experiments. It also probably depends on the 
 --       approach we take.
-minVar :: Algebra -> VariationalContext -> Schema a -> Algebra 
+minVar :: Algebra -> VariationalContext -> Schema -> Algebra 
 minVar q ctx s = 
   prjDistr (selDistr ((chcRel . optSel . pushOutProj . chcDistr) q) ctx s) ctx s
 
@@ -178,7 +178,7 @@ optSel (Prod rq1 rq2)   = Prod (renameMap optSel rq1) (renameMap optSel rq2)
 optSel q                = q
 
 -- | selection distributive properties.
-selDistr :: Algebra -> VariationalContext -> Schema a -> Algebra
+selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
 selDistr q@(Sel (VsqlAnd c1 c2) (Rename Nothing (Join rq1 rq2 c))) ctx s 
   -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
   | check c1 t1 && check c2 t2 
@@ -257,7 +257,7 @@ condAttsInEnv (And c1 c2)    t = condAttsInEnv c1 t && condAttsInEnv c2 t
 condAttsInEnv (CChc _ c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
 
 -- | projection distributive properties.
-prjDistr :: Algebra -> VariationalContext -> Schema a -> Algebra
+prjDistr :: Algebra -> VariationalContext -> Schema -> Algebra
 -- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
 prjDistr (Proj as (Rename Nothing (Join rq1 rq2 c))) ctx s 
   = Join (Rename Nothing (Proj as1 (renameMap prjDistr' rq1)))

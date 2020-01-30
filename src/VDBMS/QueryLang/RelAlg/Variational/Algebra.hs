@@ -222,7 +222,7 @@ configureAlgebra _ (TRef r)        = RTRef r
 configureAlgebra _ Empty           = REmpty
 
 -- | configure a query wrt the schema.
-configureAlgebra_ :: Config Bool -> Schema a -> Algebra -> RAlgebra
+configureAlgebra_ :: Config Bool -> Schema -> Algebra -> RAlgebra
 configureAlgebra_ c s (SetOp o l r) 
   = RSetOp o (configureAlgebra_ c s l) (configureAlgebra_ c s r)
 configureAlgebra_ c s (Proj as rq) 

@@ -22,7 +22,7 @@ import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import Control.Arrow (first, second, (***))
 
 -- |
-runQ0 :: Database conn Bool => conn -> Algebra -> IO Table
+runQ0 :: Database conn => conn -> Algebra -> IO Table
 runQ0 conn vq = 
   do let vsch = schema conn
          vsch_pc = featureModel vsch

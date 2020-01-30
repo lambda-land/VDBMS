@@ -33,24 +33,24 @@ instance Exception SchValErr
 
 -- | checks 1) if fm is sat, 2) if all relations
 --   pc are sat, and 3) if all atts pc are sat.
-isVschValid :: MonadThrow m => Schema a -> m Bool 
+isVschValid :: MonadThrow m => Schema -> m Bool 
 isVschValid s = satFM s >> satRsPC s >> satAsPC s
 
 -- | checks whether the configured vsch is the same as the 
 --   given relational schema provided by the user for a 
 --   list of configs.
 -- ∀ c ∈ C: [[S]]\_c =?= S\_c 
-areConfsCorrect :: MonadThrow m => Schema a -> [Variant (Schema a)] -> m Bool 
+areConfsCorrect :: MonadThrow m => Schema -> [Variant Schema] -> m Bool 
 areConfsCorrect s rss = foldM (\b r -> isConfCorr s r >>= return . ((&&) b)) True rss
   where
-    isConfCorr :: MonadThrow m => Schema a -> Variant (Schema a) -> m Bool
+    isConfCorr :: MonadThrow m => Schema -> Variant Schema -> m Bool
     isConfCorr s rs 
       | configure (fst rs) s == (snd rs) = return True
       | otherwise = throwM $ ConfedIsWrong (snd rs)
 
 -- | checks if the feature model is satisfiable. 
 -- sat fm =?= true
-satFM :: MonadThrow m => Schema a -> m Bool 
+satFM :: MonadThrow m => Schema -> m Bool 
 satFM s
   | (satisfiable . featureModel) s = return True
   | otherwise = throwM $ FMunsat (featureModel s)
@@ -67,7 +67,7 @@ satRPC fm (r, tsch)
 -- | checks all relations in a schema to see if
 --   their pc is satisfiable.
 -- ∀ r ∈ S : sat (fm ∧ pcᵣ)
-satRsPC :: MonadThrow m => Schema a -> m Bool 
+satRsPC :: MonadThrow m => Schema -> m Bool 
 satRsPC s = foldM (\f p -> satRPC fm p >>= return . ((&&) f)) True sList
   where
     sList = (toList . schemaStrct) s 
@@ -97,7 +97,7 @@ satRelAsPc fm (r, tsch)
 -- | check if all attributes of all relations of 
 --   the schema have satisfiable pc.
 -- ∀ r ∈ S, ∀ a ∈ r: sat (fm ∧ pcᵣ ∧ pcₐ)
-satAsPC :: MonadThrow m => Schema a -> m Bool
+satAsPC :: MonadThrow m => Schema -> m Bool
 satAsPC s = foldM (\f p -> satRelAsPc fm p >>= (return . (&&) f)) True sList
   where 
     sList = (toList . schemaStrct) s 

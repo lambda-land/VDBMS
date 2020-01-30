@@ -56,31 +56,31 @@ lookupAttFexpTypeInRowType a r =
 
 -- | Get the schema of a relation in the database, where 
 -- 	the relation schema is stored as a row type.
-lookupTableSch :: MonadThrow m => Relation -> Schema a -> m TableSchema
+lookupTableSch :: MonadThrow m => Relation -> Schema -> m TableSchema
 lookupTableSch r s = maybe (throwM $ MissingRelation r) return $ M.lookup r (schemaStrct s)
 
 -- | Get the feature expression of a relation in a database.
-lookupRelationFexp :: MonadThrow m => Relation -> Schema a -> m FeatureExpr
+lookupRelationFexp :: MonadThrow m => Relation -> Schema -> m FeatureExpr
 lookupRelationFexp r s = lookupTableSch r s 
   >>= return . (\t -> And (fst t) (featureModel s))
 
 -- | Get the row type of a relation in a database.
-lookupRel :: MonadThrow m => Relation -> Schema a -> m RowType
+lookupRel :: MonadThrow m => Relation -> Schema -> m RowType
 lookupRel r s = lookupTableSch r s >>= return . snd
 
 -- | get the attributes of a relation in a database.
-lookupRelAttsList :: MonadThrow m => Relation -> Schema a -> m [Attribute]
+lookupRelAttsList :: MonadThrow m => Relation -> Schema -> m [Attribute]
 lookupRelAttsList r s = M.keys <$> lookupRel r s
 
 -- | Get the type and feature exp of an attribute in a database.
-lookupAttribute :: MonadThrow m => Attribute -> Relation -> Schema a
+lookupAttribute :: MonadThrow m => Attribute -> Relation -> Schema
                                 -> m (Opt SqlType)
 lookupAttribute a r s = lookupRel r s >>= lookupAttFexpTypeInRowType a
 
 -- | Get the type of an attribute in a database.
-lookupAttType :: MonadThrow m => Attribute -> Relation -> Schema a -> m SqlType
+lookupAttType :: MonadThrow m => Attribute -> Relation -> Schema -> m SqlType
 lookupAttType a r s = lookupAttribute a r s >>= return . snd
 
 -- | Get the feature expression of an attribute in adatabase.
-lookupAttFexp :: MonadThrow m => Attribute -> Relation -> Schema a -> m FeatureExpr
+lookupAttFexp :: MonadThrow m => Attribute -> Relation -> Schema -> m FeatureExpr
 lookupAttFexp a r s = lookupAttribute a r s >>= return . fst

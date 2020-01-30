@@ -26,7 +26,7 @@ import Data.Maybe (isJust)
 -- | pushes the schema onto the vq after type checking 
 --   the query. in order for the commuting diagram to
 --   hold.
-pushSchToQ :: Schema a -> Algebra -> Algebra
+pushSchToQ :: Schema -> Algebra -> Algebra
 pushSchToQ s (SetOp o l r) 
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
 pushSchToQ s (Proj as rq) 
@@ -48,7 +48,7 @@ pushSchToQ _ Empty = Empty
 -- | takes a relation and schema and generates
 --   the list of optattributes of the relationschema
 --   in the schema. 
-relSchToOptAtts :: Rename Relation -> Schema a -> OptAttributes
+relSchToOptAtts :: Rename Relation -> Schema -> OptAttributes
 relSchToOptAtts rr s =
   case lookupTableSch (thing rr) s of
     Just tsch -> tsch2optAtts rr fm tsch
@@ -124,7 +124,7 @@ intersectOptAtts big small = map (restrictOptAtt big) small
 
 -- | pushes schema to vsqlcond which pushes the schema into the
 --   query used in sqlin condition.
-pushSchToCond :: Schema a -> VsqlCond -> VsqlCond
+pushSchToCond :: Schema -> VsqlCond -> VsqlCond
 pushSchToCond _ cnd@(VsqlCond _) = cnd
 pushSchToCond s (VsqlIn a q)     = VsqlIn a (pushSchToQ s q)
 pushSchToCond s (VsqlNot c)      = VsqlNot (pushSchToCond s c)

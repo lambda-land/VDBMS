@@ -68,7 +68,7 @@ filterTSch t = updateOptObj (M.filter (\v -> satAnds f (fst v)) rt) t
     -- ss = schemaStrct s 
 
 -- | returns a relation arity.
-relArity :: Relation -> Schema a -> Int 
+relArity :: Relation -> Schema -> Int 
 relArity r s = case rt of 
                  Just rowType -> M.size rowType
                  _ -> 0
@@ -97,11 +97,11 @@ getAttTypeFromRowType r = dropFexp rowSet
 
 -- | gets valid relations of a schema. i.e. relations that
 --   their fexp isn't false.
-getRels :: Schema a -> Set Relation
+getRels :: Schema -> Set Relation
 getRels s = Set.filter (flip validRel $ s) rels
   where 
     rels = M.keysSet $ schemaStrct s
-    validRel :: Relation -> Schema a -> Bool
+    validRel :: Relation -> Schema -> Bool
     validRel r sch 
       | lookupRelationFexp r sch == Just (Lit False) = False
       | lookupRelationFexp r sch == Nothing = False

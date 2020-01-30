@@ -16,9 +16,9 @@ import Data.Text
 
 -- | A database residing in Sqlite and using sqlite3
 --   to connect to it. 
-data Sqlite3 = Sqlite3 PCatt (Schema Bool) S.Database
+data Sqlite3 = Sqlite3 PCatt Schema S.Database
 
-instance Database Sqlite3 Bool where
+instance Database Sqlite3 where
 
   type Path Sqlite3 = Text
   

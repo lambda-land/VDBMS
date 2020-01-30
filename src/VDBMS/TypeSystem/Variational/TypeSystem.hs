@@ -148,7 +148,7 @@ nonAmbiguousAttr a t =
 -- i.e. it includes the fexp of the whole table.
 -- 
 typeOfQuery :: MonadThrow m 
-             => Algebra -> VariationalContext -> Schema a
+             => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
 typeOfQuery (SetOp _ l r)    ctx s = typeSetOp l r ctx s 
 typeOfQuery (Proj oas rq)    ctx s = typeProj oas rq ctx s
@@ -169,7 +169,7 @@ typeOfQuery Empty            ctx _ =
 
 -- | Determines the type a set operation query.
 typeSetOp :: MonadThrow m 
-          => Algebra -> Algebra -> VariationalContext -> Schema a
+          => Algebra -> Algebra -> VariationalContext -> Schema 
           -> m TypeEnv
 typeSetOp l r ctx s = 
   do tl <- typeOfQuery l ctx s
@@ -212,7 +212,7 @@ compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
 
 -- | Type of a projection query.
 typeProj :: MonadThrow m 
-         => OptAttributes -> Rename Algebra -> VariationalContext -> Schema a
+         => OptAttributes -> Rename Algebra -> VariationalContext -> Schema 
          -> m TypeEnv
 typeProj oas rq ctx s 
   | null oas = throwM $ EmptyAttrList oas rq 
@@ -271,7 +271,7 @@ projOptAttrs oras t =
 
 -- | Type of a selection query.
 typeSel :: MonadThrow m 
-         => VsqlCond -> Rename Algebra -> VariationalContext -> Schema a
+         => VsqlCond -> Rename Algebra -> VariationalContext -> Schema 
          -> m TypeEnv
 typeSel c rq ctx s =
   do 
@@ -303,7 +303,7 @@ updateType a t = updateOptObj updatedTypeObj t
 
 -- | Type checks variational sql conditions.
 typeVsqlCond :: MonadThrow m 
-             => VsqlCond -> VariationalContext -> Schema a -> TypeEnv 
+             => VsqlCond -> VariationalContext -> Schema -> TypeEnv 
              -> m ()
 typeVsqlCond (VsqlCond c)     ctx _ t = appCtxtToEnv ctx t 
   >>= typeCondition c ctx 
@@ -383,7 +383,7 @@ unionTypeMaps l r = SM.unionWith (appendAttrInfos_ F.Or) l r
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
          => Rename Algebra -> Rename Algebra -> Condition
-         -> VariationalContext -> Schema a
+         -> VariationalContext -> Schema 
          -> m TypeEnv
 typeJoin rl rr c ctx s = 
   do t <- typeProd rl rr ctx s 
@@ -393,7 +393,7 @@ typeJoin rl rr c ctx s =
 -- | Gives the type of cross producting multiple rename relations.
 typeProd :: MonadThrow m 
          => Rename Algebra -> Rename Algebra 
-         -> VariationalContext -> Schema a
+         -> VariationalContext -> Schema 
          -> m TypeEnv
 typeProd rl rr ctx s = 
   do tl <- typeOfQuery (thing rl) ctx s 
@@ -477,7 +477,7 @@ appendAttrInfos_ ff l r = shared ++ unshared
 
 -- | Returns the type of a rename relation.
 typeRel :: MonadThrow m 
-        => Rename Relation -> VariationalContext -> Schema a
+        => Rename Relation -> VariationalContext -> Schema 
         -> m TypeEnv
 typeRel rr ctx s = 
   do tsch <- lookupTableSch (thing rr) s 
@@ -486,7 +486,7 @@ typeRel rr ctx s =
 
 -- | Generates a type env from a table schema and updates the pc
 --   of the table by conjuncting it with schema's feature model.
-tableSch2TypeEnv :: Rename Relation -> TableSchema -> Schema a -> TypeEnv 
+tableSch2TypeEnv :: Rename Relation -> TableSchema -> Schema -> TypeEnv 
 tableSch2TypeEnv rr tsch s = 
   updateOptObj (SM.map (optSqlType2AttInfo rr) (getObj tsch)) 
              $ applyFuncFexp (F.And (featureModel s)) tsch 

@@ -45,11 +45,11 @@ type TableSchema = Opt RowType
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to
 --   the feature model, which defines the set of valid configurations.
-type Schema a = (([Feature], [Config a]), Opt (Map Relation TableSchema))
+type Schema = (([Feature], [Config Bool]), Opt (Map Relation TableSchema))
 
 -- | Configures a variational schema and returns an empty 
 --   map if the configuration isn't valid.
-configSchema_ :: Config Bool -> Schema a -> RSchema
+configSchema_ :: Config Bool -> Schema -> RSchema
 configSchema_ c s 
   | evalFeatureExpr c fm = 
     mapMaybe (configTableSchema c) (schemaStrct s)
@@ -59,7 +59,7 @@ configSchema_ c s
 
 
 -- | Configures a variational schema to a relational one.
-configSchema :: MonadThrow m => Config Bool -> Schema a -> m RSchema
+configSchema :: MonadThrow m => Config Bool -> Schema -> m RSchema
 configSchema c s 
   | evalFeatureExpr c fm = 
     return $ mapMaybe (configTableSchema c) (schemaStrct s)
@@ -143,33 +143,33 @@ configTableSchema c t
 --     optedTable = optAttrs rowtype
 
 
-instance Variational (Schema a) where
+instance Variational Schema where
 
-  type NonVariational (Schema a) = RSchema 
+  type NonVariational Schema = RSchema 
 
   configure = configSchema_
 
   optionalize_ s = undefined
-    -- optionalize (schFeatures s) (schConfs s) s
+  -- optionalize (schFeatures s) (validConfsOfFexp (schFeatures s) (featureModel s)) s
 
 -- | All features.
-schFeatures :: Schema a -> [Feature]
+schFeatures :: Schema -> [Feature]
 schFeatures = fst . fst
 
 -- | Schema.
-schema :: Schema a -> Opt (Map Relation TableSchema)
+schema :: Schema -> Opt (Map Relation TableSchema)
 schema = snd
 
 -- | The feature model associated with a schema.
-featureModel :: Schema a -> FeatureExpr
+featureModel :: Schema -> FeatureExpr
 featureModel = getFexp . schema
 
 -- | Gets the structure of schema.
-schemaStrct :: Schema a -> Map Relation TableSchema
+schemaStrct :: Schema -> Map Relation TableSchema
 schemaStrct = getObj . schema 
 
 -- | valid configurations of the schema.
-schConfs :: Schema a -> [Config a]
+schConfs :: Schema -> [Config Bool]
 schConfs = snd . fst
 
 -- | returns the table schema fexp.

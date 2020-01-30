@@ -11,7 +11,6 @@ import VDBMS.DBMS.Table.Table (SqlTable)
 import VDBMS.VDB.Name (PCatt)
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 
-import Data.SBV (Boolean)
 
 -- | A query sent to the db engine is just a string.
 type Query = String
@@ -22,14 +21,13 @@ type Query = String
 --   attribute name. This is instantiated for each
 --   external library and db engine used to connect to
 --   and store the data.
-class Boolean a => Database conn a | conn -> a where 
+class Database conn  where 
 
   type Path conn 
-  -- type DBconf a
 
-  connect :: Path conn -> PCatt -> Schema a -> IO conn 
+  connect :: Path conn -> PCatt -> Schema -> IO conn 
   disconnect :: conn -> IO ()
-  schema :: conn -> Schema a
+  schema :: conn -> Schema 
   presCond :: conn -> PCatt
   fetchQRows :: conn -> Query -> IO SqlTable
   fetchQRows' :: conn -> Query -> IO SqlTable -- strict version
@@ -39,7 +37,7 @@ class Boolean a => Database conn a | conn -> a where
   dbFeatures :: conn -> [Feature]
   dbFeatures = schFeatures . schema
   -- | Gets all valid configuration of a vdb.
-  getAllConfig :: conn -> [Config a]
+  getAllConfig :: conn -> [Config Bool]
   getAllConfig c = schConfs $ schema c
 
 

@@ -171,7 +171,7 @@ enronFeatureModel = Lit True
 --
 -- * Enron V-Schema for Software Product Lines
 --
-enronVSchema :: Schema Bool
+enronVSchema :: Schema 
 enronVSchema = ((enronFeatures, enronConfs), (enronFeatureModel, constructOptRelMap [ (Lit True, employeelist, employeelist_vrelation)
                                                       , (Lit True, messages, messages_vrelation)
                                                       , (Lit True, recipientinfo, recipientinfo_vrelation)

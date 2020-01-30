@@ -241,7 +241,7 @@ employeeFeatureModel =  (empv1 `And` (Not empv2) `And` (Not empv3) `And` (Not em
 -- 
 -- Employee V-Schema for Employee Evolution
 --
-empVSchema :: Schema Bool
+empVSchema :: Schema 
 empVSchema = ((empFeatures, empConfs), (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vrelation)
                                                        , (empv1, otherpersonnel, otherpersonnel_vrelation)
                                                        , (empv2 `Or` empv3 `Or` empv4 `Or` empv5, empacct, empacct_vrelation)
