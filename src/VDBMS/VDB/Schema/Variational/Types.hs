@@ -12,6 +12,7 @@ module VDBMS.VDB.Schema.Variational.Types (
         , configSchema
         , schFeatures
         , tableSchAtts
+        , schConfs
 
 ) where
 
@@ -33,7 +34,7 @@ import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Variational.Variational
 import VDBMS.Features.Config (Config)
 -- import VDBMS.Features.SAT (satisfiable)
-import VDBMS.Features.ConfFexp (validConfsOfFexp)
+-- import VDBMS.Features.ConfFexp (validConfsOfFexp)
 
 -- | Type of a relation in the database.
 type RowType = Map Attribute (Opt SqlType)
@@ -44,11 +45,11 @@ type TableSchema = Opt RowType
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to
 --   the feature model, which defines the set of valid configurations.
-type Schema = ([Feature], Opt (Map Relation TableSchema))
+type Schema a = (([Feature], [Config a]), Opt (Map Relation TableSchema))
 
 -- | Configures a variational schema and returns an empty 
 --   map if the configuration isn't valid.
-configSchema_ :: Config Bool -> Schema -> RSchema
+configSchema_ :: Config Bool -> Schema a -> RSchema
 configSchema_ c s 
   | evalFeatureExpr c fm = 
     mapMaybe (configTableSchema c) (schemaStrct s)
@@ -58,7 +59,7 @@ configSchema_ c s
 
 
 -- | Configures a variational schema to a relational one.
-configSchema :: MonadThrow m => Config Bool -> Schema -> m RSchema
+configSchema :: MonadThrow m => Config Bool -> Schema a -> m RSchema
 configSchema c s 
   | evalFeatureExpr c fm = 
     return $ mapMaybe (configTableSchema c) (schemaStrct s)
@@ -142,29 +143,34 @@ configTableSchema c t
 --     optedTable = optAttrs rowtype
 
 
-instance Variational Schema where
+instance Variational (Schema a) where
 
-  type NonVariational Schema = RSchema 
+  type NonVariational (Schema a) = RSchema 
 
   configure = configSchema_
 
-  optionalize_ s = optionalize (schFeatures s) (validConfsOfFexp (schFeatures s) (featureModel s)) s
+  optionalize_ s = undefined
+  -- optionalize (schFeatures s) (validConfsOfFexp (schFeatures s) (featureModel s)) s
 
 -- | All features.
-schFeatures :: Schema -> [Feature]
-schFeatures = fst
+schFeatures :: Schema a -> [Feature]
+schFeatures = fst . fst
 
 -- | Schema.
-schema :: Schema -> Opt (Map Relation TableSchema)
+schema :: Schema a -> Opt (Map Relation TableSchema)
 schema = snd
 
 -- | The feature model associated with a schema.
-featureModel :: Schema -> FeatureExpr
+featureModel :: Schema a -> FeatureExpr
 featureModel = getFexp . schema
 
 -- | Gets the structure of schema.
-schemaStrct :: Schema -> Map Relation TableSchema
+schemaStrct :: Schema a -> Map Relation TableSchema
 schemaStrct = getObj . schema 
+
+-- | valid configurations of the schema.
+schConfs :: Schema a -> [Config a]
+schConfs = snd . fst
 
 -- | returns the table schema fexp.
 tschFexp :: TableSchema -> FeatureExpr

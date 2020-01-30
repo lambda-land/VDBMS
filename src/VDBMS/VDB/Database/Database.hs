@@ -23,9 +23,9 @@ class Database conn where
 
   type Path conn 
 
-  connect :: Path conn -> PCatt -> Schema -> IO conn 
+  connect :: Path conn -> PCatt -> Schema Bool -> IO conn 
   disconnect :: conn -> IO ()
-  schema :: conn -> Schema
+  schema :: conn -> Schema Bool
   presCond :: conn -> PCatt
   fetchQRows :: conn -> Query -> IO SqlTable
   fetchQRows' :: conn -> Query -> IO SqlTable -- strict version
@@ -36,6 +36,6 @@ class Database conn where
   dbFeatures = schFeatures . schema
   -- | Gets all valid configuration of a vdb.
   getAllConfig :: conn -> [Config Bool]
-  getAllConfig c = validConfsOfFexp (dbFeatures c) $ featureModel $ schema c
+  getAllConfig c = schConfs $ schema c
 
 

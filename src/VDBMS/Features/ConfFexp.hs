@@ -1,5 +1,10 @@
 -- | Coverts feature expressions to configs and back.
-module VDBMS.Features.ConfFexp where
+module VDBMS.Features.ConfFexp (
+
+       conf2fexp
+       , confs2fexp
+
+)where
 
 import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.Types (FeatureExpr(..))
@@ -22,8 +27,8 @@ confs2fexp :: [Feature] -> [Config Bool] -> FeatureExpr
 confs2fexp fs cs = foldl (\fexp c -> Or fexp (conf2fexp fs c)) (Lit False) cs
 
 -- | extracts the valid configurations of a feature expr.
-validConfsOfFexp :: [Feature] -> FeatureExpr -> [Config Bool]
-validConfsOfFexp fs fexp = undefined
+-- validConfsOfFexp :: [Feature] -> FeatureExpr -> [Config Bool]
+-- validConfsOfFexp fs fexp = undefined
 
 
 

@@ -11,7 +11,7 @@ import VDBMS.Features.Config (Config, equivConfig)
 
 -- | checks the equiv of two configs over a vschema.
 --   TODO: need to add type constraint Boolean b!!
-equivConfigOnSchema :: Schema -> Config Bool -> Config Bool -> Bool
+equivConfigOnSchema :: Schema a -> Config Bool -> Config Bool -> Bool
 equivConfigOnSchema s c c' = equivConfig fs c c'
   where fs = features $ featureModel s
 

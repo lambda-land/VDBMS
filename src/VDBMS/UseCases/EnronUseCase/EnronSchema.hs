@@ -66,6 +66,10 @@ enronConfig4 _                           = False
 enronConfig5 :: Config Bool
 enronConfig5 _ = False
 
+enronConfs :: [Config Bool]
+enronConfs = [enronConfig1, enronConfig2, 
+              enronConfig3, enronConfig4, enronConfig5]
+
 -- | FeatureExpr for  (signature, addressbook, filtermessages)
 sign_addr_filter :: FeatureExpr
 sign_addr_filter = signature `And` addressbook `And` filtermessages
@@ -167,8 +171,8 @@ enronFeatureModel = Lit True
 --
 -- * Enron V-Schema for Software Product Lines
 --
-enronVSchema :: Schema 
-enronVSchema = (enronFeatures, (enronFeatureModel, constructOptRelMap [ (Lit True, employeelist, employeelist_vrelation)
+enronVSchema :: Schema Bool
+enronVSchema = ((enronFeatures, enronConfs), (enronFeatureModel, constructOptRelMap [ (Lit True, employeelist, employeelist_vrelation)
                                                       , (Lit True, messages, messages_vrelation)
                                                       , (Lit True, recipientinfo, recipientinfo_vrelation)
                                                       , (Lit True, referenceinfo, referenceinfo_vrelation)

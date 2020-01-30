@@ -50,6 +50,9 @@ empConfig5 :: Config Bool
 empConfig5 (Feature "v5") = True
 empConfig5 _              = False
 
+empConfs :: [Config Bool]
+empConfs = [empConfig1, empConfig2, empConfig3, empConfig4, empConfig5]
+
 -- 
 -- Relations
 -- 
@@ -238,8 +241,8 @@ employeeFeatureModel =  (empv1 `And` (Not empv2) `And` (Not empv3) `And` (Not em
 -- 
 -- Employee V-Schema for Employee Evolution
 --
-empVSchema :: Schema 
-empVSchema = (empFeatures, (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vrelation)
+empVSchema :: Schema Bool
+empVSchema = ((empFeatures, empConfs), (employeeFeatureModel, constructOptRelMap [ (empv1, engineerpersonnel, engineerpersonnel_vrelation)
                                                        , (empv1, otherpersonnel, otherpersonnel_vrelation)
                                                        , (empv2 `Or` empv3 `Or` empv4 `Or` empv5, empacct, empacct_vrelation)
                                                        , (empv1 `Or` empv2 `Or` empv3 `Or` empv4, job, job_vrelation)
