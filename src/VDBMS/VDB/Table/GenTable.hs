@@ -5,6 +5,7 @@ module VDBMS.VDB.Table.GenTable (
         -- sqlVariantTables2VTable,
         -- adjustVTable2TableSch
         variantSqlTables2Table
+        , sqlVtables2VTable
 
 ) where 
 
@@ -22,11 +23,6 @@ import VDBMS.Features.FeatureExpr.FeatureExpr (Feature, FeatureExpr)
 import VDBMS.DBMS.Table.Table (SqlTable, combineSqlTables)
 import VDBMS.TypeSystem.Variational.TypeSystem (TypeEnv)
 
--- PROBABLY STILL NEED THIS!! KNOW WHEN YOU IMPLEMENT THE RUNQ0 COMPLETELY!
--- | turns a type env to table schema.
--- typeenv2TableSchema :: TypeEnv -> TableSchema
--- typeenv2TableSchema = undefined
-
 -- | takes everything needed to combine a list of variant sqltables
 --   to a table.
 variantSqlTables2Table :: [Feature] -> PCatt 
@@ -41,8 +37,14 @@ variantSqlTables2Table fs pc t_sch ts
       ts_valid = applyConfVariantTables pc t_pc ts
       ts_sameSch_updatedPC = map ((updateTuplesPC fs pc) . (flip conformSqlVariantTableToSchema rowtype)) ts_valid
 
--- |
--- sqlVtables2VTable :: 
+-- | takes everything neede to combine a list of opt sqltable
+--   to a table.
+sqlVtables2VTable :: PCatt -> TableSchema -> [SqlVtable] -> Table
+sqlVtables2VTable pc t_sch ts = mkVTable t_sch (combineSqlTables pc undefined)
+  where
+    t_pc = tschFexp t_sch
+    rowtype = tschRowType t_sch
+    ts_valid = undefined
 
 {--
 ------------------- construct vtable for approach1 -------------------
