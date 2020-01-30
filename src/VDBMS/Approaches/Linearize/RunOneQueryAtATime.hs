@@ -7,12 +7,12 @@ module VDBMS.Approaches.Linearize.RunOneQueryAtATime where
 
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
-import VDBMS.Variational.Variational (VariantGroup, Variational(..))
+import VDBMS.Variational.Variational (Variational(..))
 import VDBMS.Variational.Opt (Opt)
 import VDBMS.VDB.Table.Table (Table)
 import VDBMS.DBMS.Table.SqlVtable (SqlVtable)
-import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typePC, typeEnv2tableSch)
+-- import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
+import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnv2tableSch)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (appMin)
@@ -20,8 +20,8 @@ import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (sqlVtables2VTable)
-import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
-import VDBMS.Features.Config (Config)
+-- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
+-- import VDBMS.Features.Config (Config)
 
 -- import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
@@ -35,7 +35,8 @@ runQ2 conn vq =
          -- configs = getAllConfig conn
          pc = presCond conn
      vq_type <- typeOfQuery vq vsch_pc vsch
-     let type_pc = typePC vq_type
+     let 
+         -- type_pc = typePC vq_type
          type_sch = typeEnv2tableSch vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
