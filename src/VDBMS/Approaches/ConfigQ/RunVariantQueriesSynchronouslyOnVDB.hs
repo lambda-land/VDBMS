@@ -9,6 +9,8 @@ import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 import VDBMS.Variational.Variational 
 import VDBMS.VDB.Table.Table (Table)
+-- import VDBMS.DBMS.Table.Table (SqlTable)
+import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
 import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typePC)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
@@ -18,8 +20,12 @@ import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
+import VDBMS.Features.Config (Config)
 
-import Control.Arrow (first, second, (***))
+-- import Control.Arrow (first, second, (***))
+import Data.Bitraversable (bitraverse, bimapDefault)
+-- import Control.Monad (Identity)
+-- import Data.Functor.Identity
 
 -- |
 runQ0 :: Database conn => conn -> Algebra -> IO Table
@@ -31,13 +37,16 @@ runQ0 conn vq =
          pc = presCond conn
      vq_type <- typeOfQuery vq vsch_pc vsch
      let type_pc = typePC vq_type
+         type_sch = undefined
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
          -- try removing opt
-         ra_qs = map (\c -> (c, configure c vq_constrained_opt)) configs
-         sql_qs = fmap (second (ppSqlString . genSql . transAlgebra2Sql)) ra_qs
+         ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
+         sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
          -- try removing gensql
-     -- sqlTables <- mapM (second (fetchQRows conn)) sql_qs
-     return undefined
+         runq :: (String, Config Bool) -> IO SqlVariantTable
+         runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
+     sqlTables <- mapM runq sql_qs
+     return $ variantSqlTables2Table features pc type_sch sqlTables
      -- return $ varSqlTables2Table features type_pc pc vq_type sqlTables
 
