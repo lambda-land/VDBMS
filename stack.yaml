@@ -17,7 +17,8 @@ flags: {}
 # extra-deps: [HDBC-sqlite3-2.3.3.1, time-1.9.2]
 # extra-deps: [HDBC-sqlite3-2.3.3.1, haskelldb-2.2.5]
 extra-deps: [HDBC-sqlite3-2.3.3.1,
-             HDBC-postgresql-2.3.2.6]
+             HDBC-postgresql-2.3.2.6,
+             HDBC-mysql-0.7.1.0]
 
 extra-lib-dirs: 
 #   - lib/haskelldb

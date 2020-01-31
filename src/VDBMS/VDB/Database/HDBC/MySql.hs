@@ -7,29 +7,45 @@ import VDBMS.VDB.Database.Database
 import VDBMS.VDB.Database.HDBC.Fetch
 
 import qualified Database.HDBC as H
-import qualified Database.HDBC.MySql as S
+import qualified Database.HDBC.MySql as M
 
--- | Sqlite DBMS with HDBC interface.
--- data SqliteHDBC = SqliteHDBC PCatt Schema S.Connection
+-- | MySql DBMS with HDBC interface.
+data MySqlHDBC = MySql PCatt Schema M.Connection
 
--- instance Database SqliteHDBC where
+instance Database MySqlHDBC where
   
---   type Path SqliteHDBC = FilePath
+  type Path MySqlHDBC = M.MySQLConnectInfo 
   
---   connect f p s = S.connectSqlite3 f >>= return . SqliteHDBC p s
+  connect f p s = M.connectMySQL f >>= return . MySqlHDBC p s
   
---   disconnect (SqliteHDBC _ _ c) = H.disconnect c
+  disconnect (MySqlHDBC _ _ c) = H.disconnect c
   
---   schema (SqliteHDBC _ s _) = s
+  schema (MySqlHDBC _ s _) = s
   
---   presCond (SqliteHDBC p _ _) = p
+  presCond (MySqlHDBC p _ _) = p
   
---   fetchQRows (SqliteHDBC _ _ c) = fetch c
+  fetchQRows (MySqlHDBC _ _ c) = fetch c
 
---   fetchQRows' (SqliteHDBC _ _ c) = fetch' c
+  fetchQRows' (MySqlHDBC _ _ c) = fetch' c
 
---   runQ (SqliteHDBC _ _ _) = undefined
+  runQ (MySqlHDBC _ _ _) = undefined
 
 
+-- data MySQLConnectInfo = MySQLConnectInfo
+--     { -- | The server's hostname; e.g., @\"db1.example.com\"@
+--       mysqlHost       :: String
+--       -- | The MySQL username to use for login; e.g., @\"scott\"@
+--     , mysqlUser       :: String
+--       -- | The MySQL password to use for login; e.g., @\"tiger\"@
+--     , mysqlPassword   :: String
+--       -- | the \"default\" database name; e.g., @\"emp\"@
+--     , mysqlDatabase   :: String
+--       -- | The port on which to connect to the server; e.g., @3306@
+--     , mysqlPort       :: Int
+--       -- | The absolute path of the server's Unix socket; e.g., @\"\/var\/lib\/mysql.sock\"@
+--     , mysqlUnixSocket :: String
+--       -- | The group name in my.cnf from which it reads options; e.g., @\"test\"@
+--     , mysqlGroup      :: Maybe String
+--     }
 
 -- ex1 = SqliteHDBC "../../../databases/testDB/test1.db" 
