@@ -1,5 +1,4 @@
 -- | Consistency checks of VTables.
-
 module VDBMS.VDB.Table.Tests where 
 
 -- import VDBMS.VDB.Table.Core 
