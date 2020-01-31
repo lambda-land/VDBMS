@@ -67,7 +67,7 @@ typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (M.toLis
 -- | returns the attributes of type env. 
 --   assumption: attributes are unique.
 typeAtts :: TypeEnv -> [Attribute]
-typeAtts = Set.toList . M.keysSet . getObj
+typeAtts = M.keys . getObj
 
 -- | Possible typing errors.
 data TypeError 

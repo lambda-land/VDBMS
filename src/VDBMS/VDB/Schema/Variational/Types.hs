@@ -13,6 +13,7 @@ module VDBMS.VDB.Schema.Variational.Types (
         , schFeatures
         , tableSchAtts
         , schConfs
+        , schemaRels
 
 ) where
 
@@ -166,6 +167,10 @@ featureModel = getFexp . schema
 -- | Gets the structure of schema.
 schemaStrct :: Schema -> Map Relation TableSchema
 schemaStrct = getObj . schema 
+
+-- | returns the relations of the schema.
+schemaRels :: Schema -> [Relation]
+schemaRels = keys . schemaStrct
 
 -- | valid configurations of the schema.
 schConfs :: Schema -> [Config Bool]

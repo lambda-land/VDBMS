@@ -7,7 +7,8 @@ module VDBMS.VDB.Schema.Variational.Tests (
 ) where
 
 import VDBMS.Features.SAT
-import VDBMS.VDB.Schema.Variational.Schema
+-- import VDBMS.VDB.Schema.Variational.Schema
+import VDBMS.VDB.Schema.Variational.Types
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt 
