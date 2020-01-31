@@ -22,6 +22,7 @@ import Data.Maybe (fromJust)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
+import Data.Bitraversable (bitraverse, bimapDefault)
 
 -- | Errors for database validity tests.
 data DatabaseErr
@@ -60,9 +61,18 @@ isTableValid pc r f = foldM (\b t -> isTupleValid pc r f t >>= return . ((&&) b)
 areTablesValid :: (Database conn, MonadThrow m) => conn -> m Bool
 areTablesValid conn = 
   do let sch = schema conn
-         -- fm = featureModel sch
-         pc = presCond conn
-     rels <- mapM (flip lookupRelationFexp sch) $ schemaRels sch
+     --     -- fm = featureModel sch
+     --     q :: String
+     --     q = "SELECT * FROM "
+     --     pc = presCond conn
+     --     -- gen :: MonadThrow m => Relation -> m (Relation, FeatureExpr)
+     --     gen r = do r_pc <- lookupRelationFexp r sch
+     --                return ((r, r_pc), q ++ relationName r ++ ";")
+     -- rfqs <- mapM gen (schemaRels sch)
+     -- let runQ :: ((Relation, FeatureExpr), String) -> IO ((Relation, FeatureExpr), SqlTable)
+     --     runQ ((r,f),sql) = bitraverse (return . id) (fetchQRows conn) ((r,f),sql)
+     -- rfts <- mapM runQ rfqs
+     -- (\((r,f),t) -> isTableValid pc r f t) rfts
      return undefined
          
 
