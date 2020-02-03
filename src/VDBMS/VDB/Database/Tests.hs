@@ -92,9 +92,12 @@ doesUnsatPcHaveNullValue_attr pc r a f t =
   do t_pc <- lookupAttValInSqlRow pc r t 
      let v_pc = And f (sqlval2fexp t_pc)
      val <- lookupAttValInSqlRow a r t 
-     if unsatisfiable v_pc 
-     then return True 
-     else throwM $ UnsatPCWithoutNullValue r a v_pc val 
+     (case (unsatisfiable v_pc, val) of 
+       (True, SqlNull) -> return True
+       (True, _) -> throwM $ UnsatPCWithoutNullValue r a v_pc val 
+       _ -> return True)
+     -- then return True 
+     -- else throwM $ UnsatPCWithoutNullValue r a v_pc val 
 
 -- | checks if all unsat pcs of an attribute in a table 
 --   have null values.
