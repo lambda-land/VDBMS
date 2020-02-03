@@ -87,5 +87,3 @@ lookupAttFexp a r s =
   do at <- lookupAttribute a r s 
      r_pc <- lookupRelationFexp r s 
      return $ And r_pc (fst at)
-  -- lookupAttribute a r s 
-  -- >>= return . (\t -> And (fst t) 
