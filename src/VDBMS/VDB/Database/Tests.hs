@@ -103,7 +103,10 @@ doesUnsatPcHaveNullValue_attr pc r a f t =
 doUnsatPcsHaveNullValues_attr :: MonadThrow m => PCatt -> Relation -> Attribute
                                               -> FeatureExpr -> SqlTable
                                               -> m Bool
-doUnsatPcsHaveNullValues_attr pc r a f t = undefined
+doUnsatPcsHaveNullValues_attr pc r a f t = foldM 
+  (\b tuple -> doesUnsatPcHaveNullValue_attr pc r a f tuple >>= return . ((&&) b)) 
+  True 
+  t 
 
 -- | checks all unsat pcs of all attributes in a table
 --   have null values.
