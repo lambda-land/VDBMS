@@ -8,9 +8,11 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.DBMS.Table.Table (SqlRow, SqlTable)
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.VDB.Name 
-import VDBMS.Features.SAT (satisfiable)
+import VDBMS.Features.SAT (satisfiable, unsatisfiable)
 -- import VDBMS.VDB.Schema.Variational.Tests (isVschValid)
 import VDBMS.VDB.Schema.Variational.Schema 
+
+import Database.HDBC (SqlValue(..))
 
 import Control.Monad.Catch 
 import Control.Monad.IO.Class (liftIO, MonadIO)
@@ -28,6 +30,7 @@ import Data.Bitraversable (bitraverse, bimapDefault)
 -- | Errors for database validity tests.
 data DatabaseErr
   = UnsatTuple Relation FeatureExpr SqlRow 
+  | UnsatPCWithoutNullValue Relation Attribute FeatureExpr SqlValue
   deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception DatabaseErr
@@ -44,6 +47,7 @@ isVDBvalid conn =
 
 -- | checks if a tuple's pc is valid.
 --   assumption: tuples have pc attribute.
+-- for a given t ∈r. sat (fm ∧ pcᵣ ∧ pc\_t )
 isTupleValid :: MonadThrow m => PCatt -> Relation -> FeatureExpr 
                              -> SqlRow -> m Bool
 isTupleValid pc r f t 
@@ -53,15 +57,16 @@ isTupleValid pc r f t
       t_pc = (And f ((sqlval2fexp . fromJust) $ M.lookup (attributeName pc) t))
 
 -- | checks if all tuples of a relation are valid.
+-- ∀t ∈ r. sat (fm ∧ pcᵣ ∧ pc\_t )
 isTableValid :: MonadThrow m => PCatt -> Relation -> FeatureExpr
                              -> SqlTable -> m Bool
 isTableValid pc r f = foldM (\b t -> isTupleValid pc r f t >>= return . ((&&) b)) True 
 
 -- | checks if all tuples of all relations in the schema are valid.
+-- ∀t ∈ r ∀r ∈ S. sat (fm ∧ pcᵣ ∧ pc\_t )
 areTablesValid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 areTablesValid conn = 
   do let sch = schema conn
-         -- fm = featureModel sch
          q :: String
          q = "SELECT * FROM "
          pc = presCond conn
@@ -75,15 +80,25 @@ areTablesValid conn =
      rfts <- liftIO $ mapM runQ rfqs
      foldM (\b ((r,f),t) -> isTableValid pc r f t >>= return . ((&&) b)) True rfts
 
--- | checks that if unsat (fm and pc_r and pc_a and pc_t) then
+-- | checks that if unsat (fm ∧ pcᵣ ∧ pcₐ ∧ pc\_t) then
 --   the value of attribute a in a tuple t is null.
+-- for a given attribute and tuple ∈ r s.t.
+-- unsat (fm ∧ pcᵣ ∧ pcₐ ∧ pc\_t). the value of attribute in tuple is null.
+-- note that the fexp f that you're passing should be: f = fm ∧ pcᵣ ∧ pcₐ 
 doesUnsatPcHaveNullValue_attr :: MonadThrow m => PCatt -> Relation -> Attribute 
                                               -> FeatureExpr -> SqlRow
                                               -> m Bool
-doesUnsatPcHaveNullValue_attr pc r a f t = undefined
+doesUnsatPcHaveNullValue_attr pc r a f t 
+  | unsatisfiable v_pc = return True
+  | otherwise = throwM $ UnsatPCWithoutNullValue r a v_pc val 
+    where 
+      v_pc = (And f ((sqlval2fexp . fromJust) $ M.lookup (attributeName pc) t))
+      val = undefined
 
 -- | checks if all unsat pcs of an attribute in a table 
 --   have null values.
+-- for a given attribute and ∀ tuple ∈ r s.t.
+-- unsat (fm ∧ pcᵣ ∧ pcₐ ∧ pc\_t). the value of attribute in tuple is null.
 doUnsatPcsHaveNullValues_attr :: MonadThrow m => PCatt -> Relation -> Attribute
                                               -> FeatureExpr -> SqlTable
                                               -> m Bool
@@ -91,12 +106,16 @@ doUnsatPcsHaveNullValues_attr pc r a f t = undefined
 
 -- | checks all unsat pcs of all attributes in a table
 --   have null values.
+-- ∀ attribute and ∀ tuple ∈ r s.t.
+-- unsat (fm ∧ pcᵣ ∧ pcₐ ∧ pc\_t). the value of attribute in tuple is null.
 doUnsatPcsHaveNullValues_rel :: MonadThrow m => PCatt -> Schema -> Relation
                                              -> SqlTable
                                              -> m Bool
 doUnsatPcsHaveNullValues_rel pc s r t = undefined
 
--- |
+-- | checks all unsat pcs of all attributes in tables 
+--   for all tables of a database they have null values.
+-- ∀a ∈r, ∀ r ∈ S, unsat(fm ∧ pcᵣ ∧ pcₐ ∧ pc\_t) then val(a) = null. 
 areValuesValid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 areValuesValid conn = 
   do let sch = schema conn 

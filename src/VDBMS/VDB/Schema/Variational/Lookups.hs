@@ -81,6 +81,11 @@ lookupAttribute a r s = lookupRel r s >>= lookupAttFexpTypeInRowType a
 lookupAttType :: MonadThrow m => Attribute -> Relation -> Schema -> m SqlType
 lookupAttType a r s = lookupAttribute a r s >>= return . snd
 
--- | Get the feature expression of an attribute in adatabase.
+-- | Get the feature expression of an attribute in a database.
 lookupAttFexp :: MonadThrow m => Attribute -> Relation -> Schema -> m FeatureExpr
-lookupAttFexp a r s = lookupAttribute a r s >>= return . fst
+lookupAttFexp a r s = 
+  do at <- lookupAttribute a r s 
+     r_pc <- lookupRelationFexp r s 
+     return $ And r_pc (fst at)
+  -- lookupAttribute a r s 
+  -- >>= return . (\t -> And (fst t) 
