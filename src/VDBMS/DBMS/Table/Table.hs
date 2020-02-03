@@ -15,7 +15,8 @@ module VDBMS.DBMS.Table.Table (
         dropUnsatTuples,
         combineSqlTables,
         updatePCInSqlTable,
-        conformSqlTableToSchema
+        conformSqlTableToSchema,
+        lookupAttValInSqlRow
 
 ) where
 
@@ -35,6 +36,10 @@ import VDBMS.DBMS.Value.Value
 
 import Database.HDBC (SqlValue(..))
 
+import Control.Monad.Catch
+import Data.Data (Data, Typeable)
+import GHC.Generics (Generic)
+
 -- type Row = [SqlValue]
 -- type Table = [Row]
 -- type Vtable = Opt Table
@@ -51,6 +56,21 @@ import Database.HDBC (SqlValue(..))
 
 type SqlRow = Map String SqlValue
 type SqlTable = [SqlRow]
+
+data SqlTableErr
+  = AttNotInRow Attribute Relation SqlRow
+  deriving (Data,Eq,Generic,Ord,Show,Typeable)
+
+instance Exception SqlTableErr
+
+-- | looks up an attribute value in a tuple.
+lookupAttValInSqlRow :: MonadThrow m => Attribute -> Relation -> SqlRow 
+                                     -> m SqlValue
+lookupAttValInSqlRow a r t 
+  | M.member aName t = return $ fromJust (M.lookup aName t)
+  | otherwise = throwM $ AttNotInRow a r t
+    where
+      aName = attributeName a
 
 -- | returns a set of attributes from a tuple.
 -- DANGER: changed Attribute to (Attribute Nothing)
