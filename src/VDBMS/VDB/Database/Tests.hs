@@ -13,6 +13,7 @@ import VDBMS.Features.SAT (satisfiable)
 import VDBMS.VDB.Schema.Variational.Schema 
 
 import Control.Monad.Catch 
+import Control.Monad.IO.Class (liftIO, MonadIO)
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
@@ -35,7 +36,7 @@ instance Exception DatabaseErr
 --   2) all tuples have satisfiable pc
 --   3) when unsat (fm and pc_r and pc_a and pc_tuple)
 --      the tuple value is null
-isVDBvalid :: (Database conn, MonadThrow m) => conn -> m Bool
+isVDBvalid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 isVDBvalid conn = 
   do isVschValid (schema conn) 
      areTablesValid conn
@@ -58,22 +59,23 @@ isTableValid :: MonadThrow m => PCatt -> Relation -> FeatureExpr
 isTableValid pc r f = foldM (\b t -> isTupleValid pc r f t >>= return . ((&&) b)) True 
 
 -- | checks if all tuples of all relations in the schema are valid.
-areTablesValid :: (Database conn, MonadThrow m) => conn -> m Bool
+areTablesValid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 areTablesValid conn = 
   do let sch = schema conn
-     --     -- fm = featureModel sch
-     --     q :: String
-     --     q = "SELECT * FROM "
-     --     pc = presCond conn
-     --     -- gen :: MonadThrow m => Relation -> m (Relation, FeatureExpr)
-     --     gen r = do r_pc <- lookupRelationFexp r sch
-     --                return ((r, r_pc), q ++ relationName r ++ ";")
-     -- rfqs <- mapM gen (schemaRels sch)
-     -- let runQ :: ((Relation, FeatureExpr), String) -> IO ((Relation, FeatureExpr), SqlTable)
-     --     runQ ((r,f),sql) = bitraverse (return . id) (fetchQRows conn) ((r,f),sql)
-     -- rfts <- mapM runQ rfqs
-     -- (\((r,f),t) -> isTableValid pc r f t) rfts
-     return undefined
+         -- fm = featureModel sch
+         q :: String
+         q = "SELECT * FROM "
+         pc = presCond conn
+         rels = schemaRels sch 
+         -- gen :: MonadThrow m => Relation -> m ((Relation, FeatureExpr),String)
+         gen r = do r_pc <- lookupRelationFexp r sch
+                    return ((r, r_pc), q ++ relationName r ++ ";")
+     rfqs <- mapM gen rels
+     let runQ :: ((Relation, FeatureExpr), String) -> IO ((Relation, FeatureExpr), SqlTable)
+         runQ ((r,f),sql) = bitraverse (return . id) (fetchQRows conn) ((r,f),sql)
+     rfts <- liftIO $ mapM runQ rfqs
+     foldM (\b ((r,f),t) -> isTableValid pc r f t >>= return . ((&&) b)) True rfts
+     -- return undefined
          
 
 
