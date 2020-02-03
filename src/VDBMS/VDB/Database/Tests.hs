@@ -75,8 +75,32 @@ areTablesValid conn =
          runQ ((r,f),sql) = bitraverse (return . id) (fetchQRows conn) ((r,f),sql)
      rfts <- liftIO $ mapM runQ rfqs
      foldM (\b ((r,f),t) -> isTableValid pc r f t >>= return . ((&&) b)) True rfts
-     -- return undefined
-         
 
+-- | checks that if unsat (fm and pc_r and pc_a and pc_t) then
+--   the value of attribute a in a tuple t is null.
+doesUnsatPcHaveNullValue_attr :: MonadThrow m => PCatt -> Relation -> Attribute 
+                                              -> FeatureExpr -> SqlRow
+                                              -> m Bool
+doesUnsatPcHaveNullValue_attr pc r a f t = undefined
+
+-- | checks if all unsat pcs of an attribute in a table 
+--   have null values.
+doUnsatPcsHaveNullValues_attr :: MonadThrow m => PCatt -> Relation -> Attribute
+                                              -> FeatureExpr -> SqlTable
+                                              -> m Bool
+doUnsatPcsHaveNullValues_attr pc r a f t = undefined
+
+-- | checks all unsat pcs of all attributes in a table
+--   have null values.
+doUnsatPcsHaveNullValues_rel :: MonadThrow m => PCatt -> Schema -> Relation
+                                             -> SqlTable
+                                             -> m Bool
+doUnsatPcsHaveNullValues_rel pc s r t = undefined
+
+-- |
+areValuesValid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
+areValuesValid conn = 
+  do let sch = schema conn 
+     return undefined
 
 
