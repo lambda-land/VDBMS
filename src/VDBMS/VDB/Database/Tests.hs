@@ -96,8 +96,6 @@ doesUnsatPcHaveNullValue_attr pc r a f t =
        (True, SqlNull) -> return True
        (True, _) -> throwM $ UnsatPCWithoutNullValue r a v_pc val 
        _ -> return True)
-     -- then return True 
-     -- else throwM $ UnsatPCWithoutNullValue r a v_pc val 
 
 -- | checks if all unsat pcs of an attribute in a table 
 --   have null values.
@@ -119,6 +117,7 @@ doUnsatPcsHaveNullValues_rel :: MonadThrow m => PCatt -> Schema -> Relation
                                              -> SqlTable
                                              -> m Bool
 doUnsatPcsHaveNullValues_rel pc s r t = undefined
+  -- do 
 
 -- | checks all unsat pcs of all attributes in tables 
 --   for all tables of a database they have null values.
