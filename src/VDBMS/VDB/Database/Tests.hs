@@ -40,8 +40,7 @@ isVDBvalid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 isVDBvalid conn = 
   do isVschValid (schema conn) 
      areTablesValid conn
-     return undefined
-
+     areValuesValid conn
 
 -- | checks if a tuple's pc is valid.
 --   assumption: tuples have pc attribute.
