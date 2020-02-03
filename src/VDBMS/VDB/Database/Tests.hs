@@ -5,7 +5,7 @@ module VDBMS.VDB.Database.Tests where
 -- import VDBMS.Features.ConfFexp
 -- import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Features.FeatureExpr.FeatureExpr
-import VDBMS.DBMS.Table.Table (SqlRow, SqlTable)
+import VDBMS.DBMS.Table.Table (SqlRow, SqlTable, lookupAttValInSqlRow)
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.VDB.Name 
 import VDBMS.Features.SAT (satisfiable, unsatisfiable)
@@ -88,12 +88,13 @@ areTablesValid conn =
 doesUnsatPcHaveNullValue_attr :: MonadThrow m => PCatt -> Relation -> Attribute 
                                               -> FeatureExpr -> SqlRow
                                               -> m Bool
-doesUnsatPcHaveNullValue_attr pc r a f t 
-  | unsatisfiable v_pc = return True
-  | otherwise = throwM $ UnsatPCWithoutNullValue r a v_pc val 
-    where 
-      v_pc = (And f ((sqlval2fexp . fromJust) $ M.lookup (attributeName pc) t))
-      val = undefined
+doesUnsatPcHaveNullValue_attr pc r a f t = 
+  do t_pc <- lookupAttValInSqlRow pc r t 
+     let v_pc = And f (sqlval2fexp t_pc)
+     val <- lookupAttValInSqlRow a r t 
+     if unsatisfiable v_pc 
+     then return True 
+     else throwM $ UnsatPCWithoutNullValue r a v_pc val 
 
 -- | checks if all unsat pcs of an attribute in a table 
 --   have null values.
