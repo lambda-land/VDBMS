@@ -116,8 +116,15 @@ doUnsatPcsHaveNullValues_attr pc r a f t = foldM
 doUnsatPcsHaveNullValues_rel :: MonadThrow m => PCatt -> Schema -> Relation
                                              -> SqlTable
                                              -> m Bool
-doUnsatPcsHaveNullValues_rel pc s r t = undefined
-  -- do 
+doUnsatPcsHaveNullValues_rel pc s r t = 
+  do atts <- lookupRelAttsList r s
+     let pairAttPc :: MonadThrow m => Relation -> Schema -> Attribute ->  m (Attribute, FeatureExpr)
+         pairAttPc rel sch a = lookupAttFexp a rel sch >>= return . (\atPC -> (a, atPC))
+     afs <- mapM (pairAttPc r s) atts
+     foldM 
+       (\b (att,att_pc) -> doUnsatPcsHaveNullValues_attr pc r att att_pc t >>= return . ((&&) b)) 
+       True 
+       afs
 
 -- | checks all unsat pcs of all attributes in tables 
 --   for all tables of a database they have null values.
