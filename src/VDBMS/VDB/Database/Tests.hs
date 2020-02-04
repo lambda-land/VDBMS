@@ -1,4 +1,5 @@
 -- | Database tests.
+-- just need to run isVDBvalid.
 module VDBMS.VDB.Database.Tests (
 
        DatabaseErr(..)
