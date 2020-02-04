@@ -1,5 +1,10 @@
 -- | Database tests.
-module VDBMS.VDB.Database.Tests where
+module VDBMS.VDB.Database.Tests (
+
+       DatabaseErr(..)
+       , isVDBvalid
+
+) where
 
 -- import VDBMS.Features.Config
 -- import VDBMS.Features.ConfFexp
@@ -60,7 +65,9 @@ isTupleValid pc r f t
 -- ∀t ∈ r. sat (fm ∧ pcᵣ ∧ pc\_t )
 isTableValid :: MonadThrow m => PCatt -> Relation -> FeatureExpr
                              -> SqlTable -> m Bool
-isTableValid pc r f = foldM (\b t -> isTupleValid pc r f t >>= return . ((&&) b)) True 
+isTableValid pc r f = foldM 
+  (\b t -> isTupleValid pc r f t >>= return . ((&&) b)) 
+  True 
 
 -- | checks if all tuples of all relations in the schema are valid.
 -- ∀t ∈ r ∀r ∈ S. sat (fm ∧ pcᵣ ∧ pc\_t )
@@ -75,10 +82,16 @@ areTablesValid conn =
          gen r = do r_pc <- lookupRelationFexp r sch
                     return ((r, r_pc), q ++ relationName r ++ ";")
      rfqs <- mapM gen rels
-     let runQ :: ((Relation, FeatureExpr), String) -> IO ((Relation, FeatureExpr), SqlTable)
-         runQ ((r,f),sql) = bitraverse (return . id) (fetchQRows conn) ((r,f),sql)
+     let runQ :: ((Relation, FeatureExpr), String) 
+              -> IO ((Relation, FeatureExpr), SqlTable)
+         runQ ((r,f),sql) = bitraverse (return . id) 
+                                       (fetchQRows conn) 
+                                       ((r,f),sql)
      rfts <- liftIO $ mapM runQ rfqs
-     foldM (\b ((r,f),t) -> isTableValid pc r f t >>= return . ((&&) b)) True rfts
+     foldM (\b ((r,f),t) -> isTableValid pc r f t 
+                        >>= return . ((&&) b)) 
+           True 
+           rfts
 
 -- | checks that if unsat (fm ∧ pcᵣ ∧ pcₐ ∧ pc\_t) then
 --   the value of attribute a in a tuple t is null.
@@ -105,7 +118,8 @@ doUnsatPcsHaveNullValues_attr :: MonadThrow m => PCatt -> Relation -> Attribute
                                               -> FeatureExpr -> SqlTable
                                               -> m Bool
 doUnsatPcsHaveNullValues_attr pc r a f t = foldM 
-  (\b tuple -> doesUnsatPcHaveNullValue_attr pc r a f tuple >>= return . ((&&) b)) 
+  (\b tuple -> doesUnsatPcHaveNullValue_attr pc r a f tuple 
+           >>= return . ((&&) b)) 
   True 
   t 
 
@@ -118,11 +132,14 @@ doUnsatPcsHaveNullValues_rel :: MonadThrow m => PCatt -> Schema -> Relation
                                              -> m Bool
 doUnsatPcsHaveNullValues_rel pc s r t = 
   do atts <- lookupRelAttsList r s
-     let pairAttPc :: MonadThrow m => Relation -> Schema -> Attribute ->  m (Attribute, FeatureExpr)
-         pairAttPc rel sch a = lookupAttFexp a rel sch >>= return . (\atPC -> (a, atPC))
+     let pairAttPc :: MonadThrow m => Relation -> Schema -> Attribute 
+                                   ->  m (Attribute, FeatureExpr)
+         pairAttPc rel sch a = lookupAttFexp a rel sch 
+           >>= return . (\atPC -> (a, atPC))
      afs <- mapM (pairAttPc r s) atts
      foldM 
-       (\b (att,att_pc) -> doUnsatPcsHaveNullValues_attr pc r att att_pc t >>= return . ((&&) b)) 
+       (\b (att,att_pc) -> doUnsatPcsHaveNullValues_attr pc r att att_pc t 
+                       >>= return . ((&&) b)) 
        True 
        afs
 
@@ -132,6 +149,17 @@ doUnsatPcsHaveNullValues_rel pc s r t =
 areValuesValid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 areValuesValid conn = 
   do let sch = schema conn 
-     return undefined
+         pc = presCond conn
+         q :: String
+         q = "SELECT * FROM "
+         rels = schemaRels sch 
+         rqs = map (\r -> (r, q ++ relationName r ++ ";")) rels
+         runQ :: (Relation, String) -> IO (Relation, SqlTable)
+         runQ = bitraverse (return . id) (fetchQRows conn) 
+     rts <- liftIO $ mapM runQ rqs
+     foldM (\b (r,t) -> doUnsatPcsHaveNullValues_rel pc sch r t 
+                    >>= return . ((&&) b))
+           True
+           rts
 
 
