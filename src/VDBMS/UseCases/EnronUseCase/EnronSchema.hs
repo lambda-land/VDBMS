@@ -47,6 +47,8 @@ enronConfig2 (Feature "remailmessage") = True
 enronConfig2 _                         = False
 
 enronConfig3 :: Config Bool
+enronConfig3 (Feature "signature")     = True
+enronConfig3 (Feature "encryption")    = True
 enronConfig3 (Feature "addressbook")   = True
 enronConfig3 (Feature "autoresponder") = True
 enronConfig3 (Feature "mailhost")      = True
@@ -91,7 +93,7 @@ referenceinfo = N.Relation "referenceinfo"
 forward_msg   = N.Relation "forward_msg"
 remail_msg    = N.Relation "remail_msg"
 filter_msg    = N.Relation "filter_msg"
-mail_host     = N.Relation "remail_msg"
+mail_host     = N.Relation "mailhost"
 alias         = N.Relation "alias"
 
 --
@@ -238,9 +240,9 @@ filter_msg_vrelation = constructAllTrueRelSchema  [ ("eid", TInt32)
                                                   , ("suffix",  TString)
                                                   ]
 mail_host_vrelation = constructAllTrueRelSchema  [ ("eid", TInt32)
-                                                , ("username",  TString)
-                                                , ("mailhost",  TString)
-                                                ]
+                                                 , ("username",  TString)
+                                                 , ("mailhost",  TString)
+                                                 ]
 
 alias_vrelation = constructAllTrueRelSchema  [ ("eid", TInt32)
                                              , ("email",  TString)
@@ -366,9 +368,9 @@ sToAttribtue = map (\(x,y) -> (N.Attribute x , y))
 
 auto_msg_table  :: [(N.Attribute, SqlType)]
 auto_msg_table =  sToAttribtue [ ("eid", TInt32)
-                              , ("username",  TString)
-                              , ("mailhost",  TString)
-                              ]
+                               , ("subject",  TString)
+                               , ("body",  TString)
+                               ]
 
 alias_table  :: [(N.Attribute, SqlType)]
 alias_table = sToAttribtue [ ("eid", TInt32)
@@ -378,9 +380,9 @@ alias_table = sToAttribtue [ ("eid", TInt32)
 
 mailhost_table  :: [(N.Attribute, SqlType)]
 mailhost_table = sToAttribtue  [ ("eid", TInt32)
-                              , ("username",  TString)
-                              , ("mailhost",  TString)
-                              ]
+                               , ("username",  TString)
+                               , ("mailhost",  TString)
+                               ]
 --  ** Schema Variant for Premium Email 
 premiumEmailSchema :: RSchema
 premiumEmailSchema  = constructRSchema   [ ( employeelist,  premium_employeelist)
