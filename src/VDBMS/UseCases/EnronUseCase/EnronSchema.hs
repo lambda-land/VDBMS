@@ -100,8 +100,8 @@ alias         = N.Relation "alias"
 email_id :: N.Attr 
 email_id = attr "email_id"
 
-mid, sender, subject, is_signed, is_encrypted, is_from_remailer :: N.Attr 
-is_autoresponse, is_forward_msg, is_system_notification:: N.Attr 
+mid, eid, sender, subject, is_signed, is_encrypted, is_from_remailer :: N.Attr 
+is_autoresponse, is_forward_msg, is_system_notification, nickname, username, mailhost_attr:: N.Attr 
 mid = attr "mid"
 eid = attr "eid"
 sender = attr "sender"
@@ -266,8 +266,6 @@ basic_employeelist = [ ( eid_, TInt32)
                      , ( email_id_, TString)
                      , ( folder_, TString)
                      , ( status_, TString)
-                     , ( verification_key_, TString)
-                     , ( puclic_key_, TString)
                      ]
 -- | messages(mid, sender, date, message id , subject, body, folder,, is_system_notification)
 basic_messages :: [(N.Attribute, SqlType)]
