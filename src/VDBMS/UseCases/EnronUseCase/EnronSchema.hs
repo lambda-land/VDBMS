@@ -46,6 +46,9 @@ enronConfig2 (Feature "encryption")    = True
 enronConfig2 (Feature "remailmessage") = True
 enronConfig2 _                         = False
 
+-- | The features map for group email:
+--   signature + encryption + addressbook + autoresponder + mailhost
+--   (To make the case that group email and privacy email have features overlapped)
 enronConfig3 :: Config Bool
 enronConfig3 (Feature "signature")     = True
 enronConfig3 (Feature "encryption")    = True
