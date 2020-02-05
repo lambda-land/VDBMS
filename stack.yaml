@@ -6,22 +6,39 @@
 # https://www.stackage.org/lts-10.8
 # resolver: lts-10.8
 resolver: lts-13.27
+# resolver: lts-13.22
+# resolver: lts-14.22
+
 
 system-ghc: false
 allow-newer: true
 packages: 
 - .
+# - lib/hdbc-mysql
 # - lib/haskelldb
 #- /Users/Paris/Desktop/VDBMS/lib/haskelldb
 flags: {}
 # extra-deps: [HDBC-sqlite3-2.3.3.1, time-1.9.2]
 # extra-deps: [HDBC-sqlite3-2.3.3.1, haskelldb-2.2.5]
-extra-deps: [HDBC-sqlite3-2.3.3.1,
+extra-deps: [
+  HDBC-sqlite3-2.3.3.1,
              HDBC-postgresql-2.3.2.6
-             # HDBC-mysql-0.7.1.0]
+             # ,HDBC-mysql-0.7.1.0]
             ]
 
-extra-lib-dirs: 
+extra-lib-dirs:
+  # - lib/hdbc-mysql
+  # - /usr/local/Cellar/mysql-client\@5.7/lib
+# - /usr/local/lib
+# - /usr/local/Cellar
+  # - /usr/local/Cellar/openssl@1.1/1.1.1d/lib/
+# - /usr/local/opt/mysql-client\@5.7/lib
+# - /usr/local/opt/zlib/lib
+# - /usr/local/opt/openssl/lib 
 #   - lib/haskelldb
 #  - /Users/Paris/Desktop/VDBMS/lib/haskelldb
+
+extra-include-dirs:
+  # - /usr/local/lib
+  # - /usr/local/Cellar
    
