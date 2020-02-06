@@ -158,6 +158,16 @@ Proof.
     apply andb_false_iff in H. destruct H.  
     assumption. discriminate H.
   Qed.
+
+Lemma or_any_true : forall e1 e2 c, 
+         ((E[[ e1]] c) || (E[[ e2]] c)) = true
+            -> (E[[ e1 \/(F) e2]] c) = true.
+Proof. intros. simpl. assumption. Qed.
+
+Lemma or_both_false : forall e1 e2 c, 
+         ((E[[ e1]] c) && (E[[ e2]] c)) = false
+            -> (E[[ e1 /\(F) e2]] c) = false.
+Proof. intros. simpl. assumption. Qed.
     
 Example sat_or: sat (litB true \/(F) litB false).
 Proof. intros. unfold sat. exists (fun _ => true). 
