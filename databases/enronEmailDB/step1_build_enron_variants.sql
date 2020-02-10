@@ -190,7 +190,15 @@ inner join p2_employee_view emp on msg.sender = emp.email_id;
 # SELECT count(mid) -- 27952
 -- # p3_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_autoresponse) 
 CREATE OR REPLACE view p3_message_view AS 
-SELECT msg.* , false as is_system_notification, false as is_autoresponse
+SELECT msg.* , false as is_system_notification, false as is_autoresponse,
+CASE    
+WHEN  emp.sign is NULL THEN false   
+WHEN  emp.sign is not NULL THEN true
+END AS is_signed,
+CASE
+WHEN  emp.public_key is not Null THEN true   
+else  false
+END AS is_encrypted,
 FROM message msg 
 inner join p3_employee_view emp on msg.sender = emp.email_id;
 
@@ -207,7 +215,6 @@ CASE
 WHEN  emp.public_key is not Null THEN true   
 else  false
 END AS is_encrypted, 
-False as is_from_remailer,
 false as is_autoresponse,
 false as is_forward_msg
 FROM message msg 
