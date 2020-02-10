@@ -110,11 +110,13 @@ CREATE TABLE `v_recipientinfo` (
   `mid` int(10) unsigned NOT NULL DEFAULT '0',
   `rtype` enum('TO','CC','BCC') DEFAULT NULL,
   `rvalue` varchar(127) DEFAULT NULL,
-  `dater` datetime DEFAULT NULL,
   `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-INSERT INTO v_recipientinfo SELECT * FROM recipientinfo;
+
+INSERT INTO v_recipientinfo(rid, mid, rtype, rvalue, presCond)
+ SELECT rid, mid, rtype, rvalue, "TRUE"
+ FROM recipientinfo;
 
 --
 -- Table structure for table `v_referenceinfo`
@@ -132,8 +134,10 @@ CREATE TABLE `v_referenceinfo` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-INSERT INTO v_referenceinfo SELECT * FROM referenceinfo;
---
+INSERT INTO v_referenceinfo(rfid, mid, rtype, reference, presCond)
+ SELECT rid, mid, rtype, rvalue, "TRUE"
+ FROM recipientinfo;
+ --
 -- Table structure for table `v_auto_msg`
 --
 

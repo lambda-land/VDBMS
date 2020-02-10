@@ -169,7 +169,27 @@ FROM message msg
 inner join p1_employee_view emp on msg.sender = emp.email_id;
 
 -- #create a view for p2_message for prodcut focusing on privacy. 
+CREATE OR REPLACE view p2_recipientinfo_view AS 
+SELECT rec.* 
+FROM recipientinfo rec
+inner join p2_employee_view emp on emp.email_id = rec.rvalue
+
 # SELECT count(mid) -- 25139
+# p3_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer) 
+-- CREATE OR REPLACE view p2_message_view AS 
+-- SELECT msg.*,  false as is_system_notification, 
+-- CASE    
+-- WHEN  emp.verification_key is NULL THEN false   
+-- WHEN  emp.verification_key is not NULL THEN true
+-- END AS is_signed,
+-- CASE
+-- WHEN  emp.public_key is not Null THEN true   
+-- else  false
+-- END AS is_encrypted
+-- FROM message msg 
+-- inner join p2_employee_view emp on msg.sender = emp.email_id
+
+# SELECT count(mid) -- 2988 (not 25139 because both sender and recipient should be the user of privacy email)
 # p3_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer) 
 CREATE OR REPLACE view p2_message_view AS 
 SELECT msg.*,  false as is_system_notification, 
@@ -183,8 +203,7 @@ else  false
 END AS is_encrypted
 FROM message msg 
 inner join p2_employee_view emp on msg.sender = emp.email_id
-inner join recipientinfo rec on emp.email_id = rec.rvalue;
-
+inner join p2_recipientinfo_view rec on rec.mid = msg.mid
 
 -- #create a view for p3_message for prodcut focusing on group usage. 
 # SELECT count(mid) -- 27952
