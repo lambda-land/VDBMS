@@ -48,7 +48,7 @@ WHERE eid > 90 AND eid <= 120;
 CREATE OR REPLACE view p5_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status
 FROM employeelist emp 
-WHERE  eid > 120 AND eid <= 1500;
+WHERE  eid > 120 AND eid <= 150;
 
 -- ##########
 -- # v_forward_msg(eid, forwardaddr)
@@ -80,8 +80,17 @@ order by eid;
 -- ##########
 -- # filter_msg_view(eid, suffix)
 -- ##########
+-- CREATE OR REPLACE view filter_msg_view as
+-- SELECT 1 as eid , "pgn.com" as suffix;
 CREATE OR REPLACE view filter_msg_view as
-SELECT 1 as eid , "pgn.com" as suffix;
+SELECT eid,
+CASE
+WHEN  eid% 3 = 0 THEN "pgn.com"
+WHEN  eid% 3 = 1 THEN "linkedin.com"
+WHEN  eid% 3 = 2 THEN "example.com"
+END as suffix
+FROM employeelist
+WHERE eid < 30 OR (eid > 90 AND eid <= 120);
 
 -- ##########
 -- # v_mailhost(eid, username, mailhost, presCond)
