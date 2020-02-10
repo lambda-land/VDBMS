@@ -199,7 +199,7 @@ END AS is_signed,
 CASE
 WHEN  emp.public_key is not Null THEN true   
 else  false
-END AS is_encrypted,
+END AS is_encrypted
 FROM message msg 
 inner join p3_employee_view emp on msg.sender = emp.email_id;
 
