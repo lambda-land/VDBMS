@@ -12,38 +12,37 @@ CREATE TABLE `v_employee` (
   `email_id` varchar(31) NOT NULL DEFAULT '',
   `folder` varchar(31) NOT NULL DEFAULT '',
   `status` varchar(50)  DEFAULT NULL,
-  `sign` text,
+  `verification_key` text DEFAULT NULL,
   `public_key` varchar(31) DEFAULT NULL,
   `presCond` text
 );
-/*!40101 SET character_set_client = @saved_cs_client */;
 
 -- enhanced email
-INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
+INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, verification_key, public_key, presCond)
 SELECT eid, firstname, lastname, email_id, folder, status, NULL, NULL, 
 "forwardmsg AND filtermsg AND (NOT (addressbook OR encrypt OR remailmsg OR autoresponder OR signature OR mailhost))"
 FROM p1_employee_view;
 
 -- privacy-focus email
-INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
-SELECT eid, firstname, lastname, email_id, folder, status, sign, public_key, 
+INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, verification_key, public_key, presCond)
+SELECT eid, firstname, lastname, email_id, folder, status, verification_key, public_key, 
 "signature AND encrypt AND remailmsg AND (NOT (addressbook OR filtermsg OR autoresponder OR forwardmsg OR mailhost))"
 FROM p2_employee_view;
 
 -- group email
-INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
+INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, verification_key, public_key, presCond)
 SELECT eid, firstname, lastname, email_id, folder, status, NULL, NULL,
 "addressbook AND autoresponder AND mailhost AND encrypt AND signature AND (NOT (forwardmsg OR remailmsg OR filtermsg))"
 FROM p3_employee_view ;
 
 -- premium email
-INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
-SELECT eid, firstname, lastname, email_id, folder, status, sign, public_key,
+INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, verification_key, public_key, presCond)
+SELECT eid, firstname, lastname, email_id, folder, status, verification_key, public_key,
 "signature AND addressbook AND filtermsg AND autoresponder AND forwardmsg AND mailhost AND encrypt AND remailmsg"
 FROM p4_employee_view ;
 
 -- basic email
-INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, sign, public_key, presCond)
+INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, verification_key, public_key, presCond)
 SELECT eid, firstname, lastname, email_id, folder, status, NULL, NULL,
 "(NOT signature) AND (NOT addressbook) AND (NOT filtermsg) AND (NOT autoresponder) AND (NOT forwardmsg) AND (NOT mailhost) AND (NOT encrypt) AND (NOT remailmsg)"
 FROM p5_employee_view ;
@@ -51,7 +50,7 @@ FROM p5_employee_view ;
 
 --
 -- Table structure for table `v_message`
--- v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
+-- v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, presCond) 
 --
 
 DROP TABLE IF EXISTS `v_message`;
@@ -68,34 +67,33 @@ CREATE TABLE `v_message` (
   `is_system_notification` int(1) DEFAULT NULL,
   `is_signed` int(1) DEFAULT NULL,
   `is_encrypted` int(1) DEFAULT NULL,
-  `is_from_remailer` int(1) DEFAULT NULL,
   `is_autoresponse` int(1) DEFAULT NULL,
   `is_forward_msg` int(1) DEFAULT NULL,
   `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
-SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, NULL, is_forward_msg, 
+INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, presCond) 
+SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, is_forward_msg, 
 "forwardmsg AND filtermsg AND (NOT (addressbook OR encrypt OR remailmsg OR autoresponder OR signature OR mailhost))"
 FROM p1_message_view;
 
-INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
-SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, NULL, NULL,
+INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, presCond) 
+SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, NULL, NULL,
 "signature AND encrypt AND remailmsg AND (NOT (addressbook OR filtermsg OR autoresponder OR forwardmsg OR mailhost))"
 FROM p2_message_view;
 
-INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
-SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, is_autoresponse, NULL, 
+INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, presCond) 
+SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, is_autoresponse, NULL, 
 "addressbook AND autoresponder AND mailhost AND encrypt AND signature AND (NOT (forwardmsg OR remailmsg OR filtermsg))"
 FROM p3_message_view;
 
-INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
-SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg,
+INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, presCond) 
+SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg,
 "signature AND addressbook AND filtermsg AND autoresponder AND forwardmsg AND mailhost AND encrypt AND remailmsg"
 FROM p4_message_view;
 
-INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer, is_autoresponse, is_forward_msg, presCond) 
-SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, NULL, NULL, 
+INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, presCond) 
+SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, NULL, 
 "(NOT signature) AND (NOT addressbook) AND (NOT filtermsg) AND (NOT autoresponder) AND (NOT forwardmsg) AND (NOT mailhost) AND (NOT encrypt) AND (NOT remailmsg)"
 FROM p5_message_view;
 

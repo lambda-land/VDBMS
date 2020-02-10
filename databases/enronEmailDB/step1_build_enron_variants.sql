@@ -174,14 +174,13 @@ inner join p1_employee_view emp on msg.sender = emp.email_id;
 CREATE OR REPLACE view p2_message_view AS 
 SELECT msg.*,  false as is_system_notification, 
 CASE    
-WHEN  emp.sign is NULL THEN false   
-WHEN  emp.sign is not NULL THEN true
+WHEN  emp.verification_key is NULL THEN false   
+WHEN  emp.verification_key is not NULL THEN true
 END AS is_signed,
 CASE
 WHEN  emp.public_key is not Null THEN true   
 else  false
-END AS is_encrypted, 
-False as is_from_remailer
+END AS is_encrypted
 FROM message msg 
 inner join p2_employee_view emp on msg.sender = emp.email_id
 inner join recipientinfo rec on emp.email_id = rec.rvalue;
@@ -193,8 +192,8 @@ inner join recipientinfo rec on emp.email_id = rec.rvalue;
 CREATE OR REPLACE view p3_message_view AS 
 SELECT msg.* , false as is_system_notification, false as is_autoresponse,
 CASE    
-WHEN  emp.sign is NULL THEN false   
-WHEN  emp.sign is not NULL THEN true
+WHEN  emp.verification_key is NULL THEN false   
+WHEN  emp.verification_key is not NULL THEN true
 END AS is_signed,
 CASE
 WHEN  emp.public_key is not Null THEN true   
@@ -209,8 +208,8 @@ inner join p3_employee_view emp on msg.sender = emp.email_id;
 CREATE OR REPLACE view p4_message_view AS 
 SELECT msg.* , false as is_system_notification, 
 CASE    
-WHEN  emp.sign is NULL THEN false   
-WHEN  emp.sign is not NULL THEN true
+WHEN  emp.verification_key is NULL THEN false   
+WHEN  emp.verification_key is not NULL THEN true
 END AS is_signed,
 CASE
 WHEN  emp.public_key is not Null THEN true   
