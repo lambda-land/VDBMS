@@ -116,6 +116,7 @@ CREATE TABLE `v_recipientinfo` (
   `presCond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+INSERT INTO v_recipientinfo SELECT * FROM recipientinfo;
 
 --
 -- Table structure for table `v_referenceinfo`
@@ -133,6 +134,7 @@ CREATE TABLE `v_referenceinfo` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+INSERT INTO v_referenceinfo SELECT * FROM referenceinfo;
 --
 -- Table structure for table `v_auto_msg`
 --
