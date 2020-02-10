@@ -183,7 +183,8 @@ else  false
 END AS is_encrypted, 
 False as is_from_remailer
 FROM message msg 
-inner join p2_employee_view emp on msg.sender = emp.email_id;
+inner join p2_employee_view emp on msg.sender = emp.email_id
+inner join recipientinfo rec on emp.email_id = rec.rvalue;
 
 
 -- #create a view for p3_message for prodcut focusing on group usage. 
