@@ -1,5 +1,9 @@
 -- timing parts of the system.
-module VDBMS.Approaches.Timing  where 
+module VDBMS.Approaches.Timing (
+       
+       timeItName
+
+) where 
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
 
