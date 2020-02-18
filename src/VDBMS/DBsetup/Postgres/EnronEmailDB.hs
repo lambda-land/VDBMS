@@ -10,7 +10,7 @@ import Database.HDBC.PostgreSQL
 
 -- | enron connection.
 enronConn :: String 
-enronConn = "blah"
+enronConn = "host=localhost dbname=test user=postgres password=paris1993"
 
 -- | enron VDB
 enronVDB :: IO PostgresHDBC

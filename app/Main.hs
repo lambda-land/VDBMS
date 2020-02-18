@@ -1,6 +1,8 @@
 module Main where
 
 import VDBMS.DBsetup.Postgres.EnronEmailDB
+import VDBMS.VDB.Database.HDBC.PostgreSQL
+
 
 -- import Example.EmployeeUseCase.EmployeeVSchema
 -- import Example.EmployeeUseCase.EmployeeSchema
@@ -19,7 +21,7 @@ import VDBMS.DBsetup.Postgres.EnronEmailDB
 -- import VDB.Variant
 
 -- import Database.HDBC
-import Database.HDBC.Sqlite3
+-- import Database.HDBC.Sqlite3
 
 -- import System.Directory
 -- import System.Clock
@@ -191,6 +193,6 @@ c5 (Feature "v5") = True
 
 --}
 
--- main :: IO Connection
--- main = enronEmail
-main = return ()
+main :: IO PostgresHDBC
+main = enronVDB
+-- main = return ()

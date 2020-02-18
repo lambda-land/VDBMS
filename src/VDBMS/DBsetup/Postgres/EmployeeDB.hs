@@ -10,7 +10,7 @@ import Database.HDBC.PostgreSQL
 
 -- | employee connection.
 empConn :: String 
-empConn = "blah"
+empConn = "host=localhost dbname=test user=postgres password=paris1993"
 
 -- | employee VDB
 employeeVDB :: IO PostgresHDBC
