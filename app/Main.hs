@@ -3,32 +3,10 @@ module Main where
 import VDBMS.DBsetup.Postgres.EnronEmailDB
 import VDBMS.VDB.Database.HDBC.PostgreSQL
 
-
--- import Example.EmployeeUseCase.EmployeeVSchema
--- import Example.EmployeeUseCase.EmployeeSchema
--- import Example.EmployeeUseCase.EmployeeQuery
--- import Example.EmployeeUseCase.EmployeeVQuery
--- import VDB.Database
--- import VDB.VTable
--- import VDB.Name
--- import VDB.Approach1.App1Run
--- import VDB.BruteForceApproach.BruteForce
--- import VDB.Algebra
--- import VDB.Name
--- import VDB.FeatureExpr
--- import VDB.Config
--- import VDB.SqlTable
--- import VDB.Variant
-
--- import Database.HDBC
--- import Database.HDBC.Sqlite3
-
 -- import System.Directory
 -- import System.Clock
 -- import System.CPUTime
 -- import Text.Printf
-
--- import VDB.Example.EmployeeUseCase.SmallSampleForTest
 
 {-- uncomment after modularization!
 
@@ -40,18 +18,6 @@ time a = do
     let diff = (fromIntegral (end - start)) / (10^12)
     printf "Computation time: %0.5f sec\n" (diff :: Double)
     return v
- 
--- vqManual = AChc (Ref $ Feature "v1") empQ1_v1 
---                  (AChc (Or (Ref $ Feature "v2") (Ref $ Feature "v3")) empQ1_v2 
---                   empQ1_v4and5)
-
-employeeConn = connectSqlite3 "./databases/employeeDB/emp_vdb.db"
-p = PresCondAtt "presCond"
-employeeVSchema = variationizeSchema [empSchema1, empSchema2, empSchema3, empSchema4, empSchema5]
-employeeVDB = do
-  conn <- employeeConn
-  return $ VDB employeeVSchema conn
-
 
 -- main :: IO VTable
 -- main :: IO [[SqlValue]]
@@ -118,14 +84,6 @@ main = do
   -- time $ runq c5 q5 db5
   -- disconnect conn5
   -- putStrLn "Done."
--- Starting...
--- Computation time: 0.01079 sec
--- Computation time: 0.01708 sec
--- Computation time: 0.01880 sec
--- Computation time: 48.24207 sec
--- Computation time: 50.10460 sec
--- Done
-
 
   -- putStrLn "Starting..."    
   -- time $ runSqlQsOnCorrespDBs vqs dbs --23.47896 sec
@@ -136,61 +94,6 @@ main = do
   -- putStrLn "Done."
   -- runBrute' q configs p "./databases/employeeDB/relDBs/emp_db" employeeVDB
   
-
--- bruteForSigmod :: Algebra -> [Config Bool] 
---             -> [SqlDatabase Connection] -> IO [SqlVariantTable]
- -- VariantDB :: IConnection conn => Schema -> Variant conn Bool -> SqlDatabase conn 
--- db1 :: SqlDatabase Connection
--- db1 = VariantDB empSchema1 (conn1,c1) 
-
-
-
--- Commented code was HARD CODED FOR THE SIGMOD 19 DEMO SUBMISSION!!
--- runq :: IConnection conn => Config Bool -> String -> SqlDatabase conn -> IO SqlVariantTable
--- runq c t db = do 
---   q <- mkStatement db t 
---   _ <- execute q []
---   r <- fetchAllRowsMap' q
---   return $ mkVariant r c
-
-
-
-c1 :: Config Bool
-c1 (Feature "v1") = True 
-c1 (Feature "v2") = False
-c1 (Feature "v3") = False
-c1 (Feature "v4") = False
-c1 (Feature "v5") = False
-
-
-c2 :: Config Bool
-c2 (Feature "v1") = False 
-c2 (Feature "v2") = True
-c2 (Feature "v3") = False
-c2 (Feature "v4") = False
-c2 (Feature "v5") = False
-
-c3 :: Config Bool
-c3 (Feature "v1") = False 
-c3 (Feature "v2") = False
-c3 (Feature "v3") = True
-c3 (Feature "v4") = False
-c3 (Feature "v5") = False
-
-c4 :: Config Bool
-c4 (Feature "v1") = False 
-c4 (Feature "v2") = False
-c4 (Feature "v3") = False
-c4 (Feature "v4") = True
-c4 (Feature "v5") = False
-
-c5 :: Config Bool
-c5 (Feature "v1") = False 
-c5 (Feature "v2") = False
-c5 (Feature "v3") = False
-c5 (Feature "v4") = False
-c5 (Feature "v5") = True
-
 --}
 
 main :: IO PostgresHDBC
