@@ -1,5 +1,6 @@
--- | connecting to the employeed database.
-module VDBMS.DBsetup.EmployeeDB where 
+-- | connecting to the enron email database stored in the sqlite3 engine
+--   via HDBC library
+module VDBMS.DBsetup.Postgres.EnronEmailDB where 
 
 import Database.HDBC.Sqlite3
 
