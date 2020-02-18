@@ -9,6 +9,8 @@ import VDBMS.VDB.Name
 import Database.HDBC.PostgreSQL
 
 -- | enron connection.
+-- for other options look into:
+-- https://www.postgresql.org/docs/8.1/libpq.html#LIBPQ-CONNECT
 enronConn :: String 
 enronConn = "host=localhost dbname=test user=postgres password=paris1993"
 
