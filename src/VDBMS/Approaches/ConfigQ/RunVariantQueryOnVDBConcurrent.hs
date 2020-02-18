@@ -21,6 +21,7 @@ import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.Features.Config (Config)
+-- import VDBMS.Approaches.Timing (time)
 
 -- import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
