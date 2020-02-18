@@ -1,6 +1,6 @@
 module Main where
 
-import VDBMS.DBsetup.EnronEmailDB
+import VDBMS.DBsetup.Postgres.EnronEmailDB
 
 -- import Example.EmployeeUseCase.EmployeeVSchema
 -- import Example.EmployeeUseCase.EmployeeSchema
@@ -191,6 +191,6 @@ c5 (Feature "v5") = True
 
 --}
 
-main :: IO Connection
-main = enronEmail
--- main = return ()
+-- main :: IO Connection
+-- main = enronEmail
+main = return ()
