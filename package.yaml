@@ -48,7 +48,7 @@ dependencies:
 - exceptions
 - parser-combinators
 - async == 2.2.2
-# - timeit == 2.0
+- timeit == 2.0
 - clock
 - formatting >= 6.3.7
 # - lens

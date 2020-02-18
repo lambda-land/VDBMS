@@ -26,7 +26,7 @@ import VDBMS.Approaches.Timing (timeItName)
 -- import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
 
--- import System.TimeIt
+import System.TimeIt
 import System.Clock
 import Formatting
 import Formatting.Clock
@@ -40,8 +40,7 @@ runQ1 conn vq =
          features = dbFeatures conn
          configs = getAllConfig conn
          pc = presCond conn
-     vq_type <- typeOfQuery vq vsch_pc vsch
-     -- timeItNamed "type system: " $ 
+     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
      start_constQ <- getTime Monotonic
      let 
          -- type_pc = typePC vq_type
