@@ -47,6 +47,5 @@ runQ2 conn vq =
          runq :: Opt String -> IO SqlVtable
          runq (f, q) = bitraverse (return . id) (fetchQRows conn) (f, q)
      sqlTables <- mapM runq sql_qs
-     -- return undefined
      return $ sqlVtables2VTable pc type_sch sqlTables
 
