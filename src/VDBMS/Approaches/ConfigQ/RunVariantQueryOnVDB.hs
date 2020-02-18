@@ -21,12 +21,12 @@ import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.Features.Config (Config)
--- import VDBMS.Approaches.Timing (time)
+import VDBMS.Approaches.Timing 
 
 -- import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
 
-import System.TimeIt
+-- import System.TimeIt
 import System.Clock
 import Formatting
 import Formatting.Clock
@@ -40,7 +40,8 @@ runQ1 conn vq =
          features = dbFeatures conn
          configs = getAllConfig conn
          pc = presCond conn
-     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     vq_type <- typeOfQuery vq vsch_pc vsch
+     -- timeItNamed "type system: " $ 
      start_constQ <- getTime Monotonic
      let 
          -- type_pc = typePC vq_type
@@ -55,7 +56,9 @@ runQ1 conn vq =
          -- try removing gensql
      let runq :: (String, Config Bool) -> IO SqlVariantTable
          runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
-     sqlTables <- timeItNamed "runing queries: " $ mapM runq sql_qs
-     timeItNamed "gathering results: " $ return 
+     sqlTables <- mapM runq sql_qs
+      -- timeItNamed "runing queries: " $
+     -- timeItNamed "gathering results: " $ 
+     return 
        $ variantSqlTables2Table features pc type_sch sqlTables
 
