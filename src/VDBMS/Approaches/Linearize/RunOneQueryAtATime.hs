@@ -22,10 +22,15 @@ import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (sqlVtables2VTable)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 -- import VDBMS.Features.Config (Config)
--- import VDBMS.Approaches.Timing (time)
+import VDBMS.Approaches.Timing (timeItName)
 
 -- import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
+
+import System.TimeIt
+import System.Clock
+import Formatting
+import Formatting.Clock
 
 -- |
 runQ2 :: Database conn => conn -> Algebra -> IO Table
@@ -35,7 +40,8 @@ runQ2 conn vq =
          -- features = dbFeatures conn
          -- configs = getAllConfig conn
          pc = presCond conn
-     vq_type <- typeOfQuery vq vsch_pc vsch
+     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     start_constQ <- getTime Monotonic
      let 
          -- type_pc = typePC vq_type
          type_sch = typeEnv2tableSch vq_type
@@ -44,9 +50,12 @@ runQ2 conn vq =
          -- try removing opt
          ra_qs = optionalize_ vq_constrained_opt
          sql_qs = fmap (bimapDefault id (ppSqlString . genSql . transAlgebra2Sql)) ra_qs
+     end_constQ <- getTime Monotonic
+     fprint (timeSpecs % "\n") start_constQ end_constQ
          -- try removing gensql
-         runq :: Opt String -> IO SqlVtable
+     let runq :: Opt String -> IO SqlVtable
          runq (f, q) = bitraverse (return . id) (fetchQRows conn) (f, q)
-     sqlTables <- mapM runq sql_qs
-     return $ sqlVtables2VTable pc type_sch sqlTables
+     sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
+     timeItName "gathering results" Monotonic $ return 
+       $ sqlVtables2VTable pc type_sch sqlTables
 
