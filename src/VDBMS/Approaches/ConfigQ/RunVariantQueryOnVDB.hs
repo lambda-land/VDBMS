@@ -56,7 +56,6 @@ runQ1 conn vq =
      let runq :: (String, Config Bool) -> IO SqlVariantTable
          runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
      sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
-      -- timeItNamed "runing queries: " $
      timeItName "gathering results" Monotonic $ return 
        $ variantSqlTables2Table features pc type_sch sqlTables
 
