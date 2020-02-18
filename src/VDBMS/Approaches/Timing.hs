@@ -20,3 +20,9 @@ timeItName s c ioa =
      putStrLn $ s ++ ": "
      fprint (timeSpecs % "\n") start end
      return a
+
+-- Clock data type
+-- Monotonic: a monotonic but not-absolute time which never changes after start-up.
+-- Realtime: an absolute Epoch-based time (which is the system clock and can change).
+-- ProcessCPUTime: CPU time taken by the process.
+-- ThreadCPUTime: CPU time taken by the thread.
