@@ -34,6 +34,12 @@ import System.Clock
 import Formatting
 import Formatting.Clock
 
+-- Clock data type
+-- Monotonic: a monotonic but not-absolute time which never changes after start-up.
+-- Realtime: an absolute Epoch-based time (which is the system clock and can change).
+-- ProcessCPUTime: CPU time taken by the process.
+-- ThreadCPUTime: CPU time taken by the thread.
+
 -- |
 runQ5 :: Database conn => conn -> Algebra -> IO Table
 runQ5 conn vq = 
