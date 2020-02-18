@@ -48,6 +48,7 @@ dependencies:
 - pretty
 - exceptions
 - parser-combinators
+- async == 2.2.2
 # - lens
 # - syb #scrap your boilerplate
 #- template-haskell
