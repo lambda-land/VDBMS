@@ -1,4 +1,4 @@
--- | connecting to the employeed database.
+-- | connecting to the employeed database stored in postgres.
 module VDBMS.DBsetup.Postgres.EmployeeDB where 
 
 import VDBMS.VDB.Database.HDBC.PostgreSQL

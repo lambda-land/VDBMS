@@ -1,5 +1,4 @@
--- | connecting to the enron email database stored in the sqlite3 engine
---   via HDBC library
+-- | connecting to the enron email database stored in postgres.
 module VDBMS.DBsetup.Postgres.EnronEmailDB where 
 
 import Database.HDBC.Sqlite3
