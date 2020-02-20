@@ -41,16 +41,16 @@ data SqlNullAtt = SqlNullAtt
 
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
-    SqlAllAtt -- ^ *
-  | SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
+    -- SqlAllAtt -- ^ *
+    SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
   | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   deriving (Eq)
 
 -- | attributes in an attribute expr.
 aExprAtt :: SqlAttrExpr -> Attribute 
-aExprAtt SqlAllAtt 
-  = error "you have a list of attributes and not one!!!"
+-- aExprAtt SqlAllAtt 
+--   = error "you have a list of attributes and not one!!!"
 aExprAtt (SqlAttr ra)                         = (attribute . thing) ra
 aExprAtt (SqlNullAttr (Rename Nothing _)) 
   = error "null attribute!!"
