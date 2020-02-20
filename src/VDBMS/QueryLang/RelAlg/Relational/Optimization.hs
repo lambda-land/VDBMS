@@ -1,5 +1,9 @@
 -- | relational alg optimization rules.
-module VDBMS.QueryLang.RelAlg.Relational.Optimization where 
+module VDBMS.QueryLang.RelAlg.Relational.Optimization (
+
+       appOpt
+
+)where 
 
 import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 -- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F

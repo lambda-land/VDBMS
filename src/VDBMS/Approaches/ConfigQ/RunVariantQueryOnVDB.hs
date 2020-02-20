@@ -22,8 +22,9 @@ import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
+import VDBMS.QueryLang.RelAlg.Relational.Optimization (appOpt)
 
--- import Control.Arrow (first, second, (***))
+import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
 
 import System.TimeIt
@@ -54,7 +55,11 @@ runQ1 conn vq =
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
          -- try removing opt
          ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
-         sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
+         -- the following two lines are for optimizing the generated RA queries
+         ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
+         ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
+         -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
+         sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
          -- try removing gensql
