@@ -2,6 +2,7 @@
 module VDBMS.QueryLang.RelAlg.Relational.Optimization (
 
        appOpt
+       , appOpt_
 
 )where 
 
@@ -19,6 +20,18 @@ import VDBMS.VDB.Schema.Relational.Types
 import qualified Data.Map.Strict as SM (lookup)
 import Data.Maybe (catMaybes, fromJust)
 import Data.List (partition)
+
+-- | Applies the minimization rules until the query doesn't change.
+-- only the ones that don't ask for schema.
+appOpt_ :: RAlgebra -> RAlgebra
+appOpt_ q
+  | opts_ q == q  = q 
+  | otherwise     = appOpt_ (opts_ q)
+
+-- | Relational optimization rules. only the ones that don't ask for schema.
+opts_ :: RAlgebra -> RAlgebra 
+opts_ = optRSel . pushOutRProj
+
 
 -- | Applies the minimization rules until the query doesn't change.
 appOpt :: RAlgebra -> RSchema -> RAlgebra

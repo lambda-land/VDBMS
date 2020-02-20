@@ -25,8 +25,9 @@ import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 -- import VDBMS.Features.Config (Config)
 import VDBMS.QueryGen.Sql.GenSqlSameSch (optRAQs2Sql)
 import VDBMS.Approaches.Timing (timeItName)
+import VDBMS.QueryLang.RelAlg.Relational.Optimization (appOpt_)
 
--- import Control.Arrow (first, second, (***))
+import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
 
 import System.TimeIt
@@ -58,7 +59,10 @@ runQ3 conn vq =
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
          -- try removing opt
          ra_qs = optionalize_ vq_constrained_opt
-         sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
+         -- the following line are for optimizing the generated RA queries
+         ras_opt = map (second appOpt_) ra_qs
+         -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
+         sql = ppSqlString $ optRAQs2Sql type_as pc ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
      sqlTab <- timeItName "running query" Monotonic $ fetchQRows conn sql
