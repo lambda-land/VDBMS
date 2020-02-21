@@ -42,6 +42,10 @@ import Formatting.Clock
 -- ThreadCPUTime: CPU time taken by the thread.
 
 -- |
+runQ5_ :: Database conn => conn -> Algebra -> IO ()
+runQ5_ conn vq = runQ5 conn vq >> return ()
+
+-- |
 runQ5 :: Database conn => conn -> Algebra -> IO Table
 runQ5 conn vq = 
   do let vsch = schema conn
