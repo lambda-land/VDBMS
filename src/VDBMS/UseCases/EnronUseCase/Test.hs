@@ -14,8 +14,8 @@ import Control.Monad.IO.Class (liftIO, MonadIO)
 -- isVschValid empVSchema
 -- areConfsCorrect empVSchema [(empConfig1,empSchema1)]
 
--- | tests the consistency of schema and data of employee vdb.
-testEmpVDB :: (MonadThrow m, MonadIO m) => m Bool
-testEmpVDB = 
+-- | tests the consistency of schema and data of enron vdb.
+testEnronVDB :: (MonadThrow m, MonadIO m) => m Bool
+testEnronVDB = 
   do db <- liftIO enronVDB
      isVDBvalid db
