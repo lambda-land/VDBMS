@@ -19,7 +19,7 @@ WHERE eid <= 30;
 -- END AS sign, 
 CREATE OR REPLACE view p2_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status, 
-conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
+conv(floor(rand() * 99999999999999), 20, 36) as sign,
 conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE eid > 30 AND eid <= 60;
@@ -28,7 +28,7 @@ WHERE eid > 30 AND eid <= 60;
 -- # SELECT count(eid) -- 30
 CREATE OR REPLACE view p3_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status,
-conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
+conv(floor(rand() * 99999999999999), 20, 36) as sign,
 conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE  eid > 60 AND eid <= 90;
@@ -38,7 +38,7 @@ WHERE  eid > 60 AND eid <= 90;
 -- # SELECT count(eid) -- 30
 CREATE OR REPLACE view p4_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status, 
-conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
+conv(floor(rand() * 99999999999999), 20, 36) as sign,
 conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE eid > 90 AND eid <= 120;
@@ -105,17 +105,13 @@ CREATE OR REPLACE view auto_msg_view as
 SELECT eid, 
 CASE    
 WHEN  eid% 3 = 0 THEN  "out of office"
-WHEN  eid% 3 = 1 THEN "Thanks for getting in touch. We are on it."
+WHEN  eid% 3 = 1 THEN "will follow up"
 WHEN  eid% 3 = 2 THEN "out of office"
 END AS subject,
 CASE
-WHEN  eid% 3 = 0 THEN  "Hi,
-I am enjoying a holiday at sea and will be off the grid until the 15th of January! I will get back to you that week. You could also reach out to my colleagues via support@email.com.
-Thanks for your patience and talk to you then!
-Best regards,
-"
-WHEN  eid% 3 = 1 THEN "Thanks for getting in touch. We will get back to you within 6 business hours (Monday-Friday 9am-6pm EST)."
-WHEN  eid% 3 = 2 THEN "Thank you for your message. I am currently out of the office, with no email access. If you need immediate assistance before then, you may reach me at my mobile"
+WHEN  eid% 3 = 0 THEN  "will contact you after the holidays."
+WHEN  eid% 3 = 1 THEN "Thanks for the info. will update you."
+WHEN  eid% 3 = 2 THEN "reach me at my mobile."
 END AS body 
 FROM employeelist
 WHERE  eid > 60 AND eid <= 120 ;
