@@ -16,4 +16,4 @@ empConn = "host=localhost dbname=employees user=postgres password=paris1993"
 
 -- | employee VDB
 employeeVDB :: IO PostgresHDBC
-employeeVDB = connect empConn (Attribute "presCond") empVSchema
+employeeVDB = connect empConn (Attribute "prescond") empVSchema

@@ -19,6 +19,7 @@ module VDBMS.DBMS.Table.SqlVariantTable (
 import Data.Set (Set)
 -- import qualified Data.Set as S
 
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
 import VDBMS.Features.Variant 
