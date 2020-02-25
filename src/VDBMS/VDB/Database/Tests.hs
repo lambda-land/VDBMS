@@ -49,7 +49,7 @@ isVDBvalid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 isVDBvalid conn = 
   do isVschValid (schema conn)
      areTablesValid conn
-     -- areValuesValid conn
+     areValuesValid conn
      -- test3 <- areValuesValid conn
      -- liftIO $ putStrLn $ show test3
      -- return test3
@@ -75,8 +75,6 @@ isTableValid pc r f tab =
        (\b t -> isTupleValid pc r f t >>= return . ((&&) b)) 
        True 
        tab
-     -- liftIO $ putStrLn $ "and DONE " ++ relationName r
-  -- >> liftIO $ putStrLn $ show r
 
 -- | checks if all tuples of all relations in the schema are valid.
 -- ∀t ∈ r ∀r ∈ S. sat (fm ∧ pcᵣ ∧ pc\_t )
@@ -91,16 +89,13 @@ areTablesValid conn =
          -- gen :: MonadThrow m => Relation -> m ((Relation, FeatureExpr),String)
          gen r = do r_pc <- lookupRelationFexp r sch
                     return ((r, r_pc), q ++ relationName r ++ ";")
-     -- liftIO $ putStrLn $ show rels
      rfqs <- mapM gen rels
-     -- liftIO $ putStrLn $ show rfqs
      let runQ :: ((Relation, FeatureExpr), String) 
               -> IO ((Relation, FeatureExpr), SqlTable)
          runQ ((r,f),sql) = bitraverse (return . id) 
                                        (fetchQRows' conn) 
                                        ((r,f),sql)
      rfts <- liftIO $ mapM runQ rfqs
-     -- liftIO $ putStrLn $ show rfts
      foldM (\b ((r,f),t) -> isTableValid pc r f t 
                         >>= return . ((&&) b)) 
            True 
