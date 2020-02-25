@@ -50,10 +50,6 @@ isVDBvalid conn =
   do isVschValid (schema conn)
      areTablesValid conn
      areValuesValid conn
-     -- test1 <- isVschValid (schema conn) 
-     -- liftIO $ putStrLn $ show test1
-     -- test2 <- areTablesValid conn
-     -- liftIO $ putStrLn $ show test2
      -- test3 <- areValuesValid conn
      -- liftIO $ putStrLn $ show test3
      -- return test3
