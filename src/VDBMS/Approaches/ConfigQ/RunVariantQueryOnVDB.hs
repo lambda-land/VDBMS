@@ -21,9 +21,26 @@ import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.Features.Config (Config)
+import VDBMS.Approaches.Timing (timeItName)
+import VDBMS.QueryLang.RelAlg.Relational.Optimization (appOpt)
 
--- import Control.Arrow (first, second, (***))
+import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
+
+import System.TimeIt
+import System.Clock
+import Formatting
+import Formatting.Clock
+
+-- Clock data type
+-- Monotonic: a monotonic but not-absolute time which never changes after start-up.
+-- Realtime: an absolute Epoch-based time (which is the system clock and can change).
+-- ProcessCPUTime: CPU time taken by the process.
+-- ThreadCPUTime: CPU time taken by the thread.
+
+-- |
+runQ1_ :: Database conn => conn -> Algebra -> IO ()
+runQ1_ conn vq = runQ1_ conn vq >> return ()
 
 -- |
 runQ1 :: Database conn => conn -> Algebra -> IO Table
@@ -33,7 +50,8 @@ runQ1 conn vq =
          features = dbFeatures conn
          configs = getAllConfig conn
          pc = presCond conn
-     vq_type <- typeOfQuery vq vsch_pc vsch
+     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     start_constQ <- getTime Monotonic
      let 
          -- type_pc = typePC vq_type
          type_sch = typeEnv2tableSch vq_type
@@ -41,10 +59,17 @@ runQ1 conn vq =
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
          -- try removing opt
          ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
-         sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
+         -- the following two lines are for optimizing the generated RA queries
+         ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
+         ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
+         -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
+         sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ras_opt
+     end_constQ <- getTime Monotonic
+     fprint (timeSpecs % "\n") start_constQ end_constQ
          -- try removing gensql
-         runq :: (String, Config Bool) -> IO SqlVariantTable
+     let runq :: (String, Config Bool) -> IO SqlVariantTable
          runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
-     sqlTables <- mapM runq sql_qs
-     return $ variantSqlTables2Table features pc type_sch sqlTables
+     sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
+     timeItName "gathering results" Monotonic $ return 
+       $ variantSqlTables2Table features pc type_sch sqlTables
 

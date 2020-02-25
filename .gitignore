@@ -8,5 +8,8 @@ dist
 .sql
 .csv
 .DS_Store
+.vo
+.glob
+.aux
 *.cabal
 

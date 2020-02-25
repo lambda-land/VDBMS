@@ -31,21 +31,21 @@ import VDBMS.VDB.Database.HDBC.Fetch
 --   runQ (MySqlHDBC _ _ _) = undefined
 
 
--- -- data MySQLConnectInfo = MySQLConnectInfo
--- --     { -- | The server's hostname; e.g., @\"db1.example.com\"@
--- --       mysqlHost       :: String
--- --       -- | The MySQL username to use for login; e.g., @\"scott\"@
--- --     , mysqlUser       :: String
--- --       -- | The MySQL password to use for login; e.g., @\"tiger\"@
--- --     , mysqlPassword   :: String
--- --       -- | the \"default\" database name; e.g., @\"emp\"@
--- --     , mysqlDatabase   :: String
--- --       -- | The port on which to connect to the server; e.g., @3306@
--- --     , mysqlPort       :: Int
--- --       -- | The absolute path of the server's Unix socket; e.g., @\"\/var\/lib\/mysql.sock\"@
--- --     , mysqlUnixSocket :: String
--- --       -- | The group name in my.cnf from which it reads options; e.g., @\"test\"@
--- --     , mysqlGroup      :: Maybe String
--- --     }
+-- -- -- data MySQLConnectInfo = MySQLConnectInfo
+-- -- --     { -- | The server's hostname; e.g., @\"db1.example.com\"@
+-- -- --       mysqlHost       :: String
+-- -- --       -- | The MySQL username to use for login; e.g., @\"scott\"@
+-- -- --     , mysqlUser       :: String
+-- -- --       -- | The MySQL password to use for login; e.g., @\"tiger\"@
+-- -- --     , mysqlPassword   :: String
+-- -- --       -- | the \"default\" database name; e.g., @\"emp\"@
+-- -- --     , mysqlDatabase   :: String
+-- -- --       -- | The port on which to connect to the server; e.g., @3306@
+-- -- --     , mysqlPort       :: Int
+-- -- --       -- | The absolute path of the server's Unix socket; e.g., @\"\/var\/lib\/mysql.sock\"@
+-- -- --     , mysqlUnixSocket :: String
+-- -- --       -- | The group name in my.cnf from which it reads options; e.g., @\"test\"@
+-- -- --     , mysqlGroup      :: Maybe String
+-- -- --     }
 
--- -- ex1 = SqliteHDBC "../../../databases/testDB/test1.db" 
+-- -- -- ex1 = SqliteHDBC "../../../databases/testDB/test1.db" 

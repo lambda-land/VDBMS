@@ -39,15 +39,18 @@ dependencies:
 - direct-sqlite
 - HDBC-sqlite3 >= 2.3.3.1 
 - HDBC-postgresql >= 2.3.2.6
-# - HDBC-mysql >= 0.7.1.0
+# - HDBC-mysql == 1.7.2.0
 - convertible
 - bytestring
 - directory
-- clock
 # - haskelldb >= 2.2.5 
 - pretty
 - exceptions
 - parser-combinators
+- async == 2.2.2
+- timeit == 2.0
+- clock
+- formatting >= 6.3.7
 # - lens
 # - syb #scrap your boilerplate
 #- template-haskell

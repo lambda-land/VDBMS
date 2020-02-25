@@ -9,7 +9,6 @@ Require Export String.*)
 Require Export Logic.
 
 
-
 Load Feature.
 Import Feature.
 
@@ -17,6 +16,78 @@ Module VRA.
 (** Variational Condition Syntax *)
 
 Definition att : Type := string.
+
+Inductive comp : Type := 
+  | EQc | LTc | GTc.
+
+Lemma nat_of_ascii_injective:
+  forall c1 c2, Ascii.nat_of_ascii c1 = Ascii.nat_of_ascii c2 -> c1 = c2.
+Proof.
+  intros; simpl.
+  assert (Ascii.ascii_of_nat (Ascii.nat_of_ascii c1) =
+          Ascii.ascii_of_nat (Ascii.nat_of_ascii c2))
+      as Hinvol. auto.
+  repeat rewrite Ascii.ascii_nat_embedding in Hinvol.
+  trivial.
+Qed.
+
+Fixpoint string_comp (s1 s2: att): comp :=
+   match s1, s2 with
+ | EmptyString, EmptyString => EQc
+ | String c1 s1', String c2 s2' => 
+             match (compare (Ascii.nat_of_ascii c1) (Ascii.nat_of_ascii c2)) with
+             | Eq => string_comp s1' s2'
+             | Lt => LTc
+             | Gt => GTc
+             end
+ | EmptyString,_ => LTc
+ | _, EmptyString => GTc
+ end.
+
+
+Lemma string_compEq_refl: forall s, string_comp s s = EQc.
+Proof. intros. induction s. - reflexivity. 
+       - simpl. induction (Ascii.nat_of_ascii a). simpl. assumption. simpl.
+         assumption.
+Qed.
+         
+
+Lemma string_compEq_eq : forall a a0, string_comp a a0 = EQc <-> a = a0.
+Proof. 
+     split. 
+     - intros. generalize dependent a0.
+       induction a as [|c a].
+       + destruct a0 as [|c0 a0]. 
+         ++ simpl. reflexivity.
+         ++ intro. discriminate H.
+       + destruct a0 as [|c0 a0].
+         ++ intro. discriminate H.
+         ++ intro. simpl in H. 
+            destruct (Ascii.nat_of_ascii c ?= Ascii.nat_of_ascii c0) eqn: C.
+            +++ apply nat_compare_eq in C. apply nat_of_ascii_injective in C.
+                apply IHa in H. rewrite C, H. reflexivity.
+            +++ discriminate H. +++ discriminate H.
+     - intros. destruct a as [|c a].
+       + intros. destruct a0 as [|c0 a0]. 
+         ++ simpl. reflexivity. 
+         ++ discriminate H. 
+       + intros. destruct a0 as [|c0 a0]. 
+         ++ discriminate H. 
+         ++ inversion H. rewrite string_compEq_refl. reflexivity.
+Qed.
+
+
+(** asuumption: list att s are set thus string_comp ( a) ( b) = EQc can't happen*)
+Inductive LocallySortedAtts : list att -> Prop :=
+  | LSorted_nil : LocallySortedAtts []
+  | LSorted_cons1 a : LocallySortedAtts [a]
+  | LSorted_consn a b l :
+      LocallySortedAtts (b :: l) -> string_comp a b = LTc
+       -> LocallySortedAtts (a :: b :: l).
+
+Inductive NoDup {A: Type}: list A -> Prop :=
+ | NoDup_nil : NoDup nil
+ | NoDup_cons : forall x l, ~ In x l -> NoDup l -> NoDup (x::l).
 
 (** variational to non-variational condiitions configurations *)
 
@@ -58,6 +129,8 @@ Fixpoint configVCond (vc : vcond) (c : config) : cond :=
 Definition r : Type := string.
 Definition atts : Type := list att.
 
+Definition assumption_atts (a:atts): Prop:= forall (a:atts), LocallySortedAtts a /\ NoDup a.
+
 Definition relS : Type := (r * atts) % type.
 
 Inductive setop : Type := union | inter | diff.
@@ -76,6 +149,14 @@ Inductive query : Type :=
   | setU  : setop   -> query -> query -> query.
 
 Definition vatt : Type := (att * fexp)%type. (*assuming always annotated; could've used option*)
+
+(** asuumption: list vatt s are set thus string_comp (fst a) (fst b) = EQc can't happen*)
+Inductive LocallySortedVAtts : list vatt -> Prop :=
+  | LSorted_nil_v : LocallySortedVAtts []
+  | LSorted_cons1_v a : LocallySortedVAtts [a]
+  | LSorted_consn_v a b l :
+      LocallySortedVAtts (b :: l) ->  string_comp (fst a) (fst b) = LTc
+       -> LocallySortedVAtts (a :: b :: l).
 
 Definition vatts : Type := list vatt.
 
@@ -143,9 +224,13 @@ Definition configVSchema (vs : vschema) (c : config) : schema := if semE (snd vs
 Definition vqtype : Type := (vatts * fexp) %type. (*assuming always annotated; could've used option*)
 Definition qtype  : Type := (atts) %type.
 
-Definition configVQtype (vqt : vqtype) (c : config) : qtype := if semE (snd vqt) c
+Definition configVQtype (vqt : vqtype) (c : config) : qtype := 
+      match vqt with 
+      |(V, e) => if semE e c then  configVAttSet V c else  nil
+      end.
+(*if semE (snd vqt) c
                                                          then  configVAttSet (fst vqt) c
-                                                           else  nil.
+                                                           else  nil. *)
 (** ---------------------qtype-------------------------- **)
 
 (*Reserved Notation "e S '|-' q ':' T"
@@ -280,50 +365,155 @@ Qed.
 
 Definition equiv_qtype ( A A': qtype ) : Prop := A = A'.
 
-(** WRONG!!!*)
-
-Fixpoint string_comp (s1 s2: string): nat :=
-   match s1, s2 with
- | EmptyString, EmptyString => 0
- | String c1 s1', String c2 s2' => 
-             match (compare (Ascii.nat_of_ascii c1) (Ascii.nat_of_ascii c2)) with
-             | Eq => string_comp s1' s2'
-             | Lt => S (S 0)
-             | Gt => S 0
-             end
- | EmptyString,_ => (S (S 0))
- | _, EmptyString => S 0
- end.
-
-Fixpoint avatts_union (A A': vatts) : vatts :=
-  let fix merge_aux A' :=
-  match A, A' with
-  | [], _ => A'
-  | _, [] => A
-  |  (a, e) ::xs,  (a', e') ::xs' =>
-      match (string_comp a a') with
-          | 0 =>  (a, e \/(F) e') :: (avatts_union xs xs')
-          | S 0 =>  (a', e') :: merge_aux xs'
-          | S (S 0) => (a, e) :: (avatts_union xs A')
-          | _ => nil
-          end
-  end
-  in merge_aux A'.
-
 Fixpoint atts_union (A A': atts) : atts :=
-  let fix merge_aux A' :=
+  let fix merge_aux_atts A' :=
   match A, A' with
   | [], _ => A'
   | _, [] => A
   |  a ::xs,  a' ::xs' =>
       match (string_comp a a') with
-          | 0 =>  a :: (atts_union xs xs')
-          | S 0 =>  a':: merge_aux xs'
-          | S (S 0) => a :: (atts_union xs A')
-          | _ => nil
-          end
+          | EQc => a :: (atts_union xs xs')
+          | LTc => a :: (atts_union xs A')
+          | GTc => a':: merge_aux_atts xs' 
+      end
   end
-  in merge_aux A'.
+  in merge_aux_atts A'.
+
+Fixpoint avatts_union (A A': vatts) : vatts :=
+  let fix merge_aux_vatts A' :=
+  match A, A' with
+  | [], _ => A'
+  | _, [] => A
+  | (a, e) ::xs,  (a', e') ::xs' =>
+      match (string_comp a a') with
+          | EQc => (a, e \/(F) e') :: (avatts_union xs xs')
+          | LTc => (a, e) :: (avatts_union xs A')
+          | GTc => (a', e') :: merge_aux_vatts xs'
+      end
+  end
+  in merge_aux_vatts A'.
+
+(** Prove that both unions preserve sorting (by lexical order)*)
+(** Define a prop called sorted on vatts and atts*)
+
+(*Definition globally_less_dec_ord : forall v v' xs xs', 
+  globally_less -> (string_comp (fst v) (fst v')) = EQc \/ (string_comp (fst v) (fst v')) = LTc -> 
+  (forall c, (E[[(snd v)]] c) = true /\ (E[[(snd v')]] c) = false ->
+   atts_union (configVAttSet (v :: xs) c)
+    (configVAttSet (v' :: xs') c) = (fst v) :: atts_union (configVAttSet xs c)
+     (configVAttSet xs' c) ).
+Proof. 
+  intros. unfold globally_less in H. 
+  intros. 
+Admitted.*)
+
+Lemma ackerman_resolve_vatts: forall (v v': vatt) (xs xs': vatts),
+ (string_comp (fst v) (fst v')) = GTc ->
+   avatts_union (v ::xs)  (v' ::xs') = v' :: avatts_union (v ::xs) xs'.
+Proof. intros. simpl. destruct v. destruct v'. simpl in H. 
+       rewrite H. reflexivity. 
+Qed.
+
+Lemma ackerman_resolve_atts: forall (a a':att) (xs xs':atts),
+ (string_comp a a') = GTc ->
+   atts_union (a ::xs)  (a' ::xs') = a' :: atts_union (a ::xs) xs'.
+Proof. intros. simpl. rewrite H. reflexivity. Qed.
+
+Lemma string_comp_symm : forall a a0, string_comp a a0 = EQc
+    -> string_comp a0 a = EQc.
+Proof. intros. apply string_compEq_eq in H.  symmetry in H. rewrite string_compEq_eq.
+       assumption. 
+Qed.
+
+Lemma string_comp_lt_gt: forall a a0, string_comp a a0 = LTc
+    <-> string_comp a0 a = GTc.
+Proof. intros. split. 
+       - intros. generalize dependent a. induction a0 as [| b0]. 
+         + intros. destruct a as [|b]; simpl in H; discriminate H. 
+         + intros. destruct a as [|b]. ++ simpl. reflexivity.
+           ++ simpl.
+            destruct (Ascii.nat_of_ascii b ?= Ascii.nat_of_ascii b0) eqn: anat.
+            +++ simpl in H. rewrite anat in H. apply nat_compare_eq in anat. 
+             apply nat_of_ascii_injective in anat. rewrite anat.
+             assert (I: forall k, Ascii.nat_of_ascii k ?= Ascii.nat_of_ascii k = Eq). 
+             { intros. induction (Ascii.nat_of_ascii k).
+               reflexivity.  simpl. assumption. }
+             rewrite I. apply IHa0 in H.  assumption.
+             +++ apply nat_compare_lt in anat.
+                 apply nat_compare_gt in anat.  
+                 rewrite anat. 
+                 reflexivity. 
+             +++ simpl in H. 
+                 rewrite anat in H. discriminate H. 
+      - intros. generalize dependent a. induction a0 as [| b0]. 
+         + intros. destruct a as [|b]; simpl in H; discriminate H. 
+         + intros. destruct a as [|b]. ++ simpl. reflexivity.
+           ++ simpl.
+            destruct (Ascii.nat_of_ascii b0 ?= Ascii.nat_of_ascii b) eqn: anat.
+            +++ simpl in H. rewrite anat in H. apply nat_compare_eq in anat. 
+             apply nat_of_ascii_injective in anat. rewrite anat.
+             assert (I: forall k, Ascii.nat_of_ascii k ?= Ascii.nat_of_ascii k = Eq). 
+             { intros. induction (Ascii.nat_of_ascii k).
+               reflexivity.  simpl. assumption. }
+             rewrite I. apply IHa0 in H.  assumption.
+             
+             +++ simpl in H. 
+                 rewrite anat in H. discriminate H. 
+             +++ apply nat_compare_gt in anat.
+                 apply nat_compare_lt in anat.  
+                 rewrite anat. 
+                 reflexivity.
+Qed. 
+
+
+Lemma avatts_union_trans: forall A A' c, 
+   configVAttSet (avatts_union A A') c = configVAttSet (avatts_union A' A) c.
+Proof. intros. generalize dependent A'. induction A. 
+       - destruct A'.
+         + simpl. reflexivity.
+         + simpl. destruct v as (v', e'). reflexivity.
+       - induction A' as [| v A'].
+        + simpl. destruct a. reflexivity.
+        + destruct a, v. 
+          assert (I: forall a e A, configVAttSet ( (a, e) :: A ) c = 
+             if semE e c then a :: (configVAttSet A c) else configVAttSet A c ). { reflexivity. }
+          destruct (string_comp a a0) eqn: cmp. 
+          ++ unfold avatts_union at 1; fold avatts_union. rewrite cmp.
+             apply string_compEq_eq in cmp as cmp_eq.
+             apply string_comp_symm in cmp. 
+             simpl. rewrite cmp.
+             rewrite cmp_eq. rewrite IHA. 
+             rewrite I. simpl. rewrite orb_comm. reflexivity.
+          ++ unfold avatts_union at 1; fold avatts_union. rewrite cmp.
+             apply string_comp_lt_gt in cmp as cmp_rev.
+             rewrite ackerman_resolve_vatts. rewrite I. rewrite I. 
+             destruct (E[[ f]] c). rewrite IHA.
+             reflexivity. apply IHA. simpl. assumption.
+          ++ apply string_comp_lt_gt in cmp as cmp_rev.
+             unfold avatts_union at 2; fold avatts_union. rewrite cmp_rev.
+             rewrite ackerman_resolve_vatts.  rewrite I. rewrite I. 
+             destruct (E[[ f0]] c). rewrite IHA'.  reflexivity. 
+             apply IHA'. simpl. assumption.
+Qed.
+
+Lemma atts_union_trans: forall A A', 
+   atts_union A A' = atts_union A' A.
+Proof. intros. generalize dependent A'. induction A.
+       + destruct A'. 
+         ++ reflexivity.
+         ++ simpl. reflexivity.
+       + induction A'. ++ reflexivity.
+         ++  destruct (string_comp a a0) eqn: SC.
+             +++ simpl. rewrite SC. apply string_comp_symm in SC. rewrite SC.
+                  rewrite IHA. rewrite string_compEq_eq in SC. rewrite SC. reflexivity.
+             +++ unfold atts_union at 1; fold atts_union. rewrite SC.
+                 apply string_comp_lt_gt in SC. rewrite ackerman_resolve_atts. 
+                 rewrite IHA. reflexivity. assumption.
+             +++ rewrite ackerman_resolve_atts. 
+                 apply string_comp_lt_gt in SC as SC_rev. 
+                 unfold atts_union at 2; fold atts_union. rewrite SC_rev. 
+                 rewrite IHA'. reflexivity. assumption.
+Qed.
 
 Lemma atts_union_nil_r: forall A, atts_union A [] = A.
 Proof. intros. destruct A. reflexivity. reflexivity. Qed.
@@ -343,14 +533,202 @@ Definition annoted (A: vqtype) : vatts :=
    | (v , m)  => recurse_annot v m
    end.
 
+
+Lemma avatts_union_nil_r : forall A, avatts_union A [] = A.
+Proof. intros. simpl. destruct A. reflexivity. simpl. 
+       destruct v. reflexivity. Qed.
+
+Lemma avatts_union_nil_l : forall A, avatts_union [] A = A.
+Proof. intros. destruct A. reflexivity. destruct v. reflexivity. Qed.
+
+
+(**  Set Printing All. *)
+
+
+(*Lemma string_comp_trans: forall a a' a'',(string_comp a a') = EQc \/ (string_comp a a') = LTc ->
+      (string_comp a' a'') = LTc -> (string_comp a a'') = LTc.
+Proof. Admitted.*)
+
+Lemma hack_control_simpl: forall a e A c, configVAttSet ( (a, e) :: A ) c = 
+       if semE e c then a :: (configVAttSet A c) else configVAttSet A c .
+Proof. intros. simpl. reflexivity. Qed.
+
+Lemma assumption_vatts : forall (v:vatts), (LocallySortedVAtts v)  /\ (NoDup v).
+Proof. Admitted.
+
+(** forall (a, e) ((a', e')::l), if a <= a', then a is less than (first element of) all components in l as 
+l is a unique list of paired elements ordered on the first element of each pair *)
+Definition globally_less : Prop :=
+   forall (a: vatt) (vs:vatts), (string_comp (fst a) (fst (hd a vs)) = EQc 
+                              \/ string_comp (fst a) (fst (hd a vs)) = LTc ->
+     (forall (x:att), (exists e, In (x, e) (tail vs)) -> 
+       string_comp (fst a) x = LTc)).
+
+Lemma globally_less_is_true: globally_less = True.
+Proof. Admitted.
+
+Lemma config_filters_subset: forall vs c x xs, configVAttSet vs c = x :: xs 
+ -> exists e, In (x, e) vs.
+Proof. intros. induction vs as [| v vs]. 
+       - simpl in H.  discriminate H. 
+       - destruct v. simpl in H. destruct (E[[ f]] c) eqn: F.
+         + inversion H. exists f. simpl. left. reflexivity.
+         + simpl. apply IHvs in H. destruct H as [e H].
+           exists e. right. assumption.
+Qed. 
+
+Lemma case1_req_global_lt_prop: forall (v v': vatt) (xs xs': vatts),
+ (string_comp (fst v) (fst v')) = EQc \/ (string_comp (fst v) (fst v')) = LTc -> 
+  (forall c, (E[[(snd v)]] c) = true  /\ (E[[(snd v')]] c) = false ->
+   atts_union (configVAttSet (v :: xs) c) (configVAttSet (v' :: xs') c) 
+     = (fst v) :: atts_union (configVAttSet xs c) (configVAttSet xs' c) ).
+Proof. 
+      intros v v' xs xs' H0 c H1.
+      assert (I: (LocallySortedVAtts (v'::xs')) /\ (NoDup (v'::xs'))). 
+      { apply assumption_vatts. }
+      destruct v as (a, e). destruct v' as (a',e'). 
+      simpl in H0. simpl in H1. simpl. 
+      destruct H1 as [H1 H2]. 
+      rewrite H1. rewrite H2. destruct (configVAttSet xs' c) eqn: Imp. 
+        + simpl. rewrite atts_union_nil_r. reflexivity.
+        + assert (H: globally_less). { rewrite globally_less_is_true. auto. }
+          unfold globally_less in H. specialize H with (vs:=((a',e')::xs')). 
+          simpl in H.
+          specialize H with (a:=(a,e)). 
+          simpl in H. 
+          simpl. specialize H with a0. 
+          simpl in H. rewrite H. reflexivity. assumption. 
+          apply config_filters_subset in Imp. assumption.   
+Qed.
+
+Lemma case2_req_global_lt_prop: forall (v v': vatt) (xs xs': vatts),
+ (string_comp (fst v) (fst v')) = EQc \/ (string_comp (fst v) (fst v')) = GTc -> 
+  (forall c, (E[[(snd v)]] c) = false /\ (E[[(snd v')]] c) = true  ->
+   atts_union (configVAttSet (v :: xs) c) (configVAttSet (v' :: xs') c) 
+     = (fst v') :: atts_union (configVAttSet xs c) (configVAttSet xs' c) ).
+Proof. 
+      intros. rewrite atts_union_trans. assert (rev: atts_union (configVAttSet xs c)
+     (configVAttSet xs' c) = atts_union (configVAttSet xs' c)
+     (configVAttSet xs c)). { rewrite atts_union_trans. reflexivity. }
+      rewrite rev. apply case1_req_global_lt_prop.
+      - destruct H. 
+      + left. apply string_comp_symm. assumption. 
+      + right. rewrite string_comp_lt_gt. assumption.
+      - rewrite and_comm. assumption.
+Qed.
+
+Lemma configVAttSet_dist_avatts_union : forall A  A' c, configVAttSet (avatts_union A A') c =
+      atts_union (configVAttSet A c) (configVAttSet A' c) .
+Proof. 
+   intros A A' c. generalize dependent A'. induction A as [ | (a1, e1) ].
+   - intro A'. rewrite avatts_union_nil_l. simpl. destruct (configVAttSet A' c).
+     reflexivity. reflexivity.
+   - intros. induction A' as [| (a2, e2)]. 
+     + rewrite avatts_union_nil_r. rewrite atts_union_nil_r. 
+       reflexivity. 
+     + assert (I: forall a e A, configVAttSet ( (a, e) :: A ) c = 
+       if semE e c then a :: (configVAttSet A c) else configVAttSet A c ).
+       { intros. simpl. reflexivity. } (* rewrite I. rewrite I. *)
+       destruct (E[[ e1]] c) eqn: E1. 
+       ++ destruct (E[[ e2]] c) eqn: E2. 
+          { rewrite I. rewrite I. rewrite E1. rewrite E2.
+            destruct (string_comp a1 a2) eqn:SC.
+            + simpl. rewrite SC. rewrite I. simpl. rewrite E1. simpl. 
+              rewrite IHA. reflexivity.
+            + simpl. rewrite SC. rewrite I. rewrite E1. 
+              rewrite IHA. rewrite I. rewrite E2. reflexivity.
+            + rewrite ackerman_resolve_vatts. 
+                   rewrite ackerman_resolve_atts.
+                   rewrite I. rewrite E2. rewrite IHA'.
+                   rewrite I. rewrite E1. reflexivity.
+                   assumption. simpl. assumption.
+          }
+          { destruct (string_comp a1 a2) eqn:SC.
+            + rewrite case1_req_global_lt_prop. unfold avatts_union; fold avatts_union. 
+              rewrite SC.  rewrite I. rewrite or_any_true. rewrite IHA.
+              simpl. reflexivity.
+              rewrite E1. reflexivity.
+              simpl. left. assumption.
+              simpl. split. assumption. assumption.
+            + rewrite case1_req_global_lt_prop. simpl. rewrite SC. rewrite I. rewrite E1.
+                rewrite IHA. rewrite I. rewrite E2. reflexivity.
+                simpl. right. assumption.
+                simpl. split. assumption. assumption.
+            + rewrite ackerman_resolve_vatts. 
+              rewrite I. rewrite E2. rewrite IHA'.
+              rewrite I. rewrite E1.  rewrite I. rewrite E2. reflexivity.
+              simpl. assumption.
+          }
+     ++ destruct (E[[ e2]] c) eqn: E2. 
+          { destruct (string_comp a1 a2) eqn:SC.
+            + rewrite case2_req_global_lt_prop. unfold avatts_union; fold avatts_union. 
+              rewrite SC.  rewrite I. rewrite or_any_true. rewrite IHA.
+              simpl. apply string_compEq_eq in SC. rewrite SC. reflexivity.
+              rewrite E2. rewrite orb_comm. reflexivity.
+              simpl. left. assumption.
+              simpl. split. assumption. assumption.
+            + simpl. rewrite SC. 
+              rewrite E1. rewrite E2. rewrite I. rewrite E1. rewrite IHA. 
+              rewrite I. rewrite E2. reflexivity.
+            + rewrite case2_req_global_lt_prop. 
+              rewrite ackerman_resolve_vatts. 
+              rewrite I. rewrite E2.
+              rewrite IHA'. rewrite I. rewrite E1. reflexivity.
+              simpl. assumption.
+              simpl. right. assumption. 
+              simpl. split. assumption. assumption.
+          }
+          { rewrite I. rewrite I. rewrite E1. rewrite E2.
+            destruct (string_comp a1 a2) eqn:SC.
+            + simpl. rewrite SC. rewrite I. simpl. rewrite E1. rewrite E2. 
+              simpl. apply IHA.
+            + simpl. rewrite SC. rewrite I. rewrite E1. rewrite IHA. 
+              rewrite I. rewrite E2. reflexivity.
+            + rewrite ackerman_resolve_vatts. 
+              rewrite I. rewrite E2. rewrite IHA'.
+              rewrite I. rewrite E1. reflexivity.
+             simpl. assumption.
+          }
+Qed.
+
 Lemma configVQType_dist_avatts_union : forall A A' e c, configVQtype (avatts_union A A', e) c
 = atts_union (configVQtype (A, e) c) (configVQtype (A', e) c).
-Proof. Admitted.
+Proof. 
+ intros A A' e c. generalize dependent A'. induction A as [ | (a1, e1) ]. 
+ - intro A'. destruct A' as [| (a2, e2)]. simpl. 
+   + unfold configVQtype. simpl. destruct (E[[ e]] c) eqn: E.
+     ++ reflexivity.
+     ++ reflexivity. 
+   + unfold configVQtype. simpl. destruct (E[[ e]] c) eqn: E.
+     ++ rewrite atts_union_nil_l. reflexivity.
+     ++ reflexivity. 
+ - intro A'. destruct A' as [| (a2, e2)]. 
+   + rewrite avatts_union_nil_r. 
+     unfold configVQtype. simpl. destruct (E[[ e]] c) eqn: E. 
+     rewrite atts_union_nil_r. reflexivity. reflexivity.
+   + unfold configVQtype. unfold configVQtype in IHA. 
+     destruct (E[[ e]] c) eqn: E. 
+     ++ apply configVAttSet_dist_avatts_union. 
+     ++ reflexivity.
+Qed.
+
 
 Lemma configVQType_recurse_anott : forall A e1 e2 c, 
 configVQtype (recurse_annot A e1, e2) c
 = configVQtype (A, e1 /\(F) e2) c.
-Proof. Admitted.
+Proof. intros. induction A. 
+       - simpl. destruct (E[[ e2]] c); 
+          destruct (E[[ e1]] c); simpl; repeat (reflexivity).
+       - destruct a as (x, e). unfold recurse_annot; fold recurse_annot. 
+         simpl. 
+         simpl in IHA.
+         destruct (E[[ e2]] c) eqn: E2.
+          + destruct (E[[ e1]] c) eqn: E1; 
+            destruct (E[[ e]] c) eqn: E; simpl; simpl in IHA;
+              rewrite IHA; reflexivity. 
+          + rewrite andb_false_r. reflexivity.
+Qed.
+
 
 Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
   | Relation_vE_fm : forall e rn A e',
@@ -375,7 +753,7 @@ Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
        vtype (e /\(F) e') vq1 (A1, e1) ->
        vtype (e /\(F) (~(F) e')) vq2 (A2, e2) ->
        vtype e (chcQ e' vq1 vq2) 
-        (avatts_union (recurse_annot A1 e1) (recurse_annot A2 e2) , litB true).
+        (avatts_union (recurse_annot A1 e1) (recurse_annot A2 e2) , e1 \/(F) e2).
             (*e1 and e2 can't be simultaneously true.*)
   (*| Product_vE: forall e vq1 vq2 A1 e1 A2 e2 ,
        vtype e  vq1 (A1, e1) ->
@@ -400,8 +778,31 @@ Fixpoint type1 (q:query) : qtype :=
 (** Variation Preservation *)
 
 Theorem context_type_rel : forall e vq A' e',
-       vtype e vq (A', e') -> ~ sat (  e' /\(F) (~(F) (e)) ).
-Proof. Admitted.
+       vtype e vq (A', e') -> 
+           ~ sat (  e' /\(F) (~(F) (e)) ).
+Proof. intros e vq. generalize dependent e. induction vq. (* subst. *)
+       - intros. inversion H; subst. assumption. rewrite not_sat_not_prop. 
+          rewrite <- sat_taut_comp.
+          intros. assumption.
+       - intros. inversion H; subst.
+       - intros. inversion H; subst.
+         rewrite not_sat_not_prop. rewrite <- sat_taut_comp.
+         intros. assumption.
+       - intros. inversion H; subst. rewrite not_sat_not_prop. 
+         unfold not_sat. intros.
+         destruct (E[[ e1]] c) eqn:E1.
+         + rewrite <- sat_taut_comp_inv_c. intros. simpl. 
+         rewrite E1. simpl. 
+         apply IHvq1 in H3.  rewrite not_sat_not_prop in H3. 
+         rewrite <- sat_taut_comp in H3. specialize H3 with c.
+         apply H3 in E1. simpl in E1. apply andb_prop in E1. 
+         destruct E1. rewrite <- H1, H0. reflexivity.
+         + rewrite <- sat_taut_comp_inv_c. intros. simpl.
+         rewrite E1. simpl.
+         apply IHvq2 in H7.  rewrite not_sat_not_prop in H7. 
+         rewrite <- sat_taut_comp_inv in H7. specialize H7 with c.
+         apply H7. simpl. rewrite H0. simpl. reflexivity.
+Admitted.
  (** (E[[ e']] c) = true -> (E[[ e]] c) = true.*)
 
 
@@ -416,14 +817,17 @@ Theorem variation_preservation : forall e vq T,
            type1 (configVQuery vq c) = configVQtype T c.
 Proof. 
   intros. induction H.
+  (* Relation - E *) (*get rid of this*)
   - unfold configVQuery. unfold configVRelS. simpl. 
     rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
     unfold configVQtype. simpl. destruct (E[[e']] c) eqn: HsemE.
     + reflexivity.
     + reflexivity. 
+  (* Relation - E *)
   - unfold configVQuery. unfold configVRelS. unfold configVQtype. simpl. 
     rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
     rewrite H0. apply H in H0. rewrite H0. reflexivity.
+ (* Project - E *)
  - unfold subsump_vqtype, configVQtype in H1. simpl in H1.
    unfold configVQtype in IHvtype. simpl in IHvtype. 
    unfold configVQtype. simpl. 
@@ -435,6 +839,7 @@ Proof.
         specialize H1 with c. rewrite H0, He' in H1. 
         destruct (configVAttSet A c). rewrite H0.
         reflexivity. simpl in H1. discriminate H1. assumption.
+ (* SetOp - E *)
  - simpl in IHvtype1. simpl in IHvtype2. simpl. 
    + simpl. rewrite IHvtype1. rewrite IHvtype2.
      unfold configVQtype. simpl. 
@@ -443,35 +848,94 @@ Proof.
      ++ rewrite (equiv_qtype_bool_refl (configVAttSet A2 c)). reflexivity.
      ++ simpl. reflexivity. 
      ++ assumption. ++ assumption.
+ (* Choice - E *)
  - simpl in IHvtype1. simpl in IHvtype2. rewrite H0 in IHvtype1, IHvtype2.
    rewrite configVQType_dist_avatts_union.
    rewrite configVQType_recurse_anott. rewrite configVQType_recurse_anott. 
-   simpl. destruct (E[[ e']] c) eqn: E'.
-   + apply context_type_rel in H1.
+   destruct (E[[ e']] c) eqn: E'.
+   + simpl. rewrite E'. apply context_type_rel in H1.
      rewrite not_sat_not_prop in H1. 
      rewrite <- sat_taut_comp_inv in H1.
      specialize H1 with c. 
      simpl in H1. rewrite H0, E' in H1. simpl in H1. 
-     assert (Ihack: false = false). { reflexivity. } 
-     apply H1 in Ihack. unfold configVQtype at 2. simpl. rewrite Ihack.
-     rewrite atts_union_nil_r. 
-     unfold configVQtype. simpl. rewrite andb_true_r. 
-     unfold configVQtype in IHvtype1. apply IHvtype1. reflexivity.
+     rewrite H1.
+     simpl. rewrite atts_union_nil_r. 
+     simpl. rewrite orb_false_r. rewrite andb_diag.
+     apply IHvtype1. reflexivity. reflexivity.
    + apply context_type_rel in H.
      rewrite not_sat_not_prop in H. 
      rewrite <- sat_taut_comp_inv in H.
      specialize H with c. 
      simpl in H. rewrite H0, E' in H. simpl in H. 
-     assert (Ihack: false = false). { reflexivity. } 
-     apply H in Ihack. unfold configVQtype at 1. simpl. rewrite Ihack.
-     simpl. destruct (configVQtype (A2, e2 /\(F) litB true) c) eqn: D;
-     unfold configVQtype in D; simpl in D; rewrite andb_true_r in D;
-     unfold configVQtype in IHvtype2; simpl in IHvtype2; rewrite D in IHvtype2;
-     apply IHvtype2;  reflexivity.
+     unfold configVQtype at 1. 
+     assert(Ihack2: forall e1 e2, (E[[  e1 /\(F) (e1 \/(F) e2)]] c) = (E[[ e1]] c)).
+     { simpl. Search andb. intros. apply absorption_andb. }
+     rewrite Ihack2. rewrite H. rewrite atts_union_nil_l.  
+     unfold configVQuery. rewrite E'. fold configVQuery.
+     destruct (configVQtype (A2, e2 /\(F) (e1 \/(F) e2)) c) eqn: D;
+     unfold configVQtype in D; simpl in D; rewrite H in D;
+     try (simpl in D); try (rewrite andb_diag in D);
+     try (unfold configVQtype in IHvtype2); try (simpl in IHvtype2);
+     try (rewrite D in IHvtype2);
+     try (apply IHvtype2); repeat (reflexivity). reflexivity.
+  (* Product - E *)
+  (* Select - E *)
 Qed.
 
 
 
+(*Lemma configVAttSet_dist_avatts_union_v1 : forall A c, (forall A' , configVAttSet (avatts_union A A') c =
+      atts_union (configVAttSet A c)
+        (configVAttSet A' c) )  -> forall a1 e1 A', configVAttSet
+        (avatts_union ((a1, e1) :: A) ( A')) c =
+           atts_union (configVAttSet ((a1, e1) :: A) c)
+             (configVAttSet ( A') c) .
+
+Proof. (* intros. 
+  assert (I: forall a e A, configVAttSet ( (a, e) :: A ) c = 
+      if semE e c then a :: (configVAttSet A c) else configVAttSet A c ).
+  { intros. simpl. reflexivity. }
+  rewrite I.  destruct (E[[ e1]] c) eqn: E1.
+  + destruct A' as [|(a2, e2)].
+    ++ simpl. rewrite E1. reflexivity.
+    ++ rewrite I. destruct (E[[ e2]] c) eqn: E2.  
+       +++ simpl. destruct (string_comp a1 a2) eqn: SC. 
+          { rewrite I. simpl. rewrite E1. simpl. rewrite H. reflexivity. }
+          { destruct n. 
+           - rewrite I. rewrite E1. rewrite H. rewrite I. rewrite E2. reflexivity.
+           - admit.
+          }
+       +++ simpl. destruct (string_comp a1 a2) eqn: SC. 
+          { rewrite I. simpl. rewrite E1. simpl. rewrite H. reflexivity. }
+          { destruct n. 
+           - rewrite I. rewrite E1. rewrite H. rewrite I. rewrite E2. reflexivity.
+           - admit.
+          }*)
+Admitted.*)
+
+(*
+   destruct v as (a, e).
+       - simpl in H0. 
+         destruct v' as (a',e') eqn:V'. 
+         destruct xs' as [|(x',ex') ] eqn: XS'.
+         + admit.
+         + remember ((a', e') :: (x', ex') :: v ) as V. 
+           assert (I: (LocallySortedVAtts V) /\ (NoDup V)). { admit. }
+           rewrite HeqV in I.  inversion I; subst. inversion H2; subst.  
+           simpl in H6.
+           simpl in H1. destruct H1. simpl in H0. simpl in H8.
+           rewrite hack_control_simpl. rewrite H1.
+           rewrite hack_control_simpl. rewrite H4. unfold fst.
+           rewrite hack_control_simpl. 
+           destruct (E[[ ex']] c) eqn: EX'.
+           ++ apply (string_comp_trans a a' x') in H8. 
+               simpl. rewrite H8. reflexivity. assumption.
+           ++ rewrite hack_control_simpl.
+              rewrite H0. rewrite hack_control_simpl.
+              rewrite H1. reflexivity.
+         + destruct H. 
+  ++ simpl. rewrite H. 
+*)
 
 (*Fixpoint avatts_union (A A': vatts) : vatts := 
   match A, A' with

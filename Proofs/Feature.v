@@ -158,6 +158,32 @@ Proof.
     apply andb_false_iff in H. destruct H.  
     assumption. discriminate H.
   Qed.
+
+Lemma sat_taut_comp_inv_c : forall e1 e2 c, 
+           (semE e2 c = false -> semE e1 c = false)
+                  <-> (E[[ e1 /\(F) ~(F) e2]] c) = false.
+Proof.
+ split.
+  + intros. 
+    simpl. destruct (E[[ e2]] c) eqn: E.
+    ++ simpl. apply andb_false_r.
+    ++ simpl. rewrite andb_true_r. apply H. reflexivity.
+  + intros. simpl in H. 
+   rewrite H0 in H. simpl in H. 
+    rewrite andb_true_r in H. 
+    assumption.
+  Qed.
+
+
+Lemma or_any_true : forall e1 e2 c, 
+         ((E[[ e1]] c) || (E[[ e2]] c)) = true
+            -> (E[[ e1 \/(F) e2]] c) = true.
+Proof. intros. simpl. assumption. Qed.
+
+Lemma or_both_false : forall e1 e2 c, 
+         ((E[[ e1]] c) && (E[[ e2]] c)) = false
+            -> (E[[ e1 /\(F) e2]] c) = false.
+Proof. intros. simpl. assumption. Qed.
     
 Example sat_or: sat (litB true \/(F) litB false).
 Proof. intros. unfold sat. exists (fun _ => true). 

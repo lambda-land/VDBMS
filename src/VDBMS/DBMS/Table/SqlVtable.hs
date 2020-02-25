@@ -15,7 +15,7 @@ module VDBMS.DBMS.Table.SqlVtable (
 
 ) where
 
--- import Data.Map.Strict (Map)
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.List (groupBy)
 import Data.Maybe (fromJust)
