@@ -19,7 +19,7 @@ WHERE eid <= 30;
 -- END AS sign, 
 CREATE OR REPLACE view p2_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status, 
-conv(floor(rand() * 99999999999999), 20, 36) as sign,
+conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
 conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE eid > 30 AND eid <= 60;
@@ -28,7 +28,7 @@ WHERE eid > 30 AND eid <= 60;
 -- # SELECT count(eid) -- 30
 CREATE OR REPLACE view p3_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status,
-conv(floor(rand() * 99999999999999), 20, 36) as sign,
+conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
 conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE  eid > 60 AND eid <= 90;
@@ -38,7 +38,7 @@ WHERE  eid > 60 AND eid <= 90;
 -- # SELECT count(eid) -- 30
 CREATE OR REPLACE view p4_employee_view AS 
 SELECT eid, firstname, lastname, email_id, folder, status, 
-conv(floor(rand() * 99999999999999), 20, 36) as sign,
+conv(floor(rand() * 99999999999999), 20, 36) as verification_key,
 conv(floor(rand() * 99999999999999), 20, 36) as public_key
 FROM employeelist emp 
 WHERE eid > 90 AND eid <= 120;
@@ -240,6 +240,4 @@ CREATE OR REPLACE view p5_message_view AS
 SELECT msg.* , false as is_system_notification
 FROM message msg 
 inner join p5_employee_view emp on msg.sender = emp.email_id;
-
-
 

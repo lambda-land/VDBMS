@@ -46,7 +46,12 @@ enronConfig2 (Feature "encryption")    = True
 enronConfig2 (Feature "remailmessage") = True
 enronConfig2 _                         = False
 
+-- | The features map for group email:
+--   signature + encryption + addressbook + autoresponder + mailhost
+--   (To make the case that group email and privacy email have features overlapped)
 enronConfig3 :: Config Bool
+enronConfig3 (Feature "signature")     = True
+enronConfig3 (Feature "encryption")    = True
 enronConfig3 (Feature "addressbook")   = True
 enronConfig3 (Feature "autoresponder") = True
 enronConfig3 (Feature "mailhost")      = True
@@ -91,7 +96,7 @@ referenceinfo = N.Relation "referenceinfo"
 forward_msg   = N.Relation "forward_msg"
 remail_msg    = N.Relation "remail_msg"
 filter_msg    = N.Relation "filter_msg"
-mail_host     = N.Relation "remail_msg"
+mail_host     = N.Relation "mailhost"
 alias         = N.Relation "alias"
 
 --
@@ -100,8 +105,8 @@ alias         = N.Relation "alias"
 email_id :: N.Attr 
 email_id = attr "email_id"
 
-mid, sender, subject, is_signed, is_encrypted, is_from_remailer :: N.Attr 
-is_autoresponse, is_forward_msg, is_system_notification:: N.Attr 
+mid, eid, sender, subject, is_signed, is_encrypted, is_from_remailer :: N.Attr 
+is_autoresponse, is_forward_msg, is_system_notification, nickname, username, mailhost_attr:: N.Attr 
 mid = attr "mid"
 eid = attr "eid"
 sender = attr "sender"
@@ -238,9 +243,9 @@ filter_msg_vrelation = constructAllTrueRelSchema  [ ("eid", TInt32)
                                                   , ("suffix",  TString)
                                                   ]
 mail_host_vrelation = constructAllTrueRelSchema  [ ("eid", TInt32)
-                                                , ("username",  TString)
-                                                , ("mailhost",  TString)
-                                                ]
+                                                 , ("username",  TString)
+                                                 , ("mailhost",  TString)
+                                                 ]
 
 alias_vrelation = constructAllTrueRelSchema  [ ("eid", TInt32)
                                              , ("email",  TString)
@@ -266,8 +271,6 @@ basic_employeelist = [ ( eid_, TInt32)
                      , ( email_id_, TString)
                      , ( folder_, TString)
                      , ( status_, TString)
-                     , ( verification_key_, TString)
-                     , ( puclic_key_, TString)
                      ]
 -- | messages(mid, sender, date, message id , subject, body, folder,, is_system_notification)
 basic_messages :: [(N.Attribute, SqlType)]
@@ -368,9 +371,9 @@ sToAttribtue = map (\(x,y) -> (N.Attribute x , y))
 
 auto_msg_table  :: [(N.Attribute, SqlType)]
 auto_msg_table =  sToAttribtue [ ("eid", TInt32)
-                              , ("username",  TString)
-                              , ("mailhost",  TString)
-                              ]
+                               , ("subject",  TString)
+                               , ("body",  TString)
+                               ]
 
 alias_table  :: [(N.Attribute, SqlType)]
 alias_table = sToAttribtue [ ("eid", TInt32)
@@ -380,9 +383,9 @@ alias_table = sToAttribtue [ ("eid", TInt32)
 
 mailhost_table  :: [(N.Attribute, SqlType)]
 mailhost_table = sToAttribtue  [ ("eid", TInt32)
-                              , ("username",  TString)
-                              , ("mailhost",  TString)
-                              ]
+                               , ("username",  TString)
+                               , ("mailhost",  TString)
+                               ]
 --  ** Schema Variant for Premium Email 
 premiumEmailSchema :: RSchema
 premiumEmailSchema  = constructRSchema   [ ( employeelist,  premium_employeelist)
