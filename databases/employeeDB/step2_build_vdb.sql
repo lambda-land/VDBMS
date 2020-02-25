@@ -64,7 +64,7 @@ CREATE TABLE `v_job` (
 ) ;
 
 INSERT INTO v_job(title, salary, presCond)
-SELECT title, salary,"True" FROM job_view;
+SELECT title, salary,"true" FROM job_view;
 
 # v_dept(deptname, deptno, managerno,presCond)
 DROP TABLE IF EXISTS `v_dept`;
@@ -76,13 +76,16 @@ CREATE TABLE `v_dept` (
 ) ;
 
 INSERT INTO v_dept(deptname, deptno, managerno,presCond)
-SELECT deptname, deptno, managerno,"v3" FROM v3_dept_view;
+SELECT deptname, deptno, managerno,"v3 or v4 or v5" FROM v3_dept_view;
 
-INSERT INTO v_dept(deptname, deptno, managerno,presCond)
-SELECT deptname, deptno, managerno,"v4" FROM v4_dept_view;
-
-INSERT INTO v_dept(deptname, deptno, managerno,presCond)
-SELECT deptname, deptno, managerno,"v5" FROM v5_dept_view;
+#INSERT INTO v_dept(deptname, deptno, managerno,presCond)
+#SELECT deptname, deptno, managerno,"v3" FROM v3_dept_view;
+#
+#INSERT INTO v_dept(deptname, deptno, managerno,presCond)
+#SELECT deptname, deptno, managerno,"v4" FROM v4_dept_view;
+#
+#INSERT INTO v_dept(deptname, deptno, managerno,presCond)
+#SELECT deptname, deptno, managerno,"v5" FROM v5_dept_view;
 
 # v_empbio(empno, sex, birthdate, name, firstname, lastname presCond)
 DROP TABLE IF EXISTS `v_empbio`;
@@ -102,3 +105,23 @@ SELECT empno, sex, birthdate, name, NULL, NULL, "v4" FROM v4_empbio_view;
 INSERT INTO v_empbio(empno, sex, birthdate, name, lastname,firstname, presCond)
 SELECT empno, sex, birthdate, NULL, lastname,firstname, "v5" FROM v5_empbio_view;
 
+drop table current_dept_emp;
+drop table departments;
+drop table dept_emp;
+drop table dept_emp_latest_date;
+drop table dept_manager;
+drop table employees;
+drop view job_view;
+drop table salaries;
+drop table titles;
+drop view v1_engineerpersonnel_view;
+drop view v1_otherpersonnel_view;
+drop view v2_empacct_view;
+drop view v3_dept_view;
+drop view v3_empacct_view;
+drop view v4_dept_view;
+drop view v4_empacct_view;
+drop view v4_empbio_view;
+drop view v5_dept_view;
+drop view v5_empacct_view;
+drop view v5_empbio_view;
