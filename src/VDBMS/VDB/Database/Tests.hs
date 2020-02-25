@@ -49,7 +49,7 @@ isVDBvalid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 isVDBvalid conn = 
   do isVschValid (schema conn)
      areTablesValid conn
-     areValuesValid conn
+     -- areValuesValid conn
      -- test3 <- areValuesValid conn
      -- liftIO $ putStrLn $ show test3
      -- return test3
@@ -67,17 +67,23 @@ isTupleValid pc r f t
 
 -- | checks if all tuples of a relation are valid.
 -- ∀t ∈ r. sat (fm ∧ pcᵣ ∧ pc\_t )
-isTableValid :: MonadThrow m => PCatt -> Relation -> FeatureExpr
+isTableValid :: (MonadThrow m, MonadIO m) => PCatt -> Relation -> FeatureExpr
                              -> SqlTable -> m Bool
-isTableValid pc r f = foldM 
-  (\b t -> isTupleValid pc r f t >>= return . ((&&) b)) 
-  True 
+isTableValid pc r f tab = 
+  do liftIO $ putStrLn $ "starting " ++ relationName r ++ "..."
+     foldM 
+       (\b t -> isTupleValid pc r f t >>= return . ((&&) b)) 
+       True 
+       tab
+     -- liftIO $ putStrLn $ "and DONE " ++ relationName r
+  -- >> liftIO $ putStrLn $ show r
 
 -- | checks if all tuples of all relations in the schema are valid.
 -- ∀t ∈ r ∀r ∈ S. sat (fm ∧ pcᵣ ∧ pc\_t )
 areTablesValid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 areTablesValid conn = 
-  do let sch = schema conn
+  do liftIO $ putStrLn "checking tuples for satisfiable presence condition:"
+     let sch = schema conn
          q :: String
          q = "SELECT * FROM "
          pc = presCond conn
@@ -138,7 +144,8 @@ doUnsatPcsHaveNullValues_rel :: MonadThrow m => PCatt -> Schema -> Relation
                                              -> SqlTable
                                              -> m Bool
 doUnsatPcsHaveNullValues_rel pc s r t = 
-  do atts <- lookupRelAttsList r s
+  do liftIO $ putStrLn $ "starting null unsat checking for " ++ relationName r ++ "..."
+     atts <- lookupRelAttsList r s
      let pairAttPc :: MonadThrow m => Relation -> Schema -> Attribute 
                                    ->  m (Attribute, FeatureExpr)
          pairAttPc rel sch a = lookupAttFexp a rel sch 
@@ -155,7 +162,8 @@ doUnsatPcsHaveNullValues_rel pc s r t =
 -- ∀a ∈r, ∀ r ∈ S, unsat(fm ∧ pcᵣ ∧ pcₐ ∧ pc\_t) then val(a) = null. 
 areValuesValid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 areValuesValid conn = 
-  do let sch = schema conn 
+  do liftIO $ putStrLn "checking cells with unsatisfiable to have NULL values:"
+     let sch = schema conn 
          pc = presCond conn
          q :: String
          q = "SELECT * FROM "
