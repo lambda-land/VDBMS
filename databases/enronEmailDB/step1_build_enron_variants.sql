@@ -53,17 +53,31 @@ WHERE  eid > 120 AND eid <= 150;
 -- ##########
 -- # v_forward_msg(eid, forwardaddr)
 -- ##########
-CREATE OR REPLACE view forward_msg_view as
+CREATE OR REPLACE view p1_forward_msg_view as
 SELECT eid, email2 AS forwardaddr
 FROM employeelist
-WHERE eid <= 30 or (eid > 90 AND eid <= 120 )
+WHERE eid <= 30
 order by eid;
+
+update p1_forward_msg_view
+set forwardaddr= substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1)
+where forwardaddr=NULL;
+
+CREATE OR REPLACE view p4_forward_msg_view as
+SELECT eid, email2 AS forwardaddr
+FROM employeelist
+WHERE eid > 90 AND eid <= 120
+order by eid;
+
+update p4_forward_msg_view
+set forwardaddr= substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1)
+where forwardaddr=NULL;
 
 
 -- ##########
 -- # v_remail_msg(eid, pseudonym, presCond)
 -- ##########
-CREATE OR REPLACE view remail_msg_view as 
+CREATE OR REPLACE view p2_remail_msg_view as 
 SELECT eid,  concat(substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ', rand()*26+1, 1),
               substring('abcdelhio', rand()*9+1, 1),
               substring('abcdelhio', rand()*9+1, 1),
@@ -74,7 +88,21 @@ SELECT eid,  concat(substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ', rand()*26+1, 1),
               substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1)
              ) as pseudonym
 FROM employeelist
-where (eid > 30 AND eid <= 60) OR (eid > 90 AND eid <= 120)
+where eid > 30 AND eid <= 60
+order by eid;
+
+CREATE OR REPLACE view p4_remail_msg_view as 
+SELECT eid,  concat(substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ', rand()*26+1, 1),
+              substring('abcdelhio', rand()*9+1, 1),
+              substring('abcdelhio', rand()*9+1, 1),
+              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
+              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
+              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
+              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
+              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1)
+             ) as pseudonym
+FROM employeelist
+where eid > 90 AND eid <= 120
 order by eid;
 
 -- ##########
@@ -82,7 +110,7 @@ order by eid;
 -- ##########
 -- CREATE OR REPLACE view filter_msg_view as
 -- SELECT 1 as eid , "pgn.com" as suffix;
-CREATE OR REPLACE view filter_msg_view as
+CREATE OR REPLACE view p1_filter_msg_view as
 SELECT eid,
 CASE
 WHEN  eid% 3 = 0 THEN "pgn.com"
@@ -90,12 +118,22 @@ WHEN  eid% 3 = 1 THEN "linkedin.com"
 WHEN  eid% 3 = 2 THEN "example.com"
 END as suffix
 FROM employeelist
-WHERE eid < 30 OR (eid > 90 AND eid <= 120);
+WHERE eid <= 30 ;
+
+CREATE OR REPLACE view p4_filter_msg_view as
+SELECT eid,
+CASE
+WHEN  eid% 3 = 0 THEN "pgn.com"
+WHEN  eid% 3 = 1 THEN "linkedin.com"
+WHEN  eid% 3 = 2 THEN "example.com"
+END as suffix
+FROM employeelist
+WHERE eid > 90 AND eid <= 120;
 
 -- ##########
 -- # v_mailhost(eid, username, mailhost, presCond)
 -- ##########
-CREATE OR REPLACE view mailhost_view as 
+CREATE OR REPLACE view p3_mailhost_view as 
 SELECT eid, 
 SUBSTRING(email_id, 1, LOCATE('@', email_id) - 1) AS username,
 CASE
@@ -104,13 +142,24 @@ WHEN  eid% 3 = 1 THEN "corvallis_host"
 WHEN  eid% 3 = 2 THEN "seattle_host"
 END AS mailhost 
 FROM employeelist
-WHERE  eid > 60 AND eid <= 120;
+WHERE  eid > 60 AND eid <= 90;
+
+CREATE OR REPLACE view p4_mailhost_view as 
+SELECT eid, 
+SUBSTRING(email_id, 1, LOCATE('@', email_id) - 1) AS username,
+CASE
+WHEN  eid% 3 = 0 THEN "phoenix_host"
+WHEN  eid% 3 = 1 THEN "corvallis_host"
+WHEN  eid% 3 = 2 THEN "seattle_host"
+END AS mailhost 
+FROM employeelist
+WHERE  eid > 90 AND eid <= 120;
 
 -- ##########
 -- # v_auto_msg(eid, subject, body)
 -- ##########
 -- # eid should be in p3 and p4
-CREATE OR REPLACE view auto_msg_view as 
+CREATE OR REPLACE view p3_auto_msg_view as 
 SELECT eid, 
 CASE    
 WHEN  eid% 3 = 0 THEN  "out of office"
@@ -123,15 +172,36 @@ WHEN  eid% 3 = 1 THEN "Thanks for the info. will update you."
 WHEN  eid% 3 = 2 THEN "reach me at my mobile."
 END AS body 
 FROM employeelist
-WHERE  eid > 60 AND eid <= 120 ;
+WHERE  eid > 60 AND eid <= 90 ;
+
+CREATE OR REPLACE view p4_auto_msg_view as 
+SELECT eid, 
+CASE    
+WHEN  eid% 3 = 0 THEN  "out of office"
+WHEN  eid% 3 = 1 THEN "will follow up"
+WHEN  eid% 3 = 2 THEN "out of office"
+END AS subject,
+CASE
+WHEN  eid% 3 = 0 THEN  "will contact you after the holidays."
+WHEN  eid% 3 = 1 THEN "Thanks for the info. will update you."
+WHEN  eid% 3 = 2 THEN "reach me at my mobile."
+END AS body 
+FROM employeelist
+WHERE  eid > 90 AND eid <= 120 ;
 
 -- ##########
 -- # v_alias(eid, email, nickname, presCond)
 -- ##########
-CREATE OR REPLACE view alias_view as 
+CREATE OR REPLACE view p3_alias_view as 
 select eid, email_id, SUBSTRING_INDEX( email_id,'.',1) as nickname
 FROM employeelist
-WHERE  eid > 60 AND eid <= 120
+WHERE  eid > 60 AND eid <= 90
+order by eid;
+
+CREATE OR REPLACE view p4_alias_view as 
+select eid, email_id, SUBSTRING_INDEX( email_id,'.',1) as nickname
+FROM employeelist
+WHERE  eid > 90 AND eid <= 120
 order by eid;
 
 ##########
@@ -163,12 +233,6 @@ CREATE OR REPLACE view p1_message_view AS
 SELECT msg.*,  false as is_system_notification, false as is_forward_msg
 FROM message msg 
 inner join p1_employee_view emp on msg.sender = emp.email_id;
-
--- #create a view for p2_message for prodcut focusing on privacy. 
-CREATE OR REPLACE view p2_recipientinfo_view AS 
-SELECT rec.* 
-FROM recipientinfo rec
-inner join p2_employee_view emp on emp.email_id = rec.rvalue
 
 # SELECT count(mid) -- 25139
 # p3_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer) 
@@ -240,4 +304,11 @@ CREATE OR REPLACE view p5_message_view AS
 SELECT msg.* , false as is_system_notification
 FROM message msg 
 inner join p5_employee_view emp on msg.sender = emp.email_id;
+
+-- #create a view for p2_message for prodcut focusing on privacy. 
+CREATE OR REPLACE view p2_recipientinfo_view AS 
+SELECT rec.* 
+FROM recipientinfo rec
+inner join p2_employee_view emp on emp.email_id = rec.rvalue
+
 
