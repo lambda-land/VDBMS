@@ -135,7 +135,7 @@ doUnsatPcsHaveNullValues_attr pc r a f t = foldM
 --   have null values.
 -- ∀ attribute and ∀ tuple ∈ r s.t.
 -- unsat (fm ∧ pcᵣ ∧ pcₐ ∧ pc\_t). the value of attribute in tuple is null.
-doUnsatPcsHaveNullValues_rel :: MonadThrow m => PCatt -> Schema -> Relation
+doUnsatPcsHaveNullValues_rel :: (MonadIO m, MonadThrow m) => PCatt -> Schema -> Relation
                                              -> SqlTable
                                              -> m Bool
 doUnsatPcsHaveNullValues_rel pc s r t = 

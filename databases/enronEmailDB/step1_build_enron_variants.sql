@@ -81,10 +81,6 @@ CREATE OR REPLACE view p2_remail_msg_view as
 SELECT eid,  concat(substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ', rand()*26+1, 1),
               substring('abcdelhio', rand()*9+1, 1),
               substring('abcdelhio', rand()*9+1, 1),
-              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
-              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
-              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
-              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
               substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1)
              ) as pseudonym
 FROM employeelist
@@ -95,10 +91,6 @@ CREATE OR REPLACE view p4_remail_msg_view as
 SELECT eid,  concat(substring('ABCDEFGHIJKLMNOPQRSTUVWXYZ', rand()*26+1, 1),
               substring('abcdelhio', rand()*9+1, 1),
               substring('abcdelhio', rand()*9+1, 1),
-              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
-              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
-              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
-              substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1),
               substring('abcdefghijklmnopqrstuvwxyz', rand()*26+1, 1)
              ) as pseudonym
 FROM employeelist
