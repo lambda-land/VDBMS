@@ -164,58 +164,16 @@ WHERE eid > 90 AND eid <= 120;
 CREATE OR REPLACE view p3_mailhost_view as 
 SELECT eid, 
 SUBSTRING(email_id, 1, LOCATE('@', email_id) - 1) AS username,
-CASE
-WHEN  eid% 3 = 0 THEN "phoenix_host"
-WHEN  eid% 3 = 1 THEN "corvallis_host"
-WHEN  eid% 3 = 2 THEN "seattle_host"
-END AS mailhost 
+"enron" as mailhost 
 FROM employeelist
 WHERE  eid > 60 AND eid <= 90;
 
 CREATE OR REPLACE view p4_mailhost_view as 
 SELECT eid, 
 SUBSTRING(email_id, 1, LOCATE('@', email_id) - 1) AS username,
-CASE
-WHEN  eid% 3 = 0 THEN "phoenix_host"
-WHEN  eid% 3 = 1 THEN "corvallis_host"
-WHEN  eid% 3 = 2 THEN "seattle_host"
-END AS mailhost 
+"enron" as mailhost 
 FROM employeelist
 WHERE  eid > 90 AND eid <= 120;
-
--- ##########
--- # v_auto_msg(eid, subject, body)
--- ##########
--- # eid should be in p3 and p4
-CREATE OR REPLACE view p3_auto_msg_view as 
-SELECT eid, 
-CASE    
-WHEN  eid% 3 = 0 THEN  "out of office"
-WHEN  eid% 3 = 1 THEN "will follow up"
-WHEN  eid% 3 = 2 THEN "out of office"
-END AS subject,
-CASE
-WHEN  eid% 3 = 0 THEN  "will contact you after the holidays."
-WHEN  eid% 3 = 1 THEN "Thanks for the info. will update you."
-WHEN  eid% 3 = 2 THEN "reach me at my mobile."
-END AS body 
-FROM employeelist
-WHERE  eid > 60 AND eid <= 90 ;
-
-CREATE OR REPLACE view p4_auto_msg_view as 
-SELECT eid, 
-CASE    
-WHEN  eid% 3 = 0 THEN  "out of office"
-WHEN  eid% 3 = 1 THEN "will follow up"
-WHEN  eid% 3 = 2 THEN "out of office"
-END AS subject,
-CASE
-WHEN  eid% 3 = 0 THEN  "will contact you after the holidays."
-WHEN  eid% 3 = 1 THEN "Thanks for the info. will update you."
-WHEN  eid% 3 = 2 THEN "reach me at my mobile."
-END AS body 
-FROM employeelist
-WHERE  eid > 90 AND eid <= 120 ;
 
 -- ##########
 -- # v_alias(eid, email, nickname, presCond)
@@ -633,4 +591,20 @@ inner join p5_employee_view emp on rec.rvalue = emp.email_id
 );
 
 
+-- ##########
+-- # v_auto_msg(eid, subject, body)
+-- ##########
+-- # eid should be in p3 and p4
+CREATE OR REPLACE view p3_auto_msg_view as 
+SELECT email_id as eid, msg.subject as subject, msg.body as body 
+FROM p3_message_view msg 
+inner join p3_employee_view emp on emp.email_id = msg.sender
+where is_autoresponse = true;
+
+
+CREATE OR REPLACE view p4_auto_msg_view as 
+SELECT email_id as eid, msg.subject as subject, msg.body as body 
+FROM p3_message_view msg 
+inner join p3_employee_view emp on emp.email_id = msg.sender
+where is_autoresponse = true;
 
