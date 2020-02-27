@@ -222,9 +222,58 @@ order by eid;
 # SELECT count(mid) -- 19103
 # p1_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_forward_msg) 
 CREATE OR REPLACE view p1_message_view AS 
-SELECT msg.*,  false as is_system_notification, false as is_forward_msg
+(SELECT msg.*,  false as is_system_notification, false as is_forward_msg
 FROM message msg 
-inner join p1_employee_view emp on msg.sender = emp.email_id;
+inner join p1_employee_view emp on msg.sender = emp.email_id
+where subject not like "Delivery Status Notification%" and
+      subject not like "FW: %")
+union 
+(
+select msg.*, true as is_system_notification, false as is_forward_msg
+from message msg
+inner join p1_employee_view emp on msg.sender = emp.email_id
+where subject like "Delivery Status Notification%")
+union
+(select msg.*, false as is_system_notification, true as is_forward_msg
+from message msg
+inner join p1_employee_view emp on msg.sender = emp.email_id
+where subject like "FW: %");
+
+CREATE OR REPLACE VIEW p1_recipientinfo_view AS
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"forwardmsg and filtermsg" AS prescond
+FROM p1_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p1_employee_view emp on rec.rvalue = emp.email_id
+)
+union
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"signature and encrypt and remailmsg" AS prescond
+FROM p1_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p2_employee_view emp on rec.rvalue = emp.email_id
+)
+union
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"addressbook and autoresponder and mailhost and encrypt and signature" AS prescond
+FROM p1_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p3_employee_view emp on rec.rvalue = emp.email_id
+)
+union
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"signature and addressbook and filtermsg and autoresponder and forwardmsg and mailhost and encrypt and remailmsg" AS prescond
+FROM p1_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p4_employee_view emp on rec.rvalue = emp.email_id
+)
+union
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"true" AS prescond
+FROM p1_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p5_employee_view emp on rec.rvalue = emp.email_id
+);
 
 # SELECT count(mid) -- 25139
 # p3_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_from_remailer) 
@@ -293,9 +342,53 @@ inner join p4_employee_view emp on msg.sender = emp.email_id;
 
 # SELECT count(distinct msg.mid) -- 12434
 CREATE OR REPLACE view p5_message_view AS 
-SELECT msg.* , false as is_system_notification
+(SELECT msg.* , false as is_system_notification
 FROM message msg 
-inner join p5_employee_view emp on msg.sender = emp.email_id;
+inner join p5_employee_view emp on msg.sender = emp.email_id
+where subject not like "Delivery Status Notification%" and
+      subject not like "FW: %")
+union 
+(
+select msg.*, true as is_system_notification
+from message msg
+inner join p5_employee_view emp on msg.sender = emp.email_id
+where subject like "Delivery Status Notification%");
+
+CREATE OR REPLACE VIEW p5_recipientinfo_view AS
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"forwardmsg and filtermsg" AS prescond
+FROM p5_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p1_employee_view emp on rec.rvalue = emp.email_id
+)
+union
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"signature and encrypt and remailmsg" AS prescond
+FROM p5_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p2_employee_view emp on rec.rvalue = emp.email_id
+)
+union
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"addressbook and autoresponder and mailhost and encrypt and signature" AS prescond
+FROM p5_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p3_employee_view emp on rec.rvalue = emp.email_id
+)
+union
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"signature and addressbook and filtermsg and autoresponder and forwardmsg and mailhost and encrypt and remailmsg" AS prescond
+FROM p5_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p4_employee_view emp on rec.rvalue = emp.email_id
+)
+union
+(SELECT rec.rid, rec.mid, rec.rtype, rec.rvalue, 
+"true" AS prescond
+FROM p5_message_view msg 
+inner join recipientinfo rec on msg.mid = rec.mid
+inner join p5_employee_view emp on rec.rvalue = emp.email_id
+);
 
 -- #create a view for p2_message for prodcut focusing on privacy. 
 CREATE OR REPLACE view p2_recipientinfo_view AS 
