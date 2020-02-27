@@ -13,7 +13,7 @@ CREATE TABLE `v_employee` (
   `folder` varchar(31) NOT NULL,
   `status` varchar(50)  DEFAULT NULL,
   `verification_key` text DEFAULT NULL,
-  `public_key` varchar(31) DEFAULT NULL,
+  `public_key` text DEFAULT NULL,
   `prescond` text
 );
 
