@@ -596,14 +596,14 @@ inner join p5_employee_view emp on rec.rvalue = emp.email_id
 -- ##########
 -- # eid should be in p3 and p4
 CREATE OR REPLACE view p3_auto_msg_view as 
-SELECT email_id as eid, msg.subject as subject, msg.body as body 
+SELECT emp.eid as eid, msg.subject as subject, msg.body as body 
 FROM p3_message_view msg 
 inner join p3_employee_view emp on emp.email_id = msg.sender
 where is_autoresponse = true;
 
 
 CREATE OR REPLACE view p4_auto_msg_view as 
-SELECT email_id as eid, msg.subject as subject, msg.body as body 
+SELECT emp.eid as eid, msg.subject as subject, msg.body as body 
 FROM p3_message_view msg 
 inner join p3_employee_view emp on emp.email_id = msg.sender
 where is_autoresponse = true;

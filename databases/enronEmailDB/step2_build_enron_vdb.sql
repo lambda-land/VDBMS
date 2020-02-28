@@ -31,7 +31,7 @@ FROM p2_employee_view;
 
 -- group email
 INSERT INTO v_employee(eid, firstname, lastname, email_id, folder, status, verification_key, public_key, prescond)
-SELECT eid, firstname, lastname, email_id, folder, status, NULL, NULL,
+SELECT eid, firstname, lastname, email_id, folder, status, verification_key, public_key,
 "addressbook and autoresponder and mailhost and encrypt and signature and (not (forwardmsg or remailmsg or filtermsg))"
 FROM p3_employee_view ;
 
@@ -74,17 +74,17 @@ CREATE TABLE `v_message` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, prescond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, is_forward_msg, 
-"forwardmsg and filtermsg and (not (addressbook or encrypt or remailmsg or autoresponder or signature or mailhost))"
+"forwardmsg and filtermsg"
 FROM p1_message_view;
 
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, prescond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, NULL, NULL,
-"signature and encrypt and remailmsg and (not (addressbook or filtermsg or autoresponder or forwardmsg or mailhost))"
+"signature and encrypt and remailmsg"
 FROM p2_message_view;
 
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, prescond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, NULL, 
-"addressbook and autoresponder and mailhost and encrypt and signature and (not (forwardmsg or remailmsg or filtermsg))"
+"addressbook and autoresponder and mailhost and encrypt and signature"
 FROM p3_message_view;
 
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, prescond) 
@@ -94,7 +94,7 @@ FROM p4_message_view;
 
 INSERT INTO v_message(mid, sender, date, message_id, subject, body, folder, is_system_notification, is_signed, is_encrypted, is_autoresponse, is_forward_msg, prescond) 
 SELECT mid, sender, date, message_id, subject, body, folder, is_system_notification, NULL, NULL, NULL, NULL, 
-"(not signature) and (not addressbook) and (not filtermsg) and (not autoresponder) and (not forwardmsg) and (not mailhost) and (not encrypt) and (not remailmsg)"
+"true"
 FROM p5_message_view;
 
 --
@@ -139,21 +139,20 @@ DROP TABLE IF EXISTS `v_auto_msg`;
  SET character_set_client = utf8mb4 ;
 CREATE TABLE `v_auto_msg` (
   `eid` int(11) NOT NULL,
-  `subject` varchar(41) DEFAULT NULL,
-  `body` varchar(244) DEFAULT NULL,
+  `subject` text DEFAULT NULL,
+  `body` text DEFAULT NULL,
   `prescond` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 INSERT INTO v_auto_msg(eid, subject, body, prescond)
-SELECT eid, subject, body, 
-"addressbook and mailhost and encrypt and signature"
-FROM p3_auto_msg_view;
-
-INSERT INTO v_auto_msg(eid, subject, body, prescond)
-SELECT eid, subject, body, 
-"signature and addressbook and filtermsg and forwardmsg and mailhost and encrypt and remailmsg"
-FROM p4_auto_msg_view;
+(SELECT eid, subject, body, 
+"addressbook and mailhost and encrypt and signature" as prescond
+FROM p3_auto_msg_view)
+union
+(SELECT eid, subject, body, 
+"signature and addressbook and filtermsg and forwardmsg and mailhost and encrypt and remailmsg" as prescond
+FROM p4_auto_msg_view);
 
 --
 -- Table structure for table `v_forward_msg`
@@ -171,14 +170,13 @@ CREATE TABLE `v_forward_msg` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 INSERT INTO v_forward_msg(eid, forwardaddr, prescond)
-SELECT eid, forwardaddr, 
-"filtermsg"
-FROM p1_forward_msg_view;
-
-INSERT INTO v_forward_msg(eid, forwardaddr, prescond)
-SELECT eid, forwardaddr, 
-"signature and addressbook and filtermsg and autoresponder and mailhost and encrypt and remailmsg"
-FROM p4_forward_msg_view;
+(SELECT eid, forwardaddr, 
+"filtermsg" as prescond
+FROM p1_forward_msg_view)
+union
+(SELECT eid, forwardaddr, 
+"signature and addressbook and filtermsg and autoresponder and mailhost and encrypt and remailmsg" as prescond
+FROM p4_forward_msg_view);
 
 --
 -- Table structure for table `v_remail_msg`
@@ -197,14 +195,13 @@ CREATE TABLE `v_remail_msg` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 INSERT INTO v_remail_msg(eid, pseudonym, prescond)
-SELECT  eid, pseudonym, 
-"signature and encrypt"
-FROM p2_remail_msg_view;
-
-INSERT INTO v_remail_msg(eid, pseudonym, prescond)
-SELECT  eid, pseudonym, 
-"signature and addressbook and filtermsg and autoresponder and forwardmsg and mailhost and encrypt"
-FROM p4_remail_msg_view;
+(SELECT  eid, pseudonym, 
+"signature and encrypt" as prescond
+FROM p2_remail_msg_view)
+union
+(SELECT  eid, pseudonym, 
+"signature and addressbook and filtermsg and autoresponder and forwardmsg and mailhost and encrypt" as prescond
+FROM p4_remail_msg_view);
 
 --
 -- Table structure for table `v_filter_msg`
@@ -221,14 +218,13 @@ CREATE TABLE `v_filter_msg` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 INSERT INTO v_filter_msg(eid, suffix, prescond)
-SELECT eid, suffix, 
-"forwardmsg"
-FROM p1_filter_msg_view;
-
-INSERT INTO v_filter_msg(eid, suffix, prescond)
-SELECT eid, suffix, 
-"signature and addressbook and autoresponder and forwardmsg and mailhost and encrypt and remailmsg"
-FROM p4_filter_msg_view;
+(SELECT eid, suffix, 
+"forwardmsg" as prescond
+FROM p1_filter_msg_view)
+union
+(SELECT eid, suffix, 
+"signature and addressbook and autoresponder and forwardmsg and mailhost and encrypt and remailmsg" as prescond
+FROM p4_filter_msg_view);
 
 --
 -- Table structure for table `v_mailhost`
@@ -247,14 +243,13 @@ CREATE TABLE `v_mailhost` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 INSERT INTO v_mailhost(eid, username, mailhost, prescond)
-SELECT eid, username, mailhost, 
-"addressbook and autoresponder and encrypt and signature"
-FROM p3_mailhost_view;
-
-INSERT INTO v_mailhost(eid, username, mailhost, prescond)
-SELECT eid, username, mailhost, 
-"signature and addressbook and filtermsg and autoresponder and forwardmsg and encrypt and remailmsg"
-FROM p4_mailhost_view;
+(SELECT eid, username, mailhost, 
+"addressbook and autoresponder and encrypt and signature" as prescond
+FROM p3_mailhost_view)
+union
+(SELECT eid, username, mailhost, 
+"signature and addressbook and filtermsg and autoresponder and forwardmsg and encrypt and remailmsg" as prescond
+FROM p4_mailhost_view);
 
 --
 -- Table structure for table `v_alias`
@@ -272,12 +267,11 @@ CREATE TABLE `v_alias` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 INSERT INTO v_alias(eid, email_id, nickname, prescond)
-SELECT eid, email_id, nickname, 
-"autoresponder and mailhost and encrypt and signature"
-FROM p3_alias_view;
-
-INSERT INTO v_alias(eid, email_id, nickname, prescond)
-SELECT eid, email_id, nickname, 
-"signature and filtermsg and autoresponder and forwardmsg and mailhost and encrypt and remailmsg"
-FROM p4_alias_view;
+(SELECT eid, email_id, nickname, 
+"autoresponder and mailhost and encrypt and signature" as prescond
+FROM p3_alias_view)
+union
+(SELECT eid, email_id, nickname, 
+"signature and filtermsg and autoresponder and forwardmsg and mailhost and encrypt and remailmsg" as prescond
+FROM p4_alias_view);
 
