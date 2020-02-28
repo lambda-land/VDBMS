@@ -18,11 +18,11 @@ CREATE TABLE v_message (
   subject text,
   body text ,
   folder varchar(127) NOT NULL DEFAULT '',
-  is_system_notification boolean DEFAULT NULL,
-  is_signed boolean DEFAULT NULL,
-  is_encrypted boolean DEFAULT NULL,
-  is_autoresponse boolean DEFAULT NULL,
-  is_forward_msg boolean DEFAULT NULL,
+  is_system_notification smallint DEFAULT NULL,
+  is_signed smallint DEFAULT NULL,
+  is_encrypted smallint DEFAULT NULL,
+  is_autoresponse smallint DEFAULT NULL,
+  is_forward_msg smallint DEFAULT NULL,
   prescond text
 );
 
