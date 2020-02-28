@@ -86,13 +86,13 @@ auto_forward_mhost = autoresponder `And` forwardmessages `And` mailhost
 --
 -- * Relations 
 -- 
-employeelist, messages, recipientinfo, auto_msg, referenceinfo, forward_msg :: N.Relation
+employeelist, messages, recipientinfo, auto_msg, forward_msg :: N.Relation
 remail_msg, filter_msg, mail_host, alias :: N.Relation
 employeelist  = N.Relation "employeelist"
 messages      = N.Relation "messages"
 recipientinfo = N.Relation "recipientinfo"
 auto_msg      = N.Relation "auto_msg"
-referenceinfo = N.Relation "referenceinfo"
+-- referenceinfo = N.Relation "referenceinfo"
 forward_msg   = N.Relation "forward_msg"
 remail_msg    = N.Relation "remail_msg"
 filter_msg    = N.Relation "filter_msg"
@@ -127,8 +127,8 @@ forwardaddr = attr "forwardaddr"
 rvalue :: N.Attr 
 rvalue = attr "rvalue"
 
-reference :: N.Attr
-reference = attr "reference"
+-- reference :: N.Attr
+-- reference = attr "reference"
 
 pseudonym, suffix :: N.Attr 
 pseudonym = attr "pseudonym"
@@ -158,12 +158,12 @@ is_autoresponse_ = N.Attribute "is_autoresponse"
 is_forward_msg_ = N.Attribute "is_forward_msg"
 is_system_notification_ = N.Attribute "is_system_notification"
 
-rid_, rfid_, rtype_, rvalue_, reference_, suffix_, forwardaddr_, pseudonym_:: N.Attribute
+rid_, rtype_, rvalue_, suffix_, forwardaddr_, pseudonym_:: N.Attribute
 rid_ = N.Attribute "rid"  
-rfid_ = N.Attribute "rfid"
+-- rfid_ = N.Attribute "rfid"
 rtype_ = N.Attribute "rtype"
 rvalue_ = N.Attribute "rvalue"
-reference_ = N.Attribute "reference"
+-- reference_ = N.Attribute "reference"
 suffix_ = N.Attribute "suffix"
 forwardaddr_ = N.Attribute "forwardaddr"
 pseudonym_ = N.Attribute "pseudonym"
@@ -180,7 +180,7 @@ enronVSchema :: Schema
 enronVSchema = ((enronFeatures, enronConfs), (enronFeatureModel, constructOptRelMap [ (Lit True, employeelist, employeelist_vrelation)
                                                       , (Lit True, messages, messages_vrelation)
                                                       , (Lit True, recipientinfo, recipientinfo_vrelation)
-                                                      , (Lit True, referenceinfo, referenceinfo_vrelation)
+                                                      -- , (Lit True, referenceinfo, referenceinfo_vrelation)
                                                       , (forwardmessages, forward_msg, forward_msg_vrelation)
                                                       , (filtermessages, filter_msg, filter_msg_vrelation)
                                                       , (remailmessage, remail_msg, remail_msg_vrelation)
@@ -189,7 +189,7 @@ enronVSchema = ((enronFeatures, enronConfs), (enronFeatureModel, constructOptRel
                                                       , (mailhost, mail_host, mail_host_vrelation)
                                                       ]))
 
-employeelist_vrelation, messages_vrelation, recipientinfo_vrelation, referenceinfo_vrelation, auto_msg_vrelation :: [(FeatureExpr, N.Attribute, SqlType)] 
+employeelist_vrelation, messages_vrelation, recipientinfo_vrelation, auto_msg_vrelation :: [(FeatureExpr, N.Attribute, SqlType)] 
 forward_msg_vrelation, remail_msg_vrelation, filter_msg_vrelation, mail_host_vrelation, alias_vrelation :: [(FeatureExpr, N.Attribute, SqlType)] 
 employeelist_vrelation = [ (Lit True, eid_, TInt32)
                          , (Lit True, firstname_,  TString)
@@ -221,10 +221,10 @@ recipientinfo_vrelation = constructAllTrueRelSchema  [ ("rid", TInt32)
                                                      , ("rvalue", TString)
                                                      ]
 
-referenceinfo_vrelation = constructAllTrueRelSchema  [ ("rfid", TInt32)
-                                                     , ("mid",  TInt32)
-                                                     , ("reference",  TString)
-                                                     ]
+-- referenceinfo_vrelation = constructAllTrueRelSchema  [ ("rfid", TInt32)
+--                                                      , ("mid",  TInt32)
+--                                                      , ("reference",  TString)
+--                                                      ]
                                                      
 forward_msg_vrelation = constructAllTrueRelSchema [ ("eid", TInt32)
                                                   , ("forwardaddr",  TString)
@@ -261,7 +261,7 @@ basicEmailSchema :: RSchema
 basicEmailSchema  = constructRSchema   [ ( employeelist,  basic_employeelist)
                                        , ( messages,    basic_messages)
                                        , ( recipientinfo,  recipientinfo_table)
-                                       , ( referenceinfo, referenceinfo_table)
+                                       -- , ( referenceinfo, referenceinfo_table)
                                        ]
 -- | employeelist(eid, firstname, lastname, email_id , folder , status)
 basic_employeelist :: [(N.Attribute, SqlType)]
@@ -292,18 +292,18 @@ recipientinfo_table =  [ (rid_, TInt32)
                        , (rvalue_, TString)
                        ]
 -- | referenceinfo(rid, mid, reference)
-referenceinfo_table :: [(N.Attribute, SqlType)]
-referenceinfo_table =  [ (rfid_, TInt32)
-                       , (mid_,  TInt32)
-                       , (reference_,  TString)
-                       ]
+-- referenceinfo_table :: [(N.Attribute, SqlType)]
+-- referenceinfo_table =  [ (rfid_, TInt32)
+--                        , (mid_,  TInt32)
+--                        , (reference_,  TString)
+--                        ]
 
 --  ** Schema Variant for Enhanced Email (basic + forwardmessages + filtermessages)
 enhancedEmailSchema :: RSchema
 enhancedEmailSchema  = constructRSchema   [ ( employeelist,  enhanced_employeelist)
                                            , ( messages,    enhanced_messages)
                                            , ( recipientinfo, recipientinfo_table)
-                                           , ( referenceinfo, referenceinfo_table)
+                                           -- , ( referenceinfo, referenceinfo_table)
                                            , ( forward_msg, forward_msg_table)
                                            , ( filter_msg, filter_msg_table)
                                            ]
@@ -329,7 +329,7 @@ privacyEmailSchema :: RSchema
 privacyEmailSchema  = constructRSchema   [ ( employeelist,  privacy_employeelist)
                                          , ( messages,    privacy_messages)
                                          , ( recipientinfo, recipientinfo_table)
-                                         , ( referenceinfo, referenceinfo_table)
+                                         -- , ( referenceinfo, referenceinfo_table)
                                          , ( remail_msg, remail_msg_table)
                                          ]
 privacy_employeelist :: [(N.Attribute, SqlType)]
@@ -355,7 +355,7 @@ groupEmailSchema :: RSchema
 groupEmailSchema  = constructRSchema   [ ( employeelist,  group_employeelist)
                                          , ( messages,    group_messages)
                                          , ( recipientinfo, recipientinfo_table)
-                                         , ( referenceinfo, referenceinfo_table)
+                                         -- , ( referenceinfo, referenceinfo_table)
                                          , ( auto_msg, auto_msg_table)
                                          , ( alias, alias_table)
                                          , ( mail_host, mailhost_table)
@@ -391,7 +391,7 @@ premiumEmailSchema :: RSchema
 premiumEmailSchema  = constructRSchema   [ ( employeelist,  premium_employeelist)
                                          , ( messages,    premium_messages)
                                          , ( recipientinfo, recipientinfo_table)
-                                         , ( referenceinfo, referenceinfo_table)
+                                         -- , ( referenceinfo, referenceinfo_table)
                                          , ( forward_msg, forward_msg_table)
                                          , ( filter_msg, filter_msg_table)
                                          , ( remail_msg, remail_msg_table)
