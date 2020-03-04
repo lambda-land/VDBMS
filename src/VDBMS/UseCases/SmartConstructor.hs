@@ -31,10 +31,16 @@ genRenameRelation rel = Rename Nothing rel
 tRef :: Relation -> Algebra 
 tRef rel = TRef $ Rename Nothing rel 
 
+-- tRefNoRename :: Relation -> Rename Algebra
+-- tRefNoRename rel = Rename Nothing (TRef rel)
 
 -- | Gaven a alias and algebra and generate a algebra with alias 
 genSubquery :: N.Name -> Algebra ->  N.Rename Algebra
 genSubquery alias algebra  =  N.Rename (Just alias) algebra
+
+-- | creates join condition from an attribute.
+joinCondition :: Attr -> Condition
+joinCondition a =  C.Comp EQ (C.Att a) (C.Att a)
 
 -- | join two realtiaon based on their common attribute
 joinTwoRelation :: Relation -> Relation -> N.Name -> Algebra

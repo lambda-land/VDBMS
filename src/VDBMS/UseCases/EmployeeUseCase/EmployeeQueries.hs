@@ -1,8 +1,5 @@
 -- | vqs for employee database.
-module VDBMS.UseCases.EmployeeUseCase.EmployeeQuery (
-
-
-)where
+module VDBMS.UseCases.EmployeeUseCase.EmployeeQueries where
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.UseCases.EmployeeUseCase.EmployeeSchema
@@ -12,7 +9,8 @@ import VDBMS.UseCases.SmartConstructor
 import VDBMS.DBMS.Value.CompOp
 import Prelude hiding (Ordering(..))
 import Database.HDBC 
-
+import VDBMS.VDB.Name hiding (name)
+import VDBMS.VDB.GenName
 
 -- import Data.Time.LocalTime
 import Data.Time.Calendar
@@ -52,6 +50,12 @@ empno_value  = SqlInt32 10004
 departno_value :: SqlValue
 departno_value = SqlString "d001"
 
+empFromEmpacct :: Rename Algebra
+empFromEmpacct = genSubquery "emp" $ Sel (VsqlCond empCond) (renameNothing (tRef empacct))
+
+empFromEmpacctUnnamed :: Rename Algebra
+empFromEmpacctUnnamed = genRenameAlgebra $ Sel (VsqlCond empCond) (renameNothing (tRef empacct))
+
 --
 -- * Queries based on Prima paper
 -- Intents are taken from the prima paper, adjusted to the employee database. 
@@ -75,14 +79,23 @@ departno_value = SqlString "d001"
 -- the year 1991 is included in variants v3, v4, and v5. we only
 -- write the query for these variants for a fair comparison against
 -- prima.
+-- 
+-- #variants = 1
+-- #unique_variants = 1
+empVQ1_old :: Algebra
+empVQ1_old = AChc empv3 empQ1 Empty
 
-empQ1 :: Algebra
+empVQ1,empQ1 :: Algebra
+empVQ1 = Proj [trueAttr salary] $ genRenameAlgebra $
+             Join empFromEmpacctUnnamed (renameNothing (tRef job)) (joinCondition title)
+
 empQ1 = Proj [trueAttr salary] $ genRenameAlgebra $
           Sel (VsqlCond empCond) $ genRenameAlgebra $
             joinTwoRelation empacct job "title"
 
-empVQ1 :: Algebra
-empVQ1 = AChc empv3 empQ1 Empty
+empVQ1' :: Algebra
+empVQ1' = Proj [(empv3, genRenameAttr salary)] $ genRenameAlgebra $
+             Join empFromEmpacctUnnamed (renameNothing (tRef job)) (joinCondition title)
 
 -- 2. intent: Return the salary values of the employee whose employee number (\empno) is 10004, 
 --         for VDB variants \vThree\ to \vFive. 
