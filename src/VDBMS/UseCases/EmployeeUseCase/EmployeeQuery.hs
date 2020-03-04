@@ -14,6 +14,10 @@ import Database.HDBC
 -- import Data.Time.LocalTime
 import Data.Time.Calendar
 
+-- need to run the following
+-- numVarintQ empVQ8 empConfs
+-- numUniqueVariantQ empVQ8
+
 --
 -- * Constant values used for employee use cases
 --
