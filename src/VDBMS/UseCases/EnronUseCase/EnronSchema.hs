@@ -88,16 +88,16 @@ auto_forward_mhost = autoresponder `And` forwardmessages `And` mailhost
 -- 
 employeelist, messages, recipientinfo, auto_msg, forward_msg :: N.Relation
 remail_msg, filter_msg, mail_host, alias :: N.Relation
-employeelist  = N.Relation "employeelist"
-messages      = N.Relation "messages"
-recipientinfo = N.Relation "recipientinfo"
-auto_msg      = N.Relation "auto_msg"
+employeelist  = N.Relation "v_employeelist"
+messages      = N.Relation "v_messages"
+recipientinfo = N.Relation "v_recipientinfo"
+auto_msg      = N.Relation "v_auto_msg"
 -- referenceinfo = N.Relation "referenceinfo"
-forward_msg   = N.Relation "forward_msg"
-remail_msg    = N.Relation "remail_msg"
-filter_msg    = N.Relation "filter_msg"
-mail_host     = N.Relation "mailhost"
-alias         = N.Relation "alias"
+forward_msg   = N.Relation "v_forward_msg"
+remail_msg    = N.Relation "v_remail_msg"
+filter_msg    = N.Relation "v_filter_msg"
+mail_host     = N.Relation "v_mailhost"
+alias         = N.Relation "v_alias"
 
 --
 -- * Attributes 
