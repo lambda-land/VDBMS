@@ -20,11 +20,16 @@ module Main where
 -- import VDBMS.Approaches.Linearize.RunQsConcurrent (runQ5)
 -- -- runQ_i :: Database conn => conn -> Algebra -> IO Table
 
-import VDBMS.UseCases.EmployeeUseCase.Test
+-- import VDBMS.UseCases.EmployeeUseCase.Test
+import VDBMS.UseCases.EnronUseCase.Test
+
+-- | Enron test vdb.
+main :: IO Bool
+main = testEnronVDB
 
 -- | Employee test vdb.
-main :: IO Bool
-main = testEmpVDB
+-- main :: IO Bool
+-- main = testEmpVDB
 
 
 -- | Enron experiment.
