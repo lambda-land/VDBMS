@@ -16,9 +16,9 @@ addressbook, signature, encryption, filtermessages, autoresponder, forwardmessag
 addressbook     = Ref (Feature "addressbook")
 signature       = Ref (Feature "signature")
 encryption      = Ref (Feature "encrypt")
-filtermessages  = Ref (Feature "filtermessages")
+filtermessages  = Ref (Feature "filtermsg")
 autoresponder   = Ref (Feature "autoresponder")
-forwardmessages = Ref (Feature "forwardmessages")
+forwardmessages = Ref (Feature "forwardmsg")
 remailmessage   = Ref (Feature "remailmessage")
 mailhost        = Ref (Feature "mailhost")
 
@@ -26,9 +26,9 @@ enronFeatures :: [Feature]
 enronFeatures = [Feature "addressbook"
                , Feature "signature"
                , Feature "encrypt"
-               , Feature "filtermessages"
+               , Feature "filtermsg"
                , Feature "autoresponder"
-               , Feature "forwardmessages"
+               , Feature "forwardmsg"
                , Feature "remailmessage"
                , Feature "mailhost"]
 
@@ -37,7 +37,7 @@ enronFeatures = [Feature "addressbook"
 -- 
 enronConfig1 :: Config Bool
 enronConfig1 (Feature "forwardmessages") = True
-enronConfig1 (Feature "filtermessages")  = True
+enronConfig1 (Feature "filtermsg")  = True
 enronConfig1 _                           = False
 
 enronConfig2 :: Config Bool
@@ -59,7 +59,7 @@ enronConfig3 _                         = False
 
 enronConfig4 :: Config Bool
 enronConfig4 (Feature "forwardmessages") = True
-enronConfig4 (Feature "filtermessages")  = True
+enronConfig4 (Feature "filtermsg")  = True
 enronConfig4 (Feature "signature")       = True
 enronConfig4 (Feature "encrypt")      = True
 enronConfig4 (Feature "remailmessage")   = True
@@ -142,7 +142,7 @@ email_id_ = N.Attribute "email_id"
 folder_ = N.Attribute "folder"
 status_ = N.Attribute "status"
 verification_key_ = N.Attribute "verification_key"
-puclic_key_ = N.Attribute "puclic_key"
+puclic_key_ = N.Attribute "public_key"
 
 mid_, sender_, date_, message_id_, subject_, body_, is_signed_, is_encrypted_ :: N.Attribute 
 is_autoresponse_, is_forward_msg_, is_system_notification_:: N.Attribute 
