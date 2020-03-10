@@ -248,7 +248,7 @@ mail_host_vrelation = constructAllTrueRelSchema  [ ("eid", TInt32)
                                                  ]
 
 alias_vrelation = constructAllTrueRelSchema  [ ("eid", TInt32)
-                                             , ("email",  TString)
+                                             , ("email_id",  TString)
                                              , ("nickname",  TString)
                                              ]
 
