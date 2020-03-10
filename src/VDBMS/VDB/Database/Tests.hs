@@ -47,8 +47,9 @@ instance Exception DatabaseErr
 --      the tuple value is null
 isVDBvalid :: (Database conn, MonadThrow m, MonadIO m) => conn -> m Bool
 isVDBvalid conn = 
-  do isVschValid (schema conn)
-     areTablesValid conn
+  do 
+     -- isVschValid (schema conn)
+     -- areTablesValid conn
      areValuesValid conn
      -- test3 <- areValuesValid conn
      -- liftIO $ putStrLn $ show test3

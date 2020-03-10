@@ -15,7 +15,7 @@ import VDBMS.Features.Config (Config)
 addressbook, signature, encryption, filtermessages, autoresponder, forwardmessages, mailhost, remailmessage :: FeatureExpr
 addressbook     = Ref (Feature "addressbook")
 signature       = Ref (Feature "signature")
-encryption      = Ref (Feature "encryption")
+encryption      = Ref (Feature "encrypt")
 filtermessages  = Ref (Feature "filtermessages")
 autoresponder   = Ref (Feature "autoresponder")
 forwardmessages = Ref (Feature "forwardmessages")
@@ -25,7 +25,7 @@ mailhost        = Ref (Feature "mailhost")
 enronFeatures :: [Feature]
 enronFeatures = [Feature "addressbook"
                , Feature "signature"
-               , Feature "encryption"
+               , Feature "encrypt"
                , Feature "filtermessages"
                , Feature "autoresponder"
                , Feature "forwardmessages"
@@ -42,7 +42,7 @@ enronConfig1 _                           = False
 
 enronConfig2 :: Config Bool
 enronConfig2 (Feature "signature")     = True
-enronConfig2 (Feature "encryption")    = True
+enronConfig2 (Feature "encrypt")    = True
 enronConfig2 (Feature "remailmessage") = True
 enronConfig2 _                         = False
 
@@ -51,7 +51,7 @@ enronConfig2 _                         = False
 --   (To make the case that group email and privacy email have features overlapped)
 enronConfig3 :: Config Bool
 enronConfig3 (Feature "signature")     = True
-enronConfig3 (Feature "encryption")    = True
+enronConfig3 (Feature "encrypt")    = True
 enronConfig3 (Feature "addressbook")   = True
 enronConfig3 (Feature "autoresponder") = True
 enronConfig3 (Feature "mailhost")      = True
@@ -61,7 +61,7 @@ enronConfig4 :: Config Bool
 enronConfig4 (Feature "forwardmessages") = True
 enronConfig4 (Feature "filtermessages")  = True
 enronConfig4 (Feature "signature")       = True
-enronConfig4 (Feature "encryption")      = True
+enronConfig4 (Feature "encrypt")      = True
 enronConfig4 (Feature "remailmessage")   = True
 enronConfig4 (Feature "addressbook")     = True
 enronConfig4 (Feature "autoresponder")   = True
