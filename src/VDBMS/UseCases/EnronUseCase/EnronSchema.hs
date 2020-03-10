@@ -19,7 +19,7 @@ encryption      = Ref (Feature "encrypt")
 filtermessages  = Ref (Feature "filtermsg")
 autoresponder   = Ref (Feature "autoresponder")
 forwardmessages = Ref (Feature "forwardmsg")
-remailmessage   = Ref (Feature "remailmessage")
+remailmessage   = Ref (Feature "remailmsg")
 mailhost        = Ref (Feature "mailhost")
 
 enronFeatures :: [Feature]
@@ -29,21 +29,21 @@ enronFeatures = [Feature "addressbook"
                , Feature "filtermsg"
                , Feature "autoresponder"
                , Feature "forwardmsg"
-               , Feature "remailmessage"
+               , Feature "remailmsg"
                , Feature "mailhost"]
 
 -- 
 --  * Configuration of variants
 -- 
 enronConfig1 :: Config Bool
-enronConfig1 (Feature "forwardmessages") = True
+enronConfig1 (Feature "forwardmsg") = True
 enronConfig1 (Feature "filtermsg")  = True
 enronConfig1 _                           = False
 
 enronConfig2 :: Config Bool
 enronConfig2 (Feature "signature")     = True
 enronConfig2 (Feature "encrypt")    = True
-enronConfig2 (Feature "remailmessage") = True
+enronConfig2 (Feature "remailmsg") = True
 enronConfig2 _                         = False
 
 -- | The features map for group email:
@@ -58,11 +58,11 @@ enronConfig3 (Feature "mailhost")      = True
 enronConfig3 _                         = False
 
 enronConfig4 :: Config Bool
-enronConfig4 (Feature "forwardmessages") = True
+enronConfig4 (Feature "forwardmsg") = True
 enronConfig4 (Feature "filtermsg")  = True
 enronConfig4 (Feature "signature")       = True
 enronConfig4 (Feature "encrypt")      = True
-enronConfig4 (Feature "remailmessage")   = True
+enronConfig4 (Feature "remailmsg")   = True
 enronConfig4 (Feature "addressbook")     = True
 enronConfig4 (Feature "autoresponder")   = True
 enronConfig4 (Feature "mailhost")        = True
