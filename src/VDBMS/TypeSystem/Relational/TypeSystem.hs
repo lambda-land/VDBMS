@@ -76,16 +76,21 @@ typeOfRQuery (RSetOp _ l r)   s =
      tr <- typeOfRQuery r s
      sameRType tl tr 
      return tl
-typeOfRQuery (RProj as rq)     s = validSubQ rq >> typeRProj as rq s 
-typeOfRQuery (RSel c rq)       s = 
-  do validSubQ rq
-     t  <- typeOfRQuery (thing rq) s
-     let t' = updateType (name rq) t
-     typeSqlCond c t' s
-     return t'
-typeOfRQuery (RJoin rl rr c)   s = typeJoin rl rr c s 
-typeOfRQuery (RProd rl rr )    s = typeRProd rl rr s
-typeOfRQuery (RTRef rr)        s = typeRRel rr s 
+typeOfRQuery (RProj as rq)     s = undefined
+  -- validSubQ rq >> typeRProj as rq s 
+typeOfRQuery (RSel c rq)       s = undefined
+  -- do validSubQ rq
+  --    t  <- typeOfRQuery (thing rq) s
+  --    let t' = updateType (name rq) t
+  --    typeSqlCond c t' s
+  --    return t'
+typeOfRQuery (RJoin rl rr c)   s = undefined
+  -- typeJoin rl rr c s 
+typeOfRQuery (RProd rl rr )    s = undefined
+  -- typeRProd rl rr s
+typeOfRQuery (RTRef rr)        s = undefined
+  -- typeRRel rr s 
+typeOfRQuery (RRenameAlg n q)  s = undefined
 typeOfRQuery REmpty            _ = return M.empty
 
 -- | Checks if two type are the same.
@@ -147,15 +152,15 @@ updateType a t = maybe t (\n -> SM.map (appName n) t) a
 
 -- | Projects one attribute from a type.
 projAtt :: MonadThrow m => Attr -> RTypeEnv -> m RTypeEnv
-projAtt a t = 
-  do i <- nonAmbiguousAttr a t
-     return $ SM.singleton (attribute a) (pure i)
+projAtt a t = undefined
+  -- do i <- nonAmbiguousAttr a t
+  --    return $ SM.singleton (attribute a) (pure i)
 
 -- | Update the attribute names to their new name if available.
 updateAttrs :: MonadThrow m => Attributes -> RTypeEnv -> m RTypeEnv
-updateAttrs as t = 
-  do ts <- mapM (flip updateAtt t) as
-     return $ SM.unionsWith (++) ts
+updateAttrs as t = undefined
+  -- do ts <- mapM (flip updateAtt t) as
+  --    return $ SM.unionsWith (++) ts
 
 -- | Gives a type env of only the given attribute.
 updateAtt :: MonadThrow m => Rename Attr -> RTypeEnv -> m RTypeEnv

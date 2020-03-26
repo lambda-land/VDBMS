@@ -29,19 +29,20 @@ import Data.Maybe (isJust)
 pushSchToQ :: Schema -> Algebra -> Algebra
 pushSchToQ s (SetOp o l r) 
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
-pushSchToQ s (Proj as rq) 
-  = Proj (intersectOptAtts (outerMostOptAttQ (thing subq)) as) subq 
-  where subq = renameMap (pushSchToQ s) rq
-pushSchToQ s (Sel c rq) 
-  = Sel (pushSchToCond s c) (renameMap (pushSchToQ s) rq)
-pushSchToQ s (AChc f l r) 
+pushSchToQ s (Proj as rq) = undefined
+  -- = Proj (intersectOptAtts (outerMostOptAttQ (thing subq)) as) subq 
+  -- where subq = renameMap (pushSchToQ s) rq
+pushSchToQ s (Sel c rq) = undefined
+  -- = Sel (pushSchToCond s c) (renameMap (pushSchToQ s) rq)
+pushSchToQ s (AChc f l r)  
   = AChc f (pushSchToQ s l) (pushSchToQ s r)
-pushSchToQ s (Join rl rr c) 
-  = Join (renameMap (pushSchToQ s) rl) (renameMap (pushSchToQ s) rr) c
-pushSchToQ s (Prod rl rr) 
-  = Prod (renameMap (pushSchToQ s) rl) (renameMap (pushSchToQ s) rr)
-pushSchToQ s q@(TRef rr) 
-  = Proj (relSchToOptAtts rr s) (renameNothing q)
+pushSchToQ s (Join rl rr c) = undefined
+  -- = Join (renameMap (pushSchToQ s) rl) (renameMap (pushSchToQ s) rr) c
+pushSchToQ s (Prod rl rr) = undefined
+  -- = Prod (renameMap (pushSchToQ s) rl) (renameMap (pushSchToQ s) rr)
+pushSchToQ s q@(TRef rr) = undefined
+  -- = Proj (relSchToOptAtts rr s) (renameNothing q)
+pushSchToQ s (RenameAlg n q) = undefined
 pushSchToQ _ Empty = Empty
 
 
@@ -61,36 +62,39 @@ relSchToOptAtts rr s =
 --   Note that it qualifies all attributes by the relation name or 
 --   the alias if available.
 tsch2optAtts :: Rename Relation -> F.FeatureExpr -> TableSchema -> OptAttributes
-tsch2optAtts rr fm tsch = case name rr of 
-  Just n -> map (\(a,f) -> (F.conjFexp [fm,rf,f], 
-                            renameNothing (Attr a (Just (SubqueryQualifier n)))))
-            $ M.toList $ M.map getFexp row  
-  _ -> oas
-  where
-    rf = getFexp tsch
-    row = getObj tsch
-    oas = map (\(a,f) -> (F.conjFexp [fm,rf,f], 
-                          renameNothing (Attr a (Just (RelQualifier (thing rr))))))
-      $ M.toList $ M.map getFexp row  
+tsch2optAtts rr fm tsch = undefined
+  -- case name rr of 
+  -- Just n -> map (\(a,f) -> (F.conjFexp [fm,rf,f], 
+  --                           renameNothing (Attr a (Just (SubqueryQualifier n)))))
+  --           $ M.toList $ M.map getFexp row  
+  -- _ -> oas
+  -- where
+  --   rf = getFexp tsch
+  --   row = getObj tsch
+  --   oas = map (\(a,f) -> (F.conjFexp [fm,rf,f], 
+  --                         renameNothing (Attr a (Just (RelQualifier (thing rr))))))
+  --     $ M.toList $ M.map getFexp row  
 
 -- | returns the outermost opt atts of a query, 
 --   knowing that the passed query definitely has a projected list
 --   and it is type correct.
 outerMostOptAttQ :: Algebra -> OptAttributes
-outerMostOptAttQ (SetOp _ l _) = outerMostOptAttQ l
-outerMostOptAttQ (Proj as _)   = as 
-outerMostOptAttQ (Sel _ rq)    = outerMostOptAttQ $ thing rq
-outerMostOptAttQ (AChc f l r) 
-  = unionOptAtts oal oar
-    where
-      oal = pushFexp2OptAtts f (outerMostOptAttQ l) 
-      oar = pushFexp2OptAtts (F.Not f) (outerMostOptAttQ r)
-outerMostOptAttQ (Join rl rr _) 
-  = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
-outerMostOptAttQ (Prod rl rr)
-  = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
-outerMostOptAttQ _
-  = error "doesnt have a list of projected atts"
+outerMostOptAttQ = undefined
+-- outerMostOptAttQ (SetOp _ l _) = outerMostOptAttQ l
+-- outerMostOptAttQ (Proj as _)   = as 
+-- outerMostOptAttQ (Sel _ rq)    = outerMostOptAttQ $ thing rq
+-- outerMostOptAttQ (AChc f l r) 
+--   = unionOptAtts oal oar
+--     where
+--       oal = pushFexp2OptAtts f (outerMostOptAttQ l) 
+--       oar = pushFexp2OptAtts (F.Not f) (outerMostOptAttQ r)
+-- outerMostOptAttQ (Join rl rr _) 
+--   = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
+-- outerMostOptAttQ (Prod rl rr)
+--   = outerMostOptAttQ (thing rl) ++ outerMostOptAttQ (thing rr)
+-- outerMostOptAttQ (RenameAlg n q) = undefined
+-- outerMostOptAttQ _
+--   = error "doesnt have a list of projected atts"
 
 -- | unions two opt atts. 
 unionOptAtts :: OptAttributes -> OptAttributes -> OptAttributes

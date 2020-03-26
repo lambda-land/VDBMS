@@ -166,8 +166,10 @@ typeOfQuery :: MonadThrow m
              => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
 typeOfQuery (SetOp _ l r)    ctx s = typeSetOp l r ctx s 
-typeOfQuery (Proj oas rq)    ctx s = typeProj oas rq ctx s
-typeOfQuery (Sel c rq)       ctx s = typeSel c rq ctx s
+typeOfQuery (Proj oas rq)    ctx s = undefined
+  -- typeProj oas rq ctx s
+typeOfQuery (Sel c rq)       ctx s = undefined
+  -- typeSel c rq ctx s
 -- note that achc doesn't need to app ctxt to type because
 -- it's been applied already in tl and tr and the new pc is
 -- more general. so if an attribute belongs to tl or tr it
@@ -176,9 +178,13 @@ typeOfQuery (AChc f l r)     ctx s =
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
      return $ unionTypes tl tr
-typeOfQuery (Join rl rr c)   ctx s = typeJoin rl rr c ctx s 
-typeOfQuery (Prod rl rr)     ctx s = typeProd rl rr ctx s 
-typeOfQuery (TRef rr)        ctx s = typeRel rr ctx s 
+typeOfQuery (Join rl rr c)   ctx s = undefined
+  -- typeJoin rl rr c ctx s 
+typeOfQuery (Prod rl rr)     ctx s = undefined
+  -- typeProd rl rr ctx s 
+typeOfQuery (TRef rr)        ctx s = undefined
+  -- typeRel rr ctx s 
+typeOfQuery (RenameAlg n q) ctx s = undefined
 typeOfQuery Empty            ctx _ = 
   appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
 
@@ -239,34 +245,34 @@ typeProj oas rq ctx s
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
 -- note that it's checking subsumption too.
 projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
-projOptAtt ora t = 
-  do let aObj = getObj ora
-         attr = thing aObj
-         a = attribute attr
-         aq = qualifier attr
-         aName = name aObj
-         aPC = getFexp ora
-         tPC = getFexp t
-     i <- nonAmbiguousAttr attr t
-     let iQual = attrQual i
-         iSqlT = attrType i
-         iPC = attrFexp i
-     pc <- lookupAttrFexpInEnv attr t 
-     maybe (if F.satAnds pc aPC
-            then return $ maybe
-                            (attr2env tPC a iPC aPC iSqlT iQual)
-                            (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
-                            aName
-            else throwM $ UnsatAttPCandEnv ora t)
-           (\q -> if q == attrQual i
-                  then if F.satAnds pc aPC
-                       then return $ maybe
-                                      (attr2env tPC a iPC aPC iSqlT iQual)
-                                      (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
-                                      aName
-                       else throwM $ UnsatAttPCandEnv ora t
-                  else throwM $ AttrQualNotInEnv attr t)
-           aq
+projOptAtt ora t = undefined 
+  -- do let aObj = getObj ora
+  --        attr = thing aObj
+  --        a = attribute attr
+  --        aq = qualifier attr
+  --        aName = name aObj
+  --        aPC = getFexp ora
+  --        tPC = getFexp t
+  --    i <- nonAmbiguousAttr attr t
+  --    let iQual = attrQual i
+  --        iSqlT = attrType i
+  --        iPC = attrFexp i
+  --    pc <- lookupAttrFexpInEnv attr t 
+  --    maybe (if F.satAnds pc aPC
+  --           then return $ maybe
+  --                           (attr2env tPC a iPC aPC iSqlT iQual)
+  --                           (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
+  --                           aName
+  --           else throwM $ UnsatAttPCandEnv ora t)
+  --          (\q -> if q == attrQual i
+  --                 then if F.satAnds pc aPC
+  --                      then return $ maybe
+  --                                     (attr2env tPC a iPC aPC iSqlT iQual)
+  --                                     (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
+  --                                     aName
+  --                      else throwM $ UnsatAttPCandEnv ora t
+  --                 else throwM $ AttrQualNotInEnv attr t)
+  --          aq
 
 -- | constructs a new type env for one attribute.
 attr2env :: F.FeatureExpr 

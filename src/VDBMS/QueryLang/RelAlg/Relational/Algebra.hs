@@ -18,11 +18,12 @@ import VDBMS.QueryLang.RelAlg.Basics.SetOp
 --   qualified attributes.
 data RAlgebra
    = RSetOp SetOp RAlgebra RAlgebra
-   | RProj  Attributes (Rename RAlgebra)
-   | RSel   (SqlCond RAlgebra) (Rename RAlgebra)
-   | RJoin (Rename RAlgebra) (Rename RAlgebra) RCondition
-   | RProd (Rename RAlgebra) (Rename RAlgebra)
-   | RTRef  (Rename Relation)
+   | RProj  Attributes RAlgebra
+   | RSel   (SqlCond RAlgebra) RAlgebra
+   | RJoin RAlgebra RAlgebra RCondition
+   | RProd RAlgebra RAlgebra
+   | RTRef  Relation
+   | RRenameAlg Name RAlgebra
    | REmpty
   deriving (Data,Eq,Show,Typeable,Ord)
 

@@ -25,36 +25,37 @@ transAlgebra2Sql (RSetOp o l r)
     where
       algBin2SqlBin Union = SqlUnion
       algBin2SqlBin Diff  = SqlDiff
-transAlgebra2Sql (RProj as q)   
-  = SqlSelect (map SqlAttr as ++ atts) (tables sql) (condition sql) 
-    where 
-      rsql = alg2SqlWithName q
-      sql = thing rsql
-      atts = attributes sql 
-      -- \\ [SqlAllAtt]
-transAlgebra2Sql (RSel c q) 
-  = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) 
-    where 
-      rsql = alg2SqlWithName q 
-      sql = thing rsql
-transAlgebra2Sql (RJoin rl rr c) 
-  = SqlSelect latts [SqlInnerJoin (SqlSubQuery lsql) (SqlSubQuery rsql) c] []
-    where
-      lsql =  alg2SqlWithName rl
-      rsql = alg2SqlWithName rr
-      latts = (attributes . thing) lsql
-      -- ratts = (attributes . thing) rsql
-transAlgebra2Sql (RProd rl rr)   
-  = SqlSelect (latts ++ ratts) 
-              [ SqlSubQuery lsql, SqlSubQuery rsql]
-              []
-    where
-      lsql =  alg2SqlWithName rl 
-      rsql =  alg2SqlWithName rr
-      latts = (attributes . thing) lsql
-      ratts = (attributes . thing) rsql
-transAlgebra2Sql (RTRef r)     
-  = SqlSelect [] [constructRel r] [] 
+transAlgebra2Sql (RProj as q) = undefined
+  -- = SqlSelect (map SqlAttr as ++ atts) (tables sql) (condition sql) 
+  --   where 
+  --     rsql = alg2SqlWithName q
+  --     sql = thing rsql
+  --     atts = attributes sql 
+  --     -- \\ [SqlAllAtt]
+transAlgebra2Sql (RSel c q) = undefined
+  -- = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) 
+  --   where 
+  --     rsql = alg2SqlWithName q 
+  --     sql = thing rsql
+transAlgebra2Sql (RJoin rl rr c) = undefined
+  -- = SqlSelect latts [SqlInnerJoin (SqlSubQuery lsql) (SqlSubQuery rsql) c] []
+  --   where
+  --     lsql =  alg2SqlWithName rl
+  --     rsql = alg2SqlWithName rr
+  --     latts = (attributes . thing) lsql
+  --     -- ratts = (attributes . thing) rsql
+transAlgebra2Sql (RProd rl rr)   = undefined
+  -- = SqlSelect (latts ++ ratts) 
+  --             [ SqlSubQuery lsql, SqlSubQuery rsql]
+  --             []
+  --   where
+  --     lsql =  alg2SqlWithName rl 
+  --     rsql =  alg2SqlWithName rr
+  --     latts = (attributes . thing) lsql
+  --     ratts = (attributes . thing) rsql
+transAlgebra2Sql (RTRef r)     = undefined
+  -- = SqlSelect [] [constructRel r] [] 
+transAlgebra2Sql (RRenameAlg q n) = undefined
 transAlgebra2Sql REmpty         = SqlEmpty
 
 -- | Attaches the name of a relational alg query to its equiv

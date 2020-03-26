@@ -23,13 +23,15 @@ newtype QueryT = QueryT String
 
 -- | attaches the feature expression true to an attribute. 
 trueAttr :: Attr -> OptAttribute
-trueAttr a = (F.Lit True, genRenameAttr a)
+trueAttr a = undefined
+	-- (F.Lit True, genRenameAttr a)
 
 genRenameRelation :: Relation -> Rename Relation
 genRenameRelation rel = Rename Nothing rel
 
 tRef :: Relation -> Algebra 
-tRef rel = TRef $ Rename Nothing rel 
+tRef rel = undefined
+	-- TRef $ Rename Nothing rel 
 
 -- tRefNoRename :: Relation -> Rename Algebra
 -- tRefNoRename rel = Rename Nothing (TRef rel)
@@ -44,8 +46,9 @@ joinCondition a =  C.Comp EQ (C.Att a) (C.Att a)
 
 -- | join two realtiaon based on their common attribute
 joinTwoRelation :: Relation -> Relation -> N.Name -> Algebra
-joinTwoRelation rel1 rel2 commonAttr = Join (genRenameAlgebra (tRef rel1)) (genRenameAlgebra (tRef rel2)) join_cond
-  where join_cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel2 commonAttr))
+joinTwoRelation rel1 rel2 commonAttr = undefined
+	-- Join (genRenameAlgebra (tRef rel1)) (genRenameAlgebra (tRef rel2)) join_cond
+ --  where join_cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel2 commonAttr))
 
 -- | generate subquery 
 genRenameAlgebra :: Algebra -> Rename Algebra
@@ -58,8 +61,9 @@ subqueryQualifiedAttr subq a = N.Attr (N.attribute (attr a)) (Just (N.SubqueryQu
 -- | Join three relation(a,b,c) based on commonAttr. 
 --   (rel1 join(rel1.commonAttr = rel2.commonAttr) rel2) join(rel1.commonAttr = rel3.commonAttr) rel3
 joinThreeRelation :: Relation -> Relation -> Relation -> N.Name -> Algebra
-joinThreeRelation rel1 rel2 rel3 commonAttr = Join (genRenameAlgebra (joinTwoRelation rel1 rel2 commonAttr)) (genRenameAlgebra (tRef rel3)) cond 
-  where cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel3 commonAttr))
+joinThreeRelation rel1 rel2 rel3 commonAttr = undefined
+	-- Join (genRenameAlgebra (joinTwoRelation rel1 rel2 commonAttr)) (genRenameAlgebra (tRef rel3)) cond 
+ --  where cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel3 commonAttr))
 
 --
 -- * Smart Constructor for Schema
