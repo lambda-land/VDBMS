@@ -65,6 +65,10 @@ typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (M.toLis
     attrinfo (a,ais) = map (\ai -> (Attribute $ (qualName . attrQual) ai ++ an, mkOpt (attrFexp ai) (attrType ai))) ais
       where an = "." ++ attributeName a
 
+-- | transforms a type env to a list of opt attributes.
+typeEnve2OptAtts :: TypeEnv -> OptAttributes
+typeEnve2OptAtts = undefined
+
 -- | returns the attributes of type env. 
 --   assumption: attributes are unique.
 typeAtts :: TypeEnv -> [Attribute]
@@ -150,10 +154,6 @@ nonAmbiguousAttr a t =
      if length qs > 1
      then maybe (throwM $ AmbiguousAttr a t) (lookupAttrInfo is) (qualifier a)
      else return $ head is
-
--- | transforms a type env to a list of opt attributes.
-typeEnve2OptAtts :: TypeEnv -> OptAttributes
-typeEnve2OptAtts = undefined
 
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
