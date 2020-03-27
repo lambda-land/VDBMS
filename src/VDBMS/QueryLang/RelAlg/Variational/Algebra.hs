@@ -206,26 +206,25 @@ data Algebra
 configureAlgebra :: Config Bool -> Algebra -> RAlgebra
 configureAlgebra c (SetOp o l r)   
   = RSetOp o (configureAlgebra c l) (configureAlgebra c r)
-configureAlgebra c (Proj as q)     = undefined
-  -- | confedAtts == [] = REmpty
-  -- | otherwise        = RProj confedAtts (renameMap (configureAlgebra c) q)
-  --   where
-  --     confedAtts = configureOptList c as 
-configureAlgebra c (Sel cond q)     = undefined
---   = RSel (configure c cond) (renameMap (configureAlgebra c) q) 
--- configureAlgebra c (AChc f l r) 
---   | F.evalFeatureExpr c f   = configureAlgebra c l
---   | otherwise               = configureAlgebra c r
-configureAlgebra c (Join l r cond) = undefined
-  -- = RJoin (renameMap (configureAlgebra c) l)
-  --       (renameMap (configureAlgebra c) r)
-  --       (configure c cond)
-configureAlgebra c (Prod l r) = undefined       
-  -- = RProd (renameMap (configureAlgebra c) l) 
-  --         (renameMap (configureAlgebra c) r)
-configureAlgebra _ (TRef r)        = undefined
-  -- RTRef r 
-configureAlgebra c (RenameAlg n q) = undefined
+configureAlgebra c (Proj as q)     
+  | confedAtts == [] = REmpty
+  | otherwise        = RProj confedAtts (configureAlgebra c q)
+    where
+      confedAtts = configureOptList c as 
+configureAlgebra c (Sel cond q)     
+  = RSel (configure c cond) (configureAlgebra c q) 
+configureAlgebra c (AChc f l r) 
+  | F.evalFeatureExpr c f   = configureAlgebra c l
+  | otherwise               = configureAlgebra c r
+configureAlgebra c (Join l r cond) 
+  = RJoin (configureAlgebra c l)
+          (configureAlgebra c r)
+          (configure c cond)
+configureAlgebra c (Prod l r) 
+  = RProd (configureAlgebra c l) 
+          (configureAlgebra c r)
+configureAlgebra _ (TRef r)        = RTRef r 
+configureAlgebra c (RenameAlg n q) = RRenameAlg n (configureAlgebra c q)
 configureAlgebra _ Empty           = REmpty
 
 -- | returns the number of variants of configuring a v-query.
