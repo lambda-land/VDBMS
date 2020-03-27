@@ -272,23 +272,22 @@ numVarintQ q cs = length $ filter (\rq -> rq /= REmpty) $
 optAlgebra :: Algebra -> [VariantGroup Algebra]
 optAlgebra (SetOp s q1 q2) = 
   combOpts F.And (RSetOp s) (optAlgebra q1) (optAlgebra q2)
-optAlgebra (Proj as q)     = undefined
-  -- combOpts F.And RProj (groupOpts as) (optRename q)
-optAlgebra (Sel c q)       = undefined
-  -- combOpts F.And RSel (optionalize_ c) (optRename q) 
-optAlgebra (AChc f q1 q2)  = undefined
-  -- mapFst (F.And f) (optAlgebra q1) ++
-  --                            mapFst (F.And (F.Not f)) (optAlgebra q2)
-optAlgebra (Join l r c)    = undefined
-  -- combOpts F.And constRJoin (combRenameAlgs l r) (optionalize_ c)
-  --   where 
-  --     combRenameAlgs rl rr = combOpts F.And (,) (optRename rl) (optRename rr)
-  --     constRJoin (rq1,rq2) cond = RJoin rq1 rq2 cond
-optAlgebra (Prod l r)      = undefined
-  -- combOpts F.And RProd (optRename l) (optRename r)
-optAlgebra (TRef r)        = undefined
-  -- pure $ mkOpt (F.Lit True) (RTRef r)
-optAlgebra (RenameAlg n q) = undefined
+optAlgebra (Proj as q)     = 
+  combOpts F.And RProj (groupOpts as) (optAlgebra q)
+optAlgebra (Sel c q)       = 
+  combOpts F.And RSel (optionalize_ c) (optAlgebra q) 
+optAlgebra (AChc f q1 q2)  = 
+  mapFst (F.And f) (optAlgebra q1) ++
+  mapFst (F.And (F.Not f)) (optAlgebra q2)
+optAlgebra (Join l r c)    = 
+  combOpts F.And constRJoin (combRenameAlgs l r) (optionalize_ c)
+    where 
+      combRenameAlgs l r = combOpts F.And (,) (optAlgebra l) (optAlgebra r)
+      constRJoin (q1,q2) cond = RJoin q1 q2 cond
+optAlgebra (Prod l r)      = 
+  combOpts F.And RProd (optAlgebra l) (optAlgebra r)
+optAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
+optAlgebra (RenameAlg n q) = mapSnd (RRenameAlg n) (optAlgebra q)
 optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
 
 -- | returns the number of unique variants of v-query.
