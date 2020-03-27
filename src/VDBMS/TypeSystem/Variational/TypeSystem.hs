@@ -8,6 +8,7 @@ module VDBMS.TypeSystem.Variational.TypeSystem (
         , updateType
         , typePC
         , typeEnv2tableSch
+        , typeEnve2OptAtts
         , typeAtts
 
 ) where 
@@ -149,6 +150,10 @@ nonAmbiguousAttr a t =
      if length qs > 1
      then maybe (throwM $ AmbiguousAttr a t) (lookupAttrInfo is) (qualifier a)
      else return $ head is
+
+-- | transforms a type env to a list of opt attributes.
+typeEnve2OptAtts :: TypeEnv -> OptAttributes
+typeEnve2OptAtts = undefined
 
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined

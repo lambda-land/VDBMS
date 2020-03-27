@@ -17,11 +17,12 @@ import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
 import VDBMS.Variational.Opt (getFexp, getObj)
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnve2OptAtts)
 
 -- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, fromJust)
 
 -- | pushes the schema onto the vq after type checking 
 --   the query. in order for the commuting diagram to
@@ -29,57 +30,58 @@ import Data.Maybe (isJust)
 pushSchToQ :: Schema -> Algebra -> Algebra
 pushSchToQ s (SetOp o l r) 
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
-pushSchToQ s (Proj as rq) = undefined
-  -- = Proj (intersectOptAtts (outerMostOptAttQ (thing subq)) as) subq 
-  -- where subq = renameMap (pushSchToQ s) rq
-pushSchToQ s (Sel c rq) = undefined
-  -- = Sel (pushSchToCond s c) (renameMap (pushSchToQ s) rq)
+pushSchToQ s (Proj as q) 
+  = Proj (intersectOptAtts as' as) subq 
+    where subq = pushSchToQ s q
+          as' = typeEnve2OptAtts $ fromJust $ typeOfQuery subq (featureModel s) s
+pushSchToQ s (Sel c q) 
+  = Sel (pushSchToCond s c) (pushSchToQ s q)
 pushSchToQ s (AChc f l r)  
   = AChc f (pushSchToQ s l) (pushSchToQ s r)
-pushSchToQ s (Join rl rr c) = undefined
-  -- = Join (renameMap (pushSchToQ s) rl) (renameMap (pushSchToQ s) rr) c
-pushSchToQ s (Prod rl rr) = undefined
-  -- = Prod (renameMap (pushSchToQ s) rl) (renameMap (pushSchToQ s) rr)
-pushSchToQ s q@(TRef rr) = undefined
-  -- = Proj (relSchToOptAtts rr s) (renameNothing q)
-pushSchToQ s (RenameAlg n q) = undefined
+pushSchToQ s (Join l r c) 
+  = Join (pushSchToQ s l) (pushSchToQ s r) c
+pushSchToQ s (Prod l r) 
+  = Prod (pushSchToQ s l) (pushSchToQ s r)
+pushSchToQ s q@(TRef r) = Proj as q
+  where as = typeEnve2OptAtts $ fromJust $ typeOfQuery q (featureModel s) s
+pushSchToQ s (RenameAlg n q) = RenameAlg n (pushSchToQ s q)
 pushSchToQ _ Empty = Empty
 
 
 -- | takes a relation and schema and generates
 --   the list of optattributes of the relationschema
 --   in the schema. 
-relSchToOptAtts :: Rename Relation -> Schema -> OptAttributes
-relSchToOptAtts rr s =
-  case lookupTableSch (thing rr) s of
-    Just tsch -> tsch2optAtts rr fm tsch
-    _ -> error "q has been type checked! not possible! relSchToOptAtts func in PushSchToQ!"
-  where 
-    fm = featureModel s
+-- relSchToOptAtts :: Relation -> Schema -> OptAttributes
+-- relSchToOptAtts r s =
+--   case lookupTableSch r s of
+--     Just tsch -> tsch2optAtts r fm tsch
+--     _ -> error "q has been type checked! not possible! relSchToOptAtts func in PushSchToQ!"
+--   where 
+--     fm = featureModel s
 
 -- | takes a relation, the feature model and table schema and 
 --   produces the opt attribute list from them.
 --   Note that it qualifies all attributes by the relation name or 
 --   the alias if available.
-tsch2optAtts :: Rename Relation -> F.FeatureExpr -> TableSchema -> OptAttributes
-tsch2optAtts rr fm tsch = undefined
-  -- case name rr of 
-  -- Just n -> map (\(a,f) -> (F.conjFexp [fm,rf,f], 
-  --                           renameNothing (Attr a (Just (SubqueryQualifier n)))))
-  --           $ M.toList $ M.map getFexp row  
-  -- _ -> oas
-  -- where
-  --   rf = getFexp tsch
-  --   row = getObj tsch
-  --   oas = map (\(a,f) -> (F.conjFexp [fm,rf,f], 
-  --                         renameNothing (Attr a (Just (RelQualifier (thing rr))))))
-  --     $ M.toList $ M.map getFexp row  
+-- tsch2optAtts :: Relation -> F.FeatureExpr -> TableSchema -> OptAttributes
+-- tsch2optAtts r fm tsch = 
+--   case r of 
+--   Just n -> map (\(a,f) -> (F.conjFexp [fm,rf,f], 
+--                             renameNothing (Attr a (Just (SubqueryQualifier n)))))
+--             $ M.toList $ M.map getFexp row  
+--   _ -> oas
+--   where
+--     rf = getFexp tsch
+--     row = getObj tsch
+--     oas = map (\(a,f) -> (F.conjFexp [fm,rf,f], 
+--                           renameNothing (Attr a (Just (RelQualifier (thing rr))))))
+--       $ M.toList $ M.map getFexp row  
 
 -- | returns the outermost opt atts of a query, 
 --   knowing that the passed query definitely has a projected list
 --   and it is type correct.
-outerMostOptAttQ :: Algebra -> OptAttributes
-outerMostOptAttQ = undefined
+-- outerMostOptAttQ :: Algebra -> OptAttributes
+-- outerMostOptAttQ = undefined
 -- outerMostOptAttQ (SetOp _ l _) = outerMostOptAttQ l
 -- outerMostOptAttQ (Proj as _)   = as 
 -- outerMostOptAttQ (Sel _ rq)    = outerMostOptAttQ $ thing rq
@@ -97,8 +99,8 @@ outerMostOptAttQ = undefined
 --   = error "doesnt have a list of projected atts"
 
 -- | unions two opt atts. 
-unionOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
-unionOptAtts = (++)
+-- unionOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
+-- unionOptAtts = (++)
 
 -- | intersects two opt atts. the first list subsumes the second one,
 --   checked by the type system. it returns attributes in the subsumed
