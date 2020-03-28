@@ -95,7 +95,7 @@ data TypeError
   | MissingAlias (Rename Algebra)
   | NotEquiveEnv TypeEnv TypeEnv
   | CompInvalid Atom Atom TypeEnv
-  | EmptyAttrList OptAttributes (Rename Algebra)
+  | EmptyAttrList OptAttributes Algebra
   | TypeEnvIntersectNotEmpty TypeEnv TypeEnv
   | UnsatFexAppliedToTypeMap F.FeatureExpr TypeMap
   | UnsatFexpsTypeInetersect F.FeatureExpr
@@ -177,8 +177,7 @@ typeOfQuery :: MonadThrow m
              => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
 typeOfQuery (SetOp _ l r)    ctx s = typeSetOp l r ctx s 
-typeOfQuery (Proj oas rq)    ctx s = undefined
-  -- typeProj oas rq ctx s
+typeOfQuery (Proj oas q)    ctx s = typeProj oas q ctx s
 typeOfQuery (Sel c rq)       ctx s = undefined
   -- typeSel c rq ctx s
 -- note that achc doesn't need to app ctxt to type because
@@ -244,12 +243,12 @@ compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
 
 -- | Type of a projection query.
 typeProj :: MonadThrow m 
-         => OptAttributes -> Rename Algebra -> VariationalContext -> Schema 
+         => OptAttributes -> Algebra -> VariationalContext -> Schema 
          -> m TypeEnv
-typeProj oas rq ctx s 
-  | null oas = throwM $ EmptyAttrList oas rq 
+typeProj oas q ctx s 
+  | null oas = throwM $ EmptyAttrList oas q 
   | otherwise = 
-    do t <- typeOfQuery (thing rq) ctx s 
+    do t <- typeOfQuery q ctx s 
        t' <- projOptAttrs oas t
        appCtxtToEnv ctx t' 
 
