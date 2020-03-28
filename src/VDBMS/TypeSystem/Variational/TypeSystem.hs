@@ -67,7 +67,13 @@ typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (M.toLis
 
 -- | transforms a type env to a list of opt attributes.
 typeEnve2OptAtts :: TypeEnv -> OptAttributes
-typeEnve2OptAtts = undefined
+typeEnve2OptAtts env = concatMap attrTrans (M.toList (getObj env))
+  where
+    envPC = typePC env
+    attrTrans :: (Attribute, AttrInformation) -> OptAttributes
+    attrTrans (a, ais) = map (\ai -> mkOpt 
+      (F.And envPC (attrFexp ai)) 
+      (Attr a (Just $ attrQual ai))) ais 
 
 -- | returns the attributes of type env. 
 --   assumption: attributes are unique.
