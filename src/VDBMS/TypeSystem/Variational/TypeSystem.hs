@@ -178,8 +178,7 @@ typeOfQuery :: MonadThrow m
              -> m TypeEnv
 typeOfQuery (SetOp _ l r)    ctx s = typeSetOp l r ctx s 
 typeOfQuery (Proj oas q)    ctx s = typeProj oas q ctx s
-typeOfQuery (Sel c rq)       ctx s = undefined
-  -- typeSel c rq ctx s
+typeOfQuery (Sel c q)       ctx s = typeSel c q ctx s
 -- note that achc doesn't need to app ctxt to type because
 -- it's been applied already in tl and tr and the new pc is
 -- more general. so if an attribute belongs to tl or tr it
@@ -300,16 +299,16 @@ projOptAttrs oras t =
 
 -- | Type of a selection query.
 typeSel :: MonadThrow m 
-         => VsqlCond -> Rename Algebra -> VariationalContext -> Schema 
+         => VsqlCond -> Algebra -> VariationalContext -> Schema 
          -> m TypeEnv
-typeSel c rq ctx s =
+typeSel c q ctx s =
   do 
-     -- validSubQ rq --ctx s 
-     t <- typeOfQuery (thing rq) ctx s
-     let t' = updateType (name rq) t 
-     typeVsqlCond c ctx s t'
+     -- validSubQ rq --ctx s -- this was for checking renaming of subq in sql.
+     t <- typeOfQuery q ctx s
+     -- let t' = updateType (name rq) t -- this was for when we had attr renaming in alg.
+     typeVsqlCond c ctx s t
      -- appCtxtToEnv ctx t'
-     return t'
+     return t
 
 -- | Checks if a subquery is valid within a seleciton or projection.
 --   Assumption: optimizations has applied before this.
