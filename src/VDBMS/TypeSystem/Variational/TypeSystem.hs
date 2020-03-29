@@ -255,34 +255,32 @@ typeProj oas q ctx s
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
 -- note that it's checking subsumption too.
 projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
-projOptAtt oa t = undefined
-  -- do let attr = getObj oa
-  --        -- attr = thing aObj
-  --        a = attribute attr
-  --        aq = qualifier attr
-  --        -- aName = name aObj
-  --        aPC = getFexp oa
-  --        tPC = typePC t
-  --    i <- nonAmbiguousAttr attr t
-  --    let iQual = attrQual i
-  --        iSqlT = attrType i
-  --        iPC = attrFexp i
-  --    pc <- lookupAttrFexpInEnv attr t 
-  --    maybe (if F.satAnds pc aPC
-  --           then return $ maybe
-  --                           (attr2env tPC a iPC aPC iSqlT iQual)
-  --                           (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
-  --                           aName
-  --           else throwM $ UnsatAttPCandEnv oa t)
-  --          (\q -> if q == attrQual i
-  --                 then if F.satAnds pc aPC
-  --                      then return $ maybe
-  --                                     (attr2env tPC a iPC aPC iSqlT iQual)
-  --                                     (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
-  --                                     aName
-  --                      else throwM $ UnsatAttPCandEnv oa t
-  --                 else throwM $ AttrQualNotInEnv attr t)
-  --          aq
+projOptAtt oa t = 
+  do let attr = getObj oa
+         -- attr = thing aObj
+         a = attribute attr
+         aq = qualifier attr
+         -- aName = name aObj
+         aPC = getFexp oa
+         tPC = typePC t
+     i <- nonAmbiguousAttr attr t
+     let iQual = attrQual i
+         iSqlT = attrType i
+         iPC = attrFexp i
+     pc <- lookupAttrFexpInEnv attr t 
+     maybe (if F.satAnds pc aPC
+            then return $ attr2env tPC a iPC aPC iSqlT iQual
+                            -- (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
+                            -- aName
+            else throwM $ UnsatAttPCandEnv oa t)
+           (\q -> if q == attrQual i
+                  then if F.satAnds pc aPC
+                       then return $ attr2env tPC a iPC aPC iSqlT iQual
+                                      -- (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
+                                      -- aName
+                       else throwM $ UnsatAttPCandEnv oa t
+                  else throwM $ AttrQualNotInEnv attr t)
+           aq
 
 -- | constructs a new type env for one attribute.
 attr2env :: F.FeatureExpr 
