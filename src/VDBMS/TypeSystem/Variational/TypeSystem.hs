@@ -187,8 +187,7 @@ typeOfQuery (AChc f l r)     ctx s =
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
      return $ unionTypes tl tr
-typeOfQuery (Join rl rr c)   ctx s = undefined
-  -- typeJoin rl rr c ctx s 
+typeOfQuery (Join l r c)   ctx s = typeJoin l r c ctx s 
 typeOfQuery (Prod rl rr)     ctx s = undefined
   -- typeProd rl rr ctx s 
 typeOfQuery (TRef rr)        ctx s = undefined
@@ -410,22 +409,22 @@ unionTypeMaps l r = SM.unionWith (appendAttrInfos_ F.Or) l r
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
-         => Rename Algebra -> Rename Algebra -> Condition
+         => Algebra -> Algebra -> Condition
          -> VariationalContext -> Schema 
          -> m TypeEnv
-typeJoin rl rr c ctx s = 
-  do t <- typeProd rl rr ctx s 
+typeJoin l r c ctx s = 
+  do t <- typeProd l r ctx s 
      typeCondition c ctx t 
      return t 
 
 -- | Gives the type of cross producting multiple rename relations.
 typeProd :: MonadThrow m 
-         => Rename Algebra -> Rename Algebra 
+         => Algebra -> Algebra 
          -> VariationalContext -> Schema 
          -> m TypeEnv
-typeProd rl rr ctx s = 
-  do tl <- typeOfQuery (thing rl) ctx s 
-     tr <- typeOfQuery (thing rr) ctx s 
+typeProd l r ctx s = 
+  do tl <- typeOfQuery l ctx s 
+     tr <- typeOfQuery r ctx s 
      uniqueRelAlias tl tr 
      common <- intersectTypes tl tr
      if SM.null (getObj common)
