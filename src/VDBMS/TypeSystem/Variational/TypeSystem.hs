@@ -188,10 +188,8 @@ typeOfQuery (AChc f l r)     ctx s =
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
      return $ unionTypes tl tr
 typeOfQuery (Join l r c)   ctx s = typeJoin l r c ctx s 
-typeOfQuery (Prod rl rr)     ctx s = undefined
-  -- typeProd rl rr ctx s 
-typeOfQuery (TRef rr)        ctx s = undefined
-  -- typeRel rr ctx s 
+typeOfQuery (Prod l r)     ctx s = typeProd l r ctx s 
+typeOfQuery (TRef r)        ctx s = typeRel r ctx s 
 typeOfQuery (RenameAlg n q) ctx s = undefined
 typeOfQuery Empty            ctx _ = 
   appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
@@ -504,24 +502,24 @@ appendAttrInfos_ ff l r = shared ++ unshared
 
 -- | Returns the type of a rename relation.
 typeRel :: MonadThrow m 
-        => Rename Relation -> VariationalContext -> Schema 
+        => Relation -> VariationalContext -> Schema 
         -> m TypeEnv
-typeRel rr ctx s = 
-  do tsch <- lookupTableSch (thing rr) s 
-     let t = tableSch2TypeEnv rr tsch s
+typeRel r ctx s = 
+  do tsch <- lookupTableSch r s 
+     let t = tableSch2TypeEnv r tsch s
      appCtxtToEnv ctx t
 
 -- | Generates a type env from a table schema and updates the pc
 --   of the table by conjuncting it with schema's feature model.
-tableSch2TypeEnv :: Rename Relation -> TableSchema -> Schema -> TypeEnv 
-tableSch2TypeEnv rr tsch s = 
-  updateOptObj (SM.map (optSqlType2AttInfo rr) (getObj tsch)) 
+tableSch2TypeEnv :: Relation -> TableSchema -> Schema -> TypeEnv 
+tableSch2TypeEnv r tsch s = 
+  updateOptObj (SM.map (optSqlType2AttInfo r) (getObj tsch)) 
              $ applyFuncFexp (F.And (featureModel s)) tsch 
   where 
-    optSqlType2AttInfo r ot = pure $ AttrInfo (getFexp ot) (getObj ot) 
-      $ maybe (RelQualifier (thing r))
-              (\n -> RelQualifier (Relation n)) 
-              (name r)
+    optSqlType2AttInfo rel ot = pure $ AttrInfo (getFexp ot) (getObj ot) 
+      $ RelQualifier rel
+              -- (\n -> RelQualifier (Relation n)) 
+              -- (name r)
 
 -- | Applies a variational ctxt to a type and drops the elements 
 --   that their pc is unsatisfiable. This is based on theory that
