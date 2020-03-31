@@ -28,8 +28,8 @@ transAlgebra2Sql (RSetOp o l r)
 transAlgebra2Sql (RProj as q) = undefined
   -- = SqlSelect (map SqlAttr as ++ atts) (tables sql) (condition sql) 
   --   where 
-  --     rsql = alg2SqlWithName q
-  --     sql = thing rsql
+  --     sql = transAlgebra2Sql q
+  --     -- sql = thing rsql
   --     atts = attributes sql 
   --     -- \\ [SqlAllAtt]
 transAlgebra2Sql (RSel c q) = undefined
