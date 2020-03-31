@@ -299,90 +299,89 @@ partitionAtts as n t = undefined
 --       can be generated from the combination of other rules.
 -- Discuss the note with Eric.
 chcRel :: Algebra -> Algebra
-chcRel = undefined
--- -- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
--- chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1)) 
---                (Sel (VsqlAnd c3 c4) (Rename Nothing q2)))
---   | vsqlCondEq c1 c3 
---     = Sel (VsqlAnd c1 (VsqlCChc f c2 c4)) (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq c1 c4 
---     = Sel (VsqlAnd c1 (VsqlCChc f c2 c3)) (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq c2 c3 
---     = Sel (VsqlAnd c2 (VsqlCChc f c1 c4)) (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq c2 c4 
---     = Sel (VsqlAnd c2 (VsqlCChc f c1 c3)) (Rename Nothing (AChc f q1 q2))
---   | otherwise = q
--- chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) (Rename Nothing q1)) 
---                (Sel (VsqlAnd c3 c4) (Rename Nothing q2)))
---   | vsqlCondEq (VsqlCond c1) c3 
---     = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) c4)) 
---           (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq (VsqlCond c1) c4 
---     = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) c3)) 
---           (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq (VsqlCond c2) c3 
---     = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) c4)) 
---           (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq (VsqlCond c2) c4 
---     = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) c3)) 
---           (Rename Nothing (AChc f q1 q2))
---   | otherwise = q
--- chcRel q@(AChc f (Sel (VsqlAnd c1 c2) (Rename Nothing q1)) 
---                (Sel (VsqlCond (And c3 c4)) (Rename Nothing q2)))
---   | vsqlCondEq c1 (VsqlCond c3) 
---     = Sel (VsqlAnd c1 (VsqlCChc f c2 (VsqlCond c4))) 
---           (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq c1 (VsqlCond c4) 
---     = Sel (VsqlAnd c1 (VsqlCChc f c2 (VsqlCond c3))) 
---           (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq c2 (VsqlCond c3) 
---     = Sel (VsqlAnd c2 (VsqlCChc f c1 (VsqlCond c4))) 
---           (Rename Nothing (AChc f q1 q2))
---   | vsqlCondEq c2 (VsqlCond c4) 
---     = Sel (VsqlAnd c2 (VsqlCChc f c1 (VsqlCond c3))) 
---           (Rename Nothing (AChc f q1 q2))
---   | otherwise = q
--- chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) (Rename Nothing q1)) 
---                (Sel (VsqlCond (And c3 c4)) (Rename Nothing q2)))
---   | conditionEq c1 c3 
---     = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) (VsqlCond c4))) 
---           (Rename Nothing (AChc f q1 q2))
---   | conditionEq c1 c4 
---     = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) (VsqlCond c3))) 
---           (Rename Nothing (AChc f q1 q2))
---   | conditionEq c2 c3 
---     = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) (VsqlCond c4))) 
---           (Rename Nothing (AChc f q1 q2))
---   | conditionEq c2 c4 
---     = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) (VsqlCond c3)))
---           (Rename Nothing (AChc f q1 q2))
---   | otherwise = q
--- -- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
--- chcRel (Sel c1 (Rename n (AChc f (Sel c2 (Rename Nothing q1)) 
---                                (Sel c3 (Rename Nothing q2)))))
---   = Sel (VsqlAnd c1 (VsqlCChc f c2 c3)) (Rename n (AChc f q1 q2))
--- -- f<q₁ ⋈\_(c₁ ∧ c₂) q₂, q₃ ⋈\_(c₁ ∧ c₃) q₄> ≡ σ (f<c₂, c₃>) (f<q₁, q₃> ⋈\_c₁ f<q₂, q₄>)
--- chcRel q@(AChc f (Join (Rename Nothing q1) (Rename Nothing q2) (And c1 c2)) 
---              (Join (Rename Nothing q3) (Rename Nothing q4) (And c3 c4)))
---   | conditionEq c1 c3 
---     = Sel (VsqlCChc f (VsqlCond c2) (VsqlCond c4)) 
---           (Rename Nothing (Join (Rename Nothing (AChc f q1 q3)) 
---                                 (Rename Nothing (AChc f q2 q4)) c1))
---   | conditionEq c1 c4 
---     = Sel (VsqlCChc f (VsqlCond c2) (VsqlCond c3))
---           (Rename Nothing (Join (Rename Nothing (AChc f q1 q3))
---                                 (Rename Nothing (AChc f q2 q4)) c1))
---   | conditionEq c2 c3 
---     = Sel (VsqlCChc f (VsqlCond c1) (VsqlCond c4))
---           (Rename Nothing (Join (Rename Nothing (AChc f q1 q3))
---                                 (Rename Nothing (AChc f q2 q4)) c2))
---   | conditionEq c2 c4 
---     = Sel (VsqlCChc f (VsqlCond c1) (VsqlCond c3))
---           (Rename Nothing (Join (Rename Nothing (AChc f q1 q3))
---                                 (Rename Nothing (AChc f q2 q4)) c2))
---   | otherwise = q
--- chcRel (RenameAlg n q) = undefined
--- chcRel q = q
+-- f<σ (c₁ ∧ c₂) q₁, σ (c₁ ∧ c₃) q₂> ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
+chcRel q@(AChc f (Sel (VsqlAnd c1 c2) q1) 
+                 (Sel (VsqlAnd c3 c4) q2))
+  | vsqlCondEq c1 c3 
+    = Sel (VsqlAnd c1 (VsqlCChc f c2 c4)) (AChc f q1 q2)
+  | vsqlCondEq c1 c4 
+    = Sel (VsqlAnd c1 (VsqlCChc f c2 c3)) (AChc f q1 q2)
+  | vsqlCondEq c2 c3 
+    = Sel (VsqlAnd c2 (VsqlCChc f c1 c4)) (AChc f q1 q2)
+  | vsqlCondEq c2 c4 
+    = Sel (VsqlAnd c2 (VsqlCChc f c1 c3)) (AChc f q1 q2)
+  | otherwise = q
+chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) q1)
+                 (Sel (VsqlAnd c3 c4) q2))
+  | vsqlCondEq (VsqlCond c1) c3 
+    = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) c4)) 
+          (AChc f q1 q2)
+  | vsqlCondEq (VsqlCond c1) c4 
+    = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) c3)) 
+          (AChc f q1 q2)
+  | vsqlCondEq (VsqlCond c2) c3 
+    = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) c4)) 
+          (AChc f q1 q2)
+  | vsqlCondEq (VsqlCond c2) c4 
+    = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) c3)) 
+          (AChc f q1 q2)
+  | otherwise = q
+chcRel q@(AChc f (Sel (VsqlAnd c1 c2) q1) 
+                 (Sel (VsqlCond (And c3 c4)) q2))
+  | vsqlCondEq c1 (VsqlCond c3) 
+    = Sel (VsqlAnd c1 (VsqlCChc f c2 (VsqlCond c4))) 
+          (AChc f q1 q2)
+  | vsqlCondEq c1 (VsqlCond c4) 
+    = Sel (VsqlAnd c1 (VsqlCChc f c2 (VsqlCond c3))) 
+          (AChc f q1 q2)
+  | vsqlCondEq c2 (VsqlCond c3) 
+    = Sel (VsqlAnd c2 (VsqlCChc f c1 (VsqlCond c4))) 
+          (AChc f q1 q2)
+  | vsqlCondEq c2 (VsqlCond c4) 
+    = Sel (VsqlAnd c2 (VsqlCChc f c1 (VsqlCond c3))) 
+          (AChc f q1 q2)
+  | otherwise = q
+chcRel q@(AChc f (Sel (VsqlCond (And c1 c2)) q1)
+                 (Sel (VsqlCond (And c3 c4)) q2))
+  | conditionEq c1 c3 
+    = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) (VsqlCond c4))) 
+          (AChc f q1 q2)
+  | conditionEq c1 c4 
+    = Sel (VsqlAnd (VsqlCond c1) (VsqlCChc f (VsqlCond c2) (VsqlCond c3))) 
+          (AChc f q1 q2)
+  | conditionEq c2 c3 
+    = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) (VsqlCond c4))) 
+          (AChc f q1 q2)
+  | conditionEq c2 c4 
+    = Sel (VsqlAnd (VsqlCond c2) (VsqlCChc f (VsqlCond c1) (VsqlCond c3)))
+          (AChc f q1 q2)
+  | otherwise = q
+-- σ c₁ (f<σ c₂ q₁, σ c₃ q₂>) ≡ σ (c₁ ∧ f<c₂, c₃>) f<q₁, q₂>
+chcRel (Sel c1 (AChc f (Sel c2  q1)
+                       (Sel c3 q2)))
+  = Sel (VsqlAnd c1 (VsqlCChc f c2 c3)) (AChc f q1 q2)
+-- f<q₁ ⋈\_(c₁ ∧ c₂) q₂, q₃ ⋈\_(c₁ ∧ c₃) q₄> ≡ σ (f<c₂, c₃>) (f<q₁, q₃> ⋈\_c₁ f<q₂, q₄>)
+chcRel q@(AChc f (Join q1 q2 (And c1 c2)) 
+                 (Join q3 q4 (And c3 c4)))
+  | conditionEq c1 c3 
+    = Sel (VsqlCChc f (VsqlCond c2) (VsqlCond c4)) 
+          (Join (AChc f q1 q3)
+                (AChc f q2 q4) c1)
+  | conditionEq c1 c4 
+    = Sel (VsqlCChc f (VsqlCond c2) (VsqlCond c3))
+          (Join (AChc f q1 q3)
+                (AChc f q2 q4) c1)
+  | conditionEq c2 c3 
+    = Sel (VsqlCChc f (VsqlCond c1) (VsqlCond c4))
+          (Join (AChc f q1 q3)
+                (AChc f q2 q4) c2)
+  | conditionEq c2 c4 
+    = Sel (VsqlCChc f (VsqlCond c1) (VsqlCond c3))
+          (Join (AChc f q1 q3)
+                (AChc f q2 q4) c2)
+  | otherwise = q
+chcRel (RenameAlg n q) = RenameAlg n (chcRel q)
+chcRel q = q
 
 
 
