@@ -5,7 +5,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import qualified VDBMS.VDB.Name as N 
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
-import VDBMS.UseCases.SmartConstructor
+import VDBMS.QueryLang.RelAlg.Variational.SmartConstructor
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Features.Config (Config)
 

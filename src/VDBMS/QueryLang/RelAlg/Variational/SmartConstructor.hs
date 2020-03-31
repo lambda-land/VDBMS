@@ -1,5 +1,5 @@
  -- | Example Queries upon an employee data base
-module VDBMS.UseCases.SmartConstructor where
+module VDBMS.QueryLang.RelAlg.Variational.SmartConstructor where
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
