@@ -210,33 +210,32 @@ condAttsInEnv (RAnd c1 c2)    t = condAttsInEnv c1 t && condAttsInEnv c2 t
 
 -- | projection distributive properties.
 prjRDistr :: RAlgebra -> RSchema -> RAlgebra
-prjRDistr = undefined
--- -- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
--- prjRDistr (RProj as (Rename Nothing (RJoin rq1 rq2 c))) s 
---   = RJoin (Rename Nothing (RProj as1 (renameMap prjDistr' rq1)))
---           (Rename Nothing (RProj as2 (renameMap prjDistr' rq2)))
---           c
---     where
---       t1  = fromJust $ typeOfRQuery (thing rq1) s 
---       pas = partitionAtts as (name rq1) t1
---       as1 = fst pas 
---       as2 = snd pas 
---       prjDistr' = flip prjRDistr s 
--- prjRDistr (RProj as rq)     s 
---   = RProj as (renameMap (flip prjRDistr s) rq)
--- prjRDistr (RSetOp o q1 q2)  s 
---   = RSetOp o (prjRDistr q1 s) (prjRDistr q2 s)
--- prjRDistr (RSel c rq)       s 
---   = RSel c (renameMap (flip prjRDistr s) rq)
--- prjRDistr (RJoin rq1 rq2 c) s 
---   = RJoin (renameMap (flip prjRDistr s) rq1)
---           (renameMap (flip prjRDistr s) rq2)
---           c
--- prjRDistr (RProd rq1 rq2)  s
---   = RProd (renameMap (flip prjRDistr s) rq1)
---           (renameMap (flip prjRDistr s) rq2)
--- prjRDistr (RRenameAlg n q) = undefined
--- prjRDistr q _ = q 
+-- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
+prjRDistr (RProj as (RJoin q1 q2 c)) s = undefined
+  -- = RJoin (RProj as1 (prjDistr' q1))
+  --         (RProj as2 (prjDistr' q2))
+  --         c
+  --   where
+  --     t1  = fromJust $ typeOfRQuery (thing rq1) s 
+  --     pas = partitionAtts as (name rq1) t1
+  --     as1 = fst pas 
+  --     as2 = snd pas 
+  --     prjDistr' = flip prjRDistr s 
+prjRDistr (RProj as q)     s 
+  = RProj as (prjRDistr q s)
+prjRDistr (RSetOp o q1 q2)  s 
+  = RSetOp o (prjRDistr q1 s) (prjRDistr q2 s)
+prjRDistr (RSel c q)       s 
+  = RSel c (prjRDistr q s)
+prjRDistr (RJoin q1 q2 c) s 
+  = RJoin (prjRDistr q1 s)
+          (prjRDistr q2 s)
+          c
+prjRDistr (RProd q1 q2)  s
+  = RProd (prjRDistr q1 s)
+          (prjRDistr q2 s)
+prjRDistr (RRenameAlg n q) s = RRenameAlg n (prjRDistr q s)
+prjRDistr q _ = q 
 -- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
 -- discuss with Eric. don't think we need this since we can regenerate
 -- it with prjDistr and pushOutPrj
