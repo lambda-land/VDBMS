@@ -39,52 +39,40 @@ appFexpOptAtts f = mapFst (F.And f)
 
 -- | Choice distributive laws.
 chcDistr :: Algebra -> Algebra
-chcDistr = undefined
--- -- f<π l₁ q₁, π l₂ q₂> ≡ π (f<l₁, l₂>) f<q₁, q₂>
--- -- f<π l₁ q₁, π l₂ q₂> ≡ π ((l₁ᶠ), (l₂ \^¬f )) f<q₁, q₂>
--- chcDistr (AChc f (Proj l1 (Rename Nothing q1)) (Proj l2 (Rename Nothing q2)))
---   = Proj (appFexpOptAtts f l1 ++ appFexpOptAtts (F.Not f) l2) 
---          (Rename Nothing 
---                 (AChc f (chcDistr q1) 
---                         (chcDistr q2)))
--- -- f<σ c₁ q₁, σ c₂ q₂> ≡ σ f<c₁, c₂> f<q₁, q₂>
--- chcDistr (AChc f (Sel c1 rq1) (Sel c2 rq2))
---   = Sel (VsqlCChc f c1 c2) 
---         (Rename Nothing 
---                (AChc f 
---                     (thing (renameMap chcDistr rq1))
---                     (thing (renameMap chcDistr rq2))))
--- -- f<q₁ × q₂, q₃ × q₄> ≡ f<q₁, q₃> × f<q₂, q₄>
--- chcDistr (AChc f (Prod rq1 rq2) (Prod rq3 rq4)) 
---   = Prod (Rename Nothing 
---                 (AChc f 
---                      (thing (renameMap chcDistr rq1))
---                      (thing (renameMap chcDistr rq3)))) 
---          (Rename Nothing 
---                 (AChc f 
---                       (thing (renameMap chcDistr rq2))
---                       (thing (renameMap chcDistr rq4))))
--- -- f<q₁ ⋈\_c₁ q₂, q₃ ⋈\_c₂ q₄> ≡ f<q₁, q₃> ⋈\_(f<c₁, c₂>) f<q₂, q₄>
--- chcDistr (AChc f (Join rq1 rq2 c1) (Join rq3 rq4 c2))
---   = Join (Rename Nothing 
---                 (AChc f 
---                      (thing (renameMap chcDistr rq1))
---                      (thing (renameMap chcDistr rq3))))
---          (Rename Nothing 
---                 (AChc f 
---                      (thing (renameMap chcDistr rq2))
---                      (thing (renameMap chcDistr rq4))))
---          (CChc f c1 c2)
--- -- f<q₁ ∪ q₂, q₃ ∪ q₄> ≡ f<q₁, q₃> ∪ f<q₂, q₄>
--- chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
---   = SetOp Union (AChc f (chcDistr q1) (chcDistr q3))
---                 (AChc f (chcDistr q2) (chcDistr q4))
--- -- f<q₁ ∩ q₂, q₃ ∩ q₄> ≡ f<q₁, q₃> ∩ f<q₂, q₄>
--- chcDistr (AChc f (SetOp Diff q1 q2) (SetOp Diff q3 q4))
---   = SetOp Diff (AChc f (chcDistr q1) (chcDistr q3))
---                (AChc f (chcDistr q2) (chcDistr q4))
--- chcDistr (RenameAlg n q) = undefined
--- chcDistr q = q
+-- f<π l₁ q₁, π l₂ q₂> ≡ π (f<l₁, l₂>) f<q₁, q₂>
+-- f<π l₁ q₁, π l₂ q₂> ≡ π ((l₁ᶠ), (l₂ \^¬f )) f<q₁, q₂>
+chcDistr (AChc f (Proj l1 q1) (Proj l2 q2))
+  = Proj (appFexpOptAtts f l1 ++ appFexpOptAtts (F.Not f) l2)
+         (AChc f (chcDistr q1) 
+                 (chcDistr q2))
+-- f<σ c₁ q₁, σ c₂ q₂> ≡ σ f<c₁, c₂> f<q₁, q₂>
+chcDistr (AChc f (Sel c1 q1) (Sel c2 q2))
+  = Sel (VsqlCChc f c1 c2) 
+        (AChc f (chcDistr q1)
+                (chcDistr q2))
+-- f<q₁ × q₂, q₃ × q₄> ≡ f<q₁, q₃> × f<q₂, q₄>
+chcDistr (AChc f (Prod q1 q2) (Prod q3 q4)) 
+  = Prod (AChc f (chcDistr q1)
+                 (chcDistr q3))
+         (AChc f (chcDistr q2)
+                 (chcDistr q4))
+-- f<q₁ ⋈\_c₁ q₂, q₃ ⋈\_c₂ q₄> ≡ f<q₁, q₃> ⋈\_(f<c₁, c₂>) f<q₂, q₄>
+chcDistr (AChc f (Join q1 q2 c1) (Join q3 q4 c2))
+  = Join (AChc f (chcDistr q1)
+                 (chcDistr q3))
+         (AChc f (chcDistr q2)
+                 (chcDistr q4))
+         (CChc f c1 c2)
+-- f<q₁ ∪ q₂, q₃ ∪ q₄> ≡ f<q₁, q₃> ∪ f<q₂, q₄>
+chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
+  = SetOp Union (AChc f (chcDistr q1) (chcDistr q3))
+                (AChc f (chcDistr q2) (chcDistr q4))
+-- f<q₁ ∩ q₂, q₃ ∩ q₄> ≡ f<q₁, q₃> ∩ f<q₂, q₄>
+chcDistr (AChc f (SetOp Diff q1 q2) (SetOp Diff q3 q4))
+  = SetOp Diff (AChc f (chcDistr q1) (chcDistr q3))
+               (AChc f (chcDistr q2) (chcDistr q4))
+chcDistr (RenameAlg n q) = RenameAlg n (chcDistr q)
+chcDistr q = q
 
 -- | Pushes out projection as far as possible.
 -- Note that you don't necessarily want to push out all projs.
