@@ -166,60 +166,59 @@ optSel q                = q
 
 -- | selection distributive properties.
 selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
-selDistr = undefined
--- selDistr q@(Sel (VsqlAnd c1 c2) (Rename Nothing (Join rq1 rq2 c))) ctx s 
---   -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
---   | check c1 t1 && check c2 t2 
---     = Join (Rename Nothing (Sel c1 (renameMap selDistr' rq1))) 
---            (Rename Nothing (Sel c2 (renameMap selDistr' rq2)))
---            c
---   -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
---   | check c2 t1 && check c1 t2 
---     = Join (Rename Nothing (Sel c2 (renameMap selDistr' rq1))) 
---            (Rename Nothing (Sel c1 (renameMap selDistr' rq2))) 
---            c
---   | otherwise = q
---     where 
---       selDistr' q' = selDistr q' ctx s 
---       check cond env = (not (notInCond cond) && inAttInEnv cond env)
---                     || (notInCond cond && condAttsInEnv (relCond cond) env)
---       t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
---       t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
--- selDistr q@(Sel c1 (Rename Nothing (Join rq1 rq2 c2))) ctx s
---   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
---   | check c1 t1
---     = Join (Rename Nothing (Sel c1 (renameMap selDistr' rq1))) 
---            (renameMap selDistr' rq2) 
---            c2
---   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_c₂ (σ c₁ q₂)
---   | check c1 t2
---     = Join (renameMap selDistr' rq1) 
---            (Rename Nothing (Sel c1 (renameMap selDistr' rq2))) 
---            c2
---   | otherwise = q 
---     where
---       selDistr' q' = selDistr q' ctx s 
---       check cond env = (not (notInCond cond) && inAttInEnv cond env)
---                     || (notInCond cond && condAttsInEnv (relCond cond) env)
---       t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
---       t2 = fromJust $ typeOfQuery (thing rq2) ctx s 
--- selDistr (Sel c rq)       ctx s 
---   = Sel c (renameMap (flip (flip selDistr ctx) s) rq)
--- selDistr (SetOp o q1 q2)  ctx s 
---   = SetOp o (selDistr q1 ctx s ) (selDistr q2 ctx s)
--- selDistr (Proj as rq)     ctx s 
---   = Proj as (renameMap (flip (flip selDistr ctx) s) rq)
--- selDistr (AChc f q1 q2)   ctx s 
---   = AChc f (selDistr q1 ctx s) (selDistr q2 ctx s)
--- selDistr (Join rq1 rq2 c) ctx s
---   = Join (renameMap (flip (flip selDistr ctx) s) rq1)
---          (renameMap (flip (flip selDistr ctx) s) rq2)
---          c 
--- selDistr (Prod rq1 rq2)   ctx s 
---   = Prod (renameMap (flip (flip selDistr ctx) s) rq1)
---          (renameMap (flip (flip selDistr ctx) s) rq2)
--- selDistr (RenameAlg n q) ctx s = undefined
--- selDistr q _ _ = q 
+selDistr q@(Sel (VsqlAnd c1 c2) (Join q1 q2 c)) ctx s 
+  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
+  | check c1 t1 && check c2 t2 
+    = Join (Sel c1 (selDistr' q1)) 
+           (Sel c2 (selDistr' q2))
+           c
+  -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
+  | check c2 t1 && check c1 t2 
+    = Join (Sel c2 (selDistr' q1)) 
+           (Sel c1 (selDistr' q2)) 
+           c
+  | otherwise = q
+    where 
+      selDistr' q' = selDistr q' ctx s 
+      check cond env = (not (notInCond cond) && inAttInEnv cond env)
+                    || (notInCond cond && condAttsInEnv (relCond cond) env)
+      t1 = fromJust $ typeOfQuery q1 ctx s 
+      t2 = fromJust $ typeOfQuery q2 ctx s 
+selDistr q@(Sel c1 (Join q1 q2 c2)) ctx s
+  -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
+  | check c1 t1
+    = Join (Sel c1 (selDistr' q1))
+           (selDistr' q2) 
+           c2
+  -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_c₂ (σ c₁ q₂)
+  | check c1 t2
+    = Join (selDistr' q1) 
+           (Sel c1 (selDistr' q2))
+           c2
+  | otherwise = q 
+    where
+      selDistr' q' = selDistr q' ctx s 
+      check cond env = (not (notInCond cond) && inAttInEnv cond env)
+                    || (notInCond cond && condAttsInEnv (relCond cond) env)
+      t1 = fromJust $ typeOfQuery q1 ctx s 
+      t2 = fromJust $ typeOfQuery q2 ctx s 
+selDistr (Sel c q)       ctx s 
+  = Sel c (selDistr q ctx s)
+selDistr (SetOp o q1 q2)  ctx s 
+  = SetOp o (selDistr q1 ctx s ) (selDistr q2 ctx s)
+selDistr (Proj as q)     ctx s 
+  = Proj as (selDistr q ctx s)
+selDistr (AChc f q1 q2)   ctx s 
+  = AChc f (selDistr q1 ctx s) (selDistr q2 ctx s)
+selDistr (Join q1 q2 c) ctx s
+  = Join (selDistr q1 ctx s)
+         (selDistr q2 ctx s)
+         c 
+selDistr (Prod q1 q2)   ctx s 
+  = Prod (selDistr q1 ctx s)
+         (selDistr q2 ctx s)
+selDistr (RenameAlg n q) ctx s = RenameAlg n (selDistr q ctx s)
+selDistr q _ _ = q 
 
 -- | gets a condition of the "IN" format and determines if
 --   its attribute exists in a type env.
