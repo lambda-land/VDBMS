@@ -49,17 +49,20 @@ att2attrQualRel a r = Attr a (Just (RelQualifier r))
 select :: VsqlCond -> Algebra -> Algebra
 select c q = Sel c q
 
-eqAttrsCond :: Attr -> Attr -> VsqlCond
-eqAttrsCond a1 a2 = VsqlCond $ C.Comp EQ (C.Att a1) (C.Att a2)
+eqAttrsSqlCond :: Attr -> Attr -> VsqlCond
+eqAttrsSqlCond a1 a2 = VsqlCond $ C.Comp EQ (C.Att a1) (C.Att a2)
 
-eqAttsCond :: Attribute -> Attribute -> VsqlCond
-eqAttsCond a1 a2 = VsqlCond $ C.Comp EQ (C.Att $ att2attr a1) (C.Att $ att2attr a2)
+eqAttrsCond :: Attr -> Attr -> C.Condition
+eqAttrsCond a1 a2 = C.Comp EQ (C.Att a1) (C.Att a2)
 
-eqAttValCond :: Attribute -> SqlValue -> VsqlCond 
-eqAttValCond a v = VsqlCond $ C.Comp EQ (C.Att $ att2attr a) (C.Val v)
+eqAttsSqlCond :: Attribute -> Attribute -> VsqlCond
+eqAttsSqlCond a1 a2 = VsqlCond $ C.Comp EQ (C.Att $ att2attr a1) (C.Att $ att2attr a2)
 
-eqAttrValCond :: Attr -> SqlValue -> VsqlCond 
-eqAttrValCond a v = VsqlCond $ C.Comp EQ (C.Att a) (C.Val v)
+eqAttValSqlCond :: Attribute -> SqlValue -> VsqlCond 
+eqAttValSqlCond a v = VsqlCond $ C.Comp EQ (C.Att $ att2attr a) (C.Val v)
+
+eqAttrValSqlCond :: Attr -> SqlValue -> VsqlCond 
+eqAttrValSqlCond a v = VsqlCond $ C.Comp EQ (C.Att a) (C.Val v)
 
 choice :: F.FeatureExpr -> Algebra -> Algebra -> Algebra
 choice f q1 q2 = AChc f q1 q2
@@ -68,8 +71,13 @@ joinTwoRels :: Relation -> Relation -> Attribute -> Algebra
 joinTwoRels r1 r2 a = Join (tRef r1) (tRef r2) (joinEqCond r1 r2 a)
   where
     joinEqCond :: Relation -> Relation -> Attribute -> Condition
-    joinEqCond r1 r2 a =  C.Comp EQ (C.Att $ att2attrQualRel a r1) 
-                                    (C.Att $ att2attrQualRel a r2)
+    joinEqCond l r at =  C.Comp EQ (C.Att $ att2attrQualRel at l) 
+                                   (C.Att $ att2attrQualRel at r)
+
+-- joinThreeRels :: Relation -> Relation -> Relation -> Attribute -> Algebra
+-- joinThreeRels r1 r2 r3 a = 
+--   Join (renameQ "temp" $ joinTwoRels r1 r2 a) (tRef r3) 
+--     (joinEqCond )
 
 joinTwoRelsRename :: Relation -> Name -> Relation -> Name -> Attribute -> Algebra
 joinTwoRelsRename r1 n1 r2 n2 a = 
@@ -77,6 +85,9 @@ joinTwoRelsRename r1 n1 r2 n2 a =
     where
       joinCond l r at = C.Comp EQ (C.Att $ att2attrQual a l)
                                   (C.Att $ att2attrQual a r)
+
+joinRename :: Algebra -> Name -> Algebra -> Name -> C.Condition -> Algebra
+joinRename q1 n1 q2 n2 c = Join (renameQ n1 q1) (renameQ n2 q2) c
 
 -- | creates join condition from an attribute.
 
@@ -96,18 +107,18 @@ renameQ alias algebra  =  RenameAlg alias algebra
 
 
 -- | join two realtiaon based on their common attribute
-joinTwoRelation :: Relation -> Relation -> N.Name -> Algebra
-joinTwoRelation rel1 rel2 commonAttr = undefined
-	-- Join (genRenameAlgebra (tRef rel1)) (genRenameAlgebra (tRef rel2)) join_cond
+-- joinTwoRelation :: Relation -> Relation -> N.Name -> Algebra
+-- joinTwoRelation rel1 rel2 commonAttr = undefined
+-- Join (genRenameAlgebra (tRef rel1)) (genRenameAlgebra (tRef rel2)) join_cond
  --  where join_cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel2 commonAttr))
 
 -- | generate subquery 
-genRenameAlgebra :: Algebra -> Rename Algebra
-genRenameAlgebra alg = Rename Nothing alg
+-- genRenameAlgebra :: Algebra -> Rename Algebra
+-- genRenameAlgebra alg = Rename Nothing alg
 
 -- | Gaven a attribute name (a) and return a Attr with Qualifier (rel)
-subqueryQualifiedAttr :: N.Name -> N.Name -> N.Attr
-subqueryQualifiedAttr subq a = N.Attr (N.attribute (attr a)) (Just (N.SubqueryQualifier subq))
+-- subqueryQualifiedAttr :: N.Name -> N.Name -> N.Attr
+-- subqueryQualifiedAttr subq a = N.Attr (N.attribute (attr a)) (Just (N.SubqueryQualifier subq))
 
 -- | Join three relation(a,b,c) based on commonAttr. 
 --   (rel1 join(rel1.commonAttr = rel2.commonAttr) rel2) join(rel1.commonAttr = rel3.commonAttr) rel3
