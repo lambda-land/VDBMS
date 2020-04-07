@@ -1,54 +1,54 @@
 -- | vqs for employee database.
 module VDBMS.UseCases.EmployeeUseCase.EmployeeQueries where
 
--- import VDBMS.QueryLang.RelAlg.Variational.Algebra
--- import VDBMS.UseCases.EmployeeUseCase.EmployeeSchema
--- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
--- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
--- import VDBMS.UseCases.SmartConstructor
--- import VDBMS.DBMS.Value.CompOp
--- import Prelude hiding (Ordering(..))
--- import Database.HDBC 
--- import VDBMS.VDB.Name hiding (name)
--- import VDBMS.VDB.GenName
+import VDBMS.QueryLang.RelAlg.Variational.Algebra
+import VDBMS.UseCases.EmployeeUseCase.EmployeeSchema
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
+import VDBMS.QueryLang.RelAlg.Variational.SmartConstructor
+import VDBMS.DBMS.Value.CompOp
+import Prelude hiding (Ordering(..))
+import Database.HDBC 
+import VDBMS.VDB.Name hiding (name)
+import VDBMS.VDB.GenName
 
--- -- import Data.Time.LocalTime
--- import Data.Time.Calendar
+-- import Data.Time.LocalTime
+import Data.Time.Calendar
 
--- -- need to run the following
--- -- numVarintQ empVQ8 empConfs
--- -- numUniqueVariantQ empVQ8
+-- need to run the following
+-- numVarintQ empVQ8 empConfs
+-- numUniqueVariantQ empVQ8
 
--- --
--- -- * Constant values used for employee use cases
--- --
+--
+-- * Constant values used for employee use cases
+--
 
--- -- | the year 1991 condition
--- --   ModifiedJulianDay Int (Count days from 1858-11-17)
--- --   1991-01-01: ModifiedJulianDay 48257
--- --   1992-01-01: ModifiedJulianDay 48622
--- date19910101, date19920101 :: Day
--- date19910101 = ModifiedJulianDay 48257
--- date19920101 = ModifiedJulianDay 48622
+-- | the year 1991 condition
+--   ModifiedJulianDay Int (Count days from 1858-11-17)
+--   1991-01-01: ModifiedJulianDay 48257
+--   1992-01-01: ModifiedJulianDay 48622
+date19910101, date19920101 :: Day
+date19910101 = ModifiedJulianDay 48257
+date19920101 = ModifiedJulianDay 48622
 
--- -- | 1991-01-01 < hiredate < 1992-01-0
--- yearCond :: C.Condition 
--- yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate date19910101) (C.Att  hiredate))
---                  (C.Comp LT (C.Att hiredate) (C.Val $ SqlLocalDate date19920101))
+-- | 1991-01-01 < hiredate < 1992-01-0
+yearCond :: C.Condition 
+yearCond = C.And (C.Comp GT (C.Val $ SqlLocalDate date19910101) (C.Att  hiredate))
+                 (C.Comp LT (C.Att hiredate) (C.Val $ SqlLocalDate date19920101))
 
--- -- |  hiredate > 1991-01-01
--- yearAfterCond :: C.Condition 
--- yearAfterCond = C.Comp GT (C.Att hiredate) (C.Val $ SqlLocalDate date19910101) 
+-- |  hiredate > 1991-01-01
+yearAfterCond :: C.Condition 
+yearAfterCond = C.Comp GT (C.Att hiredate) (C.Val $ SqlLocalDate date19910101) 
 
--- -- | employee id = 10004 condition
--- empCond :: C.Condition
--- empCond = C.Comp EQ (C.Att empno) (C.Val $ SqlInt32 10004)
+-- | employee id = 10004 condition
+empCond :: C.Condition
+empCond = C.Comp EQ (C.Att empno) (C.Val $ SqlInt32 10004)
 
--- empno_value :: SqlValue 
--- empno_value  = SqlInt32 10004
+empno_value :: SqlValue 
+empno_value  = SqlInt32 10004
 
--- departno_value :: SqlValue
--- departno_value = SqlString "d001"
+departno_value :: SqlValue
+departno_value = SqlString "d001"
 
 -- empFromEmpacct :: Rename Algebra
 -- empFromEmpacct = genSubquery "emp" $ Sel (VsqlCond empCond) (renameNothing (tRef empacct))
@@ -56,33 +56,33 @@ module VDBMS.UseCases.EmployeeUseCase.EmployeeQueries where
 -- empFromEmpacctUnnamed :: Rename Algebra
 -- empFromEmpacctUnnamed = genRenameAlgebra $ Sel (VsqlCond empCond) (renameNothing (tRef empacct))
 
--- --
--- -- * Queries based on Prima paper
--- -- Intents are taken from the prima paper, adjusted to the employee database. 
--- -- 1. We have year 1991, instead of year 2003. 
--- -- 2. We use features to identify the variants, instead of timestamps.
+--
+-- * Queries based on Prima paper
+-- Intents are taken from the prima paper, adjusted to the employee database. 
+-- 1. We have year 1991, instead of year 2003. 
+-- 2. We use features to identify the variants, instead of timestamps.
 
--- -- 1(Q1A). intent: Return the salary value of the employee whose employee number (empno) is 10004
--- --         for VDB variant V3.
--- -- 
--- -- note:
--- -- the year 1991 is included in variants v3, v4, and v5. we only
--- -- write the query for these variants for a fair comparison against
--- -- prima.
--- -- 
--- -- #variants = 1
--- -- #unique_variants = 1
--- -- 
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \pQ =&  \pi_{\salary} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\titleatt = \job.\titleatt} \job)) \\ 
--- -- \vQ =&  \chc[\vThree]{\pQ, \empRel}
--- -- \end{align*} 
--- --
--- -- V-Query: 
--- -- * v-query considering 5 versions
--- --   v3 <empQ1, empty>
--- -- 
+-- 1(Q1A). intent: Return the salary value of the employee whose employee number (empno) is 10004
+--         for VDB variant V3.
+-- 
+-- note:
+-- the year 1991 is included in variants v3, v4, and v5. we only
+-- write the query for these variants for a fair comparison against
+-- prima.
+-- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
+-- Queries in LaTex: 
+-- \begin{align*} 
+-- \pQ =&  \pi_{\salary} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\titleatt = \job.\titleatt} \job)) \\ 
+-- \vQ =&  \chc[\vThree]{\pQ, \empRel}
+-- \end{align*} 
+--
+-- V-Query: 
+-- * v-query considering 5 versions
+--   v3 <empQ1, empty>
+-- 
 -- empVQ1_old, empVQ1_eff :: Algebra
 -- empVQ1_old = AChc empv3 empQ1 Empty
 -- empVQ1_eff = AChc empv3 empQ1_eff Empty

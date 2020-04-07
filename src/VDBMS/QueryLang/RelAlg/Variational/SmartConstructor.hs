@@ -14,35 +14,86 @@ import qualified VDBMS.VDB.Name as N
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Schema.Relational.Types
 
-newtype QueryT = QueryT String
-  deriving (Show, Eq)
+-- newtype QueryT = QueryT String
+--   deriving (Show, Eq)
 
 -- 
 -- * Smart Constructors for Query
 --
 
--- | attaches the feature expression true to an attribute. 
-trueAttr :: Attr -> OptAttribute
-trueAttr a = undefined
-	-- (F.Lit True, genRenameAttr a)
+project :: OptAttributes -> Algebra -> Algebra
+project as q = Proj as q
 
-genRenameRelation :: Relation -> Rename Relation
-genRenameRelation rel = Rename Nothing rel
+att2optatt :: Attribute -> F.FeatureExpr -> OptAttribute
+att2optatt a f = mkOpt f (att2attr a)
+
+-- | attaches the feature expression true to an attribute. 
+trueAttr :: Attribute  -> OptAttribute
+trueAttr a = att2optatt a (F.Lit True) 
+
+att2optattQual :: Attribute -> Name -> F.FeatureExpr -> OptAttribute
+att2optattQual a n f = mkOpt f (att2attrQual a n)
+
+att2optattQualRel :: Attribute -> Relation -> F.FeatureExpr -> OptAttribute
+att2optattQualRel a r f = mkOpt f (att2attrQualRel a r)
+
+att2attr :: Attribute -> Attr 
+att2attr a = Attr a Nothing
+
+att2attrQual :: Attribute -> Name -> Attr
+att2attrQual a n = Attr a (Just (SubqueryQualifier n))
+
+att2attrQualRel :: Attribute -> Relation -> Attr
+att2attrQualRel a r = Attr a (Just (RelQualifier r))
+
+select :: VsqlCond -> Algebra -> Algebra
+select c q = Sel c q
+
+eqAttrsCond :: Attr -> Attr -> VsqlCond
+eqAttrsCond a1 a2 = VsqlCond $ C.Comp EQ (C.Att a1) (C.Att a2)
+
+eqAttsCond :: Attribute -> Attribute -> VsqlCond
+eqAttsCond a1 a2 = VsqlCond $ C.Comp EQ (C.Att $ att2attr a1) (C.Att $ att2attr a2)
+
+eqAttValCond :: Attribute -> SqlValue -> VsqlCond 
+eqAttValCond a v = VsqlCond $ C.Comp EQ (C.Att $ att2attr a) (C.Val v)
+
+eqAttrValCond :: Attr -> SqlValue -> VsqlCond 
+eqAttrValCond a v = VsqlCond $ C.Comp EQ (C.Att a) (C.Val v)
+
+choice :: F.FeatureExpr -> Algebra -> Algebra -> Algebra
+choice f q1 q2 = AChc f q1 q2
+
+joinTwoRels :: Relation -> Relation -> Attribute -> Algebra
+joinTwoRels r1 r2 a = Join (tRef r1) (tRef r2) (joinEqCond r1 r2 a)
+  where
+    joinEqCond :: Relation -> Relation -> Attribute -> Condition
+    joinEqCond r1 r2 a =  C.Comp EQ (C.Att $ att2attrQualRel a r1) 
+                                    (C.Att $ att2attrQualRel a r2)
+
+joinTwoRelsRename :: Relation -> Name -> Relation -> Name -> Attribute -> Algebra
+joinTwoRelsRename r1 n1 r2 n2 a = 
+  Join (renameQ n1 $ tRef r1) (renameQ n2 $ tRef r2) (joinCond n1 n2 a)
+    where
+      joinCond l r at = C.Comp EQ (C.Att $ att2attrQual a l)
+                                  (C.Att $ att2attrQual a r)
+
+-- | creates join condition from an attribute.
+
+
+-- genRenameRelation :: Relation -> Rename Relation
+-- genRenameRelation rel = Rename Nothing rel
 
 tRef :: Relation -> Algebra 
-tRef rel = undefined
-	-- TRef $ Rename Nothing rel 
+tRef rel = TRef rel 
 
 -- tRefNoRename :: Relation -> Rename Algebra
 -- tRefNoRename rel = Rename Nothing (TRef rel)
 
 -- | Gaven a alias and algebra and generate a algebra with alias 
-genSubquery :: N.Name -> Algebra ->  N.Rename Algebra
-genSubquery alias algebra  =  N.Rename (Just alias) algebra
+renameQ :: N.Name -> Algebra -> Algebra
+renameQ alias algebra  =  RenameAlg alias algebra
 
--- | creates join condition from an attribute.
-joinCondition :: Attr -> Condition
-joinCondition a =  C.Comp EQ (C.Att a) (C.Att a)
 
 -- | join two realtiaon based on their common attribute
 joinTwoRelation :: Relation -> Relation -> N.Name -> Algebra
