@@ -81,43 +81,103 @@ temp = "temp"
 -- 
 -- π (salary^\{v_3}) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job)
 -- 
-empVQ1 :: Algebra
+empVQ1, empVQ1_alt1, empVQ1_alt2 :: Algebra
 empVQ1 = 
   project (pure $ att2optatt salary_ empv3)  
           (join (renameQ temp (select empSqlCond $ tRef empacct))
                 (tRef job)
                 (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job)))
 
--- 
 -- π (salary^\{v_3}) (σ (empno=1004) (empacct ⋈_{empacct.title=job.title} job))
 -- 
+empVQ1_alt1 = 
+  project (pure $ att2optatt salary_ empv3)  
+          (select empSqlCond 
+                 (join (tRef empacct)
+                       (tRef job)
+                       (joinEqCond (att2attrQualRel title_ empacct) (att2attrQualRel title_ job))))
+
+-- v_3 ⟨π (salary) (σ (empno=1004) (empacct ⋈_{empacct.title=job.title} job)), ε ⟩
 -- 
--- v_3 <π (salary^\{v_3}) (σ (empno=1004) (empacct ⋈_{empacct.title=job.title} job)), ε >
+empVQ1_alt2 = 
+  choice empv3 
+         (project (pure $ trueAttr salary_)
+                  (select empSqlCond
+                          (join (tRef empacct)
+                                (tRef job)
+                                (joinEqCond (att2attrQualRel title_ empacct) (att2attrQualRel title_ job)))))
+         Empty
 -- 
 -- note: to ensure that naming is correct remove temp from the first, and have an incorrect query to check the system.
 -- π (salary^\{v_3}) ((σ (empno=1004) empacct) ⋈_{empacct.title=job.title} job)
+empVQ1_alt_typeErr = 
+  project (pure $ att2optatt salary_ empv3)  
+          (join (select empSqlCond (tRef empacct))
+                (tRef job)
+                (joinEqCond (att2attrQualRel title_ empacct) (att2attrQualRel title_ job)))
 
--- -- 2. intent: Return the salary values of the employee whose employee number (\empno) is 10004, 
--- --         for VDB variants \vThree\ to \vFive. 
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \pQ =  & \pi_{\salary} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\titleatt = \job.\titleatt} \job)) \\
--- -- % v5
--- -- \pQ{'} = &  \pi_{\salary}(\sigma_{\empno=10004} \empacct)\\
--- -- \vQ =  & \chc[(\vThree \vee \vFour)]{\pQ, \chc[\vFive] {\pQ{'}, \empRel}}
--- -- \end{align*}
--- -- 
--- -- Note:
--- -- 1. Attribute deptno only exist in v3,v4,v5.
--- empVQ2 :: Algebra
--- empVQ2 = AChc (F.Or empv3 empv4) empQ2_v3v4 $ AChc empv5 empQ2_v5 Empty
---             where empQ2_v3v4 = Proj [trueAttr salary] $ genRenameAlgebra $
---                                   Sel (VsqlCond empCond) $ 
---                                    genRenameAlgebra $ joinTwoRelation empacct job "title"
---                   empQ2_v5 = Proj [trueAttr salary] $ genRenameAlgebra $ 
---                               Sel (VsqlCond empCond ) $ genRenameAlgebra $ 
---                                 tRef empacct 
+-- 2. intent: Return the salary values of the employee whose employee number (\empno) is 10004, 
+--         for VDB variants \vThree\ to \vFive. 
+--
+-- Note: --> not sure why we need this note!
+-- 1. Attribute deptno only exist in v3,v4,v5.
+-- 
+-- #variants = 3?
+-- #unique_variants = 2?
+-- 
+-- π (salary) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
+--                        v_5 ⟨σ (empno=10004) empactt, ε ⟩⟩)
+-- 
+empVQ2, empVQ2_alt1, empVQ2_alt2, empVQ2_alt3 :: Algebra
+empVQ2 = 
+  project (pure $ trueAttr salary_)
+          (choice (F.Or empv3 empv4)
+                  q1
+                  (choice empv5 q2 Empty))
+    where
+      q1 = join (renameQ temp q2)
+                (tRef job)
+                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))
+      q2 = (select empSqlCond $ tRef empacct)
+
+-- π (salary^{v_3 ∨ v_4 ∨ v_5}) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
+--                                          σ (empno=10004) empactt⟩)
+-- 
+empVQ2_alt1 = 
+  project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
+          (choice (F.Or empv3 empv4)
+                  q1
+                  q2)
+    where
+      q1 = join (renameQ temp q2)
+                (tRef job)
+                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))
+      q2 = (select empSqlCond $ tRef empacct)
+
+-- π (salary^{v_3 ∨ v_4 ∨ v_5}) 
+--   (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} 
+--    v_3 ∨ v_4 ⟨job, ε⟩)
+-- 
+empVQ2_alt2 = 
+  project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
+          (join q1
+                (choice (F.Or empv3 empv4) (tRef job) Empty)
+                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job)))
+    where
+      q1 = renameQ temp (select empSqlCond $ tRef empacct)
+
+-- π (salary) 
+--   (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} 
+--    v_3 ∨ v_4 ⟨job, ε⟩)
+-- 
+empVQ2_alt3 = 
+  project (pure $ trueAttr salary_)
+          (join q1 
+                (choice (F.Or empv3 empv4) (tRef job) Empty)
+                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job)))
+    where
+      q1 = renameQ temp (select empSqlCond $ tRef empacct)
+
 
 -- -- 3.intent: Return the manager's name (of department d001) for VDB variant V3. 
 -- -- 
