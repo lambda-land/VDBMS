@@ -79,10 +79,25 @@ temp = "temp"
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- v_3 ⟨π (salary) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job), ε⟩
+-- 
+empVQ1, empVQ1_alt0, empVQ1_alt1, empVQ1_alt2 :: Algebra
+empVQ1 = 
+  choice empv3 
+         (project (pure $ trueAttr salary_)  
+          (join (renameQ temp (select empSqlCond $ tRef empacct))
+                (tRef job)
+                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))))
+         Empty
+
+-- Note that there's a slight difference between empVQ1 and empVQ1_alt0:
+-- the former returns a table that has pres cond of v_3 while the latter
+-- returns a table that has a pres cond equal to FM and its only attribute
+-- has pres cond of v_3.
+-- 
 -- π (salary^\{v_3}) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job)
 -- 
-empVQ1, empVQ1_alt1, empVQ1_alt2 :: Algebra
-empVQ1 = 
+empVQ1_alt0 = 
   project (pure $ att2optatt salary_ empv3)  
           (join (renameQ temp (select empSqlCond $ tRef empacct))
                 (tRef job)
@@ -179,21 +194,23 @@ empVQ2_alt3 =
       q1 = renameQ temp (select empSqlCond $ tRef empacct)
 
 
--- -- 3.intent: Return the manager's name (of department d001) for VDB variant V3. 
--- -- 
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \pQ =& \pi_{\name} (\sigma_{\deptno=d001} (\empacct \bowtie_{\empacct.\empno = \dept.\managerno} \dept)) \\
--- -- \vQ = &\chc[\vThree]{\pQ, \empRel}
--- -- \end{align*} 
--- empQ3 :: Algebra
--- empQ3 = Proj [trueAttr name] $ genRenameAlgebra $ 
---                   Sel (VsqlCond cond) $ genRenameAlgebra $ 
---                     Join (genRenameAlgebra (tRef empacct)) (genRenameAlgebra (tRef dept)) cond 
---           where cond = C.Comp EQ (C.Att empno) (C.Att managerno)
-
--- empVQ3 :: Algebra
--- empVQ3 = AChc empv3 empQ3 Empty
+-- 3.intent: Return the manager's name (of department d001) for VDB variant V3. 
+-- 
+-- #variants = 1?
+-- #unique_variants = 1?
+-- 
+-- v_3 ⟨π (name) ((ρ (temp) (σ (deptno=d001) empacct)) ⋈_{temp.empno=dept.managerno} dept), ε⟩ 
+-- 
+empQ3 :: Algebra
+empQ3 = 
+  choice empv3 
+         (project (pure $ trueAttr name_)
+                  (join (renameQ temp 
+                                 (select (eqAttValSqlCond deptno_ departno_value)
+                                         (tRef empacct)))
+                        (tRef dept)
+                        (joinEqCond (att2attrQual empno_ temp) (att2attrQualRel managerno_ dept) )))
+         Empty
 
 
 -- -- 4.intent: Return the manager's name (of department d001), for VDB variants \vThree\ to \vFive.
