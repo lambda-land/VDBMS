@@ -42,13 +42,19 @@ yearAfterCond = C.Comp GT (C.Att hiredate) (C.Val $ SqlLocalDate date19910101)
 
 -- | employee id = 10004 condition
 empCond :: C.Condition
-empCond = C.Comp EQ (C.Att empno) (C.Val $ SqlInt32 10004)
+empCond = C.Comp EQ (C.Att empno) (C.Val empno_value)
+
+empSqlCond :: VsqlCond
+empSqlCond = VsqlCond empCond
 
 empno_value :: SqlValue 
 empno_value  = SqlInt32 10004
 
 departno_value :: SqlValue
 departno_value = SqlString "d001"
+
+temp :: Name
+temp = "temp"
 
 -- empFromEmpacct :: Rename Algebra
 -- empFromEmpacct = genSubquery "emp" $ Sel (VsqlCond empCond) (renameNothing (tRef empacct))
@@ -73,42 +79,23 @@ departno_value = SqlString "d001"
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- Queries in LaTex: 
--- \begin{align*} 
--- \pQ =&  \pi_{\salary} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\titleatt = \job.\titleatt} \job)) \\ 
--- \vQ =&  \chc[\vThree]{\pQ, \empRel}
--- \end{align*} 
---
--- V-Query: 
--- * v-query considering 5 versions
---   v3 <empQ1, empty>
+-- π (salary^\{v_3}) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job)
 -- 
--- empVQ1_old, empVQ1_eff :: Algebra
--- empVQ1_old = AChc empv3 empQ1 Empty
--- empVQ1_eff = AChc empv3 empQ1_eff Empty
+empVQ1 :: Algebra
+empVQ1 = 
+  project (pure $ att2optatt salary_ empv3)  
+          (join (renameQ temp (select empSqlCond $ tRef empacct))
+                (tRef job)
+                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job)))
 
--- empQ1, empQ1_eff, empQ1_eff_named :: Algebra
--- -- π_\salary (σ_(empno=1004) (empacct ⋈_(empacct.title = job.title) job))
--- empQ1 = Proj [trueAttr salary] $ genRenameAlgebra $
---           Sel (VsqlCond empCond) $ genRenameAlgebra $
---             joinTwoRelation empacct job "title"
-
--- -- π_salary ((σ\_(empno = 1004) empacct) ⋈_\(title = title) job)
--- empQ1_eff = Proj [trueAttr salary] $ genRenameAlgebra $
---              Join empFromEmpacctUnnamed (renameNothing (tRef job)) (joinCondition title)
-
--- -- π_salary ((ρ emp (σ\_(empno = 1004) empacct)) ⋈_\(emp.title = job.title) job)
--- empQ1_eff_named = undefined
-
--- empVQ1, empVQ1_named :: Algebra
-
-
--- -- π_{salary^v₃} ((σ\_(empno = 1004) empacct) ⋈_\(title = title) job)
--- empVQ1 = Proj [(empv3, genRenameAttr salary)] $ genRenameAlgebra $
---              Join empFromEmpacctUnnamed (renameNothing (tRef job)) (joinCondition title)
-
--- -- π {salary^v₃} ((ρ emp (σ\_(empno = 1004) empacct)) ⋈_\(emp.title = emp.title) job
--- empVQ1_named = undefined
+-- 
+-- π (salary^\{v_3}) (σ (empno=1004) (empacct ⋈_{empacct.title=job.title} job))
+-- 
+-- 
+-- v_3 <π (salary^\{v_3}) (σ (empno=1004) (empacct ⋈_{empacct.title=job.title} job)), ε >
+-- 
+-- note: to ensure that naming is correct remove temp from the first, and have an incorrect query to check the system.
+-- π (salary^\{v_3}) ((σ (empno=1004) empacct) ⋈_{empacct.title=job.title} job)
 
 -- -- 2. intent: Return the salary values of the employee whose employee number (\empno) is 10004, 
 -- --         for VDB variants \vThree\ to \vFive. 

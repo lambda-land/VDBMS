@@ -68,11 +68,15 @@ choice :: F.FeatureExpr -> Algebra -> Algebra -> Algebra
 choice f q1 q2 = AChc f q1 q2
 
 joinTwoRels :: Relation -> Relation -> Attribute -> Algebra
-joinTwoRels r1 r2 a = Join (tRef r1) (tRef r2) (joinEqCond r1 r2 a)
-  where
-    joinEqCond :: Relation -> Relation -> Attribute -> Condition
-    joinEqCond l r at =  C.Comp EQ (C.Att $ att2attrQualRel at l) 
-                                   (C.Att $ att2attrQualRel at r)
+joinTwoRels r1 r2 a = Join (tRef r1) (tRef r2) 
+  (joinEqCond (att2attrQualRel a r1) (att2attrQualRel a r2))
+  -- where
+  --   joinEqCond :: Relation -> Relation -> Attribute -> Condition
+  --   joinEqCond l r at =  C.Comp EQ (C.Att $ att2attrQualRel at l) 
+  --                                  (C.Att $ att2attrQualRel at r)
+
+joinEqCond :: Attr -> Attr -> Condition
+joinEqCond a1 a2 = C.Comp EQ (C.Att a1) (C.Att a2)
 
 -- joinThreeRels :: Relation -> Relation -> Relation -> Attribute -> Algebra
 -- joinThreeRels r1 r2 r3 a = 
@@ -88,6 +92,9 @@ joinTwoRelsRename r1 n1 r2 n2 a =
 
 joinRename :: Algebra -> Name -> Algebra -> Name -> C.Condition -> Algebra
 joinRename q1 n1 q2 n2 c = Join (renameQ n1 q1) (renameQ n2 q2) c
+
+join :: Algebra -> Algebra -> Condition -> Algebra
+join = Join
 
 -- | creates join condition from an attribute.
 
@@ -124,7 +131,7 @@ renameQ alias algebra  =  RenameAlg alias algebra
 --   (rel1 join(rel1.commonAttr = rel2.commonAttr) rel2) join(rel1.commonAttr = rel3.commonAttr) rel3
 joinThreeRelation :: Relation -> Relation -> Relation -> N.Name -> Algebra
 joinThreeRelation rel1 rel2 rel3 commonAttr = undefined
-	-- Join (genRenameAlgebra (joinTwoRelation rel1 rel2 commonAttr)) (genRenameAlgebra (tRef rel3)) cond 
+-- Join (genRenameAlgebra (joinTwoRelation rel1 rel2 commonAttr)) (genRenameAlgebra (tRef rel3)) cond 
  --  where cond = C.Comp EQ (C.Att (qualifiedAttr rel1 commonAttr)) (C.Att (qualifiedAttr rel3 commonAttr))
 
 --
