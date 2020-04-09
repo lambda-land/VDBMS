@@ -262,20 +262,21 @@ empVQ4_alt1 =
                         (joinEqCond (att2attr empno_) (att2attr managerno_))))
          Empty
 
--- -- 5.intent: Find all managers that the employee 10004 worked with, for VDB variant \vThree. 
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \pQ = &  \pi_{\managerno} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\deptno = \dept.\deptno} \dept)) \\
--- -- \vQ = &  \chc[\vThree]{\pQ, \empRel}
--- -- \end{align*} 
--- empQ5 :: Algebra
--- empQ5 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
---   Sel (VsqlCond (C.Comp EQ (C.Att empno) (C.Val empno_value))) $ genRenameAlgebra $ 
---     joinTwoRelation empacct dept "deptno" 
-
--- empVQ5 :: Algebra
--- empVQ5 = AChc empv5 empQ5 Empty
+-- 5.intent: Find all managers that the employee 10004 worked with, for VDB variant \vThree. 
+--
+-- #variants = 1?
+-- #unique_variants = 1?
+-- 
+-- v_3⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept), ε⟩
+-- 
+empVQ5 :: Algebra
+empVQ5 = 
+  choice empv3 
+         (project (pure $ trueAttr managerno_)
+                  (join (renameQ temp (select empSqlCond (tRef empacct)))
+                        (tRef dept)
+                        (joinEqCond (att2attrQual deptno_ temp) (att2attrQualRel deptno_ dept))))
+         Empty
 
 -- -- 6.intent: Find all managers that employee 10004 worked with, for VDB variants \vThree\ to \vFive.
 -- --
