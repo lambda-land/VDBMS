@@ -296,27 +296,24 @@ empVQ6 =
                         (joinEqCond (att2attrQual deptno_ temp) (att2attrQualRel deptno_ dept))))
          Empty
 
-	-- Proj [trueAttr managerno] $ genRenameAlgebra $ 
- --         Sel (VsqlCond empCond) $ genRenameAlgebra $ 
- --    joinTwoRelation empacct dept "deptno" 
-
--- -- 7.intent: Find all salary values of managers, during the period of manager appointment, for VDB variant \vThree. 
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \pQ  =  & \pi_{(\managerno, \salary)}((\dept \\
--- -- & \bowtie_{\managerno = \empno} \empacct) \\
--- -- & \bowtie_{\empacct.\titleatt = \job.\titleatt} \job) \\
--- -- \vQ =  &\chc[\vThree]{\pQ, \empRel}
--- -- \end{align*} 
--- empQ7 :: Algebra
--- empQ7 = Proj [trueAttr managerno, trueAttr salary] $ genRenameAlgebra $ 
---           Join (genRenameAlgebra join_empacct_job) (genRenameAlgebra (tRef dept)) cond 
---     where join_empacct_job = joinTwoRelation empacct job "title" 
---           cond = C.Comp EQ (C.Att empno) (C.Att managerno)
-
+-- 7.intent: Find all salary values of managers, during the period of manager appointment, for VDB variant \vThree. 
+--
+-- Queries in LaTex: 
+-- \begin{align*} 
+-- \pQ  =  & \pi_{(\managerno, \salary)}((\dept \\
+-- & \bowtie_{\managerno = \empno} \empacct) \\
+-- & \bowtie_{\empacct.\titleatt = \job.\titleatt} \job) \\
+-- \vQ =  &\chc[\vThree]{\pQ, \empRel}
+-- \end{align*} 
 -- empVQ7 :: Algebra
--- empVQ7 = AChc empv4 empQ7 Empty
+-- empVQ7 = 
+--   choice empv3
+--          ()
+--          Empty
+	-- Proj [trueAttr managerno, trueAttr salary] $ genRenameAlgebra $ 
+ --          Join (genRenameAlgebra join_empacct_job) (genRenameAlgebra (tRef dept)) cond 
+ --    where join_empacct_job = joinTwoRelation empacct job "title" 
+ --          cond = C.Comp EQ (C.Att empno) (C.Att managerno)
 
 -- -- 8.intent: Find all salary values of managers, during the period of manager appointment, for VDB variants \vThree\ to \vFive.
 -- --
