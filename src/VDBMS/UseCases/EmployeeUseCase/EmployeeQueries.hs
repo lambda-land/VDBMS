@@ -91,7 +91,7 @@ v45 = F.Or empv4 empv5
 -- v_3 ⟨π (salary) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job), ε⟩
 -- 
 empVQ1, empVQ1_alt0, empVQ1_alt1, empVQ1_alt2 :: Algebra
-empVQ1 = 
+empVQ1_alt0 = 
   choice empv3 
          (project (pure $ trueAttr salary_)  
           (join (renameQ temp (select empSqlCond $ tRef empacct))
@@ -106,7 +106,7 @@ empVQ1 =
 -- 
 -- π (salary^\{v_3}) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job)
 -- 
-empVQ1_alt0 = 
+empVQ1 = 
   project (pure $ att2optatt salary_ empv3)  
           (join (renameQ temp (select empSqlCond $ tRef empacct))
                 (tRef job)
@@ -212,14 +212,14 @@ empVQ2_alt3 =
 -- 
 empVQ3 :: Algebra
 empVQ3 = 
-  choice empv3 
-         (project (pure $ trueAttr name_)
+  -- choice empv3 
+         (project (pure $ att2optatt name_ empv3)
                   (join (renameQ temp 
                                  (select (eqAttValSqlCond deptno_ departno_value)
                                          (tRef empacct)))
                         (tRef dept)
                         (joinEqCond (att2attrQual empno_ temp) (att2attrQualRel managerno_ dept) )))
-         Empty
+         -- Empty
 
 
 -- 4.intent: Return the manager's name (of department d001), for VDB variants \vThree\ to \vFive.
@@ -272,12 +272,12 @@ empVQ4_alt1 =
 -- 
 empVQ5 :: Algebra
 empVQ5 = 
-  choice empv3 
-         (project (pure $ trueAttr managerno_)
+  -- choice empv3 
+         (project (pure $ att2optatt managerno_ empv3)
                   (join (renameQ temp (select empSqlCond (tRef empacct)))
                         (tRef dept)
                         (joinEqCond (att2attrQual deptno_ temp) (att2attrQualRel deptno_ dept))))
-         Empty
+         -- Empty
 
 -- 6.intent: Find all managers that employee 10004 worked with, for VDB variants \vThree\ to \vFive.
 --
@@ -289,12 +289,12 @@ empVQ5 =
 -- 
 empVQ6 :: Algebra
 empVQ6 = 
-  choice v345
-         (project (pure $ trueAttr managerno_)
+  -- choice v345
+         (project (pure $ att2optatt managerno_ v345)
                   (join (renameQ temp (select empSqlCond (tRef empacct)))
                         (tRef dept)
                         (joinEqCond (att2attrQual deptno_ temp) (att2attrQualRel deptno_ dept))))
-         Empty
+         -- Empty
 
 -- 7.intent: Find all salary values of managers, during the period of manager appointment, for VDB variant \vThree. 
 --
