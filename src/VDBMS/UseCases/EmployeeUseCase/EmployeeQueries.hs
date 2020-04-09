@@ -342,11 +342,12 @@ empVQ8 =
 -- 11.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
 --            find all the departments that the manager managed, for VDB variant \vThree. 
 --
--- #variants = 3?
--- #unique_variants = 2?
+-- #variants = 1?
+-- #unique_variants = 1?
 -- 
--- temp0 = π (managerno, deptno)
---           (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept)
+-- temp0 = ρ (temp0) 
+--           (π (managerno, deptno)
+--              (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept))
 -- π (managerno^{v_3}, deptno^{v_3})
 --   (temp0 ⋈_{temp0.managerno=dept.mangerno} dept)
 -- 
@@ -360,12 +361,13 @@ empVQ11 =
                             (att2attrQualRel managerno_ dept)))
     where
       temp0 =
-        project ([trueAttr managerno_
-                , trueAttr deptno_])
-                (join (renameQ temp (select empSqlCond (tRef empacct)))
-                      (tRef dept)
-                      (joinEqCond (att2attrQual deptno_ temp) 
-                                  (att2attrQualRel deptno_ dept)))
+        renameQ "temp0" 
+                (project ([trueAttr managerno_
+                         , trueAttr deptno_])
+                        (join (renameQ temp (select empSqlCond (tRef empacct)))
+                              (tRef dept)
+                              (joinEqCond (att2attrQual deptno_ temp) 
+                                          (att2attrQualRel deptno_ dept))))
 
 -- -- 12.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
 -- --            find all the departments that the manager managed, for VDB variants \vThree\ to \vFive.
