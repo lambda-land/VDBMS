@@ -267,7 +267,8 @@ empVQ4_alt1 =
 -- #variants = 1?
 -- #unique_variants = 1?
 -- 
--- v_3⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept), ε⟩
+-- v_3⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) 
+--                       ⋈_{temp.deptno=dept.deptno} dept), ε⟩
 -- 
 empVQ5 :: Algebra
 empVQ5 = 
@@ -278,20 +279,26 @@ empVQ5 =
                         (joinEqCond (att2attrQual deptno_ temp) (att2attrQualRel deptno_ dept))))
          Empty
 
--- -- 6.intent: Find all managers that employee 10004 worked with, for VDB variants \vThree\ to \vFive.
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \pQ = &  \pi_{\managerno} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\deptno = \dept.\deptno} \dept)) \\
--- -- \vQ = & \chc[(\vThree \vee \vFour \vee \vFive)]{\pQ, \empRel}
--- -- \end{align*} 
--- empQ6 :: Algebra
--- empQ6 = Proj [trueAttr managerno] $ genRenameAlgebra $ 
---          Sel (VsqlCond empCond) $ genRenameAlgebra $ 
---     joinTwoRelation empacct dept "deptno" 
+-- 6.intent: Find all managers that employee 10004 worked with, for VDB variants \vThree\ to \vFive.
+--
+-- #variants = 1?
+-- #unique_variants = 1?
+-- 
+-- v_3 ∨ v_4 ∨ v_5 ⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) 
+--                    ⋈_{temp.deptno=dept.deptno} dept), ε⟩
+-- 
+empVQ6 :: Algebra
+empVQ6 = 
+  choice v345
+         (project (pure $ trueAttr managerno_)
+                  (join (renameQ temp (select empSqlCond (tRef empacct)))
+                        (tRef dept)
+                        (joinEqCond (att2attrQual deptno_ temp) (att2attrQualRel deptno_ dept))))
+         Empty
 
--- empVQ6 :: Algebra
--- empVQ6 =AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ6 Empty
+	-- Proj [trueAttr managerno] $ genRenameAlgebra $ 
+ --         Sel (VsqlCond empCond) $ genRenameAlgebra $ 
+ --    joinTwoRelation empacct dept "deptno" 
 
 -- -- 7.intent: Find all salary values of managers, during the period of manager appointment, for VDB variant \vThree. 
 -- --
