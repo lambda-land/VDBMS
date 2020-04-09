@@ -363,7 +363,7 @@ empVQ11 =
       temp0 =
         renameQ "temp0" 
                 (project ([trueAttr managerno_
-                         , trueAttr deptno_])
+                         , trueAttrQualRel deptno_ dept])
                         (join (renameQ temp (select empSqlCond (tRef empacct)))
                               (tRef dept)
                               (joinEqCond (att2attrQual deptno_ temp) 
@@ -372,7 +372,7 @@ empVQ11 =
 -- 12.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
 --            find all the departments that the manager managed, for VDB variants \vThree\ to \vFive.
 --
--- #variants = 1?
+-- #variants = 3?
 -- #unique_variants = 1?
 -- 
 -- temp0 = ρ (temp0) 
@@ -393,29 +393,28 @@ empVQ12 =
       temp0 =
         renameQ "temp0" 
                 (project ([trueAttr managerno_
-                         , trueAttr deptno_])
+                         , trueAttrQualRel deptno_ dept])
                         (join (renameQ temp (select empSqlCond (tRef empacct)))
                               (tRef dept)
                               (joinEqCond (att2attrQual deptno_ temp) 
                                           (att2attrQualRel deptno_ dept))))
 
--- -- 13.intent: For all managers, find all managers in the department that he/she worked in, 
--- --            for VDB variant \vThree. 
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \temp{} = & \pi_{(\managerno, \deptno)} \dept \\
--- -- \pQ = & \pi_{(\dept\managerno, \deptname, \dept.\managerno)}(\temp{} \bowtie_{\temp.\deptno = \dept.\deptno} \dept)\\
--- -- \vQ = & \chc[\vThree]{\pQ, \empRel}
--- -- \end{align*} 
--- empQ13 :: Algebra
--- empQ13 = Proj (map trueAttr [qualifiedAttr dept "managerno", deptname]) $ genRenameAlgebra $ 
---           Join temp (genRenameAlgebra (tRef dept)) join_cond 
---           where temp = genSubquery "temp" $ Proj [trueAttr managerno, trueAttr deptno] $ genRenameAlgebra $ tRef dept 
---                 join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "temp" "deptno")) (C.Att (qualifiedAttr dept "deptno"))
-
--- empVQ13 :: Algebra
--- empVQ13 = AChc empv3 empQ13 Empty
+-- 13.intent: For all managers, find all managers in the department that he/she worked in, 
+--            for VDB variant \vThree. 
+--
+-- #variants = 1?
+-- #unique_variants = 1?
+-- 
+-- 
+-- 
+empVQ13 :: Algebra
+empVQ13 = undefined
+  -- project ([])
+  --         ()
+	-- Proj (map trueAttr [qualifiedAttr dept "managerno", deptname]) $ genRenameAlgebra $ 
+ --          Join temp (genRenameAlgebra (tRef dept)) join_cond 
+ --          where temp = genSubquery "temp" $ Proj [trueAttr managerno, trueAttr deptno] $ genRenameAlgebra $ tRef dept 
+ --                join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "temp" "deptno")) (C.Att (qualifiedAttr dept "deptno"))
 
 -- -- 14.intent: For all managers, find all managers in the department that he/she worked in, 
 -- --            for VDB variants \vThree\ to \vFive.
