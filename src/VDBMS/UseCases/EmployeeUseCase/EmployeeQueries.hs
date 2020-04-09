@@ -56,6 +56,15 @@ departno_value = SqlString "d001"
 temp :: Name
 temp = "temp"
 
+v345 :: F.FeatureExpr
+v345 = F.Or v34 empv5
+
+v34 :: F.FeatureExpr
+v34 = F.Or empv3 empv4
+
+v45 :: F.FeatureExpr
+v45 = F.Or empv4 empv5
+
 -- empFromEmpacct :: Rename Algebra
 -- empFromEmpacct = genSubquery "emp" $ Sel (VsqlCond empCond) (renameNothing (tRef empacct))
 
@@ -146,7 +155,7 @@ empVQ1_alt_typeErr =
 empVQ2, empVQ2_alt1, empVQ2_alt2, empVQ2_alt3 :: Algebra
 empVQ2 = 
   project (pure $ trueAttr salary_)
-          (choice (F.Or empv3 empv4)
+          (choice v34
                   q1
                   (choice empv5 q2 Empty))
     where
@@ -160,7 +169,7 @@ empVQ2 =
 -- 
 empVQ2_alt1 = 
   project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
-          (choice (F.Or empv3 empv4)
+          (choice v34
                   q1
                   q2)
     where
@@ -174,7 +183,7 @@ empVQ2_alt1 =
 --    v_3 ∨ v_4 ⟨job, ε⟩)
 -- 
 empVQ2_alt2 = 
-  project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
+  project (pure $ att2optatt salary_ v345)
           (join q1
                 (choice (F.Or empv3 empv4) (tRef job) Empty)
                 (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job)))
@@ -188,7 +197,7 @@ empVQ2_alt2 =
 empVQ2_alt3 = 
   project (pure $ trueAttr salary_)
           (join q1 
-                (choice (F.Or empv3 empv4) (tRef job) Empty)
+                (choice v34 (tRef job) Empty)
                 (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job)))
     where
       q1 = renameQ temp (select empSqlCond $ tRef empacct)
@@ -201,8 +210,8 @@ empVQ2_alt3 =
 -- 
 -- v_3 ⟨π (name) ((ρ (temp) (σ (deptno=d001) empacct)) ⋈_{temp.empno=dept.managerno} dept), ε⟩ 
 -- 
-empQ3 :: Algebra
-empQ3 = 
+empVQ3 :: Algebra
+empVQ3 = 
   choice empv3 
          (project (pure $ trueAttr name_)
                   (join (renameQ temp 
@@ -213,35 +222,45 @@ empQ3 =
          Empty
 
 
--- -- 4.intent: Return the manager's name (of department d001), for VDB variants \vThree\ to \vFive.
--- -- 
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \pQ =& \pi_{\name} (\sigma_{\dept.\deptno=d001} (\empacct \bowtie_{\empno = \managerno} \dept)) \\
--- -- \pQ{'} =& \pi_{\name} (\sigma_{\dept.\deptno=d001} (\empbio \bowtie_{\empno = \managerno} \dept)) \\
--- -- \pQ{''}= &  \pi_{(\fname, \lname)} (\sigma_{\dept.\deptno=d001} (\empbio \bowtie_{\empno = \managerno} \dept)) \\
--- -- \vQ = & \chc[\vThree]{\pQ, \chc[\vFour] {\pQ{'}, {\chc [\vFive] {\pQ{''}, \empRel }}}}
--- -- \end{align*} 
--- empQ4 :: Algebra
--- empQ4 = Proj [trueAttr name] $ genRenameAlgebra $ 
---                   Sel (VsqlCond cond) $ genRenameAlgebra $ 
---                     Join (genRenameAlgebra (tRef empacct)) (genRenameAlgebra (tRef dept)) cond 
---           where cond = C.Comp EQ (C.Att empno) (C.Att managerno)
+-- 4.intent: Return the manager's name (of department d001), for VDB variants \vThree\ to \vFive.
+-- 
+-- #variants = 3?
+-- #unique_variants = 3?
+-- 
+-- v_3 ∨ v_4 ∨ v_5 ⟨π (name, firstname, lastname) 
+--                    (v_3⟨empacct, empbio⟩ ⋈_{empno=managerno} 
+--                                          σ (deptno="d001") dept, ε⟩
+-- 
+empVQ4, empVQ4_alt1 :: Algebra
+empVQ4 = 
+  choice v345
+         (project ([trueAttr name_, 
+                    trueAttr firstname_, 
+                    trueAttr lastname_])
+                  (join (choice empv3
+                               (tRef empacct)
+                               (tRef empbio))
+                        (select (eqAttValSqlCond deptno_ departno_value)
+                                (tRef dept))
+                        (joinEqCond (att2attr empno_) (att2attr managerno_))))
+         Empty
 
--- empQ4' :: Algebra
--- empQ4' = Proj [trueAttr name] $ genRenameAlgebra $ 
---                   Sel (VsqlCond cond) $ genRenameAlgebra $ 
---                     Join (genRenameAlgebra (tRef empbio)) (genRenameAlgebra (tRef dept)) cond 
---           where cond = C.Comp EQ (C.Att empno) (C.Att managerno)
-
--- empQ4'' :: Algebra
--- empQ4'' = Proj [trueAttr firstname, trueAttr lastname] $ genRenameAlgebra $ 
---                   Sel (VsqlCond cond) $ genRenameAlgebra $ 
---                     Join (genRenameAlgebra (tRef empbio)) (genRenameAlgebra (tRef dept)) cond 
---           where cond = C.Comp EQ (C.Att empno) (C.Att managerno)
-
--- empVQ4 :: Algebra
--- empVQ4 = AChc empv3 empQ4 $ AChc empv4 empQ4' $ AChc empv5 empQ4'' Empty
+-- v_3 ∨ v_4 ∨ v_5 ⟨π (name^{v_3 ∨ v_4}, firstname^{v_5}, lastname^{v_5}) 
+--                    (v_3⟨empacct, empbio⟩ ⋈_{empno=managerno} 
+--                                          σ (deptno="d001") dept, ε⟩
+-- 
+empVQ4_alt1 =
+  choice v345
+         (project ([att2optatt name_ v34, 
+                    att2optatt firstname_ empv5, 
+                    att2optatt lastname_ empv5])
+                  (join (choice empv3
+                               (tRef empacct)
+                               (tRef empbio))
+                        (select (eqAttValSqlCond deptno_ departno_value)
+                                (tRef dept))
+                        (joinEqCond (att2attr empno_) (att2attr managerno_))))
+         Empty
 
 -- -- 5.intent: Find all managers that the employee 10004 worked with, for VDB variant \vThree. 
 -- --
