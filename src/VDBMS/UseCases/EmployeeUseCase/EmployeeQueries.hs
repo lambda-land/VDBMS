@@ -369,17 +369,35 @@ empVQ11 =
                               (joinEqCond (att2attrQual deptno_ temp) 
                                           (att2attrQualRel deptno_ dept))))
 
--- -- 12.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
--- --            find all the departments that the manager managed, for VDB variants \vThree\ to \vFive.
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \temp{} =  & \pi_{(\managerno, \deptno)} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\deptno = \empacct.\deptno} \dept))\\
--- -- \pQ = & \pi_{(\dept.\managerno, \dept.\deptno)} (\temp{} \bowtie_{\temp.\managerno = \dept.\managerno} \dept) \\
--- -- \vQ = & \chc[(\vThree \vee \vFour \vee \vFive)]{\pQ, \empRel}
--- -- \end{align*} 
--- empVQ12 :: Algebra
--- empVQ12 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ11 Empty
+-- 12.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
+--            find all the departments that the manager managed, for VDB variants \vThree\ to \vFive.
+--
+-- #variants = 1?
+-- #unique_variants = 1?
+-- 
+-- temp0 = ρ (temp0) 
+--           (π (managerno, deptno)
+--              (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept))
+-- π (managerno^{v_3 ∨ v_4 ∨ v_5}, deptno^{v_3 ∨ v_4 ∨ v_5})
+--   (temp0 ⋈_{temp0.managerno=dept.mangerno} dept)
+-- 
+empVQ12 :: Algebra
+empVQ12 = 
+  project ([att2optattQualRel managerno_ dept v345
+          , att2optattQualRel deptno_ dept v345])
+          (join temp0
+                (tRef dept)
+                (joinEqCond (att2attrQual managerno_ "temp0") 
+                            (att2attrQualRel managerno_ dept)))
+    where
+      temp0 =
+        renameQ "temp0" 
+                (project ([trueAttr managerno_
+                         , trueAttr deptno_])
+                        (join (renameQ temp (select empSqlCond (tRef empacct)))
+                              (tRef dept)
+                              (joinEqCond (att2attrQual deptno_ temp) 
+                                          (att2attrQualRel deptno_ dept))))
 
 -- -- 13.intent: For all managers, find all managers in the department that he/she worked in, 
 -- --            for VDB variant \vThree. 
