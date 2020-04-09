@@ -315,8 +315,8 @@ empVQ7 =
 
 -- 8.intent: Find all salary values of managers, during the period of manager appointment, for VDB variants \vThree\ to \vFive.
 --
--- #variants = 1?
--- #unique_variants = 1?
+-- #variants = 3?
+-- #unique_variants = 2?
 -- 
 -- π (managerno, name)
 --   (v_3 ∨ v_4 ∨ v_5 ⟨(ρ (temp) (empacct ⋈_{mangerno=empno} dept))
@@ -339,26 +339,33 @@ empVQ8 =
                   Empty)
 
 
--- -- 11.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
--- --            find all the departments that the manager managed, for VDB variant \vThree. 
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \temp{} =  & \pi_{(\managerno, \deptno)} (\sigma_{\empno=10004} (\empacct \bowtie_{\empacct.\deptno = \empacct.\deptno} \dept))\\
--- -- \pQ = & \pi_{(\dept.\managerno, \dept.\deptno)} (\temp{} \bowtie_{\temp.\managerno = \dept.\managerno} \dept) \\
--- -- \vQ = & \chc[\vThree]{\pQ, \empRel}
--- -- \end{align*}
--- empQ11 :: Algebra
--- empQ11 = Proj (map trueAttr qualifiedAttrList)$ genRenameAlgebra $ 
---           Join temp (genRenameAlgebra (tRef dept)) join_cond 
---           where qualifiedAttrList = genQualifiedAttrList [(dept, "managerno"), (dept, "deptno")]
---                 temp = genSubquery "temp" $ Proj [trueAttr managerno, trueAttr deptno] $ genRenameAlgebra $ 
---                         Sel (VsqlCond empCond) $ genRenameAlgebra $ 
---                           joinTwoRelation empacct dept "deptno"
---                 join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "temp" "managerno")) (C.Att (qualifiedAttr dept "managerno"))
-
--- empVQ11 :: Algebra
--- empVQ11 = AChc empv3 empQ11 Empty
+-- 11.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
+--            find all the departments that the manager managed, for VDB variant \vThree. 
+--
+-- #variants = 3?
+-- #unique_variants = 2?
+-- 
+-- temp0 = π (managerno, deptno)
+--           (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept)
+-- π (managerno^{v_3}, deptno^{v_3})
+--   (temp0 ⋈_{temp0.managerno=dept.mangerno} dept)
+-- 
+empVQ11 :: Algebra
+empVQ11 = 
+  project ([att2optattQualRel managerno_ dept empv3
+          , att2optattQualRel deptno_ dept empv3])
+          (join temp0
+                (tRef dept)
+                (joinEqCond (att2attrQual managerno_ "temp0") 
+                            (att2attrQualRel managerno_ dept)))
+    where
+      temp0 =
+        project ([trueAttr managerno_
+                , trueAttr deptno_])
+                (join (renameQ temp (select empSqlCond (tRef empacct)))
+                      (tRef dept)
+                      (joinEqCond (att2attrQual deptno_ temp) 
+                                  (att2attrQualRel deptno_ dept)))
 
 -- -- 12.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
 -- --            find all the departments that the manager managed, for VDB variants \vThree\ to \vFive.
