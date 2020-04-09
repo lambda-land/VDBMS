@@ -313,23 +313,31 @@ empVQ7 =
                 (joinTwoRels empacct job title_)
                 (joinEqCond (att2attr managerno_) (att2attr empno_)))
 
--- -- 8.intent: Find all salary values of managers, during the period of manager appointment, for VDB variants \vThree\ to \vFive.
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \pQ  =  & \pi_{(\managerno, \salary)}((\dept \\
--- -- & \bowtie_{\managerno = \empno} \empacct) \\
--- -- & \bowtie_{\empacct.\titleatt = \job.\titleatt} \job) \\
--- -- \pQ{'}= &  \pi_{(\managerno, \salary)} (\empacct \bowtie_{\empno = \managerno} \dept) \\ 
--- -- \vQ = & \chc[(\vThree \vee \vFour)]{\pQ, \chc[\vFive] {\pQ{'}, \empRel}}
--- -- \end{align*} 
--- empQ8 :: Algebra
--- empQ8 = Proj [trueAttr managerno, trueAttr salary] $ genRenameAlgebra $ 
---           Join (genRenameAlgebra (tRef empbio)) (genRenameAlgebra (tRef dept)) cond 
---           where cond = C.Comp EQ (C.Att empno) (C.Att managerno)
+-- 8.intent: Find all salary values of managers, during the period of manager appointment, for VDB variants \vThree\ to \vFive.
+--
+-- #variants = 1?
+-- #unique_variants = 1?
+-- 
+-- π (managerno, name)
+--   (v_3 ∨ v_4 ∨ v_5 ⟨(ρ (temp) (empacct ⋈_{mangerno=empno} dept))
+--                     ⋈_{temp.title=job.title} (v_3 ∨ v_4 ⟨job,ε ⟩), ε⟩)
+-- 
+empVQ8 :: Algebra
+empVQ8 = 
+  project ([trueAttr managerno_
+          , trueAttr name_])
+          (choice v345 
+                  (join (renameQ temp 
+                                 (join (tRef empacct) 
+                                       (tRef dept) 
+                                       (joinEqCond managerno empno)))
+                        (choice v34 
+                                (tRef job)
+                                Empty)
+                        (joinEqCond (att2attrQual title_ temp) 
+                                    (att2attrQualRel title_ dept)))
+                  Empty)
 
--- empVQ8 :: Algebra
--- empVQ8 = AChc (empv3 `F.Or` empv4) empQ7 $ AChc empv5 empQ8 Empty
 
 -- -- 11.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
 -- --            find all the departments that the manager managed, for VDB variant \vThree. 
