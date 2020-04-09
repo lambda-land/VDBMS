@@ -146,14 +146,30 @@ empVQ1_alt_typeErr =
 -- Note: --> not sure why we need this note!
 -- 1. Attribute deptno only exist in v3,v4,v5.
 -- 
--- #variants = 3?
--- #unique_variants = 2?
+-- #variants = 3
+-- #unique_variants = 2
 -- 
+-- π (salary^{v_3 ∨ v_4 ∨ v_5}) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
+--                                          σ (empno=10004) empactt⟩)
+-- 
+empVQ2, empVQ2_alt_wrong, empVQ2_alt2, empVQ2_alt3_wrong :: Algebra
+empVQ2 = 
+  project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
+          (choice v34
+                  q1
+                  q2)
+    where
+      q1 = join (renameQ temp q2)
+                (tRef job)
+                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))
+      q2 = (select empSqlCond $ tRef empacct)
+
 -- π (salary) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
 --                        v_5 ⟨σ (empno=10004) empactt, ε ⟩⟩)
 -- 
-empVQ2, empVQ2_alt1, empVQ2_alt2, empVQ2_alt3 :: Algebra
-empVQ2 = 
+-- Note: this is wrong because it results in π (..) ε for some configs.
+-- which is ill-typed and incorrect. 
+empVQ2_alt_wrong = 
   project (pure $ trueAttr salary_)
           (choice v34
                   q1
@@ -164,19 +180,6 @@ empVQ2 =
                 (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))
       q2 = (select empSqlCond $ tRef empacct)
 
--- π (salary^{v_3 ∨ v_4 ∨ v_5}) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
---                                          σ (empno=10004) empactt⟩)
--- 
-empVQ2_alt1 = 
-  project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
-          (choice v34
-                  q1
-                  q2)
-    where
-      q1 = join (renameQ temp q2)
-                (tRef job)
-                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))
-      q2 = (select empSqlCond $ tRef empacct)
 
 -- π (salary^{v_3 ∨ v_4 ∨ v_5}) 
 --   (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} 
@@ -194,7 +197,8 @@ empVQ2_alt2 =
 --   (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} 
 --    v_3 ∨ v_4 ⟨job, ε⟩)
 -- 
-empVQ2_alt3 = 
+-- Note: it's wrong for the same reason as empvq2_alt_wrong
+empVQ2_alt3_wrong = 
   project (pure $ trueAttr salary_)
           (join q1 
                 (choice v34 (tRef job) Empty)
@@ -224,12 +228,15 @@ empVQ3 =
 
 -- 4.intent: Return the manager's name (of department d001), for VDB variants \vThree\ to \vFive.
 -- 
--- #variants = 3?
--- #unique_variants = 3?
+-- #variants = 3
+-- #unique_variants = 2 but it should be 3
 -- 
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (name, firstname, lastname) 
 --                    (v_3⟨empacct, empbio⟩ ⋈_{empno=managerno} 
 --                                          σ (deptno="d001") dept, ε⟩
+-- 
+-- Note: differences in #unique_variants is due to the fact that schema hasn't been 
+-- pushed yet!
 -- 
 empVQ4, empVQ4_alt1 :: Algebra
 empVQ4 = 
@@ -249,6 +256,7 @@ empVQ4 =
 --                    (v_3⟨empacct, empbio⟩ ⋈_{empno=managerno} 
 --                                          σ (deptno="d001") dept, ε⟩
 -- 
+-- Note: it has #unique_variants = 4!
 empVQ4_alt1 =
   choice v345
          (project ([att2optatt name_ v34, 
@@ -264,8 +272,8 @@ empVQ4_alt1 =
 
 -- 5.intent: Find all managers that the employee 10004 worked with, for VDB variant \vThree. 
 --
--- #variants = 1?
--- #unique_variants = 1?
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 -- v_3⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) 
 --                       ⋈_{temp.deptno=dept.deptno} dept), ε⟩
@@ -281,8 +289,8 @@ empVQ5 =
 
 -- 6.intent: Find all managers that employee 10004 worked with, for VDB variants \vThree\ to \vFive.
 --
--- #variants = 1?
--- #unique_variants = 1?
+-- #variants = 3
+-- #unique_variants = 1
 -- 
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) 
 --                    ⋈_{temp.deptno=dept.deptno} dept), ε⟩
@@ -298,8 +306,8 @@ empVQ6 =
 
 -- 7.intent: Find all salary values of managers, during the period of manager appointment, for VDB variant \vThree. 
 --
--- #variants = 1?
--- #unique_variants = 1?
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 -- π (managerno^{v_3}, salary^{v_3})
 --   (dept ⋈_{managerno=empno}
@@ -315,17 +323,35 @@ empVQ7 =
 
 -- 8.intent: Find all salary values of managers, during the period of manager appointment, for VDB variants \vThree\ to \vFive.
 --
--- #variants = 3?
--- #unique_variants = 2?
+-- #variants = 3
+-- #unique_variants = 2
 -- 
+-- π (managerno, name)
+--   (ρ (temp) (empacct ⋈_{mangerno=empno} dept))
+--                     ⋈_{temp.title=job.title} (v_3 ∨ v_4 ⟨job,ε ⟩))
+-- 
+empVQ8, empVQ8_wrong :: Algebra
+empVQ8 = 
+  project ([att2optatt managerno_ v345
+          , att2optatt name_ v345])
+                  (join (renameQ temp 
+                                 (join (tRef empacct) 
+                                       (tRef dept) 
+                                       (joinEqCond managerno empno)))
+                        (choice v34 
+                                (tRef job)
+                                Empty)
+                        (joinEqCond (att2attrQual title_ temp) 
+                                    (att2attrQualRel title_ dept)))
+
 -- π (managerno, name)
 --   (v_3 ∨ v_4 ∨ v_5 ⟨(ρ (temp) (empacct ⋈_{mangerno=empno} dept))
 --                     ⋈_{temp.title=job.title} (v_3 ∨ v_4 ⟨job,ε ⟩), ε⟩)
--- 
-empVQ8 :: Algebra
-empVQ8 = 
-  project ([trueAttr managerno_
-          , trueAttr name_])
+-- Note: it's wrong b/c it generates a query π (..) ε.
+-- this affect #unique_variants = 3.
+empVQ8_wrong = 
+  project ([att2optatt managerno_ v345
+          , att2optatt name_ v345])
           (choice v345 
                   (join (renameQ temp 
                                  (join (tRef empacct) 
@@ -338,12 +364,11 @@ empVQ8 =
                                     (att2attrQualRel title_ dept)))
                   Empty)
 
-
 -- 11.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
 --            find all the departments that the manager managed, for VDB variant \vThree. 
 --
--- #variants = 1?
--- #unique_variants = 1?
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 -- temp0 = ρ (temp0) 
 --           (π (managerno, deptno)
@@ -372,8 +397,8 @@ empVQ11 =
 -- 12.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
 --            find all the departments that the manager managed, for VDB variants \vThree\ to \vFive.
 --
--- #variants = 3?
--- #unique_variants = 1?
+-- #variants = 3
+-- #unique_variants = 1
 -- 
 -- temp0 = ρ (temp0) 
 --           (π (managerno, deptno)
@@ -402,8 +427,8 @@ empVQ12 =
 -- 13.intent: For all managers, find all managers in the department that he/she worked in, 
 --            for VDB variant \vThree. 
 --
--- #variants = 1?
--- #unique_variants = 1?
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 -- π (temp.managerno^{v_3}, deptname^{v_3}, dept.managerno^{v_3})
 --   ((ρ (temp) (π (managerno, deptno) dept)) ⋈_{temp.deptno=dept.deptno} dept)
@@ -423,8 +448,8 @@ empVQ13 =
 -- 14.intent: For all managers, find all managers in the department that he/she worked in, 
 --            for VDB variants \vThree\ to \vFive.
 --
--- #variants = 3?
--- #unique_variants = 1?
+-- #variants = 3
+-- #unique_variants = 1
 -- 
 -- π (temp.managerno^{v_3 ∨ v_4 ∨ v_5}
 --    , deptname^{v_3 ∨ v_4 ∨ v_5}
