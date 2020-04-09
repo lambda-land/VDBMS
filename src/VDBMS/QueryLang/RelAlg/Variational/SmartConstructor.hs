@@ -35,7 +35,7 @@ trueAttrQualRel :: Attribute -> Relation -> OptAttribute
 trueAttrQualRel a r = att2optattQualRel a r (F.Lit True) 
 
 trueAttrQual :: Attribute -> Name -> OptAttribute
-trueAttrQual a n = att2optattQualRel a n (F.Lit True) 
+trueAttrQual a n = att2optattQual a n (F.Lit True) 
 
 att2optattQual :: Attribute -> Name -> F.FeatureExpr -> OptAttribute
 att2optattQual a n f = mkOpt f (att2attrQual a n)

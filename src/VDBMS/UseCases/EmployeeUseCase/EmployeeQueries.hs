@@ -405,25 +405,40 @@ empVQ12 =
 -- #variants = 1?
 -- #unique_variants = 1?
 -- 
--- 
+-- π (temp.managerno^{v_3}, deptname^{v_3}, dept.managerno^{v_3})
+--   ((ρ (temp) (π (managerno, deptno) dept)) ⋈_{temp.deptno=dept.deptno} dept)
 -- 
 empVQ13 :: Algebra
-empVQ13 = undefined
-  -- project ([])
-  --         ()
-	-- Proj (map trueAttr [qualifiedAttr dept "managerno", deptname]) $ genRenameAlgebra $ 
- --          Join temp (genRenameAlgebra (tRef dept)) join_cond 
- --          where temp = genSubquery "temp" $ Proj [trueAttr managerno, trueAttr deptno] $ genRenameAlgebra $ tRef dept 
- --                join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "temp" "deptno")) (C.Att (qualifiedAttr dept "deptno"))
+empVQ13 = 
+  project ([att2optattQual managerno_ temp empv3
+          , att2optatt deptname_ empv3
+          , att2optattQualRel managerno_ dept empv3])
+          (join (renameQ temp 
+                         (project ([trueAttr managerno_, trueAttr deptno_])
+                                  (tRef dept)))
+                (tRef dept)
+                (joinEqCond (att2attrQual deptno_ temp) 
+                            (att2attrQualRel deptno_ dept)))
 
--- -- 14.intent: For all managers, find all managers in the department that he/she worked in, 
--- --            for VDB variants \vThree\ to \vFive.
--- --
--- -- Queries in LaTex: 
--- -- \begin{align*} 
--- -- \temp{} = & \pi_{(\managerno, \deptno)} \dept \\
--- -- \pQ = & \pi_{(\dept.\managerno, \deptname)}(\temp{} \bowtie_{\temp.\deptno = \dept.\deptno} \dept)\\
--- -- \vQ = & \chc[(\vThree \vee \vFour \vee \vFive)]{\pQ, \empRel}
--- -- \end{align*} 
--- empVQ14 :: Algebra
--- empVQ14 = AChc (empv3 `F.Or` empv4 `F.Or` empv5) empQ13 Empty
+-- 14.intent: For all managers, find all managers in the department that he/she worked in, 
+--            for VDB variants \vThree\ to \vFive.
+--
+-- #variants = 3?
+-- #unique_variants = 1?
+-- 
+-- π (temp.managerno^{v_3 ∨ v_4 ∨ v_5}
+--    , deptname^{v_3 ∨ v_4 ∨ v_5}
+--    , dept.managerno^{v_3 ∨ v_4 ∨ v_5})
+--   ((ρ (temp) (π (managerno, deptno) dept)) ⋈_{temp.deptno=dept.deptno} dept)
+-- 
+empVQ14 :: Algebra
+empVQ14 = 
+  project ([att2optattQual managerno_ temp v345
+          , att2optatt deptname_ v345
+          , att2optattQualRel managerno_ dept v345])
+          (join (renameQ temp 
+                         (project ([trueAttr managerno_, trueAttr deptno_])
+                                  (tRef dept)))
+                (tRef dept)
+                (joinEqCond (att2attrQual deptno_ temp) 
+                            (att2attrQualRel deptno_ dept)))
