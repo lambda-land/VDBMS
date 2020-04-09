@@ -298,22 +298,20 @@ empVQ6 =
 
 -- 7.intent: Find all salary values of managers, during the period of manager appointment, for VDB variant \vThree. 
 --
--- Queries in LaTex: 
--- \begin{align*} 
--- \pQ  =  & \pi_{(\managerno, \salary)}((\dept \\
--- & \bowtie_{\managerno = \empno} \empacct) \\
--- & \bowtie_{\empacct.\titleatt = \job.\titleatt} \job) \\
--- \vQ =  &\chc[\vThree]{\pQ, \empRel}
--- \end{align*} 
--- empVQ7 :: Algebra
--- empVQ7 = 
---   choice empv3
---          ()
---          Empty
-	-- Proj [trueAttr managerno, trueAttr salary] $ genRenameAlgebra $ 
- --          Join (genRenameAlgebra join_empacct_job) (genRenameAlgebra (tRef dept)) cond 
- --    where join_empacct_job = joinTwoRelation empacct job "title" 
- --          cond = C.Comp EQ (C.Att empno) (C.Att managerno)
+-- #variants = 1?
+-- #unique_variants = 1?
+-- 
+-- π (managerno^{v_3}, salary^{v_3})
+--   (dept ⋈_{managerno=empno}
+--         (empacct ⋈_{empacct.title=job.title} job))
+-- 
+empVQ7 :: Algebra
+empVQ7 = 
+  project ([att2optatt managerno_ empv3
+          , att2optatt salary_ empv3])
+          (join (tRef dept)
+                (joinTwoRels empacct job title_)
+                (joinEqCond (att2attr managerno_) (att2attr empno_)))
 
 -- -- 8.intent: Find all salary values of managers, during the period of manager appointment, for VDB variants \vThree\ to \vFive.
 -- --
