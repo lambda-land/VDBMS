@@ -10,7 +10,7 @@ import VDBMS.DBMS.Value.CompOp
 import Prelude hiding (Ordering(..))
 import Database.HDBC 
 import VDBMS.VDB.Name hiding (name)
-import VDBMS.VDB.GenName
+-- import VDBMS.VDB.GenName
 
 -- import Data.Time.LocalTime
 import Data.Time.Calendar
