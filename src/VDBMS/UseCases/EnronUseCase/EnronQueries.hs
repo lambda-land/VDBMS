@@ -1,53 +1,53 @@
 -- | Example Queries upon Enron Email Database
 module VDBMS.UseCases.EnronUseCase.EnronQueries where
 
--- import VDBMS.QueryLang.RelAlg.Variational.Algebra
--- import VDBMS.UseCases.EnronUseCase.EnronSchema
--- import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
--- import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
--- import VDBMS.UseCases.SmartConstructor
--- import VDBMS.DBMS.Value.CompOp
--- import Prelude hiding (Ordering(..))
--- import Database.HDBC 
--- import VDBMS.VDB.Name
+import VDBMS.QueryLang.RelAlg.Variational.Algebra
+import VDBMS.UseCases.EnronUseCase.EnronSchema
+import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+import qualified VDBMS.QueryLang.RelAlg.Variational.Condition as C
+import VDBMS.QueryLang.RelAlg.Variational.SmartConstructor
+import VDBMS.DBMS.Value.CompOp
+import Prelude hiding (Ordering(..))
+import Database.HDBC 
+import VDBMS.VDB.Name
 
--- -- the purpose of the email database is to showcase 
--- -- the testing step and the use of databases in this
--- -- step. hence qs are written from the tester perspective
--- -- in spl. due to interactions among features lots of test
--- -- is required to ensure that the software system behaves
--- -- accordinly in these scenarios.
+-- the purpose of the email database is to showcase 
+-- the testing step and the use of databases in this
+-- step. hence qs are written from the tester perspective
+-- in spl. due to interactions among features lots of test
+-- is required to ensure that the software system behaves
+-- accordinly in these scenarios.
 
--- -- | the message id value we choose for entire use case
--- midValue :: C.Atom
--- midValue = (C.Val (SqlInt32 9138))
+-- | the message id value we choose for entire use case
+midValue :: C.Atom
+midValue = (C.Val (SqlInt32 9138))
 
--- nullValue :: C.Atom 
--- nullValue = C.Val SqlNull
+nullValue :: C.Atom 
+nullValue = C.Val SqlNull
 
--- trueValue :: C.Atom
--- trueValue = C.Val (SqlBool True)
+trueValue :: C.Atom
+trueValue = C.Val (SqlBool True)
 
--- falseValue :: C.Atom
--- falseValue = C.Val (SqlBool False)
+falseValue :: C.Atom
+falseValue = C.Val (SqlBool False)
 
--- midCondition :: C.Condition
--- midCondition = C.Comp EQ (C.Att (qualifiedAttr messages  "mid")) midValue
+midCondition :: C.Condition
+midCondition = C.Comp EQ (C.Att (qualifiedAttr messages  "mid")) midValue
 
--- --
--- -- V-Queires for Features
--- --
+--
+-- V-Queires for Features
+--
 
--- -- 1. Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
--- --
--- -- Queries in LaTex:
--- -- \begin{align*} 
--- -- \receid = & \pi_{(\eid, \rvalue, \midatt)} ((\sigma_{\midatt=\midvalue} \vrecipientinfo) \\
--- -- & \bowtie_{\rvalue = \emailid} \vemployees) \\
--- -- \pQ_{\addressbookf} =& \pi_{(\rvalue, \nickname)} (\receid \\
--- -- & \bowtie_{\receid.\eid = \valias.\eid} \valias ) \\
--- -- \vQ_{\addressbookf} = & \chc[\addressbookf]{\pQ_{\addressbookf}, \empRel } 
--- -- \end{align*} 
+-- 1. Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
+--
+-- Queries in LaTex:
+-- \begin{align*} 
+-- \receid = & \pi_{(\eid, \rvalue, \midatt)} ((\sigma_{\midatt=\midvalue} \vrecipientinfo) \\
+-- & \bowtie_{\rvalue = \emailid} \vemployees) \\
+-- \pQ_{\addressbookf} =& \pi_{(\rvalue, \nickname)} (\receid \\
+-- & \bowtie_{\receid.\eid = \valias.\eid} \valias ) \\
+-- \vQ_{\addressbookf} = & \chc[\addressbookf]{\pQ_{\addressbookf}, \empRel } 
+-- \end{align*} 
 -- q_rec_eid :: Rename Algebra
 -- q_rec_eid = genSubquery "q_rec_eid" $ Proj (map trueAttr [eid, rvalue, mid]) $ genRenameAlgebra $ 
 --                     Join (genRenameAlgebra (Sel (VsqlCond midCondition)  $ genRenameAlgebra $ 
