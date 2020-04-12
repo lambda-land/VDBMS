@@ -102,6 +102,7 @@ alias         = N.Relation "v_alias"
 --
 -- * Attributes 
 --
+
 email_id :: N.Attr 
 email_id = attr "email_id"
 
@@ -145,7 +146,7 @@ verification_key_ = N.Attribute "verification_key"
 puclic_key_ = N.Attribute "public_key"
 
 mid_, sender_, date_, message_id_, subject_, body_, is_signed_, is_encrypted_ :: N.Attribute 
-is_autoresponse_, is_forward_msg_, is_system_notification_:: N.Attribute 
+is_autoresponse_, is_forward_msg_, is_system_notification_, nickname_:: N.Attribute 
 mid_ = N.Attribute "mid"
 sender_ = N.Attribute "sender"
 date_ = N.Attribute "date"
@@ -157,6 +158,7 @@ is_encrypted_ = N.Attribute "is_encrypted"
 is_autoresponse_ = N.Attribute "is_autoresponse"
 is_forward_msg_ = N.Attribute "is_forward_msg"
 is_system_notification_ = N.Attribute "is_system_notification"
+nickname_ = N.Attribute "nickname"
 
 rid_, rtype_, rvalue_, suffix_, forwardaddr_, pseudonym_:: N.Attribute
 rid_ = N.Attribute "rid"  

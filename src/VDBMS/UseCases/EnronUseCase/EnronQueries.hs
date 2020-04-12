@@ -10,6 +10,7 @@ import VDBMS.DBMS.Value.CompOp
 import Prelude hiding (Ordering(..))
 import Database.HDBC 
 import VDBMS.VDB.Name
+import VDBMS.DBMS.Value.Value
 
 -- the purpose of the email database is to showcase 
 -- the testing step and the use of databases in this
@@ -19,8 +20,11 @@ import VDBMS.VDB.Name
 -- accordinly in these scenarios.
 
 -- | the message id value we choose for entire use case
+midVal :: SqlValue
+midVal = SqlInt32 9138
+
 midValue :: C.Atom
-midValue = (C.Val (SqlInt32 9138))
+midValue = C.Val midVal
 
 nullValue :: C.Atom 
 nullValue = C.Val SqlNull
@@ -34,20 +38,48 @@ falseValue = C.Val (SqlBool False)
 midCondition :: C.Condition
 midCondition = C.Comp EQ (C.Att (qualifiedAttr messages  "mid")) midValue
 
+midXcond :: VsqlCond
+midXcond = eqAttValSqlCond mid_ midVal
+
+temp :: Name
+temp = "temp"
+
 --
 -- V-Queires for Features
 --
 
 -- 1. Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
 --
--- Queries in LaTex:
--- \begin{align*} 
--- \receid = & \pi_{(\eid, \rvalue, \midatt)} ((\sigma_{\midatt=\midvalue} \vrecipientinfo) \\
--- & \bowtie_{\rvalue = \emailid} \vemployees) \\
--- \pQ_{\addressbookf} =& \pi_{(\rvalue, \nickname)} (\receid \\
--- & \bowtie_{\receid.\eid = \valias.\eid} \valias ) \\
--- \vQ_{\addressbookf} = & \chc[\addressbookf]{\pQ_{\addressbookf}, \empRel } 
--- \end{align*} 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
+-- π (rvalue, nickname)
+--   ((π (eid, rvalue, mid) ((ρ temp (σ (mid=X) recipientinfo) ⋈_{rvalue=email_id} employeelist)))
+--   ⋈_{temp.eid=alias.eid} alias)
+-- 
+q_addressbook, q_addressbook_alt :: Algebra
+q_addressbook = 
+  project ([trueAttr rvalue_
+          , trueAttr nickname_ ])
+          (join tempQ
+                (tRef alias)
+                (joinEqCond (att2attrQual eid_ temp)
+                            (att2attrQualRel eid_ alias)))
+    where
+      tempQ :: Algebra
+      tempQ = renameQ temp $
+        project ([trueAttr eid_
+                , trueAttr rvalue_
+                , trueAttr mid_])
+                (join (select midXcond
+                              (tRef recipientinfo))
+                      (tRef employeelist)
+                      (joinEqCond (att2attr rvalue_)
+                                  (att2attr email_id_)))
+
+q_addressbook_alt = 
+  choice addressbook q_addressbook Empty
+
 -- q_rec_eid :: Rename Algebra
 -- q_rec_eid = genSubquery "q_rec_eid" $ Proj (map trueAttr [eid, rvalue, mid]) $ genRenameAlgebra $ 
 --                     Join (genRenameAlgebra (Sel (VsqlCond midCondition)  $ genRenameAlgebra $ 
