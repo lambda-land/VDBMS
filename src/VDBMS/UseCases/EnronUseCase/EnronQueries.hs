@@ -53,29 +53,31 @@ temp = "temp"
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- π (rvalue, nickname)
---   ((π (eid, rvalue, mid) ((ρ temp (σ (mid=X) recipientinfo) ⋈_{rvalue=email_id} employeelist)))
---   ⋈_{temp.eid=alias.eid} alias)
+-- π (rvalue, nickname) (enronTemp ⋈_{temp.eid=alias.eid} alias)
 -- 
 q_addressbook, q_addressbook_alt :: Algebra
 q_addressbook = 
   project ([trueAttr rvalue_
           , trueAttr nickname_ ])
-          (join tempQ
+          (join enronTemp
                 (tRef alias)
                 (joinEqCond (att2attrQual eid_ temp)
                             (att2attrQualRel eid_ alias)))
-    where
-      tempQ :: Algebra
-      tempQ = renameQ temp $
-        project ([trueAttr eid_
-                , trueAttr rvalue_
-                , trueAttr mid_])
-                (join (select midXcond
-                              (tRef recipientinfo))
-                      (tRef employeelist)
-                      (joinEqCond (att2attr rvalue_)
-                                  (att2attr email_id_)))
+
+-- enronTem <-- ρ (temp) 
+--                (π (eid, rvalue, mid) 
+--                   ((σ (mid=X) recipientinfo) ⋈_{rvalue=email_id} employeelist)
+enronTemp :: Algebra
+enronTemp = renameQ temp $
+  project ([trueAttr eid_
+          , trueAttr rvalue_
+          , trueAttr mid_])
+          (join (select midXcond
+                       (tRef recipientinfo))
+                (tRef employeelist)
+                (joinEqCond (att2attr rvalue_)
+                            (att2attr email_id_)))
+
 
 q_addressbook_alt = 
   choice addressbook q_addressbook Empty
