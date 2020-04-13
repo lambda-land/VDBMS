@@ -135,7 +135,7 @@ pseudonym, suffix :: N.Attr
 pseudonym = attr "pseudonym"
 suffix = attr "suffix"
 
-eid_, firstname_, lastname_, email_id_, folder_, status_, verification_key_, puclic_key_ :: N.Attribute 
+eid_, firstname_, lastname_, email_id_, folder_, status_, verification_key_, puclic_key_, username_, mailhost_attr_ :: N.Attribute 
 eid_ = N.Attribute "eid"
 firstname_ = N.Attribute "firstname"
 lastname_ = N.Attribute "lastname"
@@ -144,6 +144,8 @@ folder_ = N.Attribute "folder"
 status_ = N.Attribute "status"
 verification_key_ = N.Attribute "verification_key"
 puclic_key_ = N.Attribute "public_key"
+username_ = N.Attribute "username"
+mailhost_attr_ = N.Attribute "mailhost"
 
 mid_, sender_, date_, message_id_, subject_, body_, is_signed_, is_encrypted_ :: N.Attribute 
 is_autoresponse_, is_forward_msg_, is_system_notification_, nickname_:: N.Attribute 
