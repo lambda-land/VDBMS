@@ -181,7 +181,8 @@ q_filtermessages =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- 
+-- π (rvalue, username, mailhost)
+--   (enronTemp ⋈_{temp.eid=mailhost.eid} mailhost)
 -- 
 q_mailhost :: Algebra
 q_mailhost = 
