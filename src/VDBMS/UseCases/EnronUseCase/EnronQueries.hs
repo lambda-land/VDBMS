@@ -60,9 +60,20 @@ temp = "temp"
 -- 
 
 -- 
+-- The header inculdes the following infromation:
+-- sender, recieved_by, is_signed, signature, is_encrypted, encryption_key,
+-- subject, body, mailhost, should_filter, verification_status, verified_at,
+-- signed_by
+-- Note: not all fields of the header can be extracted from the DB. Last four
+--       fields can be created from the data from the DB and some checks. 
+-- Note: one can add more fields to the header as they please.
+-- 
+
+-- 
 -- Note: the main queries are named as q_featurename which will be used for debugging
---       the behaviour of different parts of VDBMS. The q_featurename_alt are for
---       runtime evaluation of VDBMS.
+--       the behaviour of different parts of VDBMS. These queries can be used in various
+--       parts of development code to retrieve information from the DB and process it as
+--       desired. The q_featurename_alt are for runtime evaluation of VDBMS.
 -- 
 
 -- 1. OLD Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
