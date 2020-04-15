@@ -82,16 +82,16 @@ temp = "temp"
 -- #unique_variants = 1
 -- 
 -- π (sender, nickname, subject, body)
---   ((ρ (temp1) ((ρ (temp0) (σ (mid=X) messages)) ⋈_{temp.mid=recipientinfo.mid} recepientinfo))
---              ⋈_{temp1.eid=alias.eid} alias)
+--   (((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recepientinfo)
+--              ⋈_{recipientinfo.eid=alias.eid} alias)
 -- 
 q_addressbook, q_addressbook_alt :: Algebra
 q_addressbook = undefined
 
 -- 
 -- π (mid, sender, nickname, subject, body)
---   ((ρ (temp) (messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo))
---   ⋈_{temp.eid=alias.eid})
+--   (messages ⋈_{messages.mid=recipientinfo.mid} 
+--    (recipientinfo ⋈_{recipientinfo.eid=alias.eid}))
 q_addressbook_alt = undefined
 
 -- π (rvalue, nickname) (enronTemp ⋈_{temp.eid=alias.eid} alias)
@@ -128,13 +128,17 @@ q_addressbook_alt_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- 
+-- π (sender, rvalue, is_signed, verification_key, subject, body)
+--   (((σ (mid=X) messages) ⋈_{temp0.mid=recipientinfo.mid} recipientinfo)
+--    ⋈_{sender=email_id} employeelist)
 -- 
 q_signature, q_signature_alt :: Algebra
 q_signature = undefined
 
 -- 
--- 
+-- π (messages.mid, sender, rvalue, is_signed, verification_key, subject, body)
+--   (messages ⋈_{messages.mid=recipientinfo.mid} 
+--     (recipientinfo ⋈_{sender=email_id} employeelist))
 q_signature_alt = undefined
 
 -- π (is_signed) (σ (mid=X) messages)
@@ -149,13 +153,17 @@ q_signature_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- 
+-- π (sender, rvalue, is_encrypted, public_key, subject, body)
+--   (((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--    ⋈_{sender=email_id} employeelist)
 -- 
 q_encryption, q_encryption_alt :: Algebra
 q_encryption = undefined
 
 -- 
--- 
+-- π (messages.mid, sender, rvalue, is_encrypted, public_key, subject, body)
+--   (messages ⋈_{messages.mid=recipientinfo.mid} 
+--     (recipientinfo ⋈_{sender=email_id} employeelist))
 q_encryption_alt = undefined
 
 -- π (is_encrypted) (σ (mid=X) messages)
@@ -170,13 +178,18 @@ q_encryption_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- 
+-- π (rvalue, sender, auto_msg.subject, auto_msg.body)
+--   (((σ (mid=X) messages) ⋈_{temp0.mid=recipientinfo.mid} recipientinfo)
+--     ⋈_{sender=email_id} employeelist)
 -- 
 q_autoresponder, q_autoresponder_alt :: Algebra
 q_autoresponder = undefined
 
 -- 
--- 
+-- π (messages.mid, rvalue, sender, auto_msg.subject, auto_msg.body)
+--   (messages ⋈_{messages.mid=temp.mid} 
+--   	(recipientinfo ⋈_{sender=email_id} 
+--   	  (employeelist ⋈_{employeelist.eid=auto_msg.eid} auto_msg)))
 q_autoresponder_alt = undefined
 
 -- π (subject, body) (enronTemp ⋈_{temp.eid=auto_msg.eid} auto_msg)
@@ -194,14 +207,20 @@ q_autoresponder_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- 
+-- π (rvalue, forwardaddr, subject, body)
+--   ((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} 
+--   	(recipientinfo ⋈_{rvalue=email_id} 
+--   		(employeelist ⋈_{employeelist.eid=forward_msg.eid} forward_msg)))
 -- 
 q_forwardmessages, q_forwardmessages_alt :: Algebra
 q_forwardmessages = undefined
 
 -- 
--- 
-q_forwardmessages_alt = undefined
+-- π (messages.mid, rvalue, forwardaddr, subject, body)
+--   (messages ⋈_{messages.mid=recipientinfo.mid} 
+--   	(recipientinfo ⋈_{rvalue=email_id} 
+--   		(employeelist ⋈_{employeelist.eid=forward_msg.eid} forward_msg)))
+-- q_forwardmessages_alt = undefined
 
 -- π (forwardaddr) (enronTemp ⋈_{temp.eid=forward_msg.eid} forward_msg)
 -- 
@@ -217,13 +236,19 @@ q_forwardmessages_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- 
+-- π (pseudonym, rvalue, subject, body)
+--   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--     ⋈_{sender=email_id} employeelist) 
+--     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
 -- 
 q_remailmessage, q_remailmessage_alt :: Algebra
 q_remailmessage = undefined
 
 -- 
--- 
+-- π (messages.mid, pseudonym, rvalue, subject, body)
+--   (messages ⋈_{messages.mid=recipientinfo.mid} (recipientinfo
+--     ⋈_{sender=email_id} (employeelist
+--     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)))
 q_remailmessage_alt = undefined
 
 -- π (sender, pseudonym)
@@ -252,13 +277,17 @@ q_remailmessage_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- 
+-- π (sender, rvalue, subject, body, suffix)
+--   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--   ⋈_{rvalue=email_id} employeelist) ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
 -- 
 q_filtermessages, q_filtermessages_alt :: Algebra
 q_filtermessages = undefined
 
 -- 
--- 
+-- π (messages.mid, sender, rvalue, subject, body, suffix)
+--   (messages ⋈_{messages.mid=recipientinfo.mid} (recipientinfo
+--   ⋈_{rvalue=email_id} (employeelist ⋈_{employeelist.eid=filter_msg.eid} filter_msg)))
 q_filtermessages_alt = undefined
 
 -- π (sender, suffix) (enronTemp ⋈_{temp.eid=filter_msg.eid} filter_msg)
@@ -276,13 +305,17 @@ q_filtermessages_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- 
+-- π (sender, rvalue, subject, body, mailhost)
+--   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--   ⋈_{rvalue=email_id} employeelist) ⋈_{employeelist.eid=mail_host.eid} mail_host)
 -- 
 q_mailhost, q_mailhost_alt :: Algebra
 q_mailhost = undefined
 
 -- 
--- 
+-- π (messages.mid, sender, rvalue, subject, body, mailhost)
+--   (messages ⋈_{messages.mid=recipientinfo.mid} (recipientinfo
+--   ⋈_{rvalue=email_id} (employeelist ⋈_{employeelist.eid=mail_host.eid} mail_host)))
 q_mailhost_alt = undefined
 
 -- π (rvalue, username, mailhost)
