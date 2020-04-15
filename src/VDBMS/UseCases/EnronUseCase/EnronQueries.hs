@@ -45,8 +45,25 @@ temp :: Name
 temp = "temp"
 
 --
--- V-Queires for Features
+-- V-Queires considering one feature at a time and what is needed to be extracted
+-- from the DB when the feature is enabled.
 --
+
+-- 
+-- INTENT: the intent for all these queries is constructing the header of an email.
+-- For most cases the header is being constructed for email X that has been sent 
+-- from sender A to reciever B. However, there are some exceptions:
+-- * for autoresponder and forwardmsg features the header being constructed is for 
+--   the email that is to respond to email X.
+-- * for filtermsg and mailhost features extra information is extracted from the DB
+--   to decide whether to accept the recieving email X on the reciver side or not.
+-- 
+
+-- 
+-- Note: the main queries are named as q_featurename which will be used for debugging
+--       the behaviour of different parts of VDBMS. The q_featurename_alt are for
+--       runtime evaluation of VDBMS.
+-- 
 
 -- 1. OLD Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
 --
