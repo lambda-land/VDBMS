@@ -48,15 +48,28 @@ temp = "temp"
 -- V-Queires for Features
 --
 
--- 1. Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
+-- 1. OLD Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
 --
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- π (rvalue, nickname) (enronTemp ⋈_{temp.eid=alias.eid} alias)
+-- π (sender, nickname, subject, body)
+--   ((ρ (temp1) ((ρ (temp0) (σ (mid=X) messages)) ⋈_{temp.mid=recipientinfo.mid} recepientinfo))
+--              ⋈_{temp1.eid=alias.eid} alias)
 -- 
 q_addressbook, q_addressbook_alt :: Algebra
-q_addressbook = 
+q_addressbook = undefined
+
+-- 
+-- π (mid, sender, nickname, subject, body)
+--   ((ρ (temp) (messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo))
+--   ⋈_{temp.eid=alias.eid})
+q_addressbook_alt = undefined
+
+-- π (rvalue, nickname) (enronTemp ⋈_{temp.eid=alias.eid} alias)
+-- 
+q_addressbook_old, q_addressbook_alt_old :: Algebra
+q_addressbook_old = 
   project ([trueAttr rvalue_
           , trueAttr nickname_ ])
           (join enronTemp
@@ -79,73 +92,118 @@ enronTemp = renameQ temp $
                             (att2attr email_id_)))
 
 
-q_addressbook_alt = 
+q_addressbook_alt_old = 
   choice addressbook q_addressbook Empty
 
--- 2. Intent: Check if the message X is signed in feature SIGNATURE.
+-- 2. OLD Intent: Check if the message X is signed in feature SIGNATURE.
 -- 
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- 
+-- 
+q_signature, q_signature_alt :: Algebra
+q_signature = undefined
+
+-- 
+-- 
+q_signature_alt = undefined
+
 -- π (is_signed) (σ (mid=X) messages)
 -- 
-q_signature :: Algebra
-q_signature = 
+q_signature_old :: Algebra
+q_signature_old = 
   project (pure $ trueAttr is_signed_)
           (select midXcond (tRef messages))
 
--- 3. Intent: Check if the message X is encrypted in feature ENCRYPTION.
+-- 3. OLD Intent: Check if the message X is encrypted in feature ENCRYPTION.
 --
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- 
+-- 
+q_encryption, q_encryption_alt :: Algebra
+q_encryption = undefined
+
+-- 
+-- 
+q_encryption_alt = undefined
+
 -- π (is_encrypted) (σ (mid=X) messages)
 -- 
-q_encryption :: Algebra
-q_encryption = 
+q_encryption_old :: Algebra
+q_encryption_old = 
   project (pure $ trueAttr is_encrypted_)
           (select midXcond (tRef messages))
 
--- 4. Intent: Given a message X, return the recipient's autoresponder email in the feature AUTORESPONDER.        
+-- 4. OLD Intent: Given a message X, return the recipient's autoresponder email in the feature AUTORESPONDER.        
 --
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- 
+-- 
+q_autoresponder, q_autoresponder_alt :: Algebra
+q_autoresponder = undefined
+
+-- 
+-- 
+q_autoresponder_alt = undefined
+
 -- π (subject, body) (enronTemp ⋈_{temp.eid=auto_msg.eid} auto_msg)
 -- 
-q_autoresponder :: Algebra
-q_autoresponder = 
+q_autoresponder_old :: Algebra
+q_autoresponder_old = 
   project ([trueAttr subject_
           , trueAttr body_])
           (join enronTemp (tRef auto_msg)
                 (joinEqCond (att2attrQual eid_ temp) 
                             (att2attrQualRel eid_ auto_msg)))
 
--- 5. Intent: Given a message X, return the recipient's forward address in the feature FORWARDMESSAGES.
+-- 5. OLD Intent: Given a message X, return the recipient's forward address in the feature FORWARDMESSAGES.
 -- 
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- 
+-- 
+q_forwardmessages, q_forwardmessages_alt :: Algebra
+q_forwardmessages = undefined
+
+-- 
+-- 
+q_forwardmessages_alt = undefined
+
 -- π (forwardaddr) (enronTemp ⋈_{temp.eid=forward_msg.eid} forward_msg)
 -- 
-q_forwardmessages :: Algebra
-q_forwardmessages =
+q_forwardmessages_old :: Algebra
+q_forwardmessages_old =
   project (pure $ trueAttr forwardaddr_)
           (join enronTemp (tRef forward_msg)
                 (joinEqCond (att2attrQual eid_ temp)
                             (att2attrQualRel eid_ forward_msg)))
 
--- 6. Intent: Given a message X, return the sender's pseudonym in the feature REMAILMESSAGE.
+-- 6. OLD Intent: Given a message X, return the sender's pseudonym in the feature REMAILMESSAGE.
 -- 
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- 
+-- 
+q_remailmessage, q_remailmessage_alt :: Algebra
+q_remailmessage = undefined
+
+-- 
+-- 
+q_remailmessage_alt = undefined
+
 -- π (sender, pseudonym)
 --   ((ρ (temp) (π (eid, sender, mid) ((σ (mid=X) messages) ⋈_{sender=email_id} employeelist))) 
 --       ⋈_{temp.eid=remail_msg.eid} remail_msg)
 -- 
-q_remailmessage :: Algebra
-q_remailmessage = 
+q_remailmessage_old :: Algebra
+q_remailmessage_old = 
   project ([trueAttr sender_
           , trueAttr pseudonym_])
           (join (renameQ temp
@@ -161,31 +219,49 @@ q_remailmessage =
                 (joinEqCond (att2attrQual eid_ temp)
                             (att2attrQualRel eid_ remail_msg)))
 
--- 7. Intent: Given the email message X, return the recipient's filter suffix in the feature FILTERMESSAGES.
+-- 7. OLD Intent: Given the email message X, return the recipient's filter suffix in the feature FILTERMESSAGES.
 -- 
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- 
+-- 
+q_filtermessages, q_filtermessages_alt :: Algebra
+q_filtermessages = undefined
+
+-- 
+-- 
+q_filtermessages_alt = undefined
+
 -- π (sender, suffix) (enronTemp ⋈_{temp.eid=filter_msg.eid} filter_msg)
 -- 
-q_filtermessages :: Algebra 
-q_filtermessages = 
+q_filtermessages_old :: Algebra 
+q_filtermessages_old = 
   project ([trueAttr sender_
           , trueAttr suffix_])
           (join enronTemp (tRef filter_msg)
                 (joinEqCond (att2attrQual eid_ temp)
                             (att2attrQualRel eid_ filter_msg)))
 
--- 8. Intent: Given the email message X, return the user-name of the recipient in the feature MAILHOST.
+-- 8. OLD Intent: Given the email message X, return the user-name of the recipient in the feature MAILHOST.
 -- 
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- 
+-- 
+q_mailhost, q_mailhost_alt :: Algebra
+q_mailhost = undefined
+
+-- 
+-- 
+q_mailhost_alt = undefined
+
 -- π (rvalue, username, mailhost)
 --   (enronTemp ⋈_{temp.eid=mailhost.eid} mailhost)
 -- 
-q_mailhost :: Algebra
-q_mailhost = 
+q_mailhost_old :: Algebra
+q_mailhost_old = 
   project ([trueAttr rvalue_
           , trueAttr username_
           , trueAttr mailhost_attr_])
@@ -197,7 +273,7 @@ q_mailhost =
 -- -- ** V-Queries for Feature Interactions
 -- --
 
--- -- 1. Intent: Fix interaction SIGNATURE vs. FORWARDMESSAGES (1).
+-- 1. Purpose: Fix interaction SIGNATURE vs. FORWARDMESSAGES (1).
 -- q_join_rec_emp_msg :: Rename Algebra
 -- q_join_rec_emp_msg = genSubquery "q_join_rec_emp_msg" $ Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
 --                     Join (genRenameAlgebra (joinTwoRelation messages recipientinfo "mid"))
