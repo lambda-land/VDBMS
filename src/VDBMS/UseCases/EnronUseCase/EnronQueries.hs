@@ -57,7 +57,9 @@ temp = "temp"
 --   the email that is to respond to email X.
 -- * for filtermsg and mailhost features extra information is extracted from the DB
 --   to decide whether to accept the recieving email X on the reciver side or not.
--- 
+-- Note: the order of the projected attribute list is always considered to match 
+--       the header (as much of it as it contains), i.e., the first attribute 
+--       always denotes the sender.
 
 -- 
 -- The header inculdes the following infromation:
@@ -155,13 +157,37 @@ q_addressbook_alt_old =
 --    ⋈_{sender=email_id} employeelist)
 -- 
 q_signature, q_signature_alt :: Algebra
-q_signature = undefined
+q_signature = 
+  project ([trueAttr sender_
+          , trueAttr rvalue_
+          , trueAttr is_signed_
+          , trueAttr verification_key_])
+          (join (join (select midXcond (tRef messages))
+                      (tRef recipientinfo)
+                      (joinEqCond (att2attrQualRel mid_ messages)
+                                  (att2attrQualRel mid_ recipientinfo)))
+                (tRef employeelist)
+                (joinEqCond (att2attrQualRel sender_ recipientinfo)
+                            (att2attrQualRel email_id_ employeelist)))
 
 -- 
 -- π (messages.mid, sender, rvalue, is_signed, verification_key, subject, body)
 --   (messages ⋈_{messages.mid=recipientinfo.mid} 
 --     (recipientinfo ⋈_{sender=email_id} employeelist))
-q_signature_alt = undefined
+q_signature_alt = 
+  project ([trueAttr mid_
+          , trueAttr sender_
+          , trueAttr rvalue_
+          , trueAttr is_signed_
+          , trueAttr verification_key_])
+          (join (join (tRef messages)
+                      (tRef recipientinfo)
+                      (joinEqCond (att2attrQualRel mid_ messages)
+                                  (att2attrQualRel mid_ recipientinfo)))
+                (tRef employeelist)
+                (joinEqCond (att2attrQualRel sender_ recipientinfo)
+                            (att2attrQualRel email_id_ employeelist)))
+
 
 -- π (is_signed) (σ (mid=X) messages)
 -- 
