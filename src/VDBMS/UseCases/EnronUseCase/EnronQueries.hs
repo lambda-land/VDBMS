@@ -169,7 +169,9 @@ q_signature =
   project ([trueAttr sender_
           , trueAttr rvalue_
           , trueAttr is_signed_
-          , trueAttr verification_key_])
+          , trueAttr verification_key_
+          , trueAttr subject_
+          , trueAttr body_])
           (join (join (select midXcond (tRef messages))
                       (tRef recipientinfo)
                       (joinEqCond (att2attrQualRel mid_ messages)
@@ -187,7 +189,9 @@ q_signature_alt =
           , trueAttr sender_
           , trueAttr rvalue_
           , trueAttr is_signed_
-          , trueAttr verification_key_])
+          , trueAttr verification_key_
+          , trueAttr subject_
+          , trueAttr body_])
           (join (join (tRef messages)
                       (tRef recipientinfo)
                       (joinEqCond (att2attrQualRel mid_ messages)
@@ -406,7 +410,7 @@ q_remailmessage =
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist)
 --     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
-q_remailmessage_alt = undefined
+q_remailmessage_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr pseudonym_
           , trueAttr rvalue_
@@ -477,7 +481,7 @@ q_filtermessages =
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
-q_filtermessages_alt = undefined
+q_filtermessages_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
           , trueAttr rvalue_
