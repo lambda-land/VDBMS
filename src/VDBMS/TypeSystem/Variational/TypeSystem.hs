@@ -14,6 +14,15 @@ module VDBMS.TypeSystem.Variational.TypeSystem (
 ) where 
 
 
+-- Note: there's no need for renaming all over the place.
+--       types have multiple qualifier per attribute
+--       so they can recognize that a query is referring to 
+--       two different attributes. you should change the 
+--       qualifier of an attribute when you have renaming
+--       and check that you don't have repeated qualifier names.
+--       so you odn't need to change the qualifier for join or 
+--       anything else. 
+
 import VDBMS.QueryLang.RelAlg.Variational.Algebra 
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F

@@ -262,6 +262,8 @@ q_encryption_old =
 
 -- 4. OLD Intent: Given a message X, return the recipient's autoresponder email in the feature AUTORESPONDER.        
 --
+-- The rvalue is the sender and sender is the reciever.
+-- It is constructing the auto respond email to email X.
 -- #variants = 1
 -- #unique_variants = 1
 -- 
@@ -380,6 +382,9 @@ q_forwardmessages_old =
 
 -- 6. OLD Intent: Given a message X, return the sender's pseudonym in the feature REMAILMESSAGE.
 -- 
+-- Note that pseudonym is the sender, rvalue is the reciver.
+-- It is constructing the header for the message to be forwarded.
+-- 
 -- #variants = 1
 -- #unique_variants = 1
 -- 
@@ -450,6 +455,9 @@ q_remailmessage_old =
 
 -- 7. OLD Intent: Given the email message X, return the recipient's filter suffix in the feature FILTERMESSAGES.
 -- 
+-- It (the email server) checks the suffix of the reciver and if the sender isn't included in it
+-- it delivers the email to the reciever, otherwise it rejects it.
+-- 
 -- #variants = 1
 -- #unique_variants = 1
 -- 
@@ -510,6 +518,9 @@ q_filtermessages_old =
                             (att2attrQualRel eid_ filter_msg)))
 
 -- 8. OLD Intent: Given the email message X, return the user-name of the recipient in the feature MAILHOST.
+-- 
+-- It checks if mailhost of the sender is in the set of mailhost for the reciever,
+-- it so it delivers the email to the reciever, otherwise it rejects it.
 -- 
 -- #variants = 1
 -- #unique_variants = 1
