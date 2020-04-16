@@ -135,7 +135,7 @@ pseudonym, suffix :: N.Attr
 pseudonym = attr "pseudonym"
 suffix = attr "suffix"
 
-eid_, firstname_, lastname_, email_id_, folder_, status_, verification_key_, puclic_key_, username_, mailhost_attr_ :: N.Attribute 
+eid_, firstname_, lastname_, email_id_, folder_, status_, verification_key_, public_key_, username_, mailhost_attr_ :: N.Attribute 
 eid_ = N.Attribute "eid"
 firstname_ = N.Attribute "firstname"
 lastname_ = N.Attribute "lastname"
@@ -143,7 +143,7 @@ email_id_ = N.Attribute "email_id"
 folder_ = N.Attribute "folder"
 status_ = N.Attribute "status"
 verification_key_ = N.Attribute "verification_key"
-puclic_key_ = N.Attribute "public_key"
+public_key_ = N.Attribute "public_key"
 username_ = N.Attribute "username"
 mailhost_attr_ = N.Attribute "mailhost"
 
@@ -202,7 +202,7 @@ employeelist_vrelation = [ (Lit True, eid_, TInt32)
                          , (Lit True, folder_, TString)
                          , (Lit True, status_, TString)
                          , (signature, verification_key_, TString)
-                         , (encryption,   puclic_key_, TString)
+                         , (encryption,   public_key_, TString)
                          ]
                
 messages_vrelation = [ (Lit True, mid_, TInt32) 
@@ -339,7 +339,7 @@ privacyEmailSchema  = constructRSchema   [ ( employeelist,  privacy_employeelist
 privacy_employeelist :: [(N.Attribute, SqlType)]
 privacy_employeelist = basic_employeelist ++                          
                         [ (verification_key_, TString)
-                        , (puclic_key_, TString)
+                        , (public_key_, TString)
                         ]
 
 privacy_messages :: [(N.Attribute, SqlType)]

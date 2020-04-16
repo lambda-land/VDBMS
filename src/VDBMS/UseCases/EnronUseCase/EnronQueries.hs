@@ -103,8 +103,8 @@ q_addressbook =
 
 -- 
 -- π (mid, sender, nickname, subject, body)
---   (messages ⋈_{messages.mid=recipientinfo.mid} 
---    (recipientinfo ⋈_{recipientinfo.eid=alias.eid}))
+--   (messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
+--    ⋈_{recipientinfo.eid=alias.eid} alias)
 q_addressbook_alt = 
   project ([trueAttr mid_
           , trueAttr sender_
@@ -167,13 +167,13 @@ q_signature =
                       (joinEqCond (att2attrQualRel mid_ messages)
                                   (att2attrQualRel mid_ recipientinfo)))
                 (tRef employeelist)
-                (joinEqCond (att2attrQualRel sender_ recipientinfo)
+                (joinEqCond (att2attrQualRel sender_ messages)
                             (att2attrQualRel email_id_ employeelist)))
 
 -- 
 -- π (messages.mid, sender, rvalue, is_signed, verification_key, subject, body)
---   (messages ⋈_{messages.mid=recipientinfo.mid} 
---     (recipientinfo ⋈_{sender=email_id} employeelist))
+--   ((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
+--    ⋈_{sender=email_id} employeelist)
 q_signature_alt = 
   project ([trueAttr mid_
           , trueAttr sender_
@@ -185,7 +185,7 @@ q_signature_alt =
                       (joinEqCond (att2attrQualRel mid_ messages)
                                   (att2attrQualRel mid_ recipientinfo)))
                 (tRef employeelist)
-                (joinEqCond (att2attrQualRel sender_ recipientinfo)
+                (joinEqCond (att2attrQualRel sender_ messages)
                             (att2attrQualRel email_id_ employeelist)))
 
 
@@ -206,13 +206,40 @@ q_signature_old =
 --    ⋈_{sender=email_id} employeelist)
 -- 
 q_encryption, q_encryption_alt :: Algebra
-q_encryption = undefined
+q_encryption = 
+  project ([trueAttr sender_
+          , trueAttr rvalue_
+          , trueAttr is_encrypted_
+          , trueAttr public_key_
+          , trueAttr subject_
+          , trueAttr body_])
+          (join (join (select midXcond (tRef messages))
+                      (tRef recipientinfo)
+                      (joinEqCond (att2attrQualRel mid_ messages)
+                                  (att2attrQualRel mid_ recipientinfo)))
+                (tRef employeelist)
+                (joinEqCond (att2attrQualRel sender_ messages)
+                            (att2attrQualRel email_id_ employeelist)))
 
 -- 
 -- π (messages.mid, sender, rvalue, is_encrypted, public_key, subject, body)
---   (messages ⋈_{messages.mid=recipientinfo.mid} 
---     (recipientinfo ⋈_{sender=email_id} employeelist))
-q_encryption_alt = undefined
+--   ((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
+--     ⋈_{sender=email_id} employeelist)
+q_encryption_alt = 
+  project ([trueAttr mid_
+          , trueAttr sender_
+          , trueAttr rvalue_
+          , trueAttr is_encrypted_
+          , trueAttr public_key_
+          , trueAttr subject_
+          , trueAttr body_])
+          (join (join (tRef messages)
+                      (tRef recipientinfo)
+                      (joinEqCond (att2attrQualRel mid_ messages)
+                                  (att2attrQualRel mid_ recipientinfo)))
+                (tRef employeelist)
+                (joinEqCond (att2attrQualRel sender_ messages)
+                            (att2attrQualRel email_id_ employeelist)))
 
 -- π (is_encrypted) (σ (mid=X) messages)
 -- 
