@@ -86,13 +86,35 @@ temp = "temp"
 --              ⋈_{recipientinfo.eid=alias.eid} alias)
 -- 
 q_addressbook, q_addressbook_alt :: Algebra
-q_addressbook = undefined
+q_addressbook = 
+  project ([trueAttr sender_
+          , trueAttr nickname_
+          , trueAttr subject_
+          , trueAttr body_])
+          (join (join (select midXcond (tRef messages))
+                      (tRef recipientinfo)
+                      (joinEqCond (att2attrQualRel mid_ messages)
+                                  (att2attrQualRel mid_ recipientinfo)))
+                (tRef alias)
+                (joinEqCond (att2attrQualRel eid_ recipientinfo)
+                            (att2attrQualRel eid_ alias)))
 
 -- 
 -- π (mid, sender, nickname, subject, body)
 --   (messages ⋈_{messages.mid=recipientinfo.mid} 
 --    (recipientinfo ⋈_{recipientinfo.eid=alias.eid}))
-q_addressbook_alt = undefined
+q_addressbook_alt = 
+  project ([trueAttr mid_
+          , trueAttr sender_
+          , trueAttr subject_
+          , trueAttr body_])
+          (join (join (select midXcond (tRef messages))
+                      (tRef recipientinfo)
+                      (joinEqCond (att2attrQualRel mid_ messages)
+                                  (att2attrQualRel mid_ recipientinfo)))
+                (tRef alias)
+                (joinEqCond (att2attrQualRel eid_ recipientinfo)
+                            (att2attrQualRel eid_ alias)))
 
 -- π (rvalue, nickname) (enronTemp ⋈_{temp.eid=alias.eid} alias)
 -- 
@@ -220,7 +242,7 @@ q_forwardmessages = undefined
 --   (messages ⋈_{messages.mid=recipientinfo.mid} 
 --   	(recipientinfo ⋈_{rvalue=email_id} 
 --   		(employeelist ⋈_{employeelist.eid=forward_msg.eid} forward_msg)))
--- q_forwardmessages_alt = undefined
+q_forwardmessages_alt = undefined
 
 -- π (forwardaddr) (enronTemp ⋈_{temp.eid=forward_msg.eid} forward_msg)
 -- 
