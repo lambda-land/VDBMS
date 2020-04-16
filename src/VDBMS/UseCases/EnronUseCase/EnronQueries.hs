@@ -84,8 +84,9 @@ temp = "temp"
 -- #unique_variants = 1
 -- 
 -- π (sender, nickname, subject, body)
---   (((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recepientinfo)
---              ⋈_{recipientinfo.eid=alias.eid} alias)
+--   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recepientinfo)
+--     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
+--     ⋈_{recipientinfo.eid=alias.eid} alias)
 -- 
 q_addressbook, q_addressbook_alt :: Algebra
 q_addressbook = 
@@ -93,27 +94,34 @@ q_addressbook =
           , trueAttr nickname_
           , trueAttr subject_
           , trueAttr body_])
-          (join (join (select midXcond (tRef messages))
-                      (tRef recipientinfo)
-                      (joinEqCond (att2attrQualRel mid_ messages)
-                                  (att2attrQualRel mid_ recipientinfo)))
+          (join (join (join (select midXcond (tRef messages))
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
                 (tRef alias)
                 (joinEqCond (att2attrQualRel eid_ recipientinfo)
                             (att2attrQualRel eid_ alias)))
 
 -- 
--- π (mid, sender, nickname, subject, body)
---   (messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
+-- π (messages.mid, sender, nickname, subject, body)
+--   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
+--    ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
 --    ⋈_{recipientinfo.eid=alias.eid} alias)
 q_addressbook_alt = 
-  project ([trueAttr mid_
+  project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
           , trueAttr subject_
           , trueAttr body_])
-          (join (join (select midXcond (tRef messages))
-                      (tRef recipientinfo)
-                      (joinEqCond (att2attrQualRel mid_ messages)
-                                  (att2attrQualRel mid_ recipientinfo)))
+          (join (join (join (tRef messages)
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
                 (tRef alias)
                 (joinEqCond (att2attrQualRel eid_ recipientinfo)
                             (att2attrQualRel eid_ alias)))
@@ -153,7 +161,7 @@ q_addressbook_alt_old =
 -- #unique_variants = 1
 -- 
 -- π (sender, rvalue, is_signed, verification_key, subject, body)
---   (((σ (mid=X) messages) ⋈_{temp0.mid=recipientinfo.mid} recipientinfo)
+--   (((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --    ⋈_{sender=email_id} employeelist)
 -- 
 q_signature, q_signature_alt :: Algebra
@@ -175,7 +183,7 @@ q_signature =
 --   ((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
 --    ⋈_{sender=email_id} employeelist)
 q_signature_alt = 
-  project ([trueAttr mid_
+  project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
           , trueAttr rvalue_
           , trueAttr is_signed_
@@ -226,7 +234,7 @@ q_encryption =
 --   ((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
 --     ⋈_{sender=email_id} employeelist)
 q_encryption_alt = 
-  project ([trueAttr mid_
+  project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
           , trueAttr rvalue_
           , trueAttr is_encrypted_
@@ -254,18 +262,48 @@ q_encryption_old =
 -- #unique_variants = 1
 -- 
 -- π (rvalue, sender, auto_msg.subject, auto_msg.body)
---   (((σ (mid=X) messages) ⋈_{temp0.mid=recipientinfo.mid} recipientinfo)
---     ⋈_{sender=email_id} employeelist)
+--   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
+--     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
 -- 
 q_autoresponder, q_autoresponder_alt :: Algebra
-q_autoresponder = undefined
+q_autoresponder = 
+  project ([trueAttr rvalue_
+          , trueAttr sender_
+          , trueAttrQualRel subject_ auto_msg
+          , trueAttrQualRel body_ auto_msg])
+          (join (join (join (select midXcond (tRef messages))
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef auto_msg)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ auto_msg)))
 
 -- 
 -- π (messages.mid, rvalue, sender, auto_msg.subject, auto_msg.body)
---   (messages ⋈_{messages.mid=temp.mid} 
---   	(recipientinfo ⋈_{sender=email_id} 
---   	  (employeelist ⋈_{employeelist.eid=auto_msg.eid} auto_msg)))
-q_autoresponder_alt = undefined
+--   (((messages ⋈_{messages.mid=temp.mid} recipientinfo) 
+--     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
+--     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
+q_autoresponder_alt = 
+  project ([trueAttrQualRel mid_ messages
+          , trueAttr rvalue_
+          , trueAttr sender_
+          , trueAttrQualRel subject_ auto_msg
+          , trueAttrQualRel body_ auto_msg])
+          (join (join (join (tRef messages)
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef auto_msg)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ auto_msg)))
 
 -- π (subject, body) (enronTemp ⋈_{temp.eid=auto_msg.eid} auto_msg)
 -- 
@@ -283,19 +321,49 @@ q_autoresponder_old =
 -- #unique_variants = 1
 -- 
 -- π (rvalue, forwardaddr, subject, body)
---   ((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} 
---   	(recipientinfo ⋈_{rvalue=email_id} 
---   		(employeelist ⋈_{employeelist.eid=forward_msg.eid} forward_msg)))
+--   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
 -- 
 q_forwardmessages, q_forwardmessages_alt :: Algebra
-q_forwardmessages = undefined
+q_forwardmessages = 
+  project ([trueAttr rvalue_
+          , trueAttr forwardaddr_
+          , trueAttr subject_
+          , trueAttr body_])
+          (join (join (join (select midXcond (tRef messages))
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef forward_msg)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ forward_msg)))
 
 -- 
 -- π (messages.mid, rvalue, forwardaddr, subject, body)
---   (messages ⋈_{messages.mid=recipientinfo.mid} 
---   	(recipientinfo ⋈_{rvalue=email_id} 
---   		(employeelist ⋈_{employeelist.eid=forward_msg.eid} forward_msg)))
-q_forwardmessages_alt = undefined
+--   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+q_forwardmessages_alt = 
+  project ([trueAttrQualRel mid_ messages
+          , trueAttr rvalue_
+          , trueAttr forwardaddr_
+          , trueAttr subject_
+          , trueAttr body_])
+          (join (join (join (tRef messages)
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef forward_msg)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ forward_msg)))
+
 
 -- π (forwardaddr) (enronTemp ⋈_{temp.eid=forward_msg.eid} forward_msg)
 -- 
@@ -313,18 +381,47 @@ q_forwardmessages_old =
 -- 
 -- π (pseudonym, rvalue, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
---     ⋈_{sender=email_id} employeelist) 
+--     ⋈_{messages.sender=employeelist.email_id} employeelist) 
 --     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
 -- 
 q_remailmessage, q_remailmessage_alt :: Algebra
-q_remailmessage = undefined
+q_remailmessage = 
+  project ([trueAttr pseudonym_
+          , trueAttr rvalue_
+          , trueAttr subject_
+          , trueAttr body_])
+          (join (join (join (select midXcond (tRef messages))
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel sender_ messages)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef remail_msg)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ remail_msg)))
 
 -- 
 -- π (messages.mid, pseudonym, rvalue, subject, body)
---   (messages ⋈_{messages.mid=recipientinfo.mid} (recipientinfo
---     ⋈_{sender=email_id} (employeelist
---     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)))
+--   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--     ⋈_{messages.sender=employeelist.email_id} employeelist)
+--     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
 q_remailmessage_alt = undefined
+  project ([trueAttrQualRel mid_ messages
+          , trueAttr pseudonym_
+          , trueAttr rvalue_
+          , trueAttr subject_
+          , trueAttr body_])
+          (join (join (join (tRef messages)
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel sender_ messages)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef remail_msg)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ remail_msg)))
 
 -- π (sender, pseudonym)
 --   ((ρ (temp) (π (eid, sender, mid) ((σ (mid=X) messages) ⋈_{sender=email_id} employeelist))) 
@@ -354,16 +451,49 @@ q_remailmessage_old =
 -- 
 -- π (sender, rvalue, subject, body, suffix)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
---   ⋈_{rvalue=email_id} employeelist) ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
+--   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
 -- 
 q_filtermessages, q_filtermessages_alt :: Algebra
-q_filtermessages = undefined
+q_filtermessages = 
+  project ([trueAttr sender_
+          , trueAttr rvalue_
+          , trueAttr subject_
+          , trueAttr body_
+          , trueAttr suffix_])
+          (join (join (join (select midXcond (tRef messages))
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef filter_msg)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ filter_msg)))
 
 -- 
 -- π (messages.mid, sender, rvalue, subject, body, suffix)
---   (messages ⋈_{messages.mid=recipientinfo.mid} (recipientinfo
---   ⋈_{rvalue=email_id} (employeelist ⋈_{employeelist.eid=filter_msg.eid} filter_msg)))
+--   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
 q_filtermessages_alt = undefined
+  project ([trueAttrQualRel mid_ messages
+          , trueAttr sender_
+          , trueAttr rvalue_
+          , trueAttr subject_
+          , trueAttr body_
+          , trueAttr suffix_])
+          (join (join (join (tRef messages)
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef filter_msg)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ filter_msg)))
 
 -- π (sender, suffix) (enronTemp ⋈_{temp.eid=filter_msg.eid} filter_msg)
 -- 
@@ -382,16 +512,49 @@ q_filtermessages_old =
 -- 
 -- π (sender, rvalue, subject, body, mailhost)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
---   ⋈_{rvalue=email_id} employeelist) ⋈_{employeelist.eid=mail_host.eid} mail_host)
+--   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--   ⋈_{employeelist.eid=mail_host.eid} mail_host)
 -- 
 q_mailhost, q_mailhost_alt :: Algebra
-q_mailhost = undefined
+q_mailhost = 
+  project ([trueAttr sender_
+          , trueAttr rvalue_
+          , trueAttr subject_
+          , trueAttr body_
+          , trueAttr mailhost_attr_])
+          (join (join (join (select midXcond (tRef messages))
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef mail_host)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ mail_host)))
 
 -- 
 -- π (messages.mid, sender, rvalue, subject, body, mailhost)
---   (messages ⋈_{messages.mid=recipientinfo.mid} (recipientinfo
---   ⋈_{rvalue=email_id} (employeelist ⋈_{employeelist.eid=mail_host.eid} mail_host)))
-q_mailhost_alt = undefined
+--   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--   ⋈_{employeelist.eid=mail_host.eid} mail_host)
+q_mailhost_alt = 
+  project ([trueAttrQualRel mid_ messages
+          , trueAttr sender_
+          , trueAttr rvalue_
+          , trueAttr subject_
+          , trueAttr body_
+          , trueAttr mailhost_attr_])
+          (join (join (join (tRef messages)
+                            (tRef recipientinfo)
+                            (joinEqCond (att2attrQualRel mid_ messages)
+                                        (att2attrQualRel mid_ recipientinfo)))
+                      (tRef employeelist)
+                      (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                  (att2attrQualRel email_id_ employeelist)))
+                (tRef mail_host)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
+                            (att2attrQualRel eid_ mail_host)))
 
 -- π (rvalue, username, mailhost)
 --   (enronTemp ⋈_{temp.eid=mailhost.eid} mailhost)
