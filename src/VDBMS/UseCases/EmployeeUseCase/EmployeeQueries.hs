@@ -444,12 +444,31 @@ empVQ6_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- π (managerno^v_3, salary^v_3) (dept 
+--                               ⋈_{managerno=empno} (empacct 
+--                                                   ⋈_{empacct.title=job.title} job))
+-- 
+empVQ7, empVQ7_alt, empVQ7_old :: Algebra
+empVQ7 = 
+  project (fmap (flip att2optatt empv3) [managerno_, salary_])
+          (join (tRef dept)
+                (join (tRef empacct)
+                      (tRef job)
+                      (joinEqCond (att2attrQualRel title_ empacct)
+                                  (att2attrQualRel title_ job)))
+                (joinEqCond (att2attr managerno_)
+                            (att2attr empno_)))
+
+-- π (managerno^v_3, salary^v_3) (dept 
+--                               ⋈_{managerno=empno} (empacct 
+--                                                   ⋈_{empacct.title=job.title} job))
+-- 
+empVQ7_alt = empVQ7
+
 -- π (managerno^{v_3}, salary^{v_3})
 --   (dept ⋈_{managerno=empno}
 --         (empacct ⋈_{empacct.title=job.title} job))
--- 
-empVQ7 :: Algebra
-empVQ7 = 
+empVQ7_old = 
   project ([att2optatt managerno_ empv3
           , att2optatt salary_ empv3])
           (join (tRef dept)
@@ -461,12 +480,42 @@ empVQ7 =
 -- #variants = 3
 -- #unique_variants = 2
 -- 
+-- v_3 ∨ v_4 ∨ v_5 ⟨π (managerno, name) 
+--                    (v_3 ∨ v_4 ⟨(empacct ⋈_{managerno=empno} dept) 
+--                                ⋈_{empacct.title=job.title} job,
+--                        empacct ⋈_{managerno=empno} dept⟩), ε⟩
+-- 
+empVQ8, empVQ8_alt, empVQ8_old_wrong, empVQ8_wrong :: Algebra
+empVQ8 = 
+  choice v345
+         (project (fmap trueAttr [managerno_, name_])
+                  (choice v34
+                          (join (join (tRef empacct)
+                                      (tRef dept)
+                                      (joinEqCond (att2attr managerno_)
+                                                  (att2attr empno_)))
+                                (tRef job)
+                                (joinEqCond (att2attrQualRel title_ empacct)
+                                            (att2attrQualRel title_ job)))
+                          (join (tRef empacct)
+                                (tRef dept)
+                                (joinEqCond (att2attr managerno_)
+                                            (att2attr empno_)))))
+         Empty
+
+-- v_3 ∨ v_4 ∨ v_5 ⟨π (managerno, name) 
+--                    (v_3 ∨ v_4 ⟨(empacct ⋈_{managerno=empno} dept) 
+--                                ⋈_{empacct.title=job.title} job,
+--                        empacct ⋈_{managerno=empno} dept⟩), ε⟩
+-- 
+empVQ8_alt = empVQ8
+
 -- π (managerno, name)
 --   (ρ (temp) (empacct ⋈_{mangerno=empno} dept))
 --                     ⋈_{temp.title=job.title} (v_3 ∨ v_4 ⟨job,ε ⟩))
 -- 
-empVQ8, empVQ8_wrong :: Algebra
-empVQ8 = 
+-- Note: it's wrong because it's joining with empty!
+empVQ8_old_wrong = 
   project ([att2optatt managerno_ v345
           , att2optatt name_ v345])
                   (join (renameQ temp 
