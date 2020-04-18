@@ -78,6 +78,32 @@ temp = "temp"
 --       desired. The q_featurename_alt are for runtime evaluation of VDBMS.
 -- 
 
+-- 0. Basic query when non of the features are enabled.
+-- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
+-- π (sender, rvalue, subject, body) ((σ (mid=X) messages) 
+--                                    ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+-- 
+q_basic, q_basic_alt :: Algebra
+q_basic = 
+  project (fmap trueAttr [sender_, rvalue_, subject_, body_])
+          (join (select midXcond $ tRef messages)
+                (tRef recipientinfo)
+                (joinEqCond (att2attrQualRel mid_ messages)
+                            (att2attrQualRel mid_ recipientinfo)))
+
+-- π (sender, rvalue, subject, body) 
+--   (messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+-- 
+q_basic_alt =
+  project (fmap trueAttr [sender_, rvalue_, subject_, body_])
+          (join (tRef messages)
+                (tRef recipientinfo)
+                (joinEqCond (att2attrQualRel mid_ messages)
+                            (att2attrQualRel mid_ recipientinfo)))
+
 -- 1. OLD Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
 --
 -- #variants = 1
