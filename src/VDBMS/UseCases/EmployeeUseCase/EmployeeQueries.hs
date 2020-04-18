@@ -554,14 +554,40 @@ empVQ8_wrong =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- tempQ = ρ (temp) 
+--           (π (managerno, deptno)
+--              (σ (empno=10004) empacct) ⋈_{empacct.deptno=dept.deptno} dept))
+-- π (managerno^{v_3}, deptno^{v_3})
+--   (tempQ ⋈_{temp.managerno=dept.mangerno} dept)
+-- 
+empVQ11, empVQ11_alt, empVQ11_old :: Algebra
+empVQ11 = 
+  project ([att2optattQualRel managerno_ dept empv3
+          , att2optattQualRel deptno_ dept empv3])
+          (join tempQ
+                (tRef dept)
+                (joinEqCond (att2attrQual managerno_ temp) 
+                            (att2attrQualRel managerno_ dept)))
+    where
+      tempQ =
+        renameQ temp 
+                (project ([trueAttr managerno_
+                         , trueAttrQualRel deptno_ dept])
+                        (join (select empSqlCond (tRef empacct))
+                              (tRef dept)
+                              (joinEqCond (att2attrQualRel deptno_ empacct) 
+                                          (att2attrQualRel deptno_ dept))))
+
+-- 
+-- 
+empVQ11_alt = empVQ11
+
 -- temp0 = ρ (temp0) 
 --           (π (managerno, deptno)
 --              (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept))
 -- π (managerno^{v_3}, deptno^{v_3})
 --   (temp0 ⋈_{temp0.managerno=dept.mangerno} dept)
--- 
-empVQ11 :: Algebra
-empVQ11 = 
+empVQ11_old = 
   project ([att2optattQualRel managerno_ dept empv3
           , att2optattQualRel deptno_ dept empv3])
           (join temp0
@@ -584,14 +610,40 @@ empVQ11 =
 -- #variants = 3
 -- #unique_variants = 1
 -- 
+-- tempQ = ρ (temp) 
+--           (π (managerno, deptno)
+--              (σ (empno=10004) empacct) ⋈_{empacct.deptno=dept.deptno} dept))
+-- π (managerno^{v_3 ∨ v_4 ∨ v_5}, deptno^{v_3 ∨ v_4 ∨ v_5})
+--   (tempQ ⋈_{temp.managerno=dept.mangerno} dept)
+-- 
+empVQ12, empVQ12_alt, empVQ12_old :: Algebra
+empVQ12 = 
+  project ([att2optattQualRel managerno_ dept v345
+          , att2optattQualRel deptno_ dept v345])
+          (join tempQ
+                (tRef dept)
+                (joinEqCond (att2attrQual managerno_ temp) 
+                            (att2attrQualRel managerno_ dept)))
+    where
+      tempQ =
+        renameQ temp 
+                (project ([trueAttr managerno_
+                         , trueAttrQualRel deptno_ dept])
+                        (join (select empSqlCond (tRef empacct))
+                              (tRef dept)
+                              (joinEqCond (att2attrQualRel deptno_ empacct) 
+                                          (att2attrQualRel deptno_ dept))))
+
+-- 
+-- 
+empVQ12_alt = empVQ12
+
 -- temp0 = ρ (temp0) 
 --           (π (managerno, deptno)
 --              (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept))
 -- π (managerno^{v_3 ∨ v_4 ∨ v_5}, deptno^{v_3 ∨ v_4 ∨ v_5})
 --   (temp0 ⋈_{temp0.managerno=dept.mangerno} dept)
--- 
-empVQ12 :: Algebra
-empVQ12 = 
+empVQ12_old = 
   project ([att2optattQualRel managerno_ dept v345
           , att2optattQualRel deptno_ dept v345])
           (join temp0
@@ -617,7 +669,7 @@ empVQ12 =
 -- π (temp.managerno^{v_3}, deptname^{v_3}, dept.managerno^{v_3})
 --   ((ρ (temp) (π (managerno, deptno) dept)) ⋈_{temp.deptno=dept.deptno} dept)
 -- 
-empVQ13 :: Algebra
+empVQ13, empVQ13_alt :: Algebra
 empVQ13 = 
   project ([att2optattQual managerno_ temp empv3
           , att2optatt deptname_ empv3
@@ -628,6 +680,8 @@ empVQ13 =
                 (tRef dept)
                 (joinEqCond (att2attrQual deptno_ temp) 
                             (att2attrQualRel deptno_ dept)))
+
+empVQ13_alt = empVQ13
 
 -- 14.intent: For all managers, find all managers in the department that he/she worked in, 
 --            for VDB variants \vThree\ to \vFive.
@@ -640,7 +694,7 @@ empVQ13 =
 --    , dept.managerno^{v_3 ∨ v_4 ∨ v_5})
 --   ((ρ (temp) (π (managerno, deptno) dept)) ⋈_{temp.deptno=dept.deptno} dept)
 -- 
-empVQ14 :: Algebra
+empVQ14, empVQ14_alt :: Algebra
 empVQ14 = 
   project ([att2optattQual managerno_ temp v345
           , att2optatt deptname_ v345
@@ -651,3 +705,5 @@ empVQ14 =
                 (tRef dept)
                 (joinEqCond (att2attrQual deptno_ temp) 
                             (att2attrQualRel deptno_ dept)))
+
+empVQ14_alt = empVQ14
