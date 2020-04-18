@@ -304,6 +304,31 @@ empVQ3_old =
 -- #variants = 3
 -- #unique_variants = 2 but it should be 3
 -- 
+-- v_3 ∨ v_4 ∨ v_5 ⟨π (name, firstname, lastname)
+--                    (v_3 ⟨empacct, empbio⟩ ⋈_{empno=managerno} (σ (deptno="d001") dept)), ε⟩
+-- 
+empVQ4, empVQ4_alt, empVQ4_old, empVQ4_alt1 :: Algebra
+empVQ4 = 
+  choice v345
+         (project (fmap trueAttr [name_, firstname_, lastname_])
+                  (join (choice empv3 (tRef empacct) (tRef empbio))
+                        (select (eqAttValSqlCond deptno_ departno_value) (tRef dept))
+                        (joinEqCond (att2attr empno_)
+                                    (att2attr managerno_))))
+         Empty
+
+-- v_3 ∨ v_4 ∨ v_5 ⟨π (deptno, name, firstname, lastname)
+--                    (v_3 ⟨empacct, empbio⟩ ⋈_{empno=managerno} dept), ε⟩
+-- 
+empVQ4_alt = 
+  choice v345
+         (project (fmap trueAttr [name_, firstname_, lastname_])
+                  (join (choice empv3 (tRef empacct) (tRef empbio))
+                        (tRef dept)
+                        (joinEqCond (att2attr empno_)
+                                    (att2attr managerno_))))
+         Empty
+
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (name, firstname, lastname) 
 --                    (v_3⟨empacct, empbio⟩ ⋈_{empno=managerno} 
 --                                          σ (deptno="d001") dept, ε⟩
@@ -311,8 +336,7 @@ empVQ3_old =
 -- Note: differences in #unique_variants is due to the fact that schema hasn't been 
 -- pushed yet!
 -- 
-empVQ4, empVQ4_alt1 :: Algebra
-empVQ4 = 
+empVQ4_old = 
   choice v345
          (project ([trueAttr name_, 
                     trueAttr firstname_, 
@@ -348,11 +372,30 @@ empVQ4_alt1 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- π (managerno^v_3) ((σ (deptno="d001") empacct) ⋈_{empacct.empno=dept.managerno} dept)
+-- 
+empVQ5, empVQ5_alt, empVQ5_old :: Algebra
+empVQ5 = 
+  project (pure $ att2optatt name_ empv3)
+          (join (select (eqAttValSqlCond deptno_ departno_value)
+                        (tRef empacct))
+                (tRef dept)
+                (joinEqCond (att2attrQualRel empno_ empacct)
+                            (att2attrQualRel managerno_ dept)))
+
+-- π (deptno^v_3, managerno^v_3) (empacct ⋈_{empacct.empno=dept.managerno} dept)
+-- 
+empVQ5_alt = 
+  project (fmap (flip att2optatt empv3) [deptno_, name_])
+          (join (tRef empacct)
+                (tRef dept)
+                (joinEqCond (att2attrQualRel empno_ empacct)
+                            (att2attrQualRel managerno_ dept)))
+
 -- v_3⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) 
 --                       ⋈_{temp.deptno=dept.deptno} dept), ε⟩
 -- 
-empVQ5 :: Algebra
-empVQ5 = 
+empVQ5_old = 
   -- choice empv3 
          (project (pure $ att2optatt managerno_ empv3)
                   (join (renameQ temp (select empSqlCond (tRef empacct)))
@@ -365,11 +408,30 @@ empVQ5 =
 -- #variants = 3
 -- #unique_variants = 1
 -- 
+-- π (managerno^{v_3 ∨ v_4 ∨ v_5}) ((σ (empno=10004) empacct) 
+--                                  ⋈_{empacct.deptno=dept.deptno} dept)
+-- 
+empVQ6, empVQ6_alt, empVQ6_old :: Algebra
+empVQ6 = 
+  project (pure $ att2optatt managerno_ v345)
+          (join (select empSqlCond (tRef empacct))
+                (tRef dept)
+                (joinEqCond (att2attrQualRel deptno_ empacct)
+                            (att2attrQualRel deptno_ dept)))
+
+-- π (empno^{v_3 ∨ v_4 ∨ v_5}, managerno^{v_3 ∨ v_4 ∨ v_5}) 
+--   (empacct ⋈_{empacct.deptno=dept.deptno} dept)
+-- 
+empVQ6_alt = 
+  project (fmap (flip att2optatt v345) [empno_, managerno_])
+          (join (tRef empacct)
+                (tRef dept)
+                (joinEqCond (att2attrQualRel deptno_ empacct)
+                            (att2attrQualRel deptno_ dept)))
+
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) 
 --                    ⋈_{temp.deptno=dept.deptno} dept), ε⟩
--- 
-empVQ6 :: Algebra
-empVQ6 = 
+empVQ6_old = 
   -- choice v345
          (project (pure $ att2optatt managerno_ v345)
                   (join (renameQ temp (select empSqlCond (tRef empacct)))
