@@ -170,11 +170,41 @@ empVQ1_alt_typeErr =
 -- #variants = 3
 -- #unique_variants = 2
 -- 
+-- (v_3 ∨ v_4 ∨ v_5) ⟨π (salary) ((v_3 ∨ v_4)⟨(σ (empno=10004) empacct) 
+--                                             ⋈_{empacct.title=job.title} job 
+--                                ,σ (empno=10004) empacct⟩), ε⟩
+-- 
+empVQ2, empVQ2_alt, empVQ2_old, empVQ2_alt_wrong, empVQ2_alt2, empVQ2_alt3_wrong :: Algebra
+empVQ2 = 
+  choice v345
+         (project (pure $ trueAttr salary_)
+                  (choice v34
+                          (join (select empSqlCond $ tRef empacct)
+                                (tRef job)
+                                (joinEqCond (att2attrQualRel title_ empacct)
+                                            (att2attrQualRel title_ job)))
+                          (select empSqlCond $ tRef empacct)))
+         Empty
+
+-- (v_3 ∨ v_4 ∨ v_5) ⟨π (empno, salary) ((v_3 ∨ v_4)⟨empacct 
+--                                             ⋈_{empacct.title=job.title} job 
+--                                ,empacct⟩), ε⟩
+-- 
+empVQ2_alt = 
+  choice v345
+         (project ([trueAttr empno_
+                  , trueAttr salary_])
+                  (choice v34
+                          (join (tRef empacct)
+                                (tRef job)
+                                (joinEqCond (att2attrQualRel title_ empacct)
+                                            (att2attrQualRel title_ job)))
+                          (tRef empacct)))
+         Empty
+
 -- π (salary^{v_3 ∨ v_4 ∨ v_5}) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
 --                                          σ (empno=10004) empactt⟩)
--- 
-empVQ2, empVQ2_alt_wrong, empVQ2_alt2, empVQ2_alt3_wrong :: Algebra
-empVQ2 = 
+empVQ2_old = 
   project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
           (choice v34
                   q1
@@ -233,10 +263,32 @@ empVQ2_alt3_wrong =
 -- #variants = 1?
 -- #unique_variants = 1?
 -- 
+-- π (name^v_3) ((σ (deptno="d001") empacct)
+--               ⋈_{empacct.empno=dept.managerno} dept)
+-- 
+empVQ3, empVQ3_alt, empVQ3_old :: Algebra
+empVQ3 = 
+  project (pure $ att2optatt name_ empv3)
+          (join (select (eqAttValSqlCond deptno_ departno_value)
+                        (tRef empacct))
+                (tRef dept)
+                (joinEqCond (att2attrQualRel empno_ empacct)
+                            (att2attrQualRel managerno_ dept)))
+
+-- π (deptno^v_3, name^v_3) (empacct
+--               ⋈_{empacct.empno=dept.managerno} dept)
+-- 
+empVQ3_alt = 
+  project ([att2optatt deptno_ empv3
+          , att2optatt name_ empv3])
+          (join (tRef empacct)
+                (tRef dept)
+                (joinEqCond (att2attrQualRel empno_ empacct)
+                            (att2attrQualRel managerno_ dept)))
+
 -- v_3 ⟨π (name) ((ρ (temp) (σ (deptno=d001) empacct)) ⋈_{temp.empno=dept.managerno} dept), ε⟩ 
 -- 
-empVQ3 :: Algebra
-empVQ3 = 
+empVQ3_old = 
   -- choice empv3 
          (project (pure $ att2optatt name_ empv3)
                   (join (renameQ temp 
