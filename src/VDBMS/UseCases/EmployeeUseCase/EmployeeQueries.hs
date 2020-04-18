@@ -88,9 +88,30 @@ v45 = F.Or empv4 empv5
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- π (salary^{v_3}) 
+--   ((σ (empno=10004) empacct) ⋈_{empacct.title=job.title} job)
+-- 
+empVQ1, empVQ1_alt, empVQ1_old, empVQ1_alt0, empVQ1_alt1, empVQ1_alt2 :: Algebra
+empVQ1 = 
+  project (pure $ att2optatt salary_ empv3)
+          (join (select empSqlCond $ tRef empacct)
+                (tRef job)
+                (joinEqCond (att2attrQualRel title_ empacct)
+                            (att2attrQualRel title_ job)))
+
+-- π (empno^v_3, salary^v_3)
+--   (empacct ⋈_{empacct.title=job.title} job)
+-- 
+empVQ1_alt =
+  project ([att2optatt empno_ empv3
+          , att2optatt salary_ empv3])
+          (join (tRef empacct)
+                (tRef job)
+                (joinEqCond (att2attrQualRel title_ empacct)
+                            (att2attrQualRel title_ job)))
+
 -- v_3 ⟨π (salary) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job), ε⟩
 -- 
-empVQ1, empVQ1_alt0, empVQ1_alt1, empVQ1_alt2 :: Algebra
 empVQ1_alt0 = 
   choice empv3 
          (project (pure $ trueAttr salary_)  
@@ -99,14 +120,14 @@ empVQ1_alt0 =
                 (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))))
          Empty
 
--- Note that there's a slight difference between empVQ1 and empVQ1_alt0:
+-- Note that there's a slight difference between empVQ1_old and empVQ1_alt0:
 -- the former returns a table that has pres cond of v_3 while the latter
 -- returns a table that has a pres cond equal to FM and its only attribute
 -- has pres cond of v_3.
 -- 
 -- π (salary^\{v_3}) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job)
 -- 
-empVQ1 = 
+empVQ1_old = 
   project (pure $ att2optatt salary_ empv3)  
           (join (renameQ temp (select empSqlCond $ tRef empacct))
                 (tRef job)
