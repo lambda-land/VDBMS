@@ -417,7 +417,7 @@ q_forwardmessages_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- π (pseudonym, rvalue, subject, body)
+-- π (pseudonym, sender, rvalue, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist) 
 --     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
@@ -425,6 +425,7 @@ q_forwardmessages_old =
 q_remailmessage, q_remailmessage_alt :: Algebra
 q_remailmessage = 
   project ([trueAttr pseudonym_
+          , trueAttr sender_
           , trueAttr rvalue_
           , trueAttr subject_
           , trueAttr body_])
@@ -440,13 +441,14 @@ q_remailmessage =
                             (att2attrQualRel eid_ remail_msg)))
 
 -- 
--- π (messages.mid, pseudonym, rvalue, subject, body)
+-- π (messages.mid, pseudonym, sender, rvalue, subject, body)
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist)
 --     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
 q_remailmessage_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr pseudonym_
+          , trueAttr sender_
           , trueAttr rvalue_
           , trueAttr subject_
           , trueAttr body_])
@@ -745,7 +747,7 @@ enronQ2part1_alt =
 
 -- signature ∧ remailmessage ⟪subq_similar_to_remialmessage_q,
 --   signature ⟪q_signature, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
--- subq_similar_to_remialmessage_q ← π (pseudonym, rvalue, subject, body)
+-- subq_similar_to_remialmessage_q ← π (pseudonym, sender, rvalue, subject, body)
 --   ((((σ (mid=X ∧ ¬is_signed) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist) 
 --     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
@@ -758,6 +760,7 @@ enronQ2part2 =
     where
       subq = 
         project ([trueAttr pseudonym_
+                , trueAttr sender_
                 , trueAttr rvalue_
                 , trueAttr subject_
                 , trueAttr body_])
@@ -778,7 +781,7 @@ enronQ2part2 =
 
 -- signature ∧ remailmessage ⟪subq_similar_to_remialmessage_q,
 --   signature ⟪q_signature_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
--- ⟪subq_similar_to_remialmessage_q ← π (messages.mid, sender, rvalue, subject, body, suffix)
+-- ⟪subq_similar_to_remialmessage_q ← π (messages.mid, pseudonym, sender, rvalue, subject, body, suffix)
 --   ((((σ (¬ is_signed) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
@@ -793,6 +796,7 @@ enronQ2part2_alt =
       subq =
         project ([trueAttrQualRel mid_ messages
                 , trueAttr pseudonym_
+                , trueAttr sender_
                 , trueAttr rvalue_
                 , trueAttr subject_
                 , trueAttr body_])
@@ -941,6 +945,79 @@ enronQ4part2_alt =
                       (joinEqCond (att2attrQualRel eid_ employeelist)
                                   (att2attrQualRel eid_ forward_msg)))
 
+-- 5. Purpose: Generate the header for an email when both ENCRYPTION and REMAILMESSAGE
+--             have been enabled. Since enrcyption is enabled the remailer doesn't 
+--             include the sender information in the header however it still needs
+--             the public key to decode the email. 
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- encryption ∧ remailmessage⟪ subq_enc_remail_qs_combined,
+--    encryption⟪ q_encryption, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+-- subq_enc_remail_qs_combined ← 
+--   π (pseudonym, rvalue, is_encrypted, public_key, subject, body)
+--     ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--       ⋈_{messages.sender=employeelist.email_id} employeelist) 
+--       ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
+-- 
+enronQ5, enronQ5_alt :: Algebra
+enronQ5 = 
+  choice (F.And encryption remailmessage)
+         (project ([trueAttr pseudonym_
+                  , trueAttr rvalue_
+                  , trueAttr is_encrypted_
+                  , trueAttr public_key_
+                  , trueAttr subject_
+                  , trueAttr body_])
+                  (join (join (join (select midXcond (tRef messages))
+                                    (tRef recipientinfo)
+                                    (joinEqCond (att2attrQualRel mid_ messages)
+                                                (att2attrQualRel mid_ recipientinfo)))
+                              (tRef employeelist)
+                              (joinEqCond (att2attrQualRel sender_ messages)
+                                          (att2attrQualRel email_id_ employeelist)))
+                        (tRef remail_msg)
+                        (joinEqCond (att2attrQualRel eid_ employeelist)
+                                    (att2attrQualRel eid_ remail_msg))))
+         (choice encryption 
+                 q_encryption 
+                 (choice remailmessage 
+                         q_remailmessage 
+                         q_basic))
+
+-- encryption ∧ remailmessage⟪ subq_enc_remail_qs_combined,
+--    encryption⟪ q_encryption_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+-- subq_enc_remail_qs_combined ← 
+--   π (messages.mid, pseudonym, rvalue, is_encrypted, public_key, subject, body)
+--     (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--       ⋈_{messages.sender=employeelist.email_id} employeelist) 
+--       ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
+-- 
+enronQ5_alt = 
+  choice (F.And encryption remailmessage)
+         (project ([trueAttrQualRel mid_ messages
+                  , trueAttr pseudonym_
+                  , trueAttr rvalue_
+                  , trueAttr is_encrypted_
+                  , trueAttr public_key_
+                  , trueAttr subject_
+                  , trueAttr body_])
+                 (join (join (join (select midXcond (tRef messages))
+                                   (tRef recipientinfo)
+                                   (joinEqCond (att2attrQualRel mid_ messages)
+                                               (att2attrQualRel mid_ recipientinfo)))
+                             (tRef employeelist)
+                             (joinEqCond (att2attrQualRel sender_ messages)
+                                         (att2attrQualRel email_id_ employeelist)))
+                       (tRef remail_msg)
+                       (joinEqCond (att2attrQualRel eid_ employeelist)
+                                   (att2attrQualRel eid_ remail_msg))))
+         (choice encryption 
+                 q_encryption_alt
+                 (choice remailmessage 
+                         q_remailmessage_alt
+                         q_basic_alt))
 
 -- -- 5. Intent: Fix interaction ENCRYPTION vs. REMAILMESSAGE.
 -- enronQ5 :: Algebra
