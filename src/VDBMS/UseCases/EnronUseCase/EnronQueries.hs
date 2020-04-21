@@ -1182,25 +1182,137 @@ enronQ7_alt =
                          q_remailmessage_alt
                          q_basic_alt))
 
--- -- 7. Intent: Fix interaction AUTORESPONDER vs. REMAILMESSAGE (1).
--- enronQ7 :: Algebra
--- enronQ7 = Proj (map trueAttr [sender, rvalue, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
---             Join q_join_rec_emp_msg (genRenameAlgebra (tRef auto_msg)) join_cond
---         where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr auto_msg "eid"))
---               vautomsg_subject = qualifiedAttr auto_msg "subject"
---               vautomsg_body    = qualifiedAttr auto_msg "body"
+-- 8. Purpose: Generate the header for an email when both AUTORESPONDER and FILTERMESSAGES
+--             have been enabled. When a user recieves an email that has been sent
+--             as an autoresponse and it belongs to the messages to be filtered, it
+--             shouldn't. since the autoresponse is responding to an email that said
+--             user has sent already and want to get the response. So when both these 
+--             features are enabled two headers are generated, one for the case
+--             that an incoming message is in fact autoresponse and should be delivered, 
+--             and the other where it is not and should be filtered.
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- autoresponder ∧ remailmessage⟪π (sender, rvalue, subject, body)
+--        ((σ (mid=X ∧ is_autoresponse) messages) 
+--         ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--    , autoresponder⟪ q_autoresponder, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+-- 
+enronQ8part1, enronQ8part1_alt :: Algebra
+enronQ8part1 = 
+  choice (F.And autoresponder remailmessage)
+         (project (fmap trueAttr [sender_, rvalue_, subject_, body_])
+                  (join (select (VsqlAnd midXcond
+                                $ eqAttValSqlCond is_autoresponse_ trueValue)
+                                (tRef messages))
+                        (tRef recipientinfo)
+                        (joinEqCond (att2attrQualRel mid_ messages)
+                                   (att2attrQualRel mid_ recipientinfo))))
+         (choice autoresponder 
+                 q_autoresponder
+                 (choice remailmessage
+                         q_remailmessage
+                         q_basic))
 
--- enronVQ7 :: Algebra
--- enronVQ7 = AChc autoresponder (AChc remailmessage enronQ7 q_autoresponder) q_remailmessage
+-- autoresponder ∧ remailmessage⟪π (messages.mid, sender, rvalue, subject, body)
+--        ((σ (is_autoresponse) messages) 
+--         ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--    , autoresponder⟪ q_autoresponder_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+-- 
+enronQ8part1_alt = 
+  choice (F.And autoresponder remailmessage)
+         (project ((pure $ trueAttrQualRel mid_ messages)
+                  ++ fmap trueAttr [sender_, rvalue_, subject_, body_])
+                  (join (select (eqAttValSqlCond is_autoresponse_ trueValue)
+                                (tRef messages))
+                        (tRef recipientinfo)
+                        (joinEqCond (att2attrQualRel mid_ messages)
+                                   (att2attrQualRel mid_ recipientinfo))))
+         (choice autoresponder 
+                 q_autoresponder_alt
+                 (choice remailmessage
+                         q_remailmessage_alt
+                         q_basic_alt))
 
--- -- 8. Intent: Fix interaction AUTORESPONDER vs. FILTERMESSAGES.
--- enronQ8 :: Algebra
--- enronQ8 = Proj [trueAttr is_autoresponse] $ genRenameAlgebra $ 
---                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---                       tRef messages
--- enronVQ8 :: Algebra
--- enronVQ8 = AChc autoresponder (AChc filtermessages enronQ8 q_autoresponder) q_filtermessages
-    
+-- 
+-- autoresponder ∧ remailmessage⟪π (sender, rvalue, subject, body, suffix)
+--    subq_similar_to_filtermsg_q
+--    , autoresponder⟪ q_autoresponder, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+-- subq_similar_to_filtermsg_q ← π (sender, rvalue, subject, body, suffix)
+--   ((((σ (mid=X ∧ ¬is_autoresponse) messages) 
+--   ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
+-- 
+enronQ8part2, enronQ8part2_alt :: Algebra
+enronQ8part2 = 
+  choice (F.And autoresponder remailmessage)
+         (subq_similar_to_filtermsg_q)
+         (choice autoresponder 
+                 q_autoresponder
+                 (choice remailmessage 
+                         q_remailmessage
+                         q_basic))  
+    where
+      subq_similar_to_filtermsg_q =
+        project ([trueAttr sender_
+                , trueAttr rvalue_
+                , trueAttr subject_
+                , trueAttr body_
+                , trueAttr suffix_])
+                (join (join (join (select (VsqlAnd midXcond
+                                                   (eqAttValSqlCond is_autoresponse_ 
+                                                                    falseValue)) 
+                                          (tRef messages))
+                                  (tRef recipientinfo)
+                                  (joinEqCond (att2attrQualRel mid_ messages)
+                                              (att2attrQualRel mid_ recipientinfo)))
+                            (tRef employeelist)
+                            (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                        (att2attrQualRel email_id_ employeelist)))
+                      (tRef filter_msg)
+                      (joinEqCond (att2attrQualRel eid_ employeelist)
+                                  (att2attrQualRel eid_ filter_msg)))
+
+-- autoresponder ∧ remailmessage⟪π (sender, rvalue, subject, body, suffix)
+--    subq_similar_to_filtermsg_q
+--    , autoresponder⟪ q_autoresponder, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+-- subq_similar_to_filtermsg_q ← π (sender, rvalue, subject, body, suffix)
+--   ((((σ (mid=X ∧ ¬is_autoresponse) messages) 
+--   ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
+-- 
+enronQ8part2_alt = 
+  choice (F.And autoresponder remailmessage)
+         (subq_similar_to_filtermsg_q)
+         (choice autoresponder 
+                 q_autoresponder_alt
+                 (choice remailmessage 
+                         q_remailmessage_alt
+                         q_basic_alt))  
+    where
+      subq_similar_to_filtermsg_q =
+        project ([trueAttrQualRel mid_ messages
+                , trueAttr sender_
+                , trueAttr rvalue_
+                , trueAttr subject_
+                , trueAttr body_
+                , trueAttr suffix_])
+                (join (join (join (select (eqAttValSqlCond is_autoresponse_ 
+                                                           falseValue)
+                                          (tRef messages))
+                                  (tRef recipientinfo)
+                                  (joinEqCond (att2attrQualRel mid_ messages)
+                                              (att2attrQualRel mid_ recipientinfo)))
+                            (tRef employeelist)
+                            (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                        (att2attrQualRel email_id_ employeelist)))
+                      (tRef filter_msg)
+                      (joinEqCond (att2attrQualRel eid_ employeelist)
+                                  (att2attrQualRel eid_ filter_msg)))
+
 -- -- 9. Intent: Fix interaction AUTORESPONDER vs. MAILHOST.   
 -- enronQ9 :: Algebra
 -- enronQ9 = Proj [trueAttr is_system_notification] $ genRenameAlgebra $ 
