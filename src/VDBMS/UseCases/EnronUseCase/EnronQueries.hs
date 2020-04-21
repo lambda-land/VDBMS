@@ -1313,7 +1313,7 @@ enronQ8part2_alt =
                       (joinEqCond (att2attrQualRel eid_ employeelist)
                                   (att2attrQualRel eid_ filter_msg)))
 
--- -- 9. Intent: Fix interaction AUTORESPONDER vs. MAILHOST.   
+-- -- 9. Intent: Fix interaction AUTORESPONDER vs. MAILHOST.   -->THIS IS MANAGED IN Q_AUTORESP
 -- enronQ9 :: Algebra
 -- enronQ9 = Proj [trueAttr is_system_notification] $ genRenameAlgebra $ 
 --                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
