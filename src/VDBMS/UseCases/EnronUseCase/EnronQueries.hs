@@ -1136,6 +1136,52 @@ enronQ6part2_alt =
                       (joinEqCond (att2attrQualRel eid_ employeelist)
                                   (att2attrQualRel eid_ forward_msg)))
 
+-- 7. Purpose: Generate the header for an email when both AUTORESPONDER and REMAILMESSAGE
+--             have been enabled. If a user sends out an email using remailmessage while
+--             having their autoresponder on, the autoresponder shouldn't respond if it
+--             recieves an email. So when both these features are enabled the reciever
+--             who has their autoresponder on won't send out an email and gets a warning
+--             message.
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- autoresponder ∧ remailmessage⟪π (rvalue) 
+--          ((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
+--   autoresponder⟪ q_autoresponder, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+-- 
+enronQ7, enronQ7_alt :: Algebra
+enronQ7 =
+  choice (F.And autoresponder remailmessage)
+         (project (pure $ trueAttr rvalue_)
+                  (join (select midXcond $ tRef messages)
+                        (tRef recipientinfo)
+                        (joinEqCond (att2attrQualRel mid_ messages)
+                                    (att2attrQualRel mid_ recipientinfo))))
+         (choice autoresponder 
+                 q_autoresponder
+                 (choice remailmessage
+                         q_remailmessage
+                         q_basic))
+
+-- autoresponder ∧ remailmessage⟪π (mid, rvalue) 
+--          (messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
+--   autoresponder⟪ q_autoresponder_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+-- 
+enronQ7_alt =
+  choice (F.And autoresponder remailmessage)
+         (project ([trueAttrQualRel mid_ messages
+                  , trueAttr rvalue_])
+                  (join (tRef messages)
+                        (tRef recipientinfo)
+                        (joinEqCond (att2attrQualRel mid_ messages)
+                                    (att2attrQualRel mid_ recipientinfo))))
+         (choice autoresponder 
+                 q_autoresponder_alt
+                 (choice remailmessage
+                         q_remailmessage_alt
+                         q_basic_alt))
+
 -- -- 7. Intent: Fix interaction AUTORESPONDER vs. REMAILMESSAGE (1).
 -- enronQ7 :: Algebra
 -- enronQ7 = Proj (map trueAttr [sender, rvalue, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
