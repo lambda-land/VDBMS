@@ -29,8 +29,9 @@ midValue = C.Val midVal
 nullValue :: C.Atom 
 nullValue = C.Val SqlNull
 
-trueValue :: C.Atom
-trueValue = C.Val (SqlBool True)
+trueValue :: SqlValue
+trueValue = --C.Val (
+  SqlBool True
 
 falseValue :: C.Atom
 falseValue = C.Val (SqlBool False)
@@ -614,7 +615,7 @@ q_mailhost_old =
 -- --
 
 -- 1. Purpose: Generate the header for an email when both SIGNATURE and FORWARDMESSAGES
---             have been enabled(1).
+--             have been enabled(1). The header is for the email to be forwarded.
 -- 
 -- #variants = 
 -- #unique_variants =
@@ -673,9 +674,9 @@ enronQ1 =
 --       ⋈_{messages.sender=emp1.email_id} (ρ (emp1) employeelist))
 --       ⋈_{recipientinfo.rvalue=emp2.email_id} (ρ (emp2) employeelist))
 --       ⋈_{emp2.eid=forward_msg.eid} forward_msg)
--- , signature ⟪ q_signature, forwardmessages ⟪ q_forwardmessages, q_basic ⟫⟫⟫
+-- , signature ⟪ q_signature_alt, forwardmessages ⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
 -- 
-enronQ1_alt = undefined
+enronQ1_alt = 
   choice (F.And signature forwardmessages)
          (project ([trueAttrQualRel mid_ messages
                   , trueAttr rvalue_
@@ -686,10 +687,10 @@ enronQ1_alt = undefined
                   , trueAttr body_])
                   (subq))
          (choice signature
-                 q_signature
+                 q_signature_alt
                  (choice forwardmessages
-                         q_forwardmessages
-                         q_basic))
+                         q_forwardmessages_alt
+                         q_basic_alt))
     where
       subq = 
         join (join (join (join (tRef messages)
@@ -707,6 +708,38 @@ enronQ1_alt = undefined
                          (att2attrQualRel eid_ forward_msg))
       emp1Name = "emp1"
       emp2Name = "emp2"
+
+-- 2. Purpose: Generate the header for an email when both SIGNATURE and REMAILMESSAGE
+--             have been enabled(1). The header is for the email that may be delivered
+--             to the reciever, if is_signed is enabled the sender will get an UI 
+--             warning, otherwise the email will be delivered to the reciever where
+--             the sender name is their pseudonym.
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- signature ∧ remailmessage ⟪π (sender) (σ (mid=X ∧ is_signed=True) messages),
+--   signature ⟪q_signature, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+-- 
+enronQ2part1, enronQ2part1_alt :: Algebra
+enronQ2part1 = 
+  choice (F.And signature remailmessage)
+         (project (pure $ trueAttr sender_)
+                  (select (VsqlAnd midXcond (eqAttValSqlCond is_signed_ trueValue)) 
+                          (tRef messages)))
+         (choice signature q_signature (choice remailmessage q_remailmessage q_basic))
+
+-- signature ∧ remailmessage ⟪π (mid, sender) (σ (is_signed=True) messages),
+--   signature ⟪q_signature_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+-- 
+enronQ2part1_alt = 
+  choice (F.And signature remailmessage)
+         (project (fmap trueAttr [mid_, sender_])
+                  (select (eqAttValSqlCond is_signed_ trueValue)
+                          (tRef messages)))
+         (choice signature 
+                 q_signature_alt 
+                 (choice remailmessage q_remailmessage_alt q_basic_alt))
 
 -- -- 2. Intent: Fix interaction SIGNATURE vs. REMAILMESSAGE.
 -- enronQ2 :: Algebra
