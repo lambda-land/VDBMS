@@ -33,8 +33,10 @@ trueValue :: SqlValue
 trueValue = --C.Val (
   SqlBool True
 
-falseValue :: C.Atom
-falseValue = C.Val (SqlBool False)
+falseValue :: SqlValue
+falseValue = --C.Val (
+  SqlBool False
+  -- )
 
 midCondition :: C.Condition
 midCondition = C.Comp EQ (C.Att (qualifiedAttr messages  "mid")) midValue
@@ -710,7 +712,7 @@ enronQ1_alt =
       emp2Name = "emp2"
 
 -- 2. Purpose: Generate the header for an email when both SIGNATURE and REMAILMESSAGE
---             have been enabled(1). The header is for the email that may be delivered
+--             have been enabled. The header is for the email that may be delivered
 --             to the reciever, if is_signed is enabled the sender will get an UI 
 --             warning, otherwise the email will be delivered to the reciever where
 --             the sender name is their pseudonym.
@@ -741,34 +743,204 @@ enronQ2part1_alt =
                  q_signature_alt 
                  (choice remailmessage q_remailmessage_alt q_basic_alt))
 
--- -- 2. Intent: Fix interaction SIGNATURE vs. REMAILMESSAGE.
--- enronQ2 :: Algebra
--- enronQ2 = Proj [trueAttr is_signed, trueAttr rvalue] $ genRenameAlgebra $ 
---                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---                       joinTwoRelation messages recipientinfo "mid"
+-- signature ∧ remailmessage ⟪subq_similar_to_remialmessage_q,
+--   signature ⟪q_signature, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+-- subq_similar_to_remialmessage_q ← π (pseudonym, rvalue, subject, body)
+--   ((((σ (mid=X ∧ ¬is_signed) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--     ⋈_{messages.sender=employeelist.email_id} employeelist) 
+--     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
+-- 
+enronQ2part2, enronQ2part2_alt :: Algebra
+enronQ2part2 = 
+  choice (F.And signature remailmessage)
+         subq
+         (choice signature q_signature (choice remailmessage q_remailmessage q_basic))
+    where
+      subq = 
+        project ([trueAttr pseudonym_
+                , trueAttr rvalue_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (select (VsqlAnd midXcond 
+                                                   (eqAttValSqlCond is_signed_ falseValue)) 
+                                          (tRef messages))
+                                  (tRef recipientinfo)
+                                  (joinEqCond (att2attrQualRel mid_ messages)
+                                              (att2attrQualRel mid_ recipientinfo)))
+                            (tRef employeelist)
+                            (joinEqCond (att2attrQualRel sender_ messages)
+                                        (att2attrQualRel email_id_ employeelist)))
+                      (tRef remail_msg)
+                      (joinEqCond (att2attrQualRel eid_ employeelist)
+                                  (att2attrQualRel eid_ remail_msg)))
 
--- enronVQ2 :: Algebra
--- enronVQ2 = AChc (signature `F.Or` remailmessage) enronQ2 Empty
 
--- -- 3. Intent: Fix interaction ENCRYPTION vs. AUTORESPONDER
--- enronQ3 :: Algebra
--- enronQ3 = Proj (map trueAttr [is_encrypted, rvalue, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
---             Join q_join_rec_emp_msg (genRenameAlgebra (tRef auto_msg)) join_cond
---         where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr auto_msg "eid"))
---               vautomsg_subject = qualifiedAttr auto_msg "subject"
---               vautomsg_body    = qualifiedAttr auto_msg "body"
 
--- enronVQ3 :: Algebra
--- enronVQ3 = AChc encryption (AChc autoresponder enronQ4 q_encryption) q_autoresponder
+-- signature ∧ remailmessage ⟪subq_similar_to_remialmessage_q,
+--   signature ⟪q_signature_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+-- ⟪subq_similar_to_remialmessage_q ← π (messages.mid, sender, rvalue, subject, body, suffix)
+--   ((((σ (¬ is_signed) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
+-- 
+enronQ2part2_alt = 
+  choice (F.And signature remailmessage)
+         subq
+         (choice signature 
+                 q_signature_alt 
+                 (choice remailmessage q_remailmessage_alt q_basic_alt))
+    where
+      subq =
+        project ([trueAttrQualRel mid_ messages
+                , trueAttr pseudonym_
+                , trueAttr rvalue_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (select (eqAttValSqlCond is_signed_ falseValue) 
+                                          (tRef messages))
+                                  (tRef recipientinfo)
+                                  (joinEqCond (att2attrQualRel mid_ messages)
+                                              (att2attrQualRel mid_ recipientinfo)))
+                            (tRef employeelist)
+                            (joinEqCond (att2attrQualRel sender_ messages)
+                                        (att2attrQualRel email_id_ employeelist)))
+                      (tRef remail_msg)
+                      (joinEqCond (att2attrQualRel eid_ employeelist)
+                                  (att2attrQualRel eid_ remail_msg)))
 
--- -- 4. Intent: Fix interaction ENCRYPTION vs. FORWARDMESSAGES.
--- enronQ4 :: Algebra
--- enronQ4 = Proj (map trueAttr [is_encrypted, rvalue, forwardaddr]) $ genRenameAlgebra $ 
---             Join q_join_rec_emp_msg (genRenameAlgebra (tRef forward_msg)) join_cond
---         where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
+-- 3. Purpose: Generate the header for an email when both ENCRYPTION and AUTORESPONDER
+--             have been enabled. The header is for the email to be autoresponded.
+--             Note that whether the email is encrypted or not, it doesn't matter
+--             because either way the header shouldn't include the security info in 
+--             the header of the email is being sent out.
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- encryption ∧ autoresponder ⟪ q_autoresponder,
+--    encryption ⟪ q_encryption, autoresponded⟪ q_autoresponder, q_basic⟫⟫⟫
+-- 
+enronQ3, enronQ3_alt :: Algebra
+enronQ3 = 
+  choice (F.And encryption autoresponder)
+         q_autoresponder
+         (choice encryption q_encryption (choice autoresponder q_autoresponder q_basic))
 
--- enronVQ4 :: Algebra
--- enronVQ4 = AChc encryption (AChc forwardmessages enronQ4 q_encryption) q_forwardmessages
+-- encryption ∧ autoresponder ⟪ q_autoresponder_alt,
+--    encryption ⟪ q_encryption_alt, autoresponded⟪ q_autoresponder_alt, q_basic_alt⟫⟫⟫
+-- 
+enronQ3_alt = 
+  choice (F.And encryption autoresponder)
+         q_autoresponder_alt
+         (choice encryption 
+                 q_encryption_alt 
+                 (choice autoresponder q_autoresponder_alt q_basic_alt))
+
+-- 4. Purpose: Generate the header for an email when both ENCRYPTION and FORWARDMESSAGES
+--             have been enabled. The header is for the email that may be forwarded.
+--             If is_encrypted is enabled the reciever of email X (whose about to 
+--             forward the message) will get an UI 
+--             warning, otherwise the email will be forwarded.
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- encryption ∧ forwardmessages ⟪π (rvalue) (σ (mid=X ∧ is_encrypted) messages),
+--    encryption⟪ q_encryption,forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
+-- 
+enronQ4part1, enronQ4part1_alt :: Algebra
+enronQ4part1 = 
+  choice (F.And encryption forwardmessages)
+         (project (pure $ trueAttr rvalue_)
+                  (select (VsqlAnd midXcond 
+                                   (eqAttValSqlCond is_encrypted_ trueValue))
+                          (tRef messages)))
+         (choice encryption 
+                 q_encryption
+                 (choice forwardmessages
+                         q_forwardmessages
+                         q_basic))
+
+-- encryption ∧ forwardmessages ⟪π (mid, rvalue) (σ (is_encrypted) messages),
+--    encryption⟪ q_encryption_alt,forwardmessages⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
+-- 
+enronQ4part1_alt = 
+  choice (F.And encryption forwardmessages)
+         (project (fmap trueAttr [mid_, rvalue_])
+                  (select (eqAttValSqlCond is_encrypted_ trueValue)
+                          (tRef messages)))
+         (choice encryption 
+                 q_encryption_alt
+                 (choice forwardmessages
+                         q_forwardmessages_alt
+                         q_basic_alt))
+
+-- 
+-- encryption ∧ forwardmessages ⟪subq_similar_to_forwardmsg_q,
+-- forwardmessages⟪ q_forwardmessages, q_basic⟫⟫
+-- ⟪subq_similar_to_forwardmsg_q ← π (rvalue, forwardaddr, subject, body)
+--   ((((σ (mid=X ∧ ¬is_encrypted) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+enronQ4part2, enronQ4part2_alt :: Algebra
+enronQ4part2 = 
+  choice (F.And encryption forwardmessages)
+         subq
+         (choice forwardmessages
+                 q_forwardmessages
+                 q_basic)
+    where
+      subq = 
+        project ([trueAttr rvalue_
+                , trueAttr forwardaddr_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (select (VsqlAnd midXcond 
+                                                   (eqAttValSqlCond is_encrypted_ falseValue))
+                                          (tRef messages))
+                                  (tRef recipientinfo)
+                                  (joinEqCond (att2attrQualRel mid_ messages)
+                                              (att2attrQualRel mid_ recipientinfo)))
+                            (tRef employeelist)
+                            (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                        (att2attrQualRel email_id_ employeelist)))
+                      (tRef forward_msg)
+                      (joinEqCond (att2attrQualRel eid_ employeelist)
+                                  (att2attrQualRel eid_ forward_msg)))
+
+
+-- 
+-- encryption ∧ forwardmessages ⟪subq_similar_to_forwardmsg_q,
+-- forwardmessages⟪ q_forwardmessages, q_basic⟫⟫
+-- ⟪subq_similar_to_forwardmsg_q ← π (messages.mid, rvalue, forwardaddr, subject, body)
+--   ((((σ (¬is_encrypted) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+enronQ4part2_alt = 
+  choice (F.And encryption forwardmessages)
+         subq
+         (choice forwardmessages
+                 q_forwardmessages_alt
+                 q_basic_alt)
+    where
+      subq =
+        project ([trueAttrQualRel mid_ messages
+                , trueAttr rvalue_
+                , trueAttr forwardaddr_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (select (eqAttValSqlCond is_encrypted_ falseValue)
+                                          (tRef messages))
+                                  (tRef recipientinfo)
+                                  (joinEqCond (att2attrQualRel mid_ messages)
+                                              (att2attrQualRel mid_ recipientinfo)))
+                            (tRef employeelist)
+                            (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                        (att2attrQualRel email_id_ employeelist)))
+                      (tRef forward_msg)
+                      (joinEqCond (att2attrQualRel eid_ employeelist)
+                                  (att2attrQualRel eid_ forward_msg)))
+
 
 -- -- 5. Intent: Fix interaction ENCRYPTION vs. REMAILMESSAGE.
 -- enronQ5 :: Algebra
