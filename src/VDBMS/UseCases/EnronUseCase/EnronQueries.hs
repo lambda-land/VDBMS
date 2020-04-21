@@ -613,20 +613,100 @@ q_mailhost_old =
 -- -- ** V-Queries for Feature Interactions
 -- --
 
--- 1. Purpose: Fix interaction SIGNATURE vs. FORWARDMESSAGES (1).
--- q_join_rec_emp_msg :: Rename Algebra
--- q_join_rec_emp_msg = genSubquery "q_join_rec_emp_msg" $ Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---                     Join (genRenameAlgebra (joinTwoRelation messages recipientinfo "mid"))
---                          (genRenameAlgebra (tRef employeelist)) join_cond
---           where join_cond = C.Comp EQ (C.Att sender) (C.Att email_id)
+-- 1. Purpose: Generate the header for an email when both SIGNATURE and FORWARDMESSAGES
+--             have been enabled(1).
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- signature ∧ forwardmessages ⟪ 
+-- π (rvalue, forwardaddr, emp1.is_signed, emp1.verification_key)
+--   (((((σ (mid = X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--       ⋈_{messages.sender=emp1.email_id} (ρ (emp1) employeelist))
+--       ⋈_{recipientinfo.rvalue=emp2.email_id} (ρ (emp2) employeelist))
+--       ⋈_{emp2.eid=forward_msg.eid} forward_msg)
+-- , signature ⟪ q_signature, forwardmessages ⟪ q_forwardmessages, q_basic ⟫⟫⟫
+-- 
+enronQ1, enronQ1_alt :: Algebra
+enronQ1 = 
+  choice (F.And signature forwardmessages)
+         (project ([trueAttr rvalue_
+                  , trueAttr forwardaddr_
+                  , trueAttrQual is_signed_ emp1Name
+                  , trueAttrQual verification_key_ emp1Name
+                  , trueAttr subject_
+                  , trueAttr body_])
+                  (subq))
+         (choice signature
+                 q_signature
+                 (choice forwardmessages
+                         q_forwardmessages
+                         q_basic))
+    where
+      subq = 
+        join (join (join (join (select midXcond $ tRef messages)
+                               (tRef recipientinfo)
+                               (joinEqCond (att2attrQualRel mid_ messages)
+                                           (att2attrQualRel mid_ recipientinfo)))
+                         (renameQ emp1Name (tRef employeelist))
+                         (joinEqCond (att2attrQualRel sender_ messages)
+                                     (att2attrQual email_id_ emp1Name)))
+                   (renameQ emp2Name (tRef employeelist))
+                   (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                               (att2attrQual email_id_ emp2Name)))
+             (tRef forward_msg)
+             (joinEqCond (att2attrQual eid_ emp2Name)
+                         (att2attrQualRel eid_ forward_msg))
+      emp1Name = "emp1"
+      emp2Name = "emp2"
 
--- enronQ1 :: Algebra
--- enronQ1 = Proj (map trueAttr [sender, rvalue, forwardaddr, is_signed]) $ genRenameAlgebra $ 
---             Join q_join_rec_emp_msg (genRenameAlgebra (tRef forward_msg)) join_cond
---         where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
 
--- enronVQ1 :: Algebra
--- enronVQ1 = AChc signature (AChc forwardmessages enronQ1 q_signature) q_forwardmessages
+-- checks for type system:
+-- have the same name for emp1 and emp2 --> type error
+-- dont have names for emp1 and emp2
+-- dont have qualifier for email_id attribute in join condition
+-- dont have qualifier for is_signed attribute in the projected attribute list
+
+-- signature ∧ forwardmessages ⟪ 
+-- π (messages.mid, rvalue, forwardaddr, emp1.is_signed, emp1.verification_key)
+--   ((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--       ⋈_{messages.sender=emp1.email_id} (ρ (emp1) employeelist))
+--       ⋈_{recipientinfo.rvalue=emp2.email_id} (ρ (emp2) employeelist))
+--       ⋈_{emp2.eid=forward_msg.eid} forward_msg)
+-- , signature ⟪ q_signature, forwardmessages ⟪ q_forwardmessages, q_basic ⟫⟫⟫
+-- 
+enronQ1_alt = undefined
+  choice (F.And signature forwardmessages)
+         (project ([trueAttrQualRel mid_ messages
+                  , trueAttr rvalue_
+                  , trueAttr forwardaddr_
+                  , trueAttrQual is_signed_ emp1Name
+                  , trueAttrQual verification_key_ emp1Name
+                  , trueAttr subject_
+                  , trueAttr body_])
+                  (subq))
+         (choice signature
+                 q_signature
+                 (choice forwardmessages
+                         q_forwardmessages
+                         q_basic))
+    where
+      subq = 
+        join (join (join (join (tRef messages)
+                               (tRef recipientinfo)
+                               (joinEqCond (att2attrQualRel mid_ messages)
+                                           (att2attrQualRel mid_ recipientinfo)))
+                         (renameQ emp1Name (tRef employeelist))
+                         (joinEqCond (att2attrQualRel sender_ messages)
+                                     (att2attrQual email_id_ emp1Name)))
+                   (renameQ emp2Name (tRef employeelist))
+                   (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                               (att2attrQual email_id_ emp2Name)))
+             (tRef forward_msg)
+             (joinEqCond (att2attrQual eid_ emp2Name)
+                         (att2attrQualRel eid_ forward_msg))
+      emp1Name = "emp1"
+      emp2Name = "emp2"
 
 -- -- 2. Intent: Fix interaction SIGNATURE vs. REMAILMESSAGE.
 -- enronQ2 :: Algebra
