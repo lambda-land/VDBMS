@@ -1019,27 +1019,122 @@ enronQ5_alt =
                          q_remailmessage_alt
                          q_basic_alt))
 
--- -- 5. Intent: Fix interaction ENCRYPTION vs. REMAILMESSAGE.
--- enronQ5 :: Algebra
--- enronQ5 = Proj (map trueAttr [is_encrypted, sender, rvalue]) $ genRenameAlgebra $ 
---                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---                       joinTwoRelation messages recipientinfo "mid"
+-- 6. Purpose: Generate the header for an email when both AUTORESPONDER and FORWARDMESSAGES
+--             have been enabled. This interaction requires us to generate two headers
+--             one for the email to be forwarded and another one to be autoresponded
+--             to the original first sender and not the one who forwarded the message
+--             to avoid a cycle.
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- autoresponder ∧ forwardmessages⟪ subq_gen_fwd, 
+--   autoresponder⟪ q_autoresponder, forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
+-- subq_gen_fwd ← q_forwardmessages
+-- 
+enronQ6part1, enronQ6part1_alt :: Algebra
+enronQ6part1 = 
+  choice (F.And autoresponder forwardmessages)
+         (subq_gen_fwd)
+         (choice autoresponder
+                 q_autoresponder
+                 (choice forwardmessages
+                         q_forwardmessages
+                         q_basic))
+    where 
+      subq_gen_fwd = q_forwardmessages
 
--- enronVQ5 :: Algebra
--- enronVQ5 = AChc encryption (AChc remailmessage enronQ5 q_encryption) q_remailmessage
+-- autoresponder ∧ forwardmessages⟪ subq_gen_fwd, 
+--   autoresponder⟪ q_autoresponder_alt, forwardmessages⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
+-- subq_gen_fwd ← q_forwardmessages_alt
+-- 
+enronQ6part1_alt = 
+  choice (F.And autoresponder forwardmessages)
+         (subq_gen_fwd)
+         (choice autoresponder
+                 q_autoresponder_alt
+                 (choice forwardmessages
+                         q_forwardmessages_alt
+                         q_basic_alt))
+    where
+      subq_gen_fwd = q_forwardmessages_alt
 
--- -- 6. Intent: Fix interaction AUTORESPONDER vs. FORWARDMESSAGES.
--- enronQ6 :: Algebra
--- enronQ6 = Proj (map trueAttr [sender, rvalue, forwardaddr, vautomsg_eid, vautomsg_subject, vautomsg_body]) $ genRenameAlgebra $ 
---             Join (genRenameAlgebra (Join q_join_rec_emp_msg (genRenameAlgebra (tRef auto_msg)) join_cond1))
---                  (genRenameAlgebra (tRef forward_msg)) join_cond2
---         where join_cond1 = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr auto_msg "eid"))
---               join_cond2 = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
---               vautomsg_subject = qualifiedAttr auto_msg "subject"
---               vautomsg_body    = qualifiedAttr auto_msg "body"
---               vautomsg_eid     = qualifiedAttr auto_msg "eid"
--- enronVQ6 :: Algebra
--- enronVQ6 = AChc autoresponder (AChc forwardmessages enronQ6 q_autoresponder) q_forwardmessages
+-- 
+-- autoresponder ∧ forwardmessages⟪ subq_gen_auto, 
+--   autoresponder⟪ q_autoresponder, forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
+-- subq_gen_auto ← π (forwardaddr, sender, auto_msg.subject, auto_msg.body)
+--   (((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
+--     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
+--     ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+-- 
+enronQ6part2, enronQ6part2_alt :: Algebra
+enronQ6part2 = 
+  choice (F.And autoresponder forwardmessages)
+         (subq_gen_auto)
+         (choice autoresponder
+                 q_autoresponder
+                 (choice forwardmessages
+                         q_forwardmessages
+                         q_basic))
+    where
+      subq_gen_auto = 
+        project ([trueAttr forwardaddr_
+                , trueAttr sender_
+                , trueAttrQualRel subject_ auto_msg
+                , trueAttrQualRel body_ auto_msg])
+                (join (join (join (join (select midXcond (tRef messages))
+                                        (tRef recipientinfo)
+                                        (joinEqCond (att2attrQualRel mid_ messages)
+                                                    (att2attrQualRel mid_ recipientinfo)))
+                                  (tRef employeelist)
+                                  (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                              (att2attrQualRel email_id_ employeelist)))
+                            (tRef auto_msg)
+                            (joinEqCond (att2attrQualRel eid_ employeelist)
+                                        (att2attrQualRel eid_ auto_msg)))
+                      (tRef forward_msg)
+                      (joinEqCond (att2attrQualRel eid_ employeelist)
+                                  (att2attrQualRel eid_ forward_msg)))
+
+
+-- autoresponder ∧ forwardmessages⟪ subq_gen_auto, 
+--   autoresponder⟪ q_autoresponder_alt, 
+--      forwardmessages⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
+-- subq_gen_auto ← π (forwardaddr, sender, auto_msg.subject, auto_msg.body)
+--   ((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
+--     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
+--     ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+-- 
+enronQ6part2_alt = 
+  choice (F.And autoresponder forwardmessages)
+         (subq_gen_auto)
+         (choice autoresponder
+                 q_autoresponder_alt
+                 (choice forwardmessages
+                         q_forwardmessages_alt
+                         q_basic_alt))
+    where
+      subq_gen_auto = 
+        project ([trueAttrQualRel mid_ messages
+                , trueAttr forwardaddr_
+                , trueAttr sender_
+                , trueAttrQualRel subject_ auto_msg
+                , trueAttrQualRel body_ auto_msg])
+                (join (join (join (join (tRef messages)
+                                        (tRef recipientinfo)
+                                        (joinEqCond (att2attrQualRel mid_ messages)
+                                                    (att2attrQualRel mid_ recipientinfo)))
+                                  (tRef employeelist)
+                                  (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                              (att2attrQualRel email_id_ employeelist)))
+                            (tRef auto_msg)
+                            (joinEqCond (att2attrQualRel eid_ employeelist)
+                                        (att2attrQualRel eid_ auto_msg)))
+                      (tRef forward_msg)
+                      (joinEqCond (att2attrQualRel eid_ employeelist)
+                                  (att2attrQualRel eid_ forward_msg)))
 
 -- -- 7. Intent: Fix interaction AUTORESPONDER vs. REMAILMESSAGE (1).
 -- enronQ7 :: Algebra
