@@ -1322,15 +1322,44 @@ enronQ8part2_alt =
 --                       tRef messages
 -- enronVQ9 :: Algebra
 -- enronVQ9 = AChc (autoresponder `F.And` mailhost) enronQ9 Empty
-         
--- -- 10. Intent: Fix interaction FORWARDMESSAGES vs. FORWARDMESSAGES.
--- enronQ10 :: Algebra
--- enronQ10 = Proj (map trueAttr [sender, rvalue, forwardaddr]) $ genRenameAlgebra $ 
---             Join q_join_rec_emp_msg (genRenameAlgebra (tRef forward_msg)) join_cond
---         where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
 
--- enronVQ10 :: Algebra
--- enronVQ10 = AChc forwardmessages enronQ10 Empty
+-- 10. Purpose: When FORWARDMESSAGES is enabled and it creates a loop warn the users.
+-- 
+-- #variants = 
+-- #unique_variants =
+-- 
+-- forwardmessages⟪ 
+--    π (emp2.email_id, emp1.email_id)
+--      ((((ρ (fwd1) forward_msg) 
+--        ⋈_{fwd1.forwardaddr=emp1.email_id} (ρ (emp1) employeelist))
+--        ⋈_{emp1.eid=fwd2.eid} (ρ (fwd2) forward_msg))
+--        ⋈_{fwd2.forwardaddr=emp2.email_id} (ρ (emp2) employeelist))
+--    , ε⟫
+-- 
+enronQ10, enronQ10_alt :: Algebra
+enronQ10 = 
+  choice forwardmessages
+         (project [trueAttrQual email_id_ emp2Name
+                  , trueAttrQual email_id_ emp1Name]
+                  (join (join (join (renameQ fwd1 $ tRef forward_msg)
+                                    (renameQ emp1Name $ tRef employeelist)
+                                    (joinEqCond (att2attrQual forwardaddr fwd1)
+                                                (att2attrQual email_id_ emp1Name)))
+                              (renameQ fwd2 $ tRef forward_msg)
+                              (joinEqCond (att2attrQual eid_ emp1Name)
+                                          (att2attrQual eid_ fwd2)))
+                        (renameQ emp2Name $ tRef employeelist)
+                        (joinEqCond (att2attrQual forwardaddr_ fwd2)
+                                    (att2attrQual email_id_ emp2Name))))
+         Empty
+    where
+      emp1Name = "emp1"
+      emp2Name = "emp2"
+      fwd1 = "fwd1"
+      fwd2 = "fwd2"
+
+-- 
+enronQ10_alt = enronQ10
      
 -- -- 11. Intent: Fix interaction FORWARDMESSAGES vs. REMAILMESSAGE (1).
 -- temp :: Rename Algebra
