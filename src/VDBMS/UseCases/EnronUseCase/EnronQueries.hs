@@ -1550,6 +1550,53 @@ enronQ12_alt =
                       (joinEqCond (att2attrQual eid_ emp2Name)
                                   (att2attrQualRel eid_ filter_msg)))
 
+-- 13. Purpose: Generate the header for an email when both FORWARDMESSAGES and MAILHOST
+--              have been enabled. It generates the header for an email to be 
+--              forwarded while checking if the foward address isn't included in the
+--              mailhost and causes a system notification email to be sent to the user.
+--              so the mailhost can detect if a loop may happen and avoid it.
+-- 
+-- #variants = 
+-- #unique_variants =
+--
+-- forwardmessages ∧ mailhost⟪ subq_fwd_mailhost_comb,
+--    forwardmessages⟪ q_forwardmessages, mailhost⟪ q_mailhost, q_basic⟫⟫⟫
+-- subq_fwd_remail_comb ← π (rvalue, forwardaddr, subject, body)
+--   (((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+--      ⋈_{forward_msg.eid=remail_msg.eid} remail_msg)
+-- 
+-- enronQ13, enronQ13_alt :: Algebra
+-- enronQ13 = 
+--   choice (F.And forwardmessages remailmessage)
+--          (subq_fwd_remail_comb)
+--          (choice forwardmessages
+--                  q_forwardmessages
+--                  (choice remailmessage
+--                          q_remailmessage
+--                          q_basic))
+--     where
+--       subq_fwd_remail_comb =
+--         project ([trueAttr rvalue_
+--                 , trueAttr forwardaddr_
+--                 , trueAttr pseudonym_
+--                 , trueAttr subject_
+--                 , trueAttr body_])
+--                 (join (join (join (join (select midXcond (tRef messages))
+--                                         (tRef recipientinfo)
+--                                         (joinEqCond (att2attrQualRel mid_ messages)
+--                                                     (att2attrQualRel mid_ recipientinfo)))
+--                                   (tRef employeelist)
+--                                   (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+--                                               (att2attrQualRel email_id_ employeelist)))
+--                             (tRef forward_msg)
+--                             (joinEqCond (att2attrQualRel eid_ employeelist)
+--                                         (att2attrQualRel eid_ forward_msg)))
+--                       (tRef remail_msg)
+--                       (joinEqCond (att2attrQualRel eid_ forward_msg)
+--                                   (att2attrQualRel eid_ remail_msg)))
+
 -- -- 13. Intent:Fix interaction FORWARDMESSAGES vs. MAILHOST.
 -- enronQ13 :: Algebra
 -- enronQ13 = Proj (map trueAttr [rvalue, username, is_forward_msg]) $ genRenameAlgebra $ 
