@@ -1446,26 +1446,109 @@ enronQ11_alt =
                       (joinEqCond (att2attrQualRel eid_ forward_msg)
                                   (att2attrQualRel eid_ remail_msg)))
 
--- -- 11. Intent: Fix interaction FORWARDMESSAGES vs. REMAILMESSAGE (1).
--- temp :: Rename Algebra
--- temp = genSubquery "temp" $ joinTwoRelation employeelist forward_msg "eid"
+-- 12. Purpose: Generate the header for an email when both FORWARDMESSAGES and FILTERMESSAGES
+--              have been enabled. Generates the email to be forwarded (after recieving 
+--              email X) and checks if the forwardaddr is in the filtered list.
+-- 
+-- #variants = 
+-- #unique_variants =
+--
+-- forwardmessages ∧ filtermessages⟪ subq_fwd_filter_comb,
+-- forwardmessages⟪ q_forwardmessages, filtermessages⟪ q_filtermessages, q_basic⟫⟫⟫
+-- subq_fwd_filter_comb ← π (rvalue, forwardaddr, suffix, subject, body)
+--   ((((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=emp1.email_id} (ρ (emp1) employeelist))
+--      ⋈_{emp1.eid=forward_msg.eid} forward_msg)
+--      ⋈_{forward_msg.forwardaddr=emp2.email_id} (ρ (emp2) employeelist))
+--      ⋈_{emp2.eid=filter_msg.eid} filter_msg)
+-- 
+enronQ12, enronQ12_alt :: Algebra
+enronQ12 = 
+  choice (F.And forwardmessages filtermessages)
+         (subq_fwd_filter_comb)
+         (choice forwardmessages 
+                 q_forwardmessages
+                 (choice filtermessages
+                         q_filtermessages
+                         q_basic))
+    where
+      emp1Name = "emp1"
+      emp2Name = "emp2"
+      subq_fwd_filter_comb = 
+        project ([trueAttr rvalue_
+                , trueAttr forwardaddr_
+                , trueAttr suffix_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (join (join (select midXcond (tRef messages))
+                                              (tRef recipientinfo)
+                                              (joinEqCond (att2attrQualRel mid_ 
+                                                                           messages)
+                                                          (att2attrQualRel mid_ 
+                                                                           recipientinfo)))
+                                        (renameQ emp1Name $ tRef employeelist)
+                                        (joinEqCond (att2attrQualRel rvalue_ 
+                                                                     recipientinfo)
+                                                    (att2attrQual email_id_ 
+                                                                  emp1Name)))
+                                  (tRef forward_msg)
+                                  (joinEqCond (att2attrQual eid_ emp1Name)
+                                              (att2attrQualRel eid_ forward_msg)))
+                            (renameQ emp2Name $ tRef employeelist)
+                            (joinEqCond (att2attrQualRel forwardaddr_ forward_msg)
+                                        (att2attrQual email_id_ emp2Name)))
+                      (tRef filter_msg)
+                      (joinEqCond (att2attrQual eid_ emp2Name)
+                                  (att2attrQualRel eid_ filter_msg)))
 
--- enronQ11 :: Algebra
--- enronQ11 = Proj (map trueAttr [email_id, forwardaddr, pseudonym]) $ genRenameAlgebra $ 
---             Join temp (genRenameAlgebra (tRef remail_msg)) join_cond
---         where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "temp" "eid")) (C.Att (qualifiedAttr remail_msg "eid"))
-
--- enronVQ11 :: Algebra
--- enronVQ11 = AChc (remailmessage `F.Or` forwardmessages) enronQ11 Empty
-
--- -- 12. Intent: Fix interaction FORWARDMESSAGES vs. FILTERMESSAGES.
--- enronQ12 :: Algebra
--- enronQ12 = Proj [trueAttr forwardaddr] $ genRenameAlgebra $ 
---             Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---               joinTwoRelation employeelist forward_msg "eid"
-
--- enronVQ12 :: Algebra
--- enronVQ12 = AChc (forwardmessages `F.Or` filtermessages ) enronQ12 Empty
+-- forwardmessages ∧ filtermessages⟪ subq_fwd_filter_comb,
+--    forwardmessages⟪ q_forwardmessages_alt, 
+--       filtermessages⟪ q_filtermessages_alt, q_basic_alt⟫⟫⟫
+-- subq_fwd_filter_comb ← π (messages.mid, rvalue, forwardaddr, suffix, subject, body)
+--   (((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=emp1.email_id} (ρ (emp1) employeelist))
+--      ⋈_{emp1.eid=forward_msg.eid} forward_msg)
+--      ⋈_{forward_msg.forwardaddr=emp2.email_id} (ρ (emp2) employeelist))
+--      ⋈_{emp2.eid=filter_msg.eid} filter_msg)
+-- 
+enronQ12_alt = 
+  choice (F.And forwardmessages filtermessages)
+         (subq_fwd_filter_comb)
+         (choice forwardmessages 
+                 q_forwardmessages_alt
+                 (choice filtermessages
+                         q_filtermessages_alt
+                         q_basic_alt))
+    where
+      emp1Name = "emp1"
+      emp2Name = "emp2"
+      subq_fwd_filter_comb = 
+        project ([trueAttrQualRel mid_ messages
+                , trueAttr rvalue_
+                , trueAttr forwardaddr_
+                , trueAttr suffix_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (join (join (tRef messages)
+                                              (tRef recipientinfo)
+                                              (joinEqCond (att2attrQualRel mid_ 
+                                                                           messages)
+                                                          (att2attrQualRel mid_ 
+                                                                           recipientinfo)))
+                                        (renameQ emp1Name $ tRef employeelist)
+                                        (joinEqCond (att2attrQualRel rvalue_ 
+                                                                     recipientinfo)
+                                                    (att2attrQual email_id_ 
+                                                                  emp1Name)))
+                                  (tRef forward_msg)
+                                  (joinEqCond (att2attrQual eid_ emp1Name)
+                                              (att2attrQualRel eid_ forward_msg)))
+                            (renameQ emp2Name $ tRef employeelist)
+                            (joinEqCond (att2attrQualRel forwardaddr_ forward_msg)
+                                        (att2attrQual email_id_ emp2Name)))
+                      (tRef filter_msg)
+                      (joinEqCond (att2attrQual eid_ emp2Name)
+                                  (att2attrQualRel eid_ filter_msg)))
 
 -- -- 13. Intent:Fix interaction FORWARDMESSAGES vs. MAILHOST.
 -- enronQ13 :: Algebra
