@@ -1641,14 +1641,80 @@ enronQ13_alt =
                       (joinEqCond (att2attrQualRel eid_ forward_msg)
                                   (att2attrQualRel eid_ mail_host)))
 
--- -- 13. Intent:Fix interaction FORWARDMESSAGES vs. MAILHOST.
--- enronQ13 :: Algebra
--- enronQ13 = Proj (map trueAttr [rvalue, username, is_forward_msg]) $ genRenameAlgebra $ 
---             Join q_join_rec_emp_msg (genRenameAlgebra (tRef mail_host)) join_cond
---         where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr mail_host "eid"))
+-- 14. Purpose: Generate the header for an email when both REMAILMESSAGE and MAILHOST
+--              have been enabled. The mailhost recognizes when the pseudonym is set 
+--              to the username in the mailhost and when a non-delivery notification
+--              is being generated because of this interaction it omits the user's
+--              original identity in the header of such ndn email. So it doesn't 
+--              include the sender info. The ndn is being generated as a response
+--              to email X.
+-- 
+-- #variants = 
+-- #unique_variants =
+--
+-- remailmessage ∧ mailhost⟪
+--   π (sender, subject, body)
+--     (((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--       ⋈_{rvalue=email_id} employeelist)
+--       ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
+--       ⋈_{remail_msg.eid=mail_host.eid} mail_host)
+--   , remailmessage⟪ q_remailmessage,
+--        mailhost⟪ q_mailhost, q_basic⟫⟫⟫
+-- 
+enronQ14, enronQ14_alt :: Algebra
+enronQ14 = 
+  choice (F.And remailmessage mailhost)
+         (project (fmap trueAttr [sender_, subject_, body_])
+                  (join (join (join (join (select midXcond $ tRef messages)
+                                          (tRef recipientinfo)
+                                          (joinEqCond (att2attrQualRel mid_ messages)
+                                                      (att2attrQualRel mid_ recipientinfo)))
+                                    (tRef employeelist)
+                                    (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                                (att2attrQualRel email_id_ employeelist)))
+                              (tRef remail_msg)
+                              (joinEqCond (att2attrQualRel eid_ employeelist)
+                                          (att2attrQualRel eid_ remail_msg)))
+                       (tRef mail_host)
+                       (joinEqCond (att2attrQualRel eid_ remail_msg)
+                                   (att2attrQualRel eid_ mail_host))))
+         (choice remailmessage
+                 q_remailmessage
+                 (choice mailhost
+                         q_mailhost
+                         q_basic))
 
--- enronVQ13 :: Algebra
--- enronVQ13 = AChc (forwardmessages `F.Or` mailhost ) enronQ13 Empty
+-- remailmessage ∧ mailhost⟪
+--   π (messages.mid, sender, subject, body)
+--     ((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--       ⋈_{rvalue=email_id} employeelist)
+--       ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
+--       ⋈_{remail_msg.eid=mail_host.eid} mail_host)
+--   , remailmessage⟪ q_remailmessage_alt,
+--        mailhost⟪ q_mailhost_alt, q_basic_alt⟫⟫⟫
+-- 
+enronQ14_alt = 
+  choice (F.And remailmessage mailhost)
+         (project ((pure $ trueAttrQualRel mid_ messages)
+                  ++ fmap trueAttr [sender_, subject_, body_])
+                  (join (join (join (join (tRef messages)
+                                          (tRef recipientinfo)
+                                          (joinEqCond (att2attrQualRel mid_ messages)
+                                                      (att2attrQualRel mid_ recipientinfo)))
+                                    (tRef employeelist)
+                                    (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                                (att2attrQualRel email_id_ employeelist)))
+                              (tRef remail_msg)
+                              (joinEqCond (att2attrQualRel eid_ employeelist)
+                                          (att2attrQualRel eid_ remail_msg)))
+                       (tRef mail_host)
+                       (joinEqCond (att2attrQualRel eid_ remail_msg)
+                                   (att2attrQualRel eid_ mail_host))))
+         (choice remailmessage
+                 q_remailmessage_alt
+                 (choice mailhost
+                         q_mailhost_alt
+                         q_basic_alt))
 
 -- -- 14. Intent:Fix interaction REMAILMESSAGE vs. MAILHOST
 -- enronQ14 :: Algebra
