@@ -296,7 +296,7 @@ q_encryption_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- π (rvalue, sender, auto_msg.subject, auto_msg.body)
+-- π (rvalue, sender, is_system_notification, auto_msg.subject, auto_msg.body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
 --     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
@@ -305,6 +305,7 @@ q_autoresponder, q_autoresponder_alt :: Algebra
 q_autoresponder = 
   project ([trueAttr rvalue_
           , trueAttr sender_
+          , trueAttr is_system_notification_
           , trueAttrQualRel subject_ auto_msg
           , trueAttrQualRel body_ auto_msg])
           (join (join (join (select midXcond (tRef messages))
@@ -319,7 +320,7 @@ q_autoresponder =
                             (att2attrQualRel eid_ auto_msg)))
 
 -- 
--- π (messages.mid, rvalue, sender, auto_msg.subject, auto_msg.body)
+-- π (messages.mid, rvalue, sender, is_system_notification, auto_msg.subject, auto_msg.body)
 --   (((messages ⋈_{messages.mid=temp.mid} recipientinfo) 
 --     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
 --     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
@@ -327,6 +328,7 @@ q_autoresponder_alt =
   project ([trueAttrQualRel mid_ messages
           , trueAttr rvalue_
           , trueAttr sender_
+          , trueAttr is_system_notification_
           , trueAttrQualRel subject_ auto_msg
           , trueAttrQualRel body_ auto_msg])
           (join (join (join (tRef messages)
