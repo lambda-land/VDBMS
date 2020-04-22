@@ -494,7 +494,7 @@ q_remailmessage_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- π (sender, rvalue, suffix, subject, body)
+-- π (sender, rvalue, suffix, is_system_notification, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
@@ -504,6 +504,7 @@ q_filtermessages =
   project ([trueAttr sender_
           , trueAttr rvalue_
           , trueAttr suffix_
+          , trueAttr is_system_notification_
           , trueAttr subject_
           , trueAttr body_])
           (join (join (join (select midXcond (tRef messages))
@@ -518,7 +519,7 @@ q_filtermessages =
                             (att2attrQualRel eid_ filter_msg)))
 
 -- 
--- π (messages.mid, sender, rvalue, suffix, subject, body)
+-- π (messages.mid, sender, rvalue, suffix, is_system_notification, subject, body)
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
@@ -527,6 +528,7 @@ q_filtermessages_alt =
           , trueAttr sender_
           , trueAttr rvalue_
           , trueAttr suffix_
+          , trueAttr is_system_notification_
           , trueAttr subject_
           , trueAttr body_])
           (join (join (join (tRef messages)
@@ -1317,13 +1319,8 @@ enronQ8part2_alt =
                       (joinEqCond (att2attrQualRel eid_ employeelist)
                                   (att2attrQualRel eid_ filter_msg)))
 
--- -- 9. Intent: Fix interaction AUTORESPONDER vs. MAILHOST.   -->THIS IS MANAGED IN Q_AUTORESP
--- enronQ9 :: Algebra
--- enronQ9 = Proj [trueAttr is_system_notification] $ genRenameAlgebra $ 
---                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---                       tRef messages
--- enronVQ9 :: Algebra
--- enronVQ9 = AChc (autoresponder `F.And` mailhost) enronQ9 Empty
+-- -- 9. Intent: Fix interaction AUTORESPONDER vs. MAILHOST.   
+-- -->THIS IS MANAGED IN q_autorespons by checking to see if an email is sys-not.
 
 -- 10. Purpose: When FORWARDMESSAGES is enabled and it creates a loop warn the users.
 -- 
@@ -1716,22 +1713,14 @@ enronQ14_alt =
                          q_mailhost_alt
                          q_basic_alt))
 
--- -- 14. Intent:Fix interaction REMAILMESSAGE vs. MAILHOST
--- enronQ14 :: Algebra
--- enronQ14 = Proj [trueAttr sender] $ genRenameAlgebra $ 
---                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---                       tRef messages
--- enronVQ14 :: Algebra
--- enronVQ14 = AChc (remailmessage `F.Or` mailhost ) enronQ14 Empty
+-- 15. Purpose: Generate the header for an email when both FILTERMESSAGES and MAILHOST
+--              have been enabled. --> q_filtermessage checks if an email is system
+--              notification, if so it doesn't filter the email and delivers it to 
+--              the reciever.
+-- 
 
--- -- 15. Intent: Fix interaction FILTERMESSAGES vs. MAILHOST.
--- enronQ15 :: Algebra
--- enronQ15 = Proj [trueAttr is_system_notification, trueAttr sender] $ genRenameAlgebra $ 
---                     Sel (VsqlCond midCondition) $ genRenameAlgebra $ 
---                       tRef messages
-
--- enronVQ15 :: Algebra
--- enronVQ15 = AChc (filtermessages `F.Or` mailhost ) enronQ14 Empty
+-- 16. Purpose: Generate the header for an email when both SIGNATURE and FORWARDMESSAGES (2)
+--              have been enabled. 
 
 -- -- 16. Intent: Fix interaction SIGNATURE vs. FORWARDMESSAGES (2).
 -- enronQ16 :: Algebra
