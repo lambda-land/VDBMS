@@ -494,7 +494,7 @@ q_remailmessage_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- π (sender, rvalue, subject, body, suffix)
+-- π (sender, rvalue, suffix, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
@@ -503,9 +503,9 @@ q_filtermessages, q_filtermessages_alt :: Algebra
 q_filtermessages = 
   project ([trueAttr sender_
           , trueAttr rvalue_
+          , trueAttr suffix_
           , trueAttr subject_
-          , trueAttr body_
-          , trueAttr suffix_])
+          , trueAttr body_])
           (join (join (join (select midXcond (tRef messages))
                             (tRef recipientinfo)
                             (joinEqCond (att2attrQualRel mid_ messages)
@@ -518,7 +518,7 @@ q_filtermessages =
                             (att2attrQualRel eid_ filter_msg)))
 
 -- 
--- π (messages.mid, sender, rvalue, subject, body, suffix)
+-- π (messages.mid, sender, rvalue, suffix, subject, body)
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
@@ -526,9 +526,9 @@ q_filtermessages_alt =
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
           , trueAttr rvalue_
+          , trueAttr suffix_
           , trueAttr subject_
-          , trueAttr body_
-          , trueAttr suffix_])
+          , trueAttr body_])
           (join (join (join (tRef messages)
                             (tRef recipientinfo)
                             (joinEqCond (att2attrQualRel mid_ messages)
@@ -558,7 +558,7 @@ q_filtermessages_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- π (sender, rvalue, subject, body, mailhost)
+-- π (sender, rvalue, username, mailhost, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=mail_host.eid} mail_host)
@@ -567,9 +567,10 @@ q_mailhost, q_mailhost_alt :: Algebra
 q_mailhost = 
   project ([trueAttr sender_
           , trueAttr rvalue_
+          , trueAttr username_
+          , trueAttr mailhost_attr_
           , trueAttr subject_
-          , trueAttr body_
-          , trueAttr mailhost_attr_])
+          , trueAttr body_])
           (join (join (join (select midXcond (tRef messages))
                             (tRef recipientinfo)
                             (joinEqCond (att2attrQualRel mid_ messages)
@@ -582,7 +583,7 @@ q_mailhost =
                             (att2attrQualRel eid_ mail_host)))
 
 -- 
--- π (messages.mid, sender, rvalue, subject, body, mailhost)
+-- π (messages.mid, sender, rvalue, username, mailhost, subject, body)
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=mail_host.eid} mail_host)
@@ -590,9 +591,10 @@ q_mailhost_alt =
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
           , trueAttr rvalue_
+          , trueAttr username_
+          ,trueAttr mailhost_attr_
           , trueAttr subject_
-          , trueAttr body_
-          , trueAttr mailhost_attr_])
+          , trueAttr body_])
           (join (join (join (tRef messages)
                             (tRef recipientinfo)
                             (joinEqCond (att2attrQualRel mid_ messages)
@@ -1561,41 +1563,83 @@ enronQ12_alt =
 --
 -- forwardmessages ∧ mailhost⟪ subq_fwd_mailhost_comb,
 --    forwardmessages⟪ q_forwardmessages, mailhost⟪ q_mailhost, q_basic⟫⟫⟫
--- subq_fwd_remail_comb ← π (rvalue, forwardaddr, subject, body)
+-- subq_fwd_remail_comb ← π (rvalue, forwardaddr, username, mailhost, subject, body)
 --   (((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
---      ⋈_{forward_msg.eid=remail_msg.eid} remail_msg)
+--      ⋈_{forward_msg.eid=mailhost.eid} mailhost)
 -- 
--- enronQ13, enronQ13_alt :: Algebra
--- enronQ13 = 
---   choice (F.And forwardmessages remailmessage)
---          (subq_fwd_remail_comb)
---          (choice forwardmessages
---                  q_forwardmessages
---                  (choice remailmessage
---                          q_remailmessage
---                          q_basic))
---     where
---       subq_fwd_remail_comb =
---         project ([trueAttr rvalue_
---                 , trueAttr forwardaddr_
---                 , trueAttr pseudonym_
---                 , trueAttr subject_
---                 , trueAttr body_])
---                 (join (join (join (join (select midXcond (tRef messages))
---                                         (tRef recipientinfo)
---                                         (joinEqCond (att2attrQualRel mid_ messages)
---                                                     (att2attrQualRel mid_ recipientinfo)))
---                                   (tRef employeelist)
---                                   (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
---                                               (att2attrQualRel email_id_ employeelist)))
---                             (tRef forward_msg)
---                             (joinEqCond (att2attrQualRel eid_ employeelist)
---                                         (att2attrQualRel eid_ forward_msg)))
---                       (tRef remail_msg)
---                       (joinEqCond (att2attrQualRel eid_ forward_msg)
---                                   (att2attrQualRel eid_ remail_msg)))
+enronQ13, enronQ13_alt :: Algebra
+enronQ13 = 
+  choice (F.And forwardmessages remailmessage)
+         (subq_fwd_remail_comb)
+         (choice forwardmessages
+                 q_forwardmessages
+                 (choice remailmessage
+                         q_remailmessage
+                         q_basic))
+    where
+      subq_fwd_remail_comb =
+        project ([trueAttr rvalue_
+                , trueAttr forwardaddr_
+                , trueAttr username_
+                , trueAttr mailhost_attr_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (join (select midXcond (tRef messages))
+                                        (tRef recipientinfo)
+                                        (joinEqCond (att2attrQualRel mid_ messages)
+                                                    (att2attrQualRel mid_ recipientinfo)))
+                                  (tRef employeelist)
+                                  (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                              (att2attrQualRel email_id_ employeelist)))
+                            (tRef forward_msg)
+                            (joinEqCond (att2attrQualRel eid_ employeelist)
+                                        (att2attrQualRel eid_ forward_msg)))
+                      (tRef mail_host)
+                      (joinEqCond (att2attrQualRel eid_ forward_msg)
+                                  (att2attrQualRel eid_ mail_host)))
+
+-- forwardmessages ∧ mailhost⟪ subq_fwd_mailhost_comb,
+--    forwardmessages⟪ q_forwardmessages_alt, 
+--       mailhost⟪ q_mailhost_alt, q_basic_alt⟫⟫⟫
+-- subq_fwd_remail_comb ← 
+--  π (messages.mid, rvalue, forwardaddr, username, mailhost, subject, body)
+--   ((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+--      ⋈_{forward_msg.eid=mailhost.eid} mailhost)
+-- 
+enronQ13_alt = 
+  choice (F.And forwardmessages remailmessage)
+         (subq_fwd_remail_comb)
+         (choice forwardmessages
+                 q_forwardmessages_alt
+                 (choice remailmessage
+                         q_remailmessage_alt
+                         q_basic_alt))
+    where
+      subq_fwd_remail_comb =
+        project ([trueAttrQualRel mid_ messages
+                , trueAttr rvalue_
+                , trueAttr forwardaddr_
+                , trueAttr username_
+                , trueAttr mailhost_attr_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (join (select midXcond (tRef messages))
+                                        (tRef recipientinfo)
+                                        (joinEqCond (att2attrQualRel mid_ messages)
+                                                    (att2attrQualRel mid_ recipientinfo)))
+                                  (tRef employeelist)
+                                  (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                              (att2attrQualRel email_id_ employeelist)))
+                            (tRef forward_msg)
+                            (joinEqCond (att2attrQualRel eid_ employeelist)
+                                        (att2attrQualRel eid_ forward_msg)))
+                      (tRef mail_host)
+                      (joinEqCond (att2attrQualRel eid_ forward_msg)
+                                  (att2attrQualRel eid_ mail_host)))
 
 -- -- 13. Intent:Fix interaction FORWARDMESSAGES vs. MAILHOST.
 -- enronQ13 :: Algebra
