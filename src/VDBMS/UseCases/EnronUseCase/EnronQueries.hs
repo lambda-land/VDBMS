@@ -1343,7 +1343,7 @@ enronQ10 =
                   , trueAttrQual email_id_ emp1Name]
                   (join (join (join (renameQ fwd1 $ tRef forward_msg)
                                     (renameQ emp1Name $ tRef employeelist)
-                                    (joinEqCond (att2attrQual forwardaddr fwd1)
+                                    (joinEqCond (att2attrQual forwardaddr_ fwd1)
                                                 (att2attrQual email_id_ emp1Name)))
                               (renameQ fwd2 $ tRef forward_msg)
                               (joinEqCond (att2attrQual eid_ emp1Name)
@@ -1360,7 +1360,92 @@ enronQ10 =
 
 -- 
 enronQ10_alt = enronQ10
-     
+
+-- 11. Purpose: Generate the header for an email when both FORWARDMESSAGES and REMAILMESSAGE
+--              have been enabled. It generates the header for an email to be 
+--              forwarded while checking if the foward address is the user's pseudonym
+--              so that the remailer can detect if a loop may happen and avoid it.
+-- 
+-- #variants = 
+-- #unique_variants =
+--
+-- forwardmessages ∧ remailmessage⟪ subq_fwd_remail_comb,
+--    forwardmessages⟪ q_forwardmessages, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+-- subq_fwd_remail_comb ← π (rvalue, forwardaddr, pseudonym, subject, body)
+--   (((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+--      ⋈_{forward_msg.eid=remail_msg.eid} remail_msg)
+-- 
+enronQ11, enronQ11_alt :: Algebra
+enronQ11 = 
+  choice (F.And forwardmessages remailmessage)
+         (subq_fwd_remail_comb)
+         (choice forwardmessages
+                 q_forwardmessages
+                 (choice remailmessage
+                         q_remailmessage
+                         q_basic))
+    where
+      subq_fwd_remail_comb =
+        project ([trueAttr rvalue_
+                , trueAttr forwardaddr_
+                , trueAttr pseudonym_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (join (select midXcond (tRef messages))
+                                        (tRef recipientinfo)
+                                        (joinEqCond (att2attrQualRel mid_ messages)
+                                                    (att2attrQualRel mid_ recipientinfo)))
+                                  (tRef employeelist)
+                                  (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                              (att2attrQualRel email_id_ employeelist)))
+                            (tRef forward_msg)
+                            (joinEqCond (att2attrQualRel eid_ employeelist)
+                                        (att2attrQualRel eid_ forward_msg)))
+                      (tRef remail_msg)
+                      (joinEqCond (att2attrQualRel eid_ forward_msg)
+                                  (att2attrQualRel eid_ remail_msg)))
+
+-- forwardmessages ∧ remailmessage⟪ subq_fwd_remail_comb,
+--    forwardmessages⟪ q_forwardmessages_alt, 
+--       remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+-- subq_fwd_remail_comb ← π (messages.mid, rvalue, forwardaddr, pseudonym, subject, body)
+--   ((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
+--      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
+--      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+--      ⋈_{forward_msg.eid=remail_msg.eid} remail_msg)
+-- 
+enronQ11_alt = 
+  choice (F.And forwardmessages remailmessage)
+         (subq_fwd_remail_comb)
+         (choice forwardmessages
+                 q_forwardmessages_alt
+                 (choice remailmessage
+                         q_remailmessage_alt
+                         q_basic_alt))
+    where
+      subq_fwd_remail_comb =
+        project ([trueAttrQualRel mid_ messages
+                , trueAttr rvalue_
+                , trueAttr forwardaddr_
+                , trueAttr pseudonym_
+                , trueAttr subject_
+                , trueAttr body_])
+                (join (join (join (join (tRef messages)
+                                        (tRef recipientinfo)
+                                        (joinEqCond (att2attrQualRel mid_ messages)
+                                                    (att2attrQualRel mid_ recipientinfo)))
+                                  (tRef employeelist)
+                                  (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
+                                              (att2attrQualRel email_id_ employeelist)))
+                            (tRef forward_msg)
+                            (joinEqCond (att2attrQualRel eid_ employeelist)
+                                        (att2attrQualRel eid_ forward_msg)))
+                      (tRef remail_msg)
+                      (joinEqCond (att2attrQualRel eid_ forward_msg)
+                                  (att2attrQualRel eid_ remail_msg)))
+
 -- -- 11. Intent: Fix interaction FORWARDMESSAGES vs. REMAILMESSAGE (1).
 -- temp :: Rename Algebra
 -- temp = genSubquery "temp" $ joinTwoRelation employeelist forward_msg "eid"
