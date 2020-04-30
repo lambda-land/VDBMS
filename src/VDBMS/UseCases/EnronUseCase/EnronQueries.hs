@@ -20,7 +20,7 @@ import VDBMS.DBMS.Value.Value
 -- accordinly in these scenarios.
 
 -- | the message id value we choose for entire use case
-midVal :: SqlValue
+midVal :: SqlValue 
 midVal = SqlInt32 9138
 
 midValue :: C.Atom
