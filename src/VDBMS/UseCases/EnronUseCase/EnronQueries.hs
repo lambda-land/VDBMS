@@ -626,6 +626,7 @@ q_mailhost_old =
 
 -- 1. Purpose: Generate the header for an email when both SIGNATURE and FORWARDMESSAGES
 --             have been enabled(1). The header is for the email to be forwarded.
+--             --> this takes care of interaction 16 too.
 -- 
 -- #variants = 
 -- #unique_variants =
@@ -1720,14 +1721,5 @@ enronQ14_alt =
 -- 
 
 -- 16. Purpose: Generate the header for an email when both SIGNATURE and FORWARDMESSAGES (2)
---              have been enabled. 
-
--- -- 16. Intent: Fix interaction SIGNATURE vs. FORWARDMESSAGES (2).
--- enronQ16 :: Algebra
--- enronQ16 =  Proj (map trueAttr [is_signed, rvalue, forwardaddr]) $ genRenameAlgebra $ 
---             Join q_join_rec_emp_msg (genRenameAlgebra (tRef forward_msg)) join_cond
---         where join_cond = C.Comp EQ (C.Att (subqueryQualifiedAttr "q_join_rec_emp_msg" "eid")) (C.Att (qualifiedAttr forward_msg "eid"))
-
--- enronVQ16 :: Algebra
--- enronVQ16 =  AChc signature (AChc forwardmessages enronQ16 q_signature) q_forwardmessages
+--              have been enabled. --> is taken care of in the first interaction query.
 
