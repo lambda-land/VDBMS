@@ -83,7 +83,7 @@ v45 = F.Or empv4 empv5
 -- π (salary^{v_3}) 
 --   ((σ (empno=10004) empacct) ⋈_{empacct.title=job.title} job)
 -- 
-empVQ1, empVQ1_alt,:: Algebra
+empVQ1, empVQ1_alt :: Algebra
 empVQ1 = 
   project (pure $ att2optatt salary_ empv3)
           (join (select empSqlCond $ tRef empacct)
@@ -206,7 +206,7 @@ empVQ4_alt =
 -- 
 -- π (managerno^v_3) ((σ (deptno="d001") empacct) ⋈_{empacct.empno=dept.managerno} dept)
 -- 
-empVQ5, empVQ5_alt, empVQ5_old :: Algebra
+empVQ5, empVQ5_alt :: Algebra
 empVQ5 = 
   project (pure $ att2optatt name_ empv3)
           (join (select (eqAttValSqlCond deptno_ departno_value)
