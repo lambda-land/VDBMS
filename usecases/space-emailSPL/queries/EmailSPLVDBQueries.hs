@@ -1,5 +1,5 @@
 -- | Example Queries upon Enron Email Database
-module VDBMS.UseCases.EnronUseCase.EnronQueries where
+module VDBMS.UseCases.EnronUseCase.EmailSPLVDBQueries where
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.UseCases.EnronUseCase.EnronSchema
@@ -18,6 +18,8 @@ import VDBMS.DBMS.Value.Value
 -- in spl. due to interactions among features lots of test
 -- is required to ensure that the software system behaves
 -- accordinly in these scenarios.
+
+-- The alternative queries (named as q_alt) are for runtime test.
 
 -- | the message id value we choose for entire use case
 midVal :: SqlValue 
@@ -107,10 +109,10 @@ q_basic_alt =
                 (joinEqCond (att2attrQualRel mid_ messages)
                             (att2attrQualRel mid_ recipientinfo)))
 
--- 1. OLD Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
+-- 1. Query to extract information for the header when addressbook is enabled.
 --
--- #variants = 1
--- #unique_variants = 1
+-- #variants = 2
+-- #unique_variants = 2
 -- 
 -- π (sender, nickname, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recepientinfo)
@@ -155,39 +157,19 @@ q_addressbook_alt =
                 (joinEqCond (att2attrQualRel eid_ recipientinfo)
                             (att2attrQualRel eid_ alias)))
 
--- π (rvalue, nickname) (enronTemp ⋈_{temp.eid=alias.eid} alias)
+-- Single feature query for addressbook.
 -- 
-q_addressbook_old, q_addressbook_alt_old :: Algebra
-q_addressbook_old = 
-  project ([trueAttr rvalue_
-          , trueAttr nickname_ ])
-          (join enronTemp
-                (tRef alias)
-                (joinEqCond (att2attrQual eid_ temp)
-                            (att2attrQualRel eid_ alias)))
-
--- enronTem <-- ρ (temp) 
---                (π (eid, rvalue, mid) 
---                   ((σ (mid=X) recipientinfo) ⋈_{rvalue=email_id} employeelist)
-enronTemp :: Algebra
-enronTemp = renameQ temp $
-  project ([trueAttr eid_
-          , trueAttr rvalue_
-          , trueAttr mid_])
-          (join (select midXcond
-                       (tRef recipientinfo))
-                (tRef employeelist)
-                (joinEqCond (att2attr rvalue_)
-                            (att2attr email_id_)))
-
-
-q_addressbook_alt_old = 
-  choice addressbook q_addressbook Empty
-
--- 2. OLD Intent: Check if the message X is signed in feature SIGNATURE.
+-- #variants = 2
+-- #unique_variants = 2
 -- 
--- #variants = 1
--- #unique_variants = 1
+sfq1, sfq1_alt :: Algebra
+sfq1 = choice addressbook q_addressbook q_basic
+sfq1_alt = choice addressbook q_addressbook_alt q_basic_alt
+
+-- 2. Query to extract information for the header when signature is enabled.
+-- 
+-- #variants = 2
+-- #unique_variants = 2
 -- 
 -- π (sender, rvalue, is_signed, verification_key, subject, body)
 --   (((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -229,18 +211,19 @@ q_signature_alt =
                 (joinEqCond (att2attrQualRel sender_ messages)
                             (att2attrQualRel email_id_ employeelist)))
 
-
--- π (is_signed) (σ (mid=X) messages)
+-- Single feature query for signature.
 -- 
-q_signature_old :: Algebra
-q_signature_old = 
-  project (pure $ trueAttr is_signed_)
-          (select midXcond (tRef messages))
+-- #variants = 2
+-- #unique_variants = 2
+-- 
+sfq2, sfq2_alt :: Algebra
+sfq2 = choice signature q_signature q_basic
+sfq2_alt = choice signature q_signature_alt q_basic_alt
 
--- 3. OLD Intent: Check if the message X is encrypted in feature ENCRYPTION.
+-- 3. Query to extract information for the header when encryption is enabled.
 --
--- #variants = 1
--- #unique_variants = 1
+-- #variants = 2
+-- #unique_variants = 2
 -- 
 -- π (sender, rvalue, is_encrypted, public_key, subject, body)
 --   (((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -282,19 +265,22 @@ q_encryption_alt =
                 (joinEqCond (att2attrQualRel sender_ messages)
                             (att2attrQualRel email_id_ employeelist)))
 
--- π (is_encrypted) (σ (mid=X) messages)
+-- Single feature query for encryption.
 -- 
-q_encryption_old :: Algebra
-q_encryption_old = 
-  project (pure $ trueAttr is_encrypted_)
-          (select midXcond (tRef messages))
+-- #variants = 2
+-- #unique_variants = 2
+-- 
+sfq3, sfq3_alt :: Algebra
+sfq3 = choice encryption q_encryption q_basic
+sfq3_alt = choice encryption q_encryption_alt q_basic_alt
 
--- 4. OLD Intent: Given a message X, return the recipient's autoresponder email in the feature AUTORESPONDER.        
+-- 4. Query to extract information for the header when autoresponder is enabled.
 --
 -- The rvalue is the sender and sender is the reciever.
 -- It is constructing the auto respond email to email X.
--- #variants = 1
--- #unique_variants = 1
+-- 
+-- #variants = 2
+-- #unique_variants = 2
 -- 
 -- π (rvalue, sender, is_system_notification, auto_msg.subject, auto_msg.body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -342,20 +328,19 @@ q_autoresponder_alt =
                 (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ auto_msg)))
 
--- π (subject, body) (enronTemp ⋈_{temp.eid=auto_msg.eid} auto_msg)
+-- Single feature query for autoresponder.
 -- 
-q_autoresponder_old :: Algebra
-q_autoresponder_old = 
-  project ([trueAttr subject_
-          , trueAttr body_])
-          (join enronTemp (tRef auto_msg)
-                (joinEqCond (att2attrQual eid_ temp) 
-                            (att2attrQualRel eid_ auto_msg)))
+-- #variants = 2
+-- #unique_variants = 2
+-- 
+sfq4, sfq4_alt :: Algebra
+sfq4 = choice autoresponder q_autoresponder q_basic
+sfq4_alt = choice autoresponder q_autoresponder_alt q_basic_alt
 
--- 5. OLD Intent: Given a message X, return the recipient's forward address in the feature FORWARDMESSAGES.
+-- 5. Query to extract information for the header when forwardmessages is enabled.
 -- 
--- #variants = 1
--- #unique_variants = 1
+-- #variants = 2
+-- #unique_variants = 2
 -- 
 -- π (rvalue, forwardaddr, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -401,23 +386,22 @@ q_forwardmessages_alt =
                 (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ forward_msg)))
 
-
--- π (forwardaddr) (enronTemp ⋈_{temp.eid=forward_msg.eid} forward_msg)
+-- Single feature query for forwardmessages.
 -- 
-q_forwardmessages_old :: Algebra
-q_forwardmessages_old =
-  project (pure $ trueAttr forwardaddr_)
-          (join enronTemp (tRef forward_msg)
-                (joinEqCond (att2attrQual eid_ temp)
-                            (att2attrQualRel eid_ forward_msg)))
+-- #variants = 2
+-- #unique_variants = 2
+-- 
+sfq5, sfq5_alt :: Algebra
+sfq5 = choice forwardmessages q_forwardmessages q_basic
+sfq5_alt = choice forwardmessages q_forwardmessages_alt q_basic_alt
 
--- 6. OLD Intent: Given a message X, return the sender's pseudonym in the feature REMAILMESSAGE.
+-- 6. Query to extract information for the header when remailmessage is enabled.
 -- 
 -- Note that pseudonym is the sender, rvalue is the reciver.
 -- It is constructing the header for the message to be forwarded.
 -- 
--- #variants = 1
--- #unique_variants = 1
+-- #variants = 2
+-- #unique_variants = 2
 -- 
 -- π (pseudonym, sender, rvalue, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -465,34 +449,22 @@ q_remailmessage_alt =
                 (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ remail_msg)))
 
--- π (sender, pseudonym)
---   ((ρ (temp) (π (eid, sender, mid) ((σ (mid=X) messages) ⋈_{sender=email_id} employeelist))) 
---       ⋈_{temp.eid=remail_msg.eid} remail_msg)
+-- Single feature query for remailmessage.
 -- 
-q_remailmessage_old :: Algebra
-q_remailmessage_old = 
-  project ([trueAttr sender_
-          , trueAttr pseudonym_])
-          (join (renameQ temp
-                         (project ([trueAttr eid_
-                                  , trueAttr sender_
-                                  , trueAttr mid_])
-                                  (join (select midXcond
-                                                (tRef messages))
-                                        (tRef employeelist)
-                                        (joinEqCond (att2attr sender_)
-                                                    (att2attr email_id_)))))
-                (tRef remail_msg)
-                (joinEqCond (att2attrQual eid_ temp)
-                            (att2attrQualRel eid_ remail_msg)))
+-- #variants = 2
+-- #unique_variants = 2
+-- 
+sfq6, sfq6_alt :: Algebra
+sfq6 = choice remailmessage q_remailmessage q_basic
+sfq6_alt = choice remailmessage q_remailmessage_alt q_basic_alt
 
--- 7. OLD Intent: Given the email message X, return the recipient's filter suffix in the feature FILTERMESSAGES.
+-- 7. Query to extract information for the header when filtermessages is enabled.
 -- 
 -- It (the email server) checks the suffix of the reciver and if the sender isn't included in it
 -- it delivers the email to the reciever, otherwise it rejects it.
 -- 
--- #variants = 1
--- #unique_variants = 1
+-- #variants = 2
+-- #unique_variants = 2
 -- 
 -- π (sender, rvalue, suffix, is_system_notification, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -542,23 +514,22 @@ q_filtermessages_alt =
                 (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ filter_msg)))
 
--- π (sender, suffix) (enronTemp ⋈_{temp.eid=filter_msg.eid} filter_msg)
+-- Single feature query for filtermessages.
 -- 
-q_filtermessages_old :: Algebra 
-q_filtermessages_old = 
-  project ([trueAttr sender_
-          , trueAttr suffix_])
-          (join enronTemp (tRef filter_msg)
-                (joinEqCond (att2attrQual eid_ temp)
-                            (att2attrQualRel eid_ filter_msg)))
+-- #variants = 2
+-- #unique_variants = 2
+-- 
+sfq7, sfq7_alt :: Algebra
+sfq7 = choice filtermessages q_filtermessages q_basic
+sfq7_alt = choice filtermessages q_filtermessages_alt q_basic_alt
 
--- 8. OLD Intent: Given the email message X, return the user-name of the recipient in the feature MAILHOST.
+-- 8. Query to extract information for the header when mailhost is enabled.
 -- 
 -- It checks if mailhost of the sender is in the set of mailhost for the reciever,
 -- it so it delivers the email to the reciever, otherwise it rejects it.
 -- 
--- #variants = 1
--- #unique_variants = 1
+-- #variants = 2
+-- #unique_variants = 2
 -- 
 -- π (sender, rvalue, username, mailhost, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -608,17 +579,14 @@ q_mailhost_alt =
                 (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ mail_host)))
 
--- π (rvalue, username, mailhost)
---   (enronTemp ⋈_{temp.eid=mailhost.eid} mailhost)
+-- Single feature query for mailhost.
 -- 
-q_mailhost_old :: Algebra
-q_mailhost_old = 
-  project ([trueAttr rvalue_
-          , trueAttr username_
-          , trueAttr mailhost_attr_])
-          (join enronTemp (tRef mail_host)
-                (joinEqCond (att2attrQual eid_ temp)
-                            (att2attrQualRel eid_ mail_host)))
+-- #variants = 2
+-- #unique_variants = 2
+-- 
+sfq8, sfq8_alt :: Algebra
+sfq8 = choice mailhost q_mailhost q_basic
+sfq8_alt = choice mailhost q_mailhost_alt q_basic_alt
 
 -- --
 -- -- ** V-Queries for Feature Interactions
@@ -628,8 +596,8 @@ q_mailhost_old =
 --             have been enabled(1). The header is for the email to be forwarded.
 --             --> this takes care of interaction 16 too.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 -- 
 -- signature ∧ forwardmessages ⟪ 
 -- π (rvalue, forwardaddr, emp1.is_signed, emp1.verification_key)
@@ -726,8 +694,8 @@ enronQ1_alt =
 --             warning, otherwise the email will be delivered to the reciever where
 --             the sender name is their pseudonym.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 -- 
 -- signature ∧ remailmessage ⟪π (sender) (σ (mid=X ∧ is_signed=True) messages),
 --   signature ⟪q_signature, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
@@ -825,8 +793,8 @@ enronQ2part2_alt =
 --             because either way the header shouldn't include the security info in 
 --             the header of the email is being sent out.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 3
+-- #unique_variants = 3
 -- 
 -- encryption ∧ autoresponder ⟪ q_autoresponder,
 --    encryption ⟪ q_encryption, autoresponded⟪ q_autoresponder, q_basic⟫⟫⟫
@@ -853,8 +821,8 @@ enronQ3_alt =
 --             forward the message) will get an UI 
 --             warning, otherwise the email will be forwarded.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 -- 
 -- encryption ∧ forwardmessages ⟪π (rvalue) (σ (mid=X ∧ is_encrypted) messages),
 --    encryption⟪ q_encryption,forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
@@ -886,6 +854,9 @@ enronQ4part1_alt =
                          q_forwardmessages_alt
                          q_basic_alt))
 
+-- 
+-- #variants = 3
+-- #unique_variants = 3
 -- 
 -- encryption ∧ forwardmessages ⟪subq_similar_to_forwardmsg_q,
 -- forwardmessages⟪ q_forwardmessages, q_basic⟫⟫
@@ -957,8 +928,8 @@ enronQ4part2_alt =
 --             include the sender information in the header however it still needs
 --             the public key to decode the email. 
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 -- 
 -- encryption ∧ remailmessage⟪ subq_enc_remail_qs_combined,
 --    encryption⟪ q_encryption, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
@@ -1032,8 +1003,8 @@ enronQ5_alt =
 --             to the original first sender and not the one who forwarded the message
 --             to avoid a cycle.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 3
 -- 
 -- autoresponder ∧ forwardmessages⟪ subq_gen_fwd, 
 --   autoresponder⟪ q_autoresponder, forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
@@ -1066,6 +1037,9 @@ enronQ6part1_alt =
     where
       subq_gen_fwd = q_forwardmessages_alt
 
+-- 
+-- #variants = 4
+-- #unique_variants = 4
 -- 
 -- autoresponder ∧ forwardmessages⟪ subq_gen_auto, 
 --   autoresponder⟪ q_autoresponder, forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
@@ -1150,8 +1124,8 @@ enronQ6part2_alt =
 --             who has their autoresponder on won't send out an email and gets a warning
 --             message.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 -- 
 -- autoresponder ∧ remailmessage⟪π (rvalue) 
 --          ((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
@@ -1198,8 +1172,8 @@ enronQ7_alt =
 --             that an incoming message is in fact autoresponse and should be delivered, 
 --             and the other where it is not and should be filtered.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 -- 
 -- autoresponder ∧ remailmessage⟪π (sender, rvalue, subject, body)
 --        ((σ (mid=X ∧ is_autoresponse) messages) 
@@ -1322,11 +1296,13 @@ enronQ8part2_alt =
 
 -- -- 9. Intent: Fix interaction AUTORESPONDER vs. MAILHOST.   
 -- -->THIS IS MANAGED IN q_autorespons by checking to see if an email is sys-not.
+-- #variants = 2
+-- #unique_variants = 2
 
 -- 10. Purpose: When FORWARDMESSAGES is enabled and it creates a loop warn the users.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 -- forwardmessages⟪ 
 --    π (emp2.email_id, emp1.email_id)
@@ -1366,8 +1342,8 @@ enronQ10_alt = enronQ10
 --              forwarded while checking if the foward address is the user's pseudonym
 --              so that the remailer can detect if a loop may happen and avoid it.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 --
 -- forwardmessages ∧ remailmessage⟪ subq_fwd_remail_comb,
 --    forwardmessages⟪ q_forwardmessages, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
@@ -1450,8 +1426,8 @@ enronQ11_alt =
 --              have been enabled. Generates the email to be forwarded (after recieving 
 --              email X) and checks if the forwardaddr is in the filtered list.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 --
 -- forwardmessages ∧ filtermessages⟪ subq_fwd_filter_comb,
 -- forwardmessages⟪ q_forwardmessages, filtermessages⟪ q_filtermessages, q_basic⟫⟫⟫
@@ -1556,8 +1532,8 @@ enronQ12_alt =
 --              mailhost and causes a system notification email to be sent to the user.
 --              so the mailhost can detect if a loop may happen and avoid it.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 --
 -- forwardmessages ∧ mailhost⟪ subq_fwd_mailhost_comb,
 --    forwardmessages⟪ q_forwardmessages, mailhost⟪ q_mailhost, q_basic⟫⟫⟫
@@ -1647,8 +1623,8 @@ enronQ13_alt =
 --              include the sender info. The ndn is being generated as a response
 --              to email X.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 4
+-- #unique_variants = 4
 --
 -- remailmessage ∧ mailhost⟪
 --   π (sender, subject, body)
@@ -1719,7 +1695,11 @@ enronQ14_alt =
 --              notification, if so it doesn't filter the email and delivers it to 
 --              the reciever.
 -- 
+-- #variants = 2
+-- #unique_variants = 2
 
 -- 16. Purpose: Generate the header for an email when both SIGNATURE and FORWARDMESSAGES (2)
 --              have been enabled. --> is taken care of in the first interaction query.
-
+-- 
+-- #variants = 4
+-- #unique_variants = 4
