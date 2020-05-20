@@ -406,7 +406,7 @@ sfq5_alt = choice forwardmessages q_forwardmessages_alt q_basic_alt
 -- π (pseudonym, sender, rvalue, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist) 
---     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
+--     ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
 -- 
 q_remailmessage, q_remailmessage_alt :: Algebra
 q_remailmessage = 
@@ -430,7 +430,7 @@ q_remailmessage =
 -- π (messages.mid, pseudonym, sender, rvalue, subject, body)
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist)
---     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
+--     ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
 q_remailmessage_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr pseudonym_
@@ -725,7 +725,7 @@ enronQ2part1_alt =
 -- subq_similar_to_remialmessage_q ← π (pseudonym, sender, rvalue, subject, body)
 --   ((((σ (mid=X ∧ ¬is_signed) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist) 
---     ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
+--     ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
 -- 
 enronQ2part2, enronQ2part2_alt :: Algebra
 enronQ2part2 = 
@@ -756,10 +756,10 @@ enronQ2part2 =
 
 -- signature ∧ remailmessage ⟪subq_similar_to_remialmessage_q,
 --   signature ⟪q_signature_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
--- ⟪subq_similar_to_remialmessage_q ← π (messages.mid, pseudonym, sender, rvalue, subject, body, suffix)
+-- ⟪subq_similar_to_remialmessage_q ← π (messages.mid, pseudonym, sender, rvalue, subject, body)
 --   ((((σ (¬ is_signed) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
---   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
+--   ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
 -- 
 enronQ2part2_alt = 
   choice (F.And signature remailmessage)
@@ -937,7 +937,7 @@ enronQ4part2_alt =
 --   π (pseudonym, rvalue, is_encrypted, public_key, subject, body)
 --     ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --       ⋈_{messages.sender=employeelist.email_id} employeelist) 
---       ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
+--       ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
 -- 
 enronQ5, enronQ5_alt :: Algebra
 enronQ5 = 
@@ -970,7 +970,7 @@ enronQ5 =
 --   π (messages.mid, pseudonym, rvalue, is_encrypted, public_key, subject, body)
 --     (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --       ⋈_{messages.sender=employeelist.email_id} employeelist) 
---       ⋈_{employeelist.eid=remailmessage.eid} remail_msg)
+--       ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
 -- 
 enronQ5_alt = 
   choice (F.And encryption remailmessage)
@@ -1082,7 +1082,7 @@ enronQ6part2 =
 -- autoresponder ∧ forwardmessages⟪ subq_gen_auto, 
 --   autoresponder⟪ q_autoresponder_alt, 
 --      forwardmessages⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
--- subq_gen_auto ← π (forwardaddr, sender, auto_msg.subject, auto_msg.body)
+-- subq_gen_auto ← π (messages.mid, forwardaddr, sender, auto_msg.subject, auto_msg.body)
 --   ((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
 --     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
