@@ -1175,14 +1175,14 @@ enronQ7_alt =
 -- #variants = 4
 -- #unique_variants = 4
 -- 
--- autoresponder ∧ remailmessage⟪π (sender, rvalue, subject, body)
+-- autoresponder ∧ filtermessages⟪π (sender, rvalue, subject, body)
 --        ((σ (mid=X ∧ is_autoresponse) messages) 
 --         ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
---    , autoresponder⟪ q_autoresponder, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+--    , autoresponder⟪ q_autoresponder, filtermessages⟪ q_filtermessages, q_basic⟫⟫⟫
 -- 
 enronQ8part1, enronQ8part1_alt :: Algebra
 enronQ8part1 = 
-  choice (F.And autoresponder remailmessage)
+  choice (F.And autoresponder filtermessages)
          (project (fmap trueAttr [sender_, rvalue_, subject_, body_])
                   (join (select (VsqlAnd midXcond
                                 $ eqAttValSqlCond is_autoresponse_ trueValue)
@@ -1192,17 +1192,17 @@ enronQ8part1 =
                                    (att2attrQualRel mid_ recipientinfo))))
          (choice autoresponder 
                  q_autoresponder
-                 (choice remailmessage
-                         q_remailmessage
+                 (choice filtermessages
+                         q_filtermessages
                          q_basic))
 
--- autoresponder ∧ remailmessage⟪π (messages.mid, sender, rvalue, subject, body)
+-- autoresponder ∧ filtermessages⟪π (messages.mid, sender, rvalue, subject, body)
 --        ((σ (is_autoresponse) messages) 
 --         ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
---    , autoresponder⟪ q_autoresponder_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+--    , autoresponder⟪ q_autoresponder_alt, filtermessages⟪ q_filtermessages_alt, q_basic_alt⟫⟫⟫
 -- 
 enronQ8part1_alt = 
-  choice (F.And autoresponder remailmessage)
+  choice (F.And autoresponder filtermessages)
          (project ((pure $ trueAttrQualRel mid_ messages)
                   ++ fmap trueAttr [sender_, rvalue_, subject_, body_])
                   (join (select (eqAttValSqlCond is_autoresponse_ trueValue)
@@ -1212,14 +1212,14 @@ enronQ8part1_alt =
                                    (att2attrQualRel mid_ recipientinfo))))
          (choice autoresponder 
                  q_autoresponder_alt
-                 (choice remailmessage
-                         q_remailmessage_alt
+                 (choice filtermessages
+                         q_filtermessages_alt
                          q_basic_alt))
 
 -- 
--- autoresponder ∧ remailmessage⟪π (sender, rvalue, subject, body, suffix)
+-- autoresponder ∧ filtermessages⟪π (sender, rvalue, subject, body, suffix)
 --    subq_similar_to_filtermsg_q
---    , autoresponder⟪ q_autoresponder, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+--    , autoresponder⟪ q_autoresponder, filtermessages⟪ q_filtermessages, q_basic⟫⟫⟫
 -- subq_similar_to_filtermsg_q ← π (sender, rvalue, subject, body, suffix)
 --   ((((σ (mid=X ∧ ¬is_autoresponse) messages) 
 --   ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -1228,12 +1228,12 @@ enronQ8part1_alt =
 -- 
 enronQ8part2, enronQ8part2_alt :: Algebra
 enronQ8part2 = 
-  choice (F.And autoresponder remailmessage)
+  choice (F.And autoresponder filtermessages)
          (subq_similar_to_filtermsg_q)
          (choice autoresponder 
                  q_autoresponder
-                 (choice remailmessage 
-                         q_remailmessage
+                 (choice filtermessages
+                         q_filtermessages
                          q_basic))  
     where
       subq_similar_to_filtermsg_q =
@@ -1256,9 +1256,9 @@ enronQ8part2 =
                       (joinEqCond (att2attrQualRel eid_ employeelist)
                                   (att2attrQualRel eid_ filter_msg)))
 
--- autoresponder ∧ remailmessage⟪π (sender, rvalue, subject, body, suffix)
+-- autoresponder ∧ filtermessages⟪π (sender, rvalue, subject, body, suffix)
 --    subq_similar_to_filtermsg_q
---    , autoresponder⟪ q_autoresponder, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
+--    , autoresponder⟪ q_autoresponder, filtermessages⟪ q_filtermessages, q_basic⟫⟫⟫
 -- subq_similar_to_filtermsg_q ← π (sender, rvalue, subject, body, suffix)
 --   ((((σ (mid=X ∧ ¬is_autoresponse) messages) 
 --   ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -1266,12 +1266,12 @@ enronQ8part2 =
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
 -- 
 enronQ8part2_alt = 
-  choice (F.And autoresponder remailmessage)
+  choice (F.And autoresponder filtermessages)
          (subq_similar_to_filtermsg_q)
          (choice autoresponder 
                  q_autoresponder_alt
-                 (choice remailmessage 
-                         q_remailmessage_alt
+                 (choice filtermessages 
+                         q_filtermessages_alt
                          q_basic_alt))  
     where
       subq_similar_to_filtermsg_q =
