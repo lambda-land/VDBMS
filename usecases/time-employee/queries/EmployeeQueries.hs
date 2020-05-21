@@ -321,7 +321,7 @@ empVQ8_alt = empVQ8
 -- tempQ = ρ (temp) 
 --           (π (managerno, deptno)
 --              (σ (empno=10004) empacct) ⋈_{empacct.deptno=dept.deptno} dept))
--- π (managerno^{v_3}, deptno^{v_3})
+-- π (dept.managerno^{v_3}, dept.deptno^{v_3})
 --   (tempQ ⋈_{temp.managerno=dept.mangerno} dept)
 -- 
 empVQ11, empVQ11_alt :: Algebra
@@ -355,7 +355,7 @@ empVQ11_alt = empVQ11
 -- tempQ = ρ (temp) 
 --           (π (managerno, deptno)
 --              (σ (empno=10004) empacct) ⋈_{empacct.deptno=dept.deptno} dept))
--- π (managerno^{v_3 ∨ v_4 ∨ v_5}, deptno^{v_3 ∨ v_4 ∨ v_5})
+-- π (dept.managerno^{v_3 ∨ v_4 ∨ v_5}, dept.deptno^{v_3 ∨ v_4 ∨ v_5})
 --   (tempQ ⋈_{temp.managerno=dept.mangerno} dept)
 -- 
 empVQ12, empVQ12_alt :: Algebra
