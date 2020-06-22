@@ -9,7 +9,7 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 -- import Data.Map (Map)
 import qualified Data.Map.Strict as Map
-import Data.ByteString.Char8 as BC (pack)
+import qualified Data.ByteString.Char8 as BC (pack)
 import Data.Convertible.Base
 import Data.SBV 
 

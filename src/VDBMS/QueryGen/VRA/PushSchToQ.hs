@@ -33,7 +33,8 @@ pushSchToQ s (SetOp o l r)
 pushSchToQ s (Proj as q) 
   = Proj (intersectOptAtts as' as) subq 
     where subq = pushSchToQ s q
-          as' = typeEnve2OptAtts $ fromJust $ typeOfQuery subq (featureModel s) s
+          as' = typeEnve2OptAtts $ 
+            fromJust $ typeOfQuery subq (featureModel s) s
 pushSchToQ s (Sel c q) 
   = Sel (pushSchToCond s c) (pushSchToQ s q)
 pushSchToQ s (AChc f l r)  

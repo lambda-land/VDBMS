@@ -4,12 +4,15 @@ module VDBMS.TypeSystem.Variational.TypeSystem (
         TypeEnv
         , VariationalContext
         , typeOfQuery
+        , runTypeQuery
         , AttrInfo(..)
         , updateType
         , typePC
         , typeEnv2tableSch
         , typeEnve2OptAtts
         , typeAtts
+        , tableSch2TypeEnv
+        , appCtxtToEnv
 
 ) where 
 
@@ -28,7 +31,7 @@ import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.Variational.Opt
 import VDBMS.VDB.Schema.Variational.Schema
-import VDBMS.Features.SAT (equivalent, satisfiable)
+import VDBMS.Features.SAT (equivalent, satisfiable, unsatisfiable)
 import VDBMS.DBMS.Value.Value
 
 import qualified Data.Map as M 
@@ -177,6 +180,11 @@ nonAmbiguousAttr a t =
 -- verifyTypeEnv t = undefined
   -- | satisfiable (getFexp t) = return $ propagateFexpToTsch t
   -- | otherwise = throwM $ EnvFexpUnsat (getFexp t) t
+
+-- 
+-- 
+runTypeQuery :: MonadThrow m => Algebra -> Schema -> m TypeEnv
+runTypeQuery q s = typeOfQuery q (featureModel s) s
 
 -- 
 -- Static semantics of a vquery that returns a table schema,
@@ -424,6 +432,8 @@ typeJoin l r c ctx s =
      typeCondition c ctx t 
      return t 
 
+-- check for disjoint types. r.a should be checked.
+-- also check intersecting and unioning type. it's not correct.
 -- | Gives the type of cross producting multiple rename relations.
 typeProd :: MonadThrow m 
          => Algebra -> Algebra 
@@ -488,7 +498,8 @@ appendAttrInfos :: (F.FeatureExpr -> F.FeatureExpr -> F.FeatureExpr)
                 -- -> (Qualifier -> Qualifier -> Bool)
                 -> AttrInformation -> AttrInformation 
                 -> AttrInformation
-appendAttrInfos ff l r = shared ++ unshared
+appendAttrInfos ff l r = shared 
+-- ++ unshared
   where 
     shared = [AttrInfo f (attrType al) (attrQual al) 
             | al <- l, ar <- r, attrQual al == attrQual ar, 
@@ -518,6 +529,11 @@ typeRel r ctx s =
      let t = tableSch2TypeEnv r tsch s
      appCtxtToEnv ctx t
 
+-- TODO: revise this. doesn't need to take the tableschema since
+-- it can get it from the schema. if you're tableschema differs
+-- then you need to have another function but if every time
+-- you're callind this function you're looking up the tableschema
+-- from the schema you should refactor.
 -- | Generates a type env from a table schema and updates the pc
 --   of the table by conjuncting it with schema's feature model.
 tableSch2TypeEnv :: Relation -> TableSchema -> Schema -> TypeEnv 
@@ -558,10 +574,10 @@ appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t)
 -- | applies a fexp to type map.
 appCtxtToTypeMap :: MonadThrow m => F.FeatureExpr -> TypeMap -> m TypeEnv
 appCtxtToTypeMap f m 
-  | satisfiable f = return $ mkOpt f $ SM.filter null (SM.map (appCtxtToAttInfo f) m)
+  | satisfiable f = return $ mkOpt f $ SM.filter (not . null) (SM.map (appCtxtToAttInfo f) m)
   | otherwise = throwM $ UnsatFexAppliedToTypeMap f m
   where 
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
-    appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
+    appCtxtToAttInfo fexp is = filter (\i -> satisfiable (F.And fexp (attrFexp i))) is
 
 

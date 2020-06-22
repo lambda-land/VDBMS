@@ -15,6 +15,10 @@ import VDBMS.VDB.Name hiding (name)
 -- import Data.Time.LocalTime
 import Data.Time.Calendar
 
+-- for test
+import Data.Map (fromList)
+import VDBMS.DBMS.Value.Type
+
 -- need to run the following
 -- numVarintQ empVQ8 empConfs
 -- numUniqueVariantQ empVQ8
@@ -91,6 +95,17 @@ v45 = F.Or empv4 empv5
 -- π (salary^{v_3}) 
 --   ((σ (empno=10004) empacct) ⋈_{empacct.title=job.title} job)
 -- 
+-- emptest :: Algebra
+-- emptest = project (pure $ trueAttr salary_) (tRef job)
+
+-- vtest :: F.FeatureExpr
+-- vtest = foldr F.Or v34 [empv1,empv2]
+
+-- tbltest = (vtest,fromList [(Attribute {attributeName = "salary"},(F.Lit True,TInt32)),(Attribute {attributeName = "title"},(F.Lit True,TString))])
+
+empl = select empSqlCond $ tRef empacct
+empr = tRef job
+
 empVQ1, empVQ1_alt, empVQ1_old, empVQ1_alt0, empVQ1_alt1, empVQ1_alt2 :: Algebra
 empVQ1 = 
   project (pure $ att2optatt salary_ empv3)
