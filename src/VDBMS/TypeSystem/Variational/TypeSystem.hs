@@ -1,20 +1,21 @@
 -- | Statically syntesizes the types of vqs.
-module VDBMS.TypeSystem.Variational.TypeSystem (
+module VDBMS.TypeSystem.Variational.TypeSystem where
+-- (
 
-        TypeEnv
-        , VariationalContext
-        , typeOfQuery
-        , runTypeQuery
-        , AttrInfo(..)
-        , updateType
-        , typePC
-        , typeEnv2tableSch
-        , typeEnve2OptAtts
-        , typeAtts
-        , tableSch2TypeEnv
-        , appCtxtToEnv
+--         TypeEnv
+--         , VariationalContext
+--         , typeOfQuery
+--         , runTypeQuery
+--         , AttrInfo(..)
+--         , updateType
+--         , typePC
+--         , typeEnv2tableSch
+--         , typeEnve2OptAtts
+--         , typeAtts
+--         , tableSch2TypeEnv
+--         , appCtxtToEnv
 
-) where 
+-- ) where 
 
 
 -- Note: there's no need for renaming all over the place.
@@ -96,7 +97,7 @@ typeAtts = M.keys . getObj
 data TypeError 
   = 
   -- CtxUnsatOverEnv VariationalContext TypeEnv
-    NotUniqueRelAlias TypeEnv TypeEnv
+    NotUniqueRelAlias [Name] TypeEnv TypeEnv
   | UnsatFexpsInProduct F.FeatureExpr 
   | InOpMustContainOneClm TypeEnv
   | UnsatAttPCandEnv OptAttribute TypeEnv
@@ -108,7 +109,7 @@ data TypeError
   | NotEquiveEnv TypeEnv TypeEnv
   | CompInvalid Atom Atom TypeEnv
   | EmptyAttrList OptAttributes Algebra
-  | TypeEnvIntersectNotEmpty TypeEnv TypeEnv
+  | TypeEnvNotDisjoint TypeEnv TypeEnv
   | UnsatFexAppliedToTypeMap F.FeatureExpr TypeMap
   | UnsatFexpsTypeInetersect F.FeatureExpr
     deriving (Data,Eq,Generic,Show,Typeable)
@@ -194,8 +195,8 @@ typeOfQuery :: MonadThrow m
              => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
 typeOfQuery (SetOp _ l r)    ctx s = typeSetOp l r ctx s 
-typeOfQuery (Proj oas q)    ctx s = typeProj oas q ctx s
-typeOfQuery (Sel c q)       ctx s = typeSel c q ctx s
+typeOfQuery (Proj oas q)     ctx s = typeProj oas q ctx s
+typeOfQuery (Sel c q)        ctx s = typeSel c q ctx s
 -- note that achc doesn't need to app ctxt to type because
 -- it's been applied already in tl and tr and the new pc is
 -- more general. so if an attribute belongs to tl or tr it
@@ -204,11 +205,11 @@ typeOfQuery (AChc f l r)     ctx s =
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
      return $ unionTypes tl tr
-typeOfQuery (Join l r c)   ctx s = typeJoin l r c ctx s 
-typeOfQuery (Prod l r)     ctx s = typeProd l r ctx s 
+typeOfQuery (Join l r c)    ctx s = typeJoin l r c ctx s 
+typeOfQuery (Prod l r)      ctx s = typeProd l r ctx s 
 typeOfQuery (TRef r)        ctx s = typeRel r ctx s 
 typeOfQuery (RenameAlg n q) ctx s = undefined
-typeOfQuery Empty            ctx _ = 
+typeOfQuery Empty           ctx _ = 
   appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
 
 -- | Determines the type a set operation query.
@@ -412,15 +413,31 @@ typeComp a@(Att l) a'@(Att r)  c t =
      then return ()
      else throwM $ CompInvalid a a' t
 
--- | Unions two type envs for a choice query.
+-- TESTED
+-- | Unions two type envs for a choice query without checking the sat of 
+--   fexps in the type map.
+unionTypes_ :: TypeEnv -> TypeEnv -> TypeEnv
+unionTypes_ t t' = 
+  mkOpt (F.Or (getFexp t) (getFexp t'))
+        (unionTypeMaps_ (getObj t) (getObj t'))
+
+-- TESTED
+-- | union type maps without checking the sat of fexps.
+unionTypeMaps_ :: TypeMap -> TypeMap -> TypeMap
+unionTypeMaps_ l r = SM.unionWith (appendAttrInfos_ F.Or) l r
+
+-- TESTED
+-- | Unions two type envs for a choice query and checks the sat of 
+--   fexps in the type map.
 unionTypes :: TypeEnv -> TypeEnv -> TypeEnv
 unionTypes t t' = 
   mkOpt (F.Or (getFexp t) (getFexp t'))
         (unionTypeMaps (getObj t) (getObj t'))
 
--- | union type maps.
+-- TESTED
+-- | union type maps without checking the sat of fexps.
 unionTypeMaps :: TypeMap -> TypeMap -> TypeMap
-unionTypeMaps l r = SM.unionWith (appendAttrInfos_ F.Or) l r
+unionTypeMaps l r = SM.unionWith (appendAttrInfos F.Or) l r
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
@@ -432,8 +449,7 @@ typeJoin l r c ctx s =
      typeCondition c ctx t 
      return t 
 
--- check for disjoint types. r.a should be checked.
--- also check intersecting and unioning type. it's not correct.
+-- all helpers TESTED
 -- | Gives the type of cross producting multiple rename relations.
 typeProd :: MonadThrow m 
          => Algebra -> Algebra 
@@ -443,16 +459,50 @@ typeProd l r ctx s =
   do tl <- typeOfQuery l ctx s 
      tr <- typeOfQuery r ctx s 
      uniqueRelAlias tl tr 
-     common <- intersectTypes tl tr
-     if SM.null (getObj common)
-     then prodTypes tl tr 
-     else throwM $ TypeEnvIntersectNotEmpty tl tr
-     
+     disjointTypes tl tr
+     prodTypes tl tr 
+     -- common <- intersectTypes tl tr
+     -- if SM.null (getObj common)
+     -- then prodTypes tl tr 
+     -- else throwM $ TypeEnvIntersectNotEmpty tl tr
+
+attinfo1 = [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1")), 
+     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))]
+attinfo2 = [AttrInfo (F.Lit False) TString (RelQualifier (Relation "r2")), 
+     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r4"))]
+
+typetst1 = ((F.Lit True), SM.fromList [(Attribute "a1"
+  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1")), 
+     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])
+  , (Attribute "a2"
+  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1")), 
+     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])])
+typetst2 = ((F.Lit True), SM.fromList [(Attribute "a1"
+  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r3")), 
+     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])
+  , (Attribute "a2"
+  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r3")), 
+     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r4"))])])
+
+-- TESTED
+-- | checks if give type envs are disjoint w.r.t. relation.attribute.
+disjointTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
+disjointTypes l r 
+  | null quals = return ()
+  | otherwise = throwM $ TypeEnvNotDisjoint l r
+    where 
+      quals = [(a,rl,rr)| (a,(rinf,linf)) <- comb, rl <- map attrQual linf,
+        rr <- map attrQual rinf, rl == rr]
+      comb = SM.toList $ SM.intersectionWith (,) (getObj l) (getObj r)
+      -- infl = SM.map (\info -> map attrQual (fst info)) comb
+      -- infr = SM.map ((map attrQual) . snd) comb
+
+-- TESTED
 -- | products two types, i.e., unions their map and 
 --   then applies the conjunction of their fexps to them.
 prodTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
 prodTypes l r = appCtxtToTypeMap (F.And (getFexp l) (getFexp r)) 
-                             (unionTypeMaps (getObj l) (getObj r))
+                             (unionTypeMaps_ (getObj l) (getObj r))
 
 
 -- | Products a list of types.
@@ -466,16 +516,18 @@ prodTypes l r = appCtxtToTypeMap (F.And (getFexp l) (getFexp r))
 --       fr = getFexp tr
 --       prodTypeMaps = mkOpt f (SM.unionWith (++) (getObj tl) (getObj tr))
 
+-- TESTED
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
 uniqueRelAlias :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
 uniqueRelAlias tl tr 
   | null relNs = return ()
-  | otherwise  = throwM $ NotUniqueRelAlias tl tr 
+  | otherwise  = throwM $ NotUniqueRelAlias relNs tl tr 
     where 
       relNs = relNames (getObj tl) `intersect` relNames (getObj tr)
       relNames envObj = nub $ fmap (qualName . attrQual) $ concatMap snd $ SM.toList envObj
 
+-- TODO check this
 -- | intersects two types. 
 intersectTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
 intersectTypes l r 
@@ -488,6 +540,7 @@ intersectTypes l r
 intersectTypeMaps :: TypeMap -> TypeMap -> TypeMap
 intersectTypeMaps l r = SM.intersectionWith (appendAttrInfos F.And) l r
 
+-- TESTED
 -- | appends two attr informations based on equality of quals.
 --   if they're the same attr  
 --   a given function is used to combine their fexps.
@@ -498,14 +551,16 @@ appendAttrInfos :: (F.FeatureExpr -> F.FeatureExpr -> F.FeatureExpr)
                 -- -> (Qualifier -> Qualifier -> Bool)
                 -> AttrInformation -> AttrInformation 
                 -> AttrInformation
-appendAttrInfos ff l r = shared 
--- ++ unshared
+appendAttrInfos ff l r = shared ++ unshared
   where 
     shared = [AttrInfo f (attrType al) (attrQual al) 
             | al <- l, ar <- r, attrQual al == attrQual ar, 
               let f = ff (attrFexp al) (attrFexp ar), satisfiable f]
-    unshared = filter (\a -> not ((elem . attrQual) a (fmap attrQual shared))) (l ++ r)
+    sharedQuals = [ attrQual al | al<-l, ar<- r, attrQual al == attrQual ar]
+    unshared = filter (\inf -> not $ (elem . attrQual) inf sharedQuals) l 
+             ++ filter (\inf -> not $ (elem . attrQual) inf sharedQuals) r
 
+-- TESTED
 -- | appends two attr infor without checking for satisfiability.
 --   because the ff function used already knows the result is 
 --   satisfiable.
@@ -518,8 +573,11 @@ appendAttrInfos_ ff l r = shared ++ unshared
   where 
     shared = [AttrInfo (ff (attrFexp al) (attrFexp ar)) (attrType al) (attrQual al) 
             | al <- l, ar <- r, attrQual al == attrQual ar]
-    unshared = filter (\a -> not ((elem . attrQual) a (fmap attrQual shared))) (l ++ r)
+    sharedQuals = [ attrQual al | al<-l, ar<- r, attrQual al == attrQual ar]
+    unshared = filter (\inf -> not $ (elem . attrQual) inf sharedQuals) l 
+             ++ filter (\inf -> not $ (elem . attrQual) inf sharedQuals) r
 
+-- TESTED
 -- | Returns the type of a rename relation.
 typeRel :: MonadThrow m 
         => Relation -> VariationalContext -> Schema 
@@ -529,6 +587,7 @@ typeRel r ctx s =
      let t = tableSch2TypeEnv r tsch s
      appCtxtToEnv ctx t
 
+-- TESTED
 -- TODO: revise this. doesn't need to take the tableschema since
 -- it can get it from the schema. if you're tableschema differs
 -- then you need to have another function but if every time
@@ -561,6 +620,7 @@ tableSch2TypeEnv r tsch s =
 --     appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
 --     appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
+-- TESTED
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
 appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t) 
@@ -571,6 +631,7 @@ appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t)
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
     -- appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
+-- TESTED
 -- | applies a fexp to type map.
 appCtxtToTypeMap :: MonadThrow m => F.FeatureExpr -> TypeMap -> m TypeEnv
 appCtxtToTypeMap f m 
