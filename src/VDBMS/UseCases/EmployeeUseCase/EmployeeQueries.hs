@@ -197,6 +197,13 @@ empVQ2 =
                           (select empSqlCond $ tRef empacct)))
          Empty
 
+-- this should give ambg attr. but it isn't
+empvq2l = (join (tRef empacct)
+                                (tRef job)
+                                (joinEqCond (att2attrQualRel title_ empacct)
+                                            (att2attrQualRel title_ job)))
+empvq2r = ( tRef empacct)
+
 -- (v_3 ∨ v_4 ∨ v_5) ⟨π (empno, salary) ((v_3 ∨ v_4)⟨empacct 
 --                                             ⋈_{empacct.title=job.title} job 
 --                                ,empacct⟩), ε⟩

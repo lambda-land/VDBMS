@@ -103,7 +103,7 @@ data TypeError
   | UnsatAttPCandEnv OptAttribute TypeEnv
   | AttrQualNotInEnv Attr TypeEnv
   | AttrNotInEnv Attribute TypeEnv
-  | AmbiguousAttr Attr TypeEnv
+  | AmbiguousAttr Attr [Qualifier] TypeEnv
   | QualNotInInfo Qualifier AttrInformation
   | MissingAlias (Rename Algebra)
   | NotEquiveEnv TypeEnv TypeEnv
@@ -124,12 +124,14 @@ lookupAttrInfo is q =
     (\(f,t) -> return $ AttrInfo f t q)
     (lookup q $ zip (fmap attrQual is) (zip (fmap attrFexp is) (fmap attrType is)))
 
+-- TESTED
 -- | Returns all qualifiers for an attribute in a type.
 lookupAttrQuals :: MonadThrow m => Attribute -> TypeEnv -> m [Qualifier]
 lookupAttrQuals a t = 
   do i <- lookupAttr a t 
      return $ fmap attrQual i
 
+-- TESTED
 -- | Looks up attribute information from the type.
 lookupAttr :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
 lookupAttr a t = 
@@ -171,7 +173,9 @@ nonAmbiguousAttr a t =
   do is <- lookupAttr (attribute a) t 
      qs <- lookupAttrQuals (attribute a) t
      if length qs > 1
-     then maybe (throwM $ AmbiguousAttr a t) (lookupAttrInfo is) (qualifier a)
+     then maybe (throwM $ AmbiguousAttr a (map attrQual $ getObj t SM.! attribute a) t) 
+                (lookupAttrInfo is) 
+                (qualifier a)
      else return $ head is
 
 -- | verifies and similifies the final type env return by the type system, i.e.,
@@ -446,7 +450,7 @@ typeJoin :: MonadThrow m
          -> m TypeEnv
 typeJoin l r c ctx s = 
   do t <- typeProd l r ctx s 
-     typeCondition c ctx t 
+     -- typeCondition c ctx t --TODO uncomment this!!!!!!!!!!!!!!
      return t 
 
 -- all helpers TESTED
@@ -466,23 +470,27 @@ typeProd l r ctx s =
      -- then prodTypes tl tr 
      -- else throwM $ TypeEnvIntersectNotEmpty tl tr
 
-attinfo1 = [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1")), 
-     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))]
-attinfo2 = [AttrInfo (F.Lit False) TString (RelQualifier (Relation "r2")), 
-     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r4"))]
+attinfo1 = [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1"))]
+-- , 
+     -- AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))]
+attinfo2 = [AttrInfo (F.Lit False) TString (RelQualifier (Relation "r2"))]
+-- , 
+--      AttrInfo (F.Lit True) TString (RelQualifier (Relation "r4"))]
 
 typetst1 = ((F.Lit True), SM.fromList [(Attribute "a1"
-  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1")), 
-     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])
-  , (Attribute "a2"
-  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1")), 
-     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])])
+  , [AttrInfo (F.Ref (F.Feature "f")) TString (RelQualifier (Relation "r1"))])])
+-- , 
+--      AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])
+--   , (Attribute "a2"
+--   , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1")), 
+--      AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])])
 typetst2 = ((F.Lit True), SM.fromList [(Attribute "a1"
-  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r3")), 
-     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])
-  , (Attribute "a2"
-  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r3")), 
-     AttrInfo (F.Lit True) TString (RelQualifier (Relation "r4"))])])
+  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r3"))])])
+-- , 
+--      AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])
+--   , (Attribute "a2"
+--   , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r3")), 
+--      AttrInfo (F.Lit True) TString (RelQualifier (Relation "r4"))])])
 
 -- TESTED
 -- | checks if give type envs are disjoint w.r.t. relation.attribute.
@@ -620,7 +628,7 @@ tableSch2TypeEnv r tsch s =
 --     appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
 --     appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
--- TESTED
+-- TODO test
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
 appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t) 
@@ -631,7 +639,7 @@ appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t)
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
     -- appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
--- TESTED
+-- TODO WRONG
 -- | applies a fexp to type map.
 appCtxtToTypeMap :: MonadThrow m => F.FeatureExpr -> TypeMap -> m TypeEnv
 appCtxtToTypeMap f m 
