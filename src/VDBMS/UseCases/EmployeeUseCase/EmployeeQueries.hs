@@ -197,7 +197,7 @@ empVQ2 =
                           (select empSqlCond $ tRef empacct)))
          Empty
 
--- this should give ambg attr. but it isn't
+-- this should give ambg attr. no it shouldn't
 empvq2l = (join (tRef empacct)
                                 (tRef job)
                                 (joinEqCond (att2attrQualRel title_ empacct)

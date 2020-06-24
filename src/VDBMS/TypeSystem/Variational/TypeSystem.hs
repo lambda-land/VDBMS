@@ -628,7 +628,7 @@ tableSch2TypeEnv r tsch s =
 --     appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
 --     appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
--- TODO test
+
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
 appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t) 
@@ -639,7 +639,7 @@ appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t)
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
     -- appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
--- TODO WRONG
+-- TESTED
 -- | applies a fexp to type map.
 appCtxtToTypeMap :: MonadThrow m => F.FeatureExpr -> TypeMap -> m TypeEnv
 appCtxtToTypeMap f m 
