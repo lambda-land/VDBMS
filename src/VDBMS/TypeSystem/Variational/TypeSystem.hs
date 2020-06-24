@@ -41,6 +41,8 @@ import qualified Data.Set as Set
 -- import Data.Set (Set)
 import Data.List (intersect, nub, (\\))
 
+import Data.Maybe (maybe, fromJust, isNothing)
+
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
@@ -69,6 +71,10 @@ type TypeEnv = Opt TypeMap
 -- | presence condition of type.
 typePC :: TypeEnv -> F.FeatureExpr
 typePC = getFexp
+
+-- | updates attributes fexp.
+updateAttFexp :: F.FeatureExpr -> AttrInformation -> AttrInformation
+updateAttFexp f = map (\i -> AttrInfo (F.And f (attrFexp i)) (attrType i) (attrQual i))
 
 -- | turns a type env to table schema.
 typeEnv2tableSch :: TypeEnv -> TableSchema
@@ -128,15 +134,28 @@ lookupAttrInfo is q =
 -- | Returns all qualifiers for an attribute in a type.
 lookupAttrQuals :: MonadThrow m => Attribute -> TypeEnv -> m [Qualifier]
 lookupAttrQuals a t = 
-  do i <- lookupAttr a t 
+  do i <- lookupAttr_ a t 
      return $ fmap attrQual i
 
 -- TESTED
 -- | Looks up attribute information from the type.
-lookupAttr :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
-lookupAttr a t = 
+lookupAttr_ :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
+lookupAttr_ a t = 
   maybe (throwM $ AttrNotInEnv a t)
         return
+        (SM.lookup a (getObj t))
+
+-- | Looks up attribute information from the type and applies the type pc
+--   to all attributes. 
+lookupAttr :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
+lookupAttr a t =
+  -- | isNothing lu = throwM $ AttrNotInEnv a t
+  -- | otherwise = map (\i -> F.And (typePC t) (attrFexp i)) (fromJust lu)
+  --   where
+  --     lu = SM.lookup a (getObj t')
+  -- do t' <- appCtxtToEnv (typePC t) t
+  maybe (throwM $ AttrNotInEnv a t)
+        (return . updateAttFexp (typePC t))
         (SM.lookup a (getObj t))
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
@@ -168,15 +187,30 @@ lookupAttrFexpInEnv a t =
      return $ F.And (getFexp t) (attrFexp i)
 
 -- | checks if the attribute is ambigusous or not.
+-- note that it considers both the qualifier and the fexp.
+-- i.e., if r.a has been repeated it checks for the fexps,
+-- if their conjunction is satisfiable (there exists a config
+-- under which both attributes could exists) then we have an
+-- ambiuous attribute. however, if it is unsat then we're ok.
+-- e.g. of this is the attribute salary in empvq2.
 nonAmbiguousAttr :: MonadThrow m => Attr -> TypeEnv -> m AttrInfo
 nonAmbiguousAttr a t = 
   do is <- lookupAttr (attribute a) t 
      qs <- lookupAttrQuals (attribute a) t
      if length qs > 1
-     then maybe (throwM $ AmbiguousAttr a (map attrQual $ getObj t SM.! attribute a) t) 
-                (lookupAttrInfo is) 
-                (qualifier a)
+     then isAmbiguous a is
+      -- maybe (throwM $ AmbiguousAttr a (map attrQual $ getObj t SM.! attribute a) t) 
+      --           (lookupAttrInfo is) 
+      --           (qualifier a)
      else return $ head is
+
+isAmbiguous :: MonadThrow m => Attr -> AttrInformation -> m AttrInfo
+isAmbiguous a is 
+  | isNothing q = undefined
+  | otherwise   = lookupAttrInfo is (fromJust q)
+    where
+      q = qualifier a
+  
 
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
@@ -450,7 +484,7 @@ typeJoin :: MonadThrow m
          -> m TypeEnv
 typeJoin l r c ctx s = 
   do t <- typeProd l r ctx s 
-     -- typeCondition c ctx t --TODO uncomment this!!!!!!!!!!!!!!
+     typeCondition c ctx t
      return t 
 
 -- all helpers TESTED

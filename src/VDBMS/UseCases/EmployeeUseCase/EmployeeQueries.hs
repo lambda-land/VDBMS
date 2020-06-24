@@ -197,12 +197,25 @@ empVQ2 =
                           (select empSqlCond $ tRef empacct)))
          Empty
 
--- this should give ambg attr. no it shouldn't
-empvq2l = (join (tRef empacct)
+empvq2tst = 
+  choice v345
+                  (choice v34
+                          (join (select empSqlCond $ tRef empacct)
                                 (tRef job)
                                 (joinEqCond (att2attrQualRel title_ empacct)
                                             (att2attrQualRel title_ job)))
-empvq2r = ( tRef empacct)
+                          (select empSqlCond $ tRef empacct))
+         Empty
+
+-- this should give ambg attr. no it shouldn't because the attribute salary only
+-- exists in empacct for version5 while the relation job doesn't exists in that
+-- version. thus the attribute salary gets dropped since the conjunction
+-- of the fexps of the two joined relations will be applied to attributes. 
+empvq2l = project (pure $ trueAttr salary_) (join (tRef empacct)
+                                (tRef job)
+                                (joinEqCond (att2attrQualRel title_ empacct)
+                                            (att2attrQualRel title_ job)))
+empvq2r = project (pure $ trueAttr salary_)( tRef empacct)
 
 -- (v_3 ∨ v_4 ∨ v_5) ⟨π (empno, salary) ((v_3 ∨ v_4)⟨empacct 
 --                                             ⋈_{empacct.title=job.title} job 
