@@ -107,9 +107,10 @@ data TypeError
   | UnsatFexpsInProduct F.FeatureExpr 
   | InOpMustContainOneClm TypeEnv
   | UnsatAttPCandEnv OptAttribute TypeEnv
-  | AttrQualNotInEnv Attr TypeEnv
+  | AttrQualNotInEnv Attr [Qualifier]
   | AttrNotInEnv Attribute TypeEnv
-  | AmbiguousAttr Attr [Qualifier] TypeEnv
+  | AmbiguousAttr Attr AttrInformation
+  | AmbiguousAttrInCtxt Attr AttrInformation VariationalContext
   | QualNotInInfo Qualifier AttrInformation
   | MissingAlias (Rename Algebra)
   | NotEquiveEnv TypeEnv TypeEnv
@@ -149,42 +150,46 @@ lookupAttr_ a t =
 --   to all attributes. 
 lookupAttr :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
 lookupAttr a t =
-  -- | isNothing lu = throwM $ AttrNotInEnv a t
-  -- | otherwise = map (\i -> F.And (typePC t) (attrFexp i)) (fromJust lu)
-  --   where
-  --     lu = SM.lookup a (getObj t')
-  -- do t' <- appCtxtToEnv (typePC t) t
   maybe (throwM $ AttrNotInEnv a t)
         (return . updateAttFexp (typePC t))
         (SM.lookup a (getObj t))
 
--- | Checks if an attribute (possibly with its qualifier) exists in a type env.
-attrConsistentWithType :: MonadThrow m => Attr -> TypeEnv -> m ()
-attrConsistentWithType a t = 
-  do i <- nonAmbiguousAttr a t
+-- | Checks if an attribute (possibly with its qualifier) exists 
+--   in a type env.
+attrConsistentWithType :: MonadThrow m => Attr -> [Qualifier] -> m ()
+attrConsistentWithType a qs = 
+  maybe (return ())
+    (\q -> if q `elem` qs
+           then return ()
+           else throwM $ AttrQualNotInEnv a qs)
+    (qualifier a)
      -- pc <- lookupAttrFexpInEnv a t 
-     maybe (return ())
-           (\q -> if q == attrQual i
-                  then return ()
-                    -- if F.satAnds pc (getFexp t)
-                       -- then return ()
-                       -- else throwM $ UnsatAttPCandEnv pc t
-                  else throwM $ AttrQualNotInEnv a t)
-           (qualifier a)
+     -- maybe (return ())
+     --       (\q -> if q == attrQual i
+     --              then return ()
+     --                -- if F.satAnds pc (getFexp t)
+     --                   -- then return ()
+     --                   -- else throwM $ UnsatAttPCandEnv pc t
+     --              else throwM $ AttrQualNotInEnv a t)
+     --       (qualifier a)
 
 -- | looks up the type of an attribute in the env.
-lookupAttrTypeInEnv :: MonadThrow m => Attr -> TypeEnv -> m SqlType
-lookupAttrTypeInEnv a t = 
-  do i <- nonAmbiguousAttr a t 
-     attrConsistentWithType a t
+lookupAttrTypeFromEnvInCtx :: MonadThrow m 
+                    => Attr -> TypeEnv -> VariationalContext 
+                    -> m SqlType
+lookupAttrTypeFromEnvInCtx a t ctx = 
+  do i <- attinfoFromTypeInCtxt a t ctx
+     -- attrConsistentWithType a t
      return $ attrType i 
 
 -- | Looks up the presence condition of an attribute in the env.
-lookupAttrFexpInEnv :: MonadThrow m => Attr -> TypeEnv -> m F.FeatureExpr
-lookupAttrFexpInEnv a t = 
-  do i <- nonAmbiguousAttr a t 
-     attrConsistentWithType a t
-     return $ F.And (getFexp t) (attrFexp i)
+lookupAttrFexpFromEnvInCtx :: MonadThrow m 
+                           => Attr -> TypeEnv -> VariationalContext 
+                           -> m F.FeatureExpr
+lookupAttrFexpFromEnvInCtx a t ctx = 
+  do i <- attinfoFromTypeInCtxt a t ctx
+     -- attrConsistentWithType a t
+     return $ attrFexp i
 
 -- | checks if the attribute is ambigusous or not.
 -- note that it considers both the qualifier and the fexp.
@@ -193,24 +198,43 @@ lookupAttrFexpInEnv a t =
 -- under which both attributes could exists) then we have an
 -- ambiuous attribute. however, if it is unsat then we're ok.
 -- e.g. of this is the attribute salary in empvq2.
-nonAmbiguousAttr :: MonadThrow m => Attr -> TypeEnv -> m AttrInfo
+nonAmbiguousAttr :: MonadThrow m => Attr -> TypeEnv -> m AttrInformation
 nonAmbiguousAttr a t = 
   do is <- lookupAttr (attribute a) t 
      qs <- lookupAttrQuals (attribute a) t
+     attrConsistentWithType a qs
      if length qs > 1
      then isAmbiguous a is
       -- maybe (throwM $ AmbiguousAttr a (map attrQual $ getObj t SM.! attribute a) t) 
       --           (lookupAttrInfo is) 
       --           (qualifier a)
-     else return $ head is
+     else return $ is
 
-isAmbiguous :: MonadThrow m => Attr -> AttrInformation -> m AttrInfo
+-- | helper for nonAmbiguousAttr. 
+isAmbiguous :: MonadThrow m => Attr -> AttrInformation -> m AttrInformation
 isAmbiguous a is 
-  | isNothing q = undefined
-  | otherwise   = lookupAttrInfo is (fromJust q)
+  | isNothing q = if null [ (i,i') | i <- is, i' <- is, i /= i'
+                                   , satisfiable (attrFexp i `F.And` attrFexp i')]
+                  then return is
+                  else throwM $ AmbiguousAttr a is
+  | otherwise   = lookupAttrInfo is (fromJust q) >>= return . pure
     where
       q = qualifier a
   
+-- | returns the attr information from the type env
+--   for a given ctxt. Note that if the ctxt isn't given
+--   the type env can have multiple instances of an attribute
+--   but in a given ctxt only one instance of the given attr
+--   should exists. 
+attinfoFromTypeInCtxt :: MonadThrow m 
+                      => Attr -> TypeEnv -> VariationalContext 
+                      -> m AttrInfo
+attinfoFromTypeInCtxt a t ctx =
+  do is <- nonAmbiguousAttr a t
+     let is' = filter (\i -> satisfiable (F.And ctx (attrFexp i))) is 
+     if length is' > 1
+     then throwM $ AmbiguousAttrInCtxt a is' ctx
+     else return $ head is'
 
 -- | verifies and similifies the final type env return by the type system, i.e.,
 --   checks the satisfiability of all attributes' pres conds conjoined
@@ -301,38 +325,40 @@ typeProj oas q ctx s
   | null oas = throwM $ EmptyAttrList oas q 
   | otherwise = 
     do t <- typeOfQuery q ctx s 
-       t' <- projOptAttrs oas t
+       t' <- projOptAttrs oas t 
        appCtxtToEnv ctx t' 
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
 -- note that it's checking subsumption too.
-projOptAtt :: MonadThrow m => OptAttribute -> TypeEnv -> m TypeEnv
-projOptAtt oa t = 
-  do let attr = getObj oa
-         -- attr = thing aObj
-         a = attribute attr
-         aq = qualifier attr
-         -- aName = name aObj
-         aPC = getFexp oa
-         tPC = typePC t
-     i <- nonAmbiguousAttr attr t
-     let iQual = attrQual i
-         iSqlT = attrType i
-         iPC = attrFexp i
-     pc <- lookupAttrFexpInEnv attr t 
-     maybe (if F.satAnds pc aPC
-            then return $ attr2env tPC a iPC aPC iSqlT iQual
-                            -- (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
-                            -- aName
-            else throwM $ UnsatAttPCandEnv oa t)
-           (\q -> if q == attrQual i
-                  then if F.satAnds pc aPC
-                       then return $ attr2env tPC a iPC aPC iSqlT iQual
-                                      -- (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
-                                      -- aName
-                       else throwM $ UnsatAttPCandEnv oa t
-                  else throwM $ AttrQualNotInEnv attr t)
-           aq
+projOptAtt :: MonadThrow m 
+           => OptAttribute -> TypeEnv  
+           -> m TypeEnv
+projOptAtt oa t  = undefined
+  -- do let attr = getObj oa
+  --        -- attr = thing aObj
+  --        a = attribute attr
+  --        aq = qualifier attr
+  --        -- aName = name aObj
+  --        aPC = getFexp oa
+  --        tPC = typePC t
+  --    i <- attinfoFromTypeInCtxt attr t ctx
+  --    let iQual = attrQual i
+  --        iSqlT = attrType i
+  --        iPC = attrFexp i
+  --    -- pc <- lookupAttrFexpInEnv attr t 
+  --    maybe (if F.satAnds pc aPC
+  --           then return $ attr2env tPC a iPC aPC iSqlT iQual
+  --                           -- (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
+  --                           -- aName
+  --           else throwM $ UnsatAttPCandEnv oa t)
+  --          (\q -> if q == attrQual i
+  --                 then if F.satAnds pc aPC
+  --                      then return $ attr2env tPC a iPC aPC iSqlT iQual
+  --                                     -- (\n -> attr2env tPC (Attribute n) iPC aPC iSqlT iQual)
+  --                                     -- aName
+  --                      else throwM $ UnsatAttPCandEnv oa t
+  --                 else throwM $ AttrQualNotInEnv attr t)
+  --          aq
 
 -- | constructs a new type env for one attribute.
 attr2env :: F.FeatureExpr 
@@ -403,7 +429,8 @@ onlyAttrInType :: MonadThrow m
                => Attr -> TypeEnv -> TypeEnv
                -> m ()
 onlyAttrInType a tenv tq =
-  do attrConsistentWithType a tenv
+  do qs <- lookupAttrQuals (attribute a) tenv
+     attrConsistentWithType a qs
      if Set.null $ attribute a `Set.delete` SM.keysSet (getObj tq)
      then return ()
      else throwM $ InOpMustContainOneClm tq
@@ -430,24 +457,24 @@ typeComp :: MonadThrow m
 typeComp a@(Val l)  a'@(Val r) _ t 
   | typeOf l == typeOf r = return ()
   | otherwise = throwM $ CompInvalid a a' t 
-typeComp a@(Val l)  a'@(Att r) c t = 
-  do at <- lookupAttrTypeInEnv r t
-     af <- lookupAttrFexpInEnv r t
-     if typeOf l == at && F.tautImplyFexps af c
+typeComp a@(Val l)  a'@(Att r) ctx t = 
+  do at <- lookupAttrTypeFromEnvInCtx r t ctx
+     af <- lookupAttrFexpFromEnvInCtx r t ctx
+     if typeOf l == at && F.tautImplyFexps af ctx
      then return () 
      else throwM $ CompInvalid a a' t
-typeComp a@(Att l) a'@(Val r)  c t = 
-  do at <- lookupAttrTypeInEnv l t
-     af <- lookupAttrFexpInEnv l t
-     if typeOf r == at && F.tautImplyFexps af c
+typeComp a@(Att l) a'@(Val r)  ctx t = 
+  do at <- lookupAttrTypeFromEnvInCtx l t ctx
+     af <- lookupAttrFexpFromEnvInCtx l t ctx
+     if typeOf r == at && F.tautImplyFexps af ctx
      then return () 
      else throwM $ CompInvalid a a' t
-typeComp a@(Att l) a'@(Att r)  c t = 
-  do lt <- lookupAttrTypeInEnv l t
-     lf <- lookupAttrFexpInEnv l t
-     rt <- lookupAttrTypeInEnv r t
-     rf <- lookupAttrFexpInEnv r t
-     if lt == rt && F.tautImplyFexps lf c && F.tautImplyFexps rf c
+typeComp a@(Att l) a'@(Att r)  ctx t = 
+  do lt <- lookupAttrTypeFromEnvInCtx l t ctx
+     lf <- lookupAttrFexpFromEnvInCtx l t ctx
+     rt <- lookupAttrTypeFromEnvInCtx r t ctx
+     rf <- lookupAttrFexpFromEnvInCtx r t ctx
+     if lt == rt && F.tautImplyFexps lf ctx && F.tautImplyFexps rf ctx
      then return ()
      else throwM $ CompInvalid a a' t
 
