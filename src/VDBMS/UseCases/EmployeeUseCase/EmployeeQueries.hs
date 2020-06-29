@@ -202,6 +202,15 @@ empVQ2 =
                           (select empSqlCond $ tRef empacct)))
          Empty
 
+empvq2lchc =
+  (project (pure $ trueAttr salary_)
+                  (choice v34
+                          (join (select empSqlCond $ tRef empacct)
+                                (tRef job)
+                                (joinEqCond (att2attrQualRel title_ empacct)
+                                            (att2attrQualRel title_ job)))
+                          (select empSqlCond $ tRef empacct)))
+
 empvq2tst = 
   choice v345
                   (choice v34
@@ -216,7 +225,7 @@ empvq2tst =
 -- exists in empacct for version5 while the relation job doesn't exists in that
 -- version. thus the attribute salary gets dropped since the conjunction
 -- of the fexps of the two joined relations will be applied to attributes. 
-empvq2l = project (pure $ trueAttr salary_) (join (tRef empacct)
+empvq2l = project (pure $ trueAttr salary_) (join (select empSqlCond $ tRef empacct)
                                 (tRef job)
                                 (joinEqCond (att2attrQualRel title_ empacct)
                                             (att2attrQualRel title_ job)))

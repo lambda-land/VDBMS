@@ -814,6 +814,6 @@ appCtxtToTypeMap f m
   | otherwise = throwM $ UnsatFexAppliedToTypeMap f m
   where 
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
-    appCtxtToAttInfo fexp is = filter (\i -> satisfiable (F.And fexp (attrFexp i))) is
+    appCtxtToAttInfo fexp is = filter (satisfiable . attrFexp ) $ applyFuncToAttFexp (F.And fexp) is
 
 

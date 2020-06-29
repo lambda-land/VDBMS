@@ -15,7 +15,7 @@ import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
-import VDBMS.Variational.Opt (getFexp, getObj)
+import VDBMS.Variational.Opt (getFexp, getObj, applyFuncFexp)
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnve2OptAtts)
 
@@ -23,6 +23,8 @@ import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnve2OptAtts)
 import qualified Data.Map.Strict as M
 
 import Data.Maybe (isJust, fromJust)
+
+import Control.Arrow (second)
 
 -- | pushes the schema onto the vq after type checking 
 --   the query. in order for the commuting diagram to
@@ -38,7 +40,9 @@ pushSchToQ s (Proj as q)
 pushSchToQ s (Sel c q) 
   = Sel (pushSchToCond s c) (pushSchToQ s q)
 pushSchToQ s (AChc f l r)  
-  = AChc f (pushSchToQ s l) (pushSchToQ s r)
+  = AChc f 
+        (pushSchToQ (updateFM (F.And f) s) l) 
+        (pushSchToQ (updateFM (F.And (F.Not f)) s) r)
 pushSchToQ s (Join l r c) 
   = Join (pushSchToQ s l) (pushSchToQ s r) c
 pushSchToQ s (Prod l r) 
@@ -47,6 +51,45 @@ pushSchToQ s q@(TRef r) = Proj as q
   where as = typeEnve2OptAtts $ fromJust $ typeOfQuery q (featureModel s) s
 pushSchToQ s (RenameAlg n q) = RenameAlg n (pushSchToQ s q)
 pushSchToQ _ Empty = Empty
+
+-- | intersects two opt atts. the first list subsumes the second one,
+--   checked by the type system. it returns attributes in the subsumed
+--   list with their fexp conjuncted with the correspondent fexps 
+--   (disjuncted if more than one) in the
+--   bigger list (the first one). if the attr has qualifier in the 
+--   subsumed list it is only matched with attributes with the same
+--   qualifier, otherwise it is matched with all attributes with 
+--   the same name. 
+--   Note it needs to look into the first list completely
+--                  subsumes      -> isSubsumed    -> intersection
+intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
+intersectOptAtts big small = map (restrictOptAtt big) small
+  where
+    restrictOptAtt :: OptAttributes -> OptAttribute -> OptAttribute
+    restrictOptAtt oas oa = conjFexpOptAttr (genFexp oasFiltered) oa
+      where 
+        att = attrOfOptAttr oa 
+        qual = qualOfOptAttr oa 
+        oasFiltered = filter check oas 
+        check a = case qual of 
+          Just aq -> qual == qualOfOptAttr a && att == attrOfOptAttr a 
+          _ -> att == attrOfOptAttr a
+        genFexp :: OptAttributes -> F.FeatureExpr
+        genFexp [] = error "shouldnt be getting empty list. func: intersectOptAtts in PushSchToQ"
+        genFexp (x:xs) = foldl (\f at -> F.Or f (getFexp at)) (getFexp x) xs
+
+-- | pushes schema to vsqlcond which pushes the schema into the
+--   query used in sqlin condition.
+pushSchToCond :: Schema -> VsqlCond -> VsqlCond
+pushSchToCond _ cnd@(VsqlCond _) = cnd
+pushSchToCond s (VsqlIn a q)     = VsqlIn a (pushSchToQ s q)
+pushSchToCond s (VsqlNot c)      = VsqlNot (pushSchToCond s c)
+pushSchToCond s (VsqlOr l r) 
+  = VsqlOr (pushSchToCond s l) (pushSchToCond s r)
+pushSchToCond s (VsqlAnd l r) 
+  = VsqlAnd (pushSchToCond s l) (pushSchToCond s r)
+pushSchToCond s (VsqlCChc f l r) 
+  = VsqlCChc f (pushSchToCond s l) (pushSchToCond s r)
 
 
 -- | takes a relation and schema and generates
@@ -102,43 +145,4 @@ pushSchToQ _ Empty = Empty
 -- | unions two opt atts. 
 -- unionOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
 -- unionOptAtts = (++)
-
--- | intersects two opt atts. the first list subsumes the second one,
---   checked by the type system. it returns attributes in the subsumed
---   list with their fexp conjuncted with the correspondent fexps 
---   (disjuncted if more than one) in the
---   bigger list (the first one). if the attr has qualifier in the 
---   subsumed list it is only matched with attributes with the same
---   qualifier, otherwise it is matched with all attributes with 
---   the same name. 
---   Note it needs to look into the first list completely
---                  subsumes      -> isSubsumed    -> intersection
-intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
-intersectOptAtts big small = map (restrictOptAtt big) small
-  where
-    restrictOptAtt :: OptAttributes -> OptAttribute -> OptAttribute
-    restrictOptAtt oas oa = conjFexpOptAttr (genFexp oasFiltered) oa
-      where 
-        att = attrOfOptAttr oa 
-        qual = qualOfOptAttr oa 
-        oasFiltered = filter check oas 
-        check a = case qual of 
-          Just aq -> qual == qualOfOptAttr a && att == attrOfOptAttr a 
-          _ -> att == attrOfOptAttr a
-        genFexp :: OptAttributes -> F.FeatureExpr
-        genFexp [] = error "shouldnt be getting empty list. func: intersectOptAtts in PushSchToQ"
-        genFexp (x:xs) = foldl (\f at -> F.Or f (getFexp at)) (getFexp x) xs
-
--- | pushes schema to vsqlcond which pushes the schema into the
---   query used in sqlin condition.
-pushSchToCond :: Schema -> VsqlCond -> VsqlCond
-pushSchToCond _ cnd@(VsqlCond _) = cnd
-pushSchToCond s (VsqlIn a q)     = VsqlIn a (pushSchToQ s q)
-pushSchToCond s (VsqlNot c)      = VsqlNot (pushSchToCond s c)
-pushSchToCond s (VsqlOr l r) 
-  = VsqlOr (pushSchToCond s l) (pushSchToCond s r)
-pushSchToCond s (VsqlAnd l r) 
-  = VsqlAnd (pushSchToCond s l) (pushSchToCond s r)
-pushSchToCond s (VsqlCChc f l r) 
-  = VsqlCChc f (pushSchToCond s l) (pushSchToCond s r)
 
