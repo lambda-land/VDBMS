@@ -134,7 +134,9 @@ empVQ1_alt0 =
 -- Note that there's a slight difference between empVQ1_old and empVQ1_alt0:
 -- the former returns a table that has pres cond of v_3 while the latter
 -- returns a table that has a pres cond equal to FM and its only attribute
--- has pres cond of v_3.
+-- has pres cond of v_3. --> actually they both have the same type since
+-- the choice affects each branch separately and doesn't have the pc v3
+-- over the entire type env.
 -- 
 -- π (salary^\{v_3}) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job)
 -- 
@@ -166,6 +168,9 @@ empVQ1_alt2 =
 -- 
 -- note: to ensure that naming is correct remove temp from the first, and have an incorrect query to check the system.
 -- π (salary^\{v_3}) ((σ (empno=1004) empacct) ⋈_{empacct.title=job.title} job)
+-- actually this is type correct b/c there's no need to rename the select empsqlcond
+-- subquery since in the type env title has two qualifiers one is empacct and 
+-- the other is job. so this will be fine.
 empVQ1_alt_typeErr = 
   project (pure $ att2optatt salary_ empv3)  
           (join (select empSqlCond (tRef empacct))

@@ -72,6 +72,12 @@ type TypeEnv = Opt TypeMap
 typePC :: TypeEnv -> F.FeatureExpr
 typePC = getFexp
 
+-- | applies func to pcs of atts.
+applyFuncToAttFexp :: (F.FeatureExpr -> F.FeatureExpr)
+                   -> AttrInformation 
+                   -> AttrInformation
+applyFuncToAttFexp f = map (\i -> AttrInfo (f (attrFexp i)) (attrType i) (attrQual i))
+
 -- | updates attributes fexp.
 updateAttFexp :: F.FeatureExpr -> AttrInformation -> AttrInformation
 updateAttFexp f = map (\i -> AttrInfo (F.And f (attrFexp i)) (attrType i) (attrQual i))
@@ -118,6 +124,11 @@ data TypeError
   | EmptyAttrList OptAttributes Algebra
   | TypeEnvNotDisjoint TypeEnv TypeEnv
   | UnsatFexAppliedToTypeMap F.FeatureExpr TypeMap
+  | EnvsMapNotEqDueToQualMismatch Attribute Qualifier Qualifier
+  | EnvsMapNotEqDueToTypeMismatch Attribute SqlType SqlType
+  | EnvsMapNotEqDueToUnequivFexp Attribute F.FeatureExpr F.FeatureExpr
+  | EnvsFexpNotEq F.FeatureExpr F.FeatureExpr
+  | EnvsKeySetsNotEq (Set.Set Attribute) (Set.Set Attribute)
   -- | UnsatFexpsTypeInetersect F.FeatureExpr
     deriving (Data,Eq,Generic,Show,Typeable)
 
@@ -253,10 +264,12 @@ isAmbiguous a is
   -- | satisfiable (getFexp t) = return $ propagateFexpToTsch t
   -- | otherwise = throwM $ EnvFexpUnsat (getFexp t) t
 
--- | runs the typeofquery for a given query and schema,
---   initiating tbe context to the feature model.
-runTypeQuery :: MonadThrow m => Algebra -> Schema -> m TypeEnv
-runTypeQuery q s = typeOfQuery q (featureModel s) s
+-- | drops the monad throw from a type.
+extrctType :: Maybe TypeEnv -> TypeEnv
+extrctType = fromJust
+
+
+-- sameType_ (extrctType $ simplType empVQ1_alt0 empVSchema) (extrctType $ simplType empVQ1_alt empVSchema)
 
 -- 
 -- Static semantics of a vquery that returns a table schema,
@@ -295,18 +308,58 @@ typeSetOp l r ctx s =
      sameType tl tr 
      return tl
 
+-- TODO isn't working correctly or maybe the queries aren't equiv. come back to it
+-- with a more elab error.
 -- | Checks if two type are the same.
-sameType :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
-sameType lt rt 
-  | compTypes equivalent (\_ _ -> True) (==) lt rt = return ()
+sameType_ :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
+sameType_ lt rt 
+  | compTypes_ equivalent (\_ _ -> True) (==) lt rt = return ()
   | otherwise = throwM $ NotEquiveEnv lt rt  
 
+-- TODO debug
+-- | Checks if two type are the same with elaborate error.
+sameType :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
+sameType lt rt = compTypes equivalent (\_ _ -> True) (==) lt rt >> return ()
+
+-- TODO debug
+-- | a more ellaborate error giving comp.
+compTypes :: MonadThrow m
+          => (F.FeatureExpr -> F.FeatureExpr -> Bool)
+          -> (SqlType -> SqlType -> Bool) 
+          -> (Qualifier -> Qualifier -> Bool)
+          -> TypeEnv -> TypeEnv -> m Bool 
+compTypes ff tf qf lt rt = undefined
+  -- do let rObj = getObj rt
+  --        lObj = getObj lt
+  --        lfexp = getFexp lt 
+  --        rfexp = getFexp rt 
+  --        tfexpEq = ff lfexp rfexp
+  --        -- envsEq = SM.isSubmapOfBy (eqAttInfo ff tf qf) lObj rObj 
+  --        --   && SM.isSubmapOfBy (eqAttInfo ff tf qf) rObj lObj
+  --        -- eqAttInfo :: AttrInformation -> AttrInformation -> Bool
+  --        -- eqAttInfo f t q lis ris = length lis == length ris 
+  --        --   && null (lqs \\ rqs)
+  --        --   && null (rqs \\ lqs)
+  --        --   && and res
+  --        -- lqs = fmap attrQual lis
+  --        -- rqs = fmap attrQual ris
+  --        -- res = [ t (attrType li) (attrType ri) && f (F.And (attrFexp li) lfexp) (F.And (attrFexp ri) rfexp)
+  --        --     | li <- lis, ri <- ris, q (attrQual li) (attrQual ri) ]
+  --    if SM.keysSet lObj == SM.keysSet rObj
+  --    then if tfexpEq 
+  --         then if envsEq
+  --              then return True
+  --              else throwM $ 
+  --         else throwM $ EnvsFexpNotEq (F.shrinkFeatureExpr lfexp) (F.shrinkFeatureExpr rfexp)
+  --    else throwM $ EnvsKeySetsNotEq (SM.keysSet lObj) (SM.keysSet rObj)
+
+-- TODO debug
 -- | compares two types with the given functions over each field of attr info.
-compTypes :: (F.FeatureExpr -> F.FeatureExpr -> Bool)
+compTypes_ :: (F.FeatureExpr -> F.FeatureExpr -> Bool)
           -> (SqlType -> SqlType -> Bool) 
           -> (Qualifier -> Qualifier -> Bool)
           -> TypeEnv -> TypeEnv -> Bool 
-compTypes ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
+compTypes_ ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
   && tfexpEq
   && envsEq
   where
