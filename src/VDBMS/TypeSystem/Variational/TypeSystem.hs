@@ -102,15 +102,15 @@ typeAtts = M.keys . getObj
 -- | Possible typing errors.
 data TypeError 
   = 
-  -- CtxUnsatOverEnv VariationalContext TypeEnv
-    NotUniqueRelAlias [Name] TypeEnv TypeEnv
+  CtxUnsatOverEnv VariationalContext TypeEnv
+  | NotUniqueRelAlias [Name] TypeEnv TypeEnv
   | UnsatFexpsInProduct F.FeatureExpr 
   | InOpMustContainOneClm TypeEnv
   | UnsatAttPCandEnv OptAttribute TypeEnv
   | AttrQualNotInEnv Attr [Qualifier]
   | AttrNotInEnv Attribute TypeEnv
   | AmbiguousAttr Attr AttrInformation
-  | AmbiguousAttrInCtxt Attr AttrInformation VariationalContext
+  -- | AmbiguousAttrInCtxt Attr AttrInformation VariationalContext
   | QualNotInInfo Qualifier AttrInformation
   | MissingAlias (Rename Algebra)
   | NotEquiveEnv TypeEnv TypeEnv
@@ -118,14 +118,14 @@ data TypeError
   | EmptyAttrList OptAttributes Algebra
   | TypeEnvNotDisjoint TypeEnv TypeEnv
   | UnsatFexAppliedToTypeMap F.FeatureExpr TypeMap
-  | UnsatFexpsTypeInetersect F.FeatureExpr
+  -- | UnsatFexpsTypeInetersect F.FeatureExpr
     deriving (Data,Eq,Generic,Show,Typeable)
 
 instance Exception TypeError  
 
 -- | looks up attr info for a qualifier.
-lookupAttrInfo :: MonadThrow m => AttrInformation -> Qualifier -> m AttrInfo
-lookupAttrInfo is q = 
+lookupAttrInfo_ :: MonadThrow m => AttrInformation -> Qualifier -> m AttrInfo
+lookupAttrInfo_ is q = 
   maybe 
     (throwM $ QualNotInInfo q is)
     (\(f,t) -> return $ AttrInfo f t q)
@@ -135,21 +135,21 @@ lookupAttrInfo is q =
 -- | Returns all qualifiers for an attribute in a type.
 lookupAttrQuals :: MonadThrow m => Attribute -> TypeEnv -> m [Qualifier]
 lookupAttrQuals a t = 
-  do i <- lookupAttr_ a t 
+  do i <- lookupAttribute_ a t 
      return $ fmap attrQual i
 
 -- TESTED
 -- | Looks up attribute information from the type.
-lookupAttr_ :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
-lookupAttr_ a t = 
+lookupAttribute_ :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
+lookupAttribute_ a t = 
   maybe (throwM $ AttrNotInEnv a t)
         return
         (SM.lookup a (getObj t))
 
 -- | Looks up attribute information from the type and applies the type pc
 --   to all attributes. 
-lookupAttr :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
-lookupAttr a t =
+lookupAttribute :: MonadThrow m => Attribute -> TypeEnv -> m AttrInformation
+lookupAttribute a t =
   maybe (throwM $ AttrNotInEnv a t)
         (return . updateAttFexp (typePC t))
         (SM.lookup a (getObj t))
@@ -179,19 +179,26 @@ lookupAttrTypeFromEnv :: MonadThrow m
                     -- -> VariationalContext 
                     -> m [SqlType]
 lookupAttrTypeFromEnv a t = 
-  do is <- nonAmbiguousAttr a t 
+  do is <- lookupAttr a t
      -- attrConsistentWithType a t
      return $ map attrType is 
 
 -- | Looks up the presence condition of an attribute in the env.
-lookupAttrFexpFromEnv :: MonadThrow m 
-                           => Attr -> TypeEnv 
-                           -- -> VariationalContext 
-                           -> m [F.FeatureExpr]
-lookupAttrFexpFromEnv a t = 
-  do is <- nonAmbiguousAttr a t 
-     -- attrConsistentWithType a t
-     return $ map attrFexp is
+-- lookupAttrFexpFromEnv :: MonadThrow m 
+--                            => Attr -> TypeEnv 
+--                            -- -> VariationalContext 
+--                            -> m [F.FeatureExpr]
+-- lookupAttrFexpFromEnv a t = 
+--   do is <- lookupAttr a t
+--      -- attrConsistentWithType a t
+--      return $ map attrFexp is
+
+lookupAttr :: MonadThrow m => Attr -> TypeEnv -> m AttrInformation
+lookupAttr a t = 
+  do is <- lookupAttribute (attribute a) t 
+     maybe (return is)
+           (\q -> sequence (pure $ lookupAttrInfo_ is q))
+           (qualifier a)
 
 -- | checks if the attribute is ambigusous or not.
 -- note that it considers both the qualifier and the fexp.
@@ -202,7 +209,7 @@ lookupAttrFexpFromEnv a t =
 -- e.g. of this is the attribute salary in empvq2.
 nonAmbiguousAttr :: MonadThrow m => Attr -> TypeEnv -> m AttrInformation
 nonAmbiguousAttr a t = 
-  do is <- lookupAttr (attribute a) t 
+  do is <- lookupAttribute (attribute a) t 
      qs <- lookupAttrQuals (attribute a) t
      attrConsistentWithType a qs
      if length qs > 1
@@ -219,7 +226,7 @@ isAmbiguous a is
                                    , satisfiable (attrFexp i `F.And` attrFexp i')]
                   then return is
                   else throwM $ AmbiguousAttr a is
-  | otherwise   = lookupAttrInfo is (fromJust q) >>= return . pure
+  | otherwise   = lookupAttrInfo_ is (fromJust q) >>= return . pure
     where
       q = qualifier a
   
@@ -272,7 +279,9 @@ typeOfQuery (AChc f l r)     ctx s =
 typeOfQuery (Join l r c)    ctx s = typeJoin l r c ctx s 
 typeOfQuery (Prod l r)      ctx s = typeProd l r ctx s 
 typeOfQuery (TRef r)        ctx s = typeRel r ctx s 
-typeOfQuery (RenameAlg n q) ctx s = undefined
+typeOfQuery (RenameAlg n q) ctx s = 
+  typeOfQuery q ctx s
+  >>= return . updateType n 
 typeOfQuery Empty           ctx _ = 
   appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
 
@@ -392,9 +401,12 @@ typeSel c q ctx s =
   do 
      -- validSubQ rq --ctx s -- this was for checking renaming of subq in sql.
      t <- typeOfQuery q ctx s
-     -- let t' = updateType (name rq) t -- this was for when we had attr renaming in alg.
+     -- let t' = updateType (name rq) t -- this was for when we had attr 
+     -- renaming in alg.
      typeVsqlCond c ctx s t
-     -- appCtxtToEnv ctx t'
+     -- appCtxtToEnv ctx t' -- you don't need this since you just need to 
+     -- check consistency of ctxt with conditions and it shouldn't be 
+     -- applied to the overal type env.
      return t
 
 -- | Checks if a subquery is valid within a seleciton or projection.
@@ -407,13 +419,13 @@ typeSel c q ctx s =
 -- validSubQ _ = return ()
 
 -- | updates a type env with a new name.
-updateType :: Alias -> TypeEnv -> TypeEnv
-updateType a t = updateOptObj updatedTypeObj t
+updateType :: Name -> TypeEnv -> TypeEnv
+updateType n t = updateOptObj updatedTypeObj t
   where
     tObj = getObj t
-    updatedTypeObj = maybe tObj (\n -> SM.map (appName n) tObj) a 
-    appName :: String -> AttrInformation -> AttrInformation
-    appName n = fmap (updateQual (SubqueryQualifier n))
+    updatedTypeObj = SM.map (appName n) tObj 
+    appName :: Name -> AttrInformation -> AttrInformation
+    appName nm = fmap (updateQual (SubqueryQualifier nm))
     updateQual q (AttrInfo af at _) = AttrInfo af at q 
 
 -- | Type checks variational sql conditions.
@@ -429,8 +441,11 @@ typeVsqlCond (VsqlOr l r)     ctx s t = typeVsqlCond l ctx s t
   >> typeVsqlCond r ctx s t 
 typeVsqlCond (VsqlAnd l r)    ctx s t = typeVsqlCond l ctx s t
   >> typeVsqlCond r ctx s t 
-typeVsqlCond (VsqlCChc f l r) ctx s t = typeVsqlCond l (F.And ctx f) s t
-  >> typeVsqlCond r (F.And ctx (F.Not f)) s t
+typeVsqlCond (VsqlCChc f l r) ctx s t = 
+  appCtxtToEnv (F.And ctx f) t
+  >>= typeVsqlCond l (F.And ctx f) s 
+  >> appCtxtToEnv (F.And ctx (F.Not f)) t
+  >>= typeVsqlCond r (F.And ctx (F.Not f)) s 
 
 -- | Checks if the attribute is the only attribute of a type env.
 onlyAttrInType :: MonadThrow m 
@@ -468,19 +483,38 @@ typeComp :: MonadThrow m
 typeComp a@(Val l)  a'@(Val r) _ t 
   | typeOf l == typeOf r = return ()
   | otherwise = throwM $ CompInvalid a a' t 
-typeComp a@(Val l)  a'@(Att r) ctx t = undefined
-  -- do ats <- lookupAttrTypeFromEnv r t 
-  --    afs <- lookupAttrFexpFromEnv r t 
-  --    if typeOf l `elem` ats && F.tautImplyFexps af ctx
-  --    then return () 
-  --    else throwM $ CompInvalid a a' t
-typeComp a@(Att l) a'@(Val r)  ctx t = undefined
-  -- do ats <- lookupAttrTypeFromEnv l t 
+typeComp a@(Val l)  a'@(Att r) ctx t = 
+  do is <- lookupAttr r t -- TODO lookup suffices. same for the rest.
+     -- ats <- lookupAttrTypeFromEnv r t 
+     -- afs <- lookupAttrFexpFromEnv r t 
+     let validInfos = filter (\i -> F.tautImplyFexps (attrFexp i) ctx) 
+                    $ filter (((==) (typeOf l)) . attrType) is 
+     if null validInfos
+      -- typeOf l `elem` (attrType is) && F.tautImplyFexps af ctx
+     then throwM $ CompInvalid a a' t
+     else return () 
+typeComp a@(Att l) a'@(Val r)  ctx t = 
+  do is <- lookupAttr l t 
+     let validInfos = filter (\i -> F.tautImplyFexps (attrFexp i) ctx) 
+                    $ filter (((==) (typeOf r)) . attrType) is 
+     if null validInfos
+     then throwM $ CompInvalid a a' t
+     else return ()  
+    -- ats <- lookupAttrTypeFromEnv l t 
   --    afs <- lookupAttrFexpFromEnv l t 
   --    if typeOf r `elem` ats && F.tautImplyFexps af ctx
   --    then return () 
   --    else throwM $ CompInvalid a a' t
-typeComp a@(Att l) a'@(Att r)  ctx t = undefined
+typeComp a@(Att l) a'@(Att r)  ctx t = 
+  do lis <- lookupAttr l t
+     ris <- lookupAttr r t 
+     let validInfos = [ (li,ri) | li <- lis, ri <- ris
+                      , attrType li == attrType ri
+                      , F.tautImplyFexps (attrFexp li) ctx
+                      , F.tautImplyFexps (attrFexp ri) ctx]
+     if null validInfos 
+     then throwM $ CompInvalid a a' t
+     else return ()
   -- do lts <- lookupAttrTypeFromEnv l t 
   --    lfs <- lookupAttrFexpFromEnv l t 
   --    rts <- lookupAttrTypeFromEnv r t 
@@ -514,6 +548,17 @@ unionTypes t t' =
 -- | union type maps without checking the sat of fexps.
 unionTypeMaps :: TypeMap -> TypeMap -> TypeMap
 unionTypeMaps l r = SM.unionWith (appendAttrInfos F.Or) l r
+
+-- TODO check this
+-- | intersects two types. 
+intersectTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
+intersectTypes l r = appCtxtToTypeMap f $ intersectTypeMaps (getObj l) (getObj r) 
+  where
+    f = F.And (getFexp l) (getFexp r)
+
+-- | intersect type maps. 
+intersectTypeMaps :: TypeMap -> TypeMap -> TypeMap
+intersectTypeMaps l r = SM.intersectionWith (appendAttrInfos F.And) l r
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
@@ -557,7 +602,7 @@ typetst1 = ((F.Lit True), SM.fromList [(Attribute "a1"
 --   , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r1")), 
 --      AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])])
 typetst2 = ((F.Lit True), SM.fromList [(Attribute "a1"
-  , [AttrInfo (F.Lit True) TString (RelQualifier (Relation "r3"))])])
+  , [AttrInfo (F.Not $ F.Ref (F.Feature "f")) TString (RelQualifier (Relation "r1"))])])
 -- , 
 --      AttrInfo (F.Lit True) TString (RelQualifier (Relation "r2"))])
 --   , (Attribute "a2"
@@ -566,16 +611,25 @@ typetst2 = ((F.Lit True), SM.fromList [(Attribute "a1"
 
 -- TESTED
 -- | checks if give type envs are disjoint w.r.t. relation.attribute.
+-- the following is commented out. have to discuss it with Eric.
+-- do we want to combine the naming scope with pcs?
+--   and attriubtes pc. e.g. (π_{a^v_1} r × π_{a^¬v_1} r) shouldn't
+--   return a disjoint error, it results in not having unique relation
+--   names. 
 disjointTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
 disjointTypes l r 
   | null quals = return ()
   | otherwise = throwM $ TypeEnvNotDisjoint l r
     where 
-      quals = [(a,rl,rr)| (a,(rinf,linf)) <- comb, rl <- map attrQual linf,
-        rr <- map attrQual rinf, rl == rr]
+      quals = [(a,rl,rr)| (a,(rinf,linf)) <- comb
+        , rl <- map attrQual linf
+        , rr <- map attrQual rinf
+        , rr == rl]
+        -- (rl,fl) <- map (\i -> (attrQual i, attrFexp i)) linf,
+        -- (rr,fr) <- map (\i -> (attrQual i, attrFexp i)) rinf, 
+        -- rl == rr, 
+        -- satisfiable (F.And (F.And (typePC l) fl) (F.And (typePC r) fr))]
       comb = SM.toList $ SM.intersectionWith (,) (getObj l) (getObj r)
-      -- infl = SM.map (\info -> map attrQual (fst info)) comb
-      -- infr = SM.map ((map attrQual) . snd) comb
 
 -- TESTED
 -- | products two types, i.e., unions their map and 
@@ -599,6 +653,7 @@ prodTypes l r = appCtxtToTypeMap (F.And (getFexp l) (getFexp r))
 -- TESTED
 -- | Checks that table/alias are unique. The relation names or
 --   their aliases must be unique.
+-- discuss with Eric: should we consider uniqueness w.r.t. pcs?
 uniqueRelAlias :: MonadThrow m => TypeEnv -> TypeEnv -> m ()
 uniqueRelAlias tl tr 
   | null relNs = return ()
@@ -606,19 +661,6 @@ uniqueRelAlias tl tr
     where 
       relNs = relNames (getObj tl) `intersect` relNames (getObj tr)
       relNames envObj = nub $ fmap (qualName . attrQual) $ concatMap snd $ SM.toList envObj
-
--- TODO check this
--- | intersects two types. 
-intersectTypes :: MonadThrow m => TypeEnv -> TypeEnv -> m TypeEnv
-intersectTypes l r 
-  | satisfiable f = return $ mkOpt f $ intersectTypeMaps (getObj l) (getObj r)
-  | otherwise = throwM $ UnsatFexpsTypeInetersect f
-  where
-    f = F.And (getFexp l) (getFexp r)
-
--- | intersect type maps. 
-intersectTypeMaps :: TypeMap -> TypeMap -> TypeMap
-intersectTypeMaps l r = SM.intersectionWith (appendAttrInfos F.And) l r
 
 -- TESTED
 -- | appends two attr informations based on equality of quals.
@@ -703,11 +745,11 @@ tableSch2TypeEnv r tsch s =
 
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
-appCtxtToEnv ctx t = appCtxtToTypeMap f (getObj t) 
-    -- | satisfiable f 
-    -- | otherwise = throwM $ CtxUnsatOverEnv ctx t
+appCtxtToEnv ctx t 
+    | satisfiable f = appCtxtToTypeMap f (getObj t) >>= return . updateFexp (F.shrinkFeatureExpr f) 
+    | otherwise = throwM $ CtxUnsatOverEnv ctx t
   where 
-    f = F.shrinkFeatureExpr (F.And ctx $ getFexp t)
+    f = F.And ctx $ getFexp t
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
     -- appCtxtToAttInfo fexp is = filter (\i -> F.satAnds fexp (attrFexp i)) is
 
