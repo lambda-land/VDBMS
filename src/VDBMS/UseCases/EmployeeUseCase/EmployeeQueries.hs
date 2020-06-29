@@ -202,34 +202,34 @@ empVQ2 =
                           (select empSqlCond $ tRef empacct)))
          Empty
 
-empvq2lchc =
-  (project (pure $ trueAttr salary_)
-                  (choice v34
-                          (join (select empSqlCond $ tRef empacct)
-                                (tRef job)
-                                (joinEqCond (att2attrQualRel title_ empacct)
-                                            (att2attrQualRel title_ job)))
-                          (select empSqlCond $ tRef empacct)))
+-- empvq2lchc =
+--   (project (pure $ trueAttr salary_)
+--                   (choice v34
+--                           (join (select empSqlCond $ tRef empacct)
+--                                 (tRef job)
+--                                 (joinEqCond (att2attrQualRel title_ empacct)
+--                                             (att2attrQualRel title_ job)))
+--                           (select empSqlCond $ tRef empacct)))
 
-empvq2tst = 
-  choice v345
-                  (choice v34
-                          (join (select empSqlCond $ tRef empacct)
-                                (tRef job)
-                                (joinEqCond (att2attrQualRel title_ empacct)
-                                            (att2attrQualRel title_ job)))
-                          (select empSqlCond $ tRef empacct))
-         Empty
+-- empvq2tst = 
+--   choice v345
+--                   (choice v34
+--                           (join (select empSqlCond $ tRef empacct)
+--                                 (tRef job)
+--                                 (joinEqCond (att2attrQualRel title_ empacct)
+--                                             (att2attrQualRel title_ job)))
+--                           (select empSqlCond $ tRef empacct))
+--          Empty
 
 -- this should give ambg attr. no it shouldn't because the attribute salary only
 -- exists in empacct for version5 while the relation job doesn't exists in that
 -- version. thus the attribute salary gets dropped since the conjunction
 -- of the fexps of the two joined relations will be applied to attributes. 
-empvq2l = project (pure $ trueAttr salary_) (join (select empSqlCond $ tRef empacct)
-                                (tRef job)
-                                (joinEqCond (att2attrQualRel title_ empacct)
-                                            (att2attrQualRel title_ job)))
-empvq2r = project (pure $ trueAttr salary_)( tRef empacct)
+-- empvq2l = project (pure $ trueAttr salary_) (join (select empSqlCond $ tRef empacct)
+--                                 (tRef job)
+--                                 (joinEqCond (att2attrQualRel title_ empacct)
+--                                             (att2attrQualRel title_ job)))
+-- empvq2r = project (pure $ trueAttr salary_)( tRef empacct)
 
 -- (v_3 ∨ v_4 ∨ v_5) ⟨π (empno, salary) ((v_3 ∨ v_4)⟨empacct 
 --                                             ⋈_{empacct.title=job.title} job 
@@ -260,11 +260,15 @@ empVQ2_old =
                 (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))
       q2 = (select empSqlCond $ tRef empacct)
 
+empProj = project (pure $ trueAttr salary_) Empty
+
 -- π (salary) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
 --                        v_5 ⟨σ (empno=10004) empactt, ε ⟩⟩)
 -- 
 -- Note: this is wrong because it results in π (..) ε for some configs.
--- which is ill-typed and incorrect. 
+-- which is ill-typed and incorrect. --> actually this is not type incorrect.
+-- b/c the type env is union of the left and right branch of the choice
+-- which isn't empty. so it's different than projecting an attribute from empty.
 empVQ2_alt_wrong = 
   project (pure $ trueAttr salary_)
           (choice v34
@@ -293,7 +297,7 @@ empVQ2_alt2 =
 --   (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} 
 --    v_3 ∨ v_4 ⟨job, ε⟩)
 -- 
--- Note: it's wrong for the same reason as empvq2_alt_wrong
+-- Note: it's wrong for the same reason as empvq2_alt_wrong --> it is not!
 empVQ2_alt3_wrong = 
   project (pure $ trueAttr salary_)
           (join q1 
@@ -319,6 +323,9 @@ empVQ3 =
                 (tRef dept)
                 (joinEqCond (att2attrQualRel empno_ empacct)
                             (att2attrQualRel managerno_ dept)))
+
+empvq3tst = (select (eqAttValSqlCond deptno_ departno_value)
+                        (tRef empacct))
 
 -- π (deptno^v_3, name^v_3) (empacct
 --               ⋈_{empacct.empno=dept.managerno} dept)
@@ -428,6 +435,7 @@ empVQ5 =
                 (joinEqCond (att2attrQualRel empno_ empacct)
                             (att2attrQualRel managerno_ dept)))
 
+-- TODO type-ill
 -- π (deptno^v_3, managerno^v_3) (empacct ⋈_{empacct.empno=dept.managerno} dept)
 -- 
 empVQ5_alt = 
@@ -555,6 +563,7 @@ empVQ8 =
 -- 
 empVQ8_alt = empVQ8
 
+-- TODO type-ill. look into why.
 -- π (managerno, name)
 --   (ρ (temp) (empacct ⋈_{mangerno=empno} dept))
 --                     ⋈_{temp.title=job.title} (v_3 ∨ v_4 ⟨job,ε ⟩))
@@ -573,6 +582,7 @@ empVQ8_old_wrong =
                         (joinEqCond (att2attrQual title_ temp) 
                                     (att2attrQualRel title_ dept)))
 
+-- TODO type-ill. look into why.
 -- π (managerno, name)
 --   (v_3 ∨ v_4 ∨ v_5 ⟨(ρ (temp) (empacct ⋈_{mangerno=empno} dept))
 --                     ⋈_{temp.title=job.title} (v_3 ∨ v_4 ⟨job,ε ⟩), ε⟩)

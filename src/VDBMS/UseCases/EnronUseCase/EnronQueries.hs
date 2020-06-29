@@ -117,6 +117,7 @@ q_basic_alt =
 --     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
 --     ⋈_{recipientinfo.eid=alias.eid} alias)
 -- 
+-- TODO type-ill. look into why. both of them!
 q_addressbook, q_addressbook_alt :: Algebra
 q_addressbook = 
   project ([trueAttr sender_
@@ -180,7 +181,7 @@ enronTemp = renameQ temp $
                 (joinEqCond (att2attr rvalue_)
                             (att2attr email_id_)))
 
-
+-- TODO type-ill. look into why.
 q_addressbook_alt_old = 
   choice addressbook q_addressbook Empty
 
@@ -542,6 +543,7 @@ q_filtermessages_alt =
                 (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ filter_msg)))
 
+-- TODO type-ill. look into why.
 -- π (sender, suffix) (enronTemp ⋈_{temp.eid=filter_msg.eid} filter_msg)
 -- 
 q_filtermessages_old :: Algebra 
@@ -639,6 +641,8 @@ q_mailhost_old =
 --       ⋈_{emp2.eid=forward_msg.eid} forward_msg)
 -- , signature ⟪ q_signature, forwardmessages ⟪ q_forwardmessages, q_basic ⟫⟫⟫
 -- 
+-- TODO type-ill. look into why. both are wrong in both 
+-- with and without pushing schema.
 enronQ1, enronQ1_alt :: Algebra
 enronQ1 = 
   choice (F.And signature forwardmessages)
@@ -859,6 +863,7 @@ enronQ3_alt =
 -- encryption ∧ forwardmessages ⟪π (rvalue) (σ (mid=X ∧ is_encrypted) messages),
 --    encryption⟪ q_encryption,forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
 -- 
+-- TODO type-ill. look into why. both are wrong with and without pushing schema.
 enronQ4part1, enronQ4part1_alt :: Algebra
 enronQ4part1 = 
   choice (F.And encryption forwardmessages)

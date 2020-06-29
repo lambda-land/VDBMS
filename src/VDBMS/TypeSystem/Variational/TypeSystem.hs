@@ -84,7 +84,7 @@ updateAttFexp f = map (\i -> AttrInfo (F.And f (attrFexp i)) (attrType i) (attrQ
 
 -- | turns a type env to table schema.
 typeEnv2tableSch :: TypeEnv -> TableSchema
-typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (M.toList (getObj t)))
+typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (SM.toList (getObj t)))
   where 
     attrinfo :: (Attribute, AttrInformation) -> [(Attribute, Opt SqlType)]
     attrinfo (a,ais) = map (\ai -> (Attribute $ (qualName . attrQual) ai ++ an, mkOpt (attrFexp ai) (attrType ai))) ais
@@ -103,7 +103,7 @@ typeEnve2OptAtts env = concatMap attrTrans (M.toList (getObj env))
 -- | returns the attributes of type env. 
 --   assumption: attributes are unique.
 typeAtts :: TypeEnv -> [Attribute]
-typeAtts = M.keys . getObj
+typeAtts = SM.keys . getObj
 
 -- | Possible typing errors.
 data TypeError 
@@ -129,6 +129,7 @@ data TypeError
   | EnvsMapNotEqDueToUnequivFexp Attribute F.FeatureExpr F.FeatureExpr
   | EnvsFexpNotEq F.FeatureExpr F.FeatureExpr
   | EnvsKeySetsNotEq (Set.Set Attribute) (Set.Set Attribute)
+  | ProjectingAttFromEmpty OptAttribute
   -- | UnsatFexpsTypeInetersect F.FeatureExpr
     deriving (Data,Eq,Generic,Show,Typeable)
 
@@ -296,7 +297,7 @@ typeOfQuery (RenameAlg n q) ctx s =
   typeOfQuery q ctx s
   >>= return . updateType n 
 typeOfQuery Empty           ctx _ = 
-  appCtxtToEnv ctx (mkOpt (F.Lit True) M.empty)
+  appCtxtToEnv ctx (mkOpt (F.Lit True) SM.empty)
 
 -- | Determines the type a set operation query.
 typeSetOp :: MonadThrow m 
@@ -406,15 +407,18 @@ projOptAtt oa t =
          -- aName = name aObj
          aPC = getFexp oa
          tPC = typePC t
-     is <- nonAmbiguousAttr attr t 
-     let validInfos = maybe 
-           (filter (satisfiable . (F.And aPC) . attrFexp) is)
-           (\q -> filter (satisfiable . (F.And aPC) . attrFexp) 
-                   $ filter (((==) q) . attrQual) is)
-           aq
-     if null validInfos
-     then throwM $ UnsatAttPCandEnv oa t
-     else return $ mkOpt tPC $ SM.singleton a $ updateAttFexp aPC validInfos
+     if SM.null (getObj t)
+     then throwM $ ProjectingAttFromEmpty oa
+     else do is <- nonAmbiguousAttr attr t 
+             let validInfos = maybe 
+                   (filter (satisfiable . (F.And aPC) . attrFexp) is)
+                   (\q -> filter (satisfiable . (F.And aPC) . attrFexp) 
+                      $ filter (((==) q) . attrQual) is)
+                   aq
+             if null validInfos
+             then throwM $ UnsatAttPCandEnv oa t
+             else return $ mkOpt tPC $ SM.singleton a 
+                         $ updateAttFexp aPC validInfos
      -- -- pc <- lookupAttrFexpInEnv attr t 
      -- maybe (if F.satAnds iPC aPC
      --        then return $ attr2env tPC a iPC aPC iSqlT iQual

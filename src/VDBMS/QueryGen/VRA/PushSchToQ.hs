@@ -24,7 +24,7 @@ import qualified Data.Map.Strict as M
 
 import Data.Maybe (isJust, fromJust)
 
-import Control.Arrow (second)
+-- import Control.Arrow (second)
 
 -- | pushes the schema onto the vq after type checking 
 --   the query. in order for the commuting diagram to

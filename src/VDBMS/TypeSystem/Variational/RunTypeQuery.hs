@@ -9,7 +9,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Variational.Opt
 
 import Control.Monad.Catch
-import qualified Data.Map as M 
+-- import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM
 
 -- | runs the typeofquery for a given query and schema,
@@ -26,6 +26,10 @@ simplType q s =
            $ applyFuncObj (SM.map (applyFuncToAttFexp shrinkFeatureExpr)) env 
      return $ shrinkType t
 
+-- |checks if a query is type correct or not. 
+checkType :: MonadThrow m => Algebra -> Schema -> m ()
+checkType q s = simplType q s >> return ()
+
 
 -- | simpilifies a type after type checking the query after
 --   pushing the schema onto it.
@@ -34,3 +38,6 @@ simplTypeWithPushSch q s =
   do let q' = pushSchToQ s q
      simplType q' s
 
+-- |checks if a query (after pushing schema onto it) is type correct or not. 
+checkTypeWithPushSch :: MonadThrow m => Algebra -> Schema -> m ()
+checkTypeWithPushSch q s = simplTypeWithPushSch q s >> return ()
