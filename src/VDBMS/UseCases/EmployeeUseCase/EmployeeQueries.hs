@@ -439,7 +439,8 @@ empVQ5 =
 -- π (deptno^v_3, managerno^v_3) (empacct ⋈_{empacct.empno=dept.managerno} dept)
 -- 
 empVQ5_alt = 
-  project (fmap (flip att2optatt empv3) [deptno_, name_])
+  project [att2optatt managerno_ empv3
+          , att2optattQualRel deptno_ dept empv3]
           (join (tRef empacct)
                 (tRef dept)
                 (joinEqCond (att2attrQualRel empno_ empacct)
