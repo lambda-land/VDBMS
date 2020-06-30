@@ -628,8 +628,7 @@ q_mailhost_old =
 -- checks for type system:
 -- have the same name for emp1 and emp2 --> checked
 -- dont have names for emp1 and emp2  --> checked
--- dont have qualifier for email_id attribute in join condition --> didn't pass.
--- --> it was still working. --> TODO look into it.
+-- dont have qualifier for email_id attribute in join condition --> checked
 
 
 -- 1. Purpose: Generate the header for an email when both SIGNATURE and FORWARDMESSAGES

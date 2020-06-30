@@ -544,7 +544,7 @@ typeComp a@(Val l)  a'@(Val r) _ t
   | typeOf l == typeOf r = return ()
   | otherwise = throwM $ CompInvalid a a' t 
 typeComp a@(Val l)  a'@(Att r) ctx t = 
-  do is <- lookupAttr r t -- TODO lookup suffices. same for the rest.
+  do is <- nonAmbiguousAttr r t -- TODO lookup suffices. same for the rest.
      -- ats <- lookupAttrTypeFromEnv r t 
      -- afs <- lookupAttrFexpFromEnv r t 
      let validInfos = filter (\i -> F.tautImplyFexps (attrFexp i) ctx) 
@@ -554,7 +554,7 @@ typeComp a@(Val l)  a'@(Att r) ctx t =
      then throwM $ CompInvalid a a' t
      else return () 
 typeComp a@(Att l) a'@(Val r)  ctx t = 
-  do is <- lookupAttr l t 
+  do is <- nonAmbiguousAttr l t 
      let validInfos = filter (\i -> F.tautImplyFexps (attrFexp i) ctx) 
                     $ filter (((==) (typeOf r)) . attrType) is 
      if null validInfos
@@ -566,8 +566,8 @@ typeComp a@(Att l) a'@(Val r)  ctx t =
   --    then return () 
   --    else throwM $ CompInvalid a a' t
 typeComp a@(Att l) a'@(Att r)  ctx t = 
-  do lis <- lookupAttr l t
-     ris <- lookupAttr r t 
+  do lis <- nonAmbiguousAttr l t
+     ris <- nonAmbiguousAttr r t 
      let validInfos = [ (li,ri) | li <- lis, ri <- ris
                       , attrType li == attrType ri
                       , F.tautImplyFexps (attrFexp li) ctx
