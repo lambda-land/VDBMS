@@ -10,7 +10,7 @@ import VDBMS.DBMS.Value.CompOp
 import Prelude hiding (Ordering(..))
 import Database.HDBC 
 import VDBMS.VDB.Name
-import VDBMS.DBMS.Value.Value
+import VDBMS.DBMS.Value.Value()
 
 -- the purpose of the email database is to showcase 
 -- the testing step and the use of databases in this
@@ -115,9 +115,8 @@ q_basic_alt =
 -- π (sender, nickname, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recepientinfo)
 --     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
---     ⋈_{recipientinfo.eid=alias.eid} alias)
+--     ⋈_{employeelist.eid=alias.eid} alias)
 -- 
--- TODO type-ill. look into why. both of them!
 q_addressbook, q_addressbook_alt :: Algebra
 q_addressbook = 
   project ([trueAttr sender_
@@ -132,14 +131,14 @@ q_addressbook =
                       (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
                                   (att2attrQualRel email_id_ employeelist)))
                 (tRef alias)
-                (joinEqCond (att2attrQualRel eid_ recipientinfo)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ alias)))
 
 -- 
 -- π (messages.mid, sender, nickname, subject, body)
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
 --    ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
---    ⋈_{recipientinfo.eid=alias.eid} alias)
+--    ⋈_{employeelist.eid=alias.eid} alias)
 q_addressbook_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
@@ -153,7 +152,7 @@ q_addressbook_alt =
                       (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
                                   (att2attrQualRel email_id_ employeelist)))
                 (tRef alias)
-                (joinEqCond (att2attrQualRel eid_ recipientinfo)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ alias)))
 
 -- π (rvalue, nickname) (enronTemp ⋈_{temp.eid=alias.eid} alias)
@@ -168,7 +167,7 @@ q_addressbook_old =
                             (att2attrQualRel eid_ alias)))
 
 -- enronTem <-- ρ (temp) 
---                (π (eid, rvalue, mid) 
+--                (π (eid, rvalue, mid, sender) 
 --                   ((σ (mid=X) recipientinfo) ⋈_{rvalue=email_id} employeelist)
 enronTemp :: Algebra
 enronTemp = renameQ temp $
@@ -181,7 +180,6 @@ enronTemp = renameQ temp $
                 (joinEqCond (att2attr rvalue_)
                             (att2attr email_id_)))
 
--- TODO type-ill. look into why.
 q_addressbook_alt_old = 
   choice addressbook q_addressbook Empty
 
@@ -543,16 +541,17 @@ q_filtermessages_alt =
                 (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ filter_msg)))
 
--- TODO type-ill. look into why.
+-- type-ill. because the join of enronTemp and filter_msg doesn't
+-- include the sender attribute.
 -- π (sender, suffix) (enronTemp ⋈_{temp.eid=filter_msg.eid} filter_msg)
 -- 
-q_filtermessages_old :: Algebra 
-q_filtermessages_old = 
-  project ([trueAttr sender_
-          , trueAttr suffix_])
-          (join enronTemp (tRef filter_msg)
-                (joinEqCond (att2attrQual eid_ temp)
-                            (att2attrQualRel eid_ filter_msg)))
+-- q_filtermessages_old :: Algebra 
+-- q_filtermessages_old = 
+--   project ([trueAttr sender_
+--           , trueAttr suffix_])
+--           (join enronTemp (tRef filter_msg)
+--                 (joinEqCond (att2attrQual eid_ temp)
+--                             (att2attrQualRel eid_ filter_msg)))
 
 -- 8. OLD Intent: Given the email message X, return the user-name of the recipient in the feature MAILHOST.
 -- 
@@ -626,6 +625,13 @@ q_mailhost_old =
 -- -- ** V-Queries for Feature Interactions
 -- --
 
+-- checks for type system:
+-- have the same name for emp1 and emp2 --> checked
+-- dont have names for emp1 and emp2  --> checked
+-- dont have qualifier for email_id attribute in join condition --> didn't pass.
+-- --> it was still working. --> TODO look into it.
+
+
 -- 1. Purpose: Generate the header for an email when both SIGNATURE and FORWARDMESSAGES
 --             have been enabled(1). The header is for the email to be forwarded.
 --             --> this takes care of interaction 16 too.
@@ -634,21 +640,20 @@ q_mailhost_old =
 -- #unique_variants =
 -- 
 -- signature ∧ forwardmessages ⟪ 
--- π (rvalue, forwardaddr, emp1.is_signed, emp1.verification_key)
+-- π (rvalue, forwardaddr, is_signed, emp1.verification_key)
 --   (((((σ (mid = X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --       ⋈_{messages.sender=emp1.email_id} (ρ (emp1) employeelist))
 --       ⋈_{recipientinfo.rvalue=emp2.email_id} (ρ (emp2) employeelist))
 --       ⋈_{emp2.eid=forward_msg.eid} forward_msg)
 -- , signature ⟪ q_signature, forwardmessages ⟪ q_forwardmessages, q_basic ⟫⟫⟫
 -- 
--- TODO type-ill. look into why. both are wrong in both 
 -- with and without pushing schema.
 enronQ1, enronQ1_alt :: Algebra
 enronQ1 = 
   choice (F.And signature forwardmessages)
          (project ([trueAttr rvalue_
                   , trueAttr forwardaddr_
-                  , trueAttrQual is_signed_ emp1Name
+                  , trueAttr is_signed_ 
                   , trueAttrQual verification_key_ emp1Name
                   , trueAttr subject_
                   , trueAttr body_])
@@ -677,14 +682,8 @@ enronQ1 =
       emp2Name = "emp2"
 
 
--- checks for type system:
--- have the same name for emp1 and emp2 --> type error
--- dont have names for emp1 and emp2
--- dont have qualifier for email_id attribute in join condition
--- dont have qualifier for is_signed attribute in the projected attribute list
-
 -- signature ∧ forwardmessages ⟪ 
--- π (messages.mid, rvalue, forwardaddr, emp1.is_signed, emp1.verification_key)
+-- π (messages.mid, rvalue, forwardaddr, is_signed, emp1.verification_key)
 --   ((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --       ⋈_{messages.sender=emp1.email_id} (ρ (emp1) employeelist))
 --       ⋈_{recipientinfo.rvalue=emp2.email_id} (ρ (emp2) employeelist))
@@ -696,7 +695,7 @@ enronQ1_alt =
          (project ([trueAttrQualRel mid_ messages
                   , trueAttr rvalue_
                   , trueAttr forwardaddr_
-                  , trueAttrQual is_signed_ emp1Name
+                  , trueAttr is_signed_ 
                   , trueAttrQual verification_key_ emp1Name
                   , trueAttr subject_
                   , trueAttr body_])
@@ -860,31 +859,39 @@ enronQ3_alt =
 -- #variants = 
 -- #unique_variants =
 -- 
--- encryption ∧ forwardmessages ⟪π (rvalue) (σ (mid=X ∧ is_encrypted) messages),
+-- encryption ∧ forwardmessages ⟪π (rvalue) 
+--   (σ (mid=X ∧ is_encrypted) messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
 --    encryption⟪ q_encryption,forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
 -- 
--- TODO type-ill. look into why. both are wrong with and without pushing schema.
 enronQ4part1, enronQ4part1_alt :: Algebra
 enronQ4part1 = 
   choice (F.And encryption forwardmessages)
          (project (pure $ trueAttr rvalue_)
-                  (select (VsqlAnd midXcond 
+                  (join (tRef recipientinfo)
+                        (select (VsqlAnd midXcond 
                                    (eqAttValSqlCond is_encrypted_ trueValue))
-                          (tRef messages)))
+                                (tRef messages))
+                        (joinEqCond (att2attrQualRel mid_ messages)
+                                    (att2attrQualRel mid_ recipientinfo))))
          (choice encryption 
                  q_encryption
                  (choice forwardmessages
                          q_forwardmessages
                          q_basic))
 
--- encryption ∧ forwardmessages ⟪π (mid, rvalue) (σ (is_encrypted) messages),
+-- encryption ∧ forwardmessages ⟪π (messages.mid, rvalue) 
+--       (σ (is_encrypted) messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
 --    encryption⟪ q_encryption_alt,forwardmessages⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
 -- 
 enronQ4part1_alt = 
   choice (F.And encryption forwardmessages)
-         (project (fmap trueAttr [mid_, rvalue_])
-                  (select (eqAttValSqlCond is_encrypted_ trueValue)
-                          (tRef messages)))
+         (project [trueAttrQualRel mid_ messages
+                  , trueAttr rvalue_]
+                  (join (tRef recipientinfo)
+                        (select (eqAttValSqlCond is_encrypted_ trueValue)
+                                (tRef messages))
+                        (joinEqCond (att2attrQualRel mid_ messages)
+                                    (att2attrQualRel mid_ recipientinfo))))
          (choice encryption 
                  q_encryption_alt
                  (choice forwardmessages

@@ -117,7 +117,7 @@ q_basic_alt =
 -- π (sender, nickname, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recepientinfo)
 --     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
---     ⋈_{recipientinfo.eid=alias.eid} alias)
+--     ⋈_{employeelist.eid=alias.eid} alias)
 -- 
 q_addressbook, q_addressbook_alt :: Algebra
 q_addressbook = 
@@ -133,14 +133,14 @@ q_addressbook =
                       (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
                                   (att2attrQualRel email_id_ employeelist)))
                 (tRef alias)
-                (joinEqCond (att2attrQualRel eid_ recipientinfo)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ alias)))
 
 -- 
 -- π (messages.mid, sender, nickname, subject, body)
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
 --    ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
---    ⋈_{recipientinfo.eid=alias.eid} alias)
+--    ⋈_{employeelist.eid=alias.eid} alias)
 q_addressbook_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
@@ -154,7 +154,7 @@ q_addressbook_alt =
                       (joinEqCond (att2attrQualRel rvalue_ recipientinfo)
                                   (att2attrQualRel email_id_ employeelist)))
                 (tRef alias)
-                (joinEqCond (att2attrQualRel eid_ recipientinfo)
+                (joinEqCond (att2attrQualRel eid_ employeelist)
                             (att2attrQualRel eid_ alias)))
 
 -- Single feature query for addressbook.
@@ -600,7 +600,7 @@ sfq8_alt = choice mailhost q_mailhost_alt q_basic_alt
 -- #unique_variants = 4
 -- 
 -- signature ∧ forwardmessages ⟪ 
--- π (rvalue, forwardaddr, emp1.is_signed, emp1.verification_key)
+-- π (rvalue, forwardaddr, is_signed, emp1.verification_key)
 --   (((((σ (mid = X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --       ⋈_{messages.sender=emp1.email_id} (ρ (emp1) employeelist))
 --       ⋈_{recipientinfo.rvalue=emp2.email_id} (ρ (emp2) employeelist))
@@ -612,7 +612,7 @@ enronQ1 =
   choice (F.And signature forwardmessages)
          (project ([trueAttr rvalue_
                   , trueAttr forwardaddr_
-                  , trueAttrQual is_signed_ emp1Name
+                  , trueAttr is_signed_ 
                   , trueAttrQual verification_key_ emp1Name
                   , trueAttr subject_
                   , trueAttr body_])
@@ -641,14 +641,9 @@ enronQ1 =
       emp2Name = "emp2"
 
 
--- checks for type system:
--- have the same name for emp1 and emp2 --> type error
--- dont have names for emp1 and emp2
--- dont have qualifier for email_id attribute in join condition
--- dont have qualifier for is_signed attribute in the projected attribute list
 
 -- signature ∧ forwardmessages ⟪ 
--- π (messages.mid, rvalue, forwardaddr, emp1.is_signed, emp1.verification_key)
+-- π (messages.mid, rvalue, forwardaddr, is_signed, emp1.verification_key)
 --   ((((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --       ⋈_{messages.sender=emp1.email_id} (ρ (emp1) employeelist))
 --       ⋈_{recipientinfo.rvalue=emp2.email_id} (ρ (emp2) employeelist))
@@ -660,7 +655,7 @@ enronQ1_alt =
          (project ([trueAttrQualRel mid_ messages
                   , trueAttr rvalue_
                   , trueAttr forwardaddr_
-                  , trueAttrQual is_signed_ emp1Name
+                  , trueAttr is_signed_ 
                   , trueAttrQual verification_key_ emp1Name
                   , trueAttr subject_
                   , trueAttr body_])
@@ -821,33 +816,42 @@ enronQ3_alt =
 --             forward the message) will get an UI 
 --             warning, otherwise the email will be forwarded.
 -- 
--- #variants = 4
--- #unique_variants = 4
+-- #variants = 
+-- #unique_variants =
 -- 
--- encryption ∧ forwardmessages ⟪π (rvalue) (σ (mid=X ∧ is_encrypted) messages),
+-- encryption ∧ forwardmessages ⟪π (rvalue) 
+--   (σ (mid=X ∧ is_encrypted) messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
 --    encryption⟪ q_encryption,forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
 -- 
 enronQ4part1, enronQ4part1_alt :: Algebra
 enronQ4part1 = 
   choice (F.And encryption forwardmessages)
          (project (pure $ trueAttr rvalue_)
-                  (select (VsqlAnd midXcond 
+                  (join (tRef recipientinfo)
+                        (select (VsqlAnd midXcond 
                                    (eqAttValSqlCond is_encrypted_ trueValue))
-                          (tRef messages)))
+                                (tRef messages))
+                        (joinEqCond (att2attrQualRel mid_ messages)
+                                    (att2attrQualRel mid_ recipientinfo))))
          (choice encryption 
                  q_encryption
                  (choice forwardmessages
                          q_forwardmessages
                          q_basic))
 
--- encryption ∧ forwardmessages ⟪π (mid, rvalue) (σ (is_encrypted) messages),
+-- encryption ∧ forwardmessages ⟪π (mid, rvalue) 
+--       (σ (is_encrypted) messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
 --    encryption⟪ q_encryption_alt,forwardmessages⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
 -- 
 enronQ4part1_alt = 
   choice (F.And encryption forwardmessages)
-         (project (fmap trueAttr [mid_, rvalue_])
-                  (select (eqAttValSqlCond is_encrypted_ trueValue)
-                          (tRef messages)))
+         (project [trueAttrQualRel mid_ messages
+                  , trueAttr rvalue_]
+                  (join (tRef recipientinfo)
+                        (select (eqAttValSqlCond is_encrypted_ trueValue)
+                                (tRef messages))
+                        (joinEqCond (att2attrQualRel mid_ messages)
+                                    (att2attrQualRel mid_ recipientinfo))))
          (choice encryption 
                  q_encryption_alt
                  (choice forwardmessages
