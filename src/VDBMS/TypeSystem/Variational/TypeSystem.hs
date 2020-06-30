@@ -117,7 +117,7 @@ data TypeError
   | AttrNotInEnv Attribute TypeEnv
   | AmbiguousAttr Attr AttrInformation
   -- | AmbiguousAttrInCtxt Attr AttrInformation VariationalContext
-  | QualNotInInfo Qualifier AttrInformation
+  | QualNotInInfo Attribute Qualifier AttrInformation
   | MissingAlias (Rename Algebra)
   | NotEquiveEnv TypeEnv TypeEnv
   | CompInvalid Atom Atom TypeEnv
@@ -136,10 +136,12 @@ data TypeError
 instance Exception TypeError  
 
 -- | looks up attr info for a qualifier.
-lookupAttrInfo_ :: MonadThrow m => AttrInformation -> Qualifier -> m AttrInfo
-lookupAttrInfo_ is q = 
+lookupAttrInfo_ :: MonadThrow m 
+                => Attribute -> AttrInformation -> Qualifier 
+                -> m AttrInfo
+lookupAttrInfo_ a is q = 
   maybe 
-    (throwM $ QualNotInInfo q is)
+    (throwM $ QualNotInInfo a q is)
     (\(f,t) -> return $ AttrInfo f t q)
     (lookup q $ zip (fmap attrQual is) (zip (fmap attrFexp is) (fmap attrType is)))
 
@@ -207,9 +209,10 @@ lookupAttrTypeFromEnv a t =
 
 lookupAttr :: MonadThrow m => Attr -> TypeEnv -> m AttrInformation
 lookupAttr a t = 
-  do is <- lookupAttribute (attribute a) t 
+  do let at = attribute a
+     is <- lookupAttribute at t 
      maybe (return is)
-           (\q -> sequence (pure $ lookupAttrInfo_ is q))
+           (\q -> sequence (pure $ lookupAttrInfo_ at is q))
            (qualifier a)
 
 -- | checks if the attribute is ambigusous or not.
@@ -238,7 +241,7 @@ isAmbiguous a is
                                    , satisfiable (attrFexp i `F.And` attrFexp i')]
                   then return is
                   else throwM $ AmbiguousAttr a is
-  | otherwise   = lookupAttrInfo_ is (fromJust q) >>= return . pure
+  | otherwise   = lookupAttrInfo_ (attribute a) is (fromJust q) >>= return . pure
     where
       q = qualifier a
   

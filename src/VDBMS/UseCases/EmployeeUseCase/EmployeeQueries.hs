@@ -190,7 +190,7 @@ empVQ1_alt_typeErr =
 --                                             ⋈_{empacct.title=job.title} job 
 --                                ,σ (empno=10004) empacct⟩), ε⟩
 -- 
-empVQ2, empVQ2_alt, empVQ2_old, empVQ2_alt_wrong, empVQ2_alt2, empVQ2_alt3_wrong :: Algebra
+empVQ2, empVQ2_alt, empVQ2_old, empVQ2_alt_thought_wrong_but_correct, empVQ2_alt2, empVQ2_alt3_thought_wrong_but_correct :: Algebra
 empVQ2 = 
   choice v345
          (project (pure $ trueAttr salary_)
@@ -269,7 +269,7 @@ empProj = project (pure $ trueAttr salary_) Empty
 -- which is ill-typed and incorrect. --> actually this is not type incorrect.
 -- b/c the type env is union of the left and right branch of the choice
 -- which isn't empty. so it's different than projecting an attribute from empty.
-empVQ2_alt_wrong = 
+empVQ2_alt_thought_wrong_but_correct = 
   project (pure $ trueAttr salary_)
           (choice v34
                   q1
@@ -298,7 +298,7 @@ empVQ2_alt2 =
 --    v_3 ∨ v_4 ⟨job, ε⟩)
 -- 
 -- Note: it's wrong for the same reason as empvq2_alt_wrong --> it is not!
-empVQ2_alt3_wrong = 
+empVQ2_alt3_thought_wrong_but_correct = 
   project (pure $ trueAttr salary_)
           (join q1 
                 (choice v34 (tRef job) Empty)
@@ -435,7 +435,6 @@ empVQ5 =
                 (joinEqCond (att2attrQualRel empno_ empacct)
                             (att2attrQualRel managerno_ dept)))
 
--- TODO type-ill
 -- π (deptno^v_3, managerno^v_3) (empacct ⋈_{empacct.empno=dept.managerno} dept)
 -- 
 empVQ5_alt = 
@@ -539,7 +538,7 @@ empVQ7_old =
 --                                ⋈_{empacct.title=job.title} job,
 --                        empacct ⋈_{managerno=empno} dept⟩), ε⟩
 -- 
-empVQ8, empVQ8_alt, empVQ8_old_wrong, empVQ8_wrong :: Algebra
+empVQ8, empVQ8_alt, empVQ8_old_thought_wrong_but_correct, empVQ8_thought_wrong_but_correct :: Algebra
 empVQ8 = 
   choice v345
          (project (fmap trueAttr [managerno_, name_])
@@ -564,13 +563,16 @@ empVQ8 =
 -- 
 empVQ8_alt = empVQ8
 
--- TODO type-ill. look into why.
 -- π (managerno, name)
 --   (ρ (temp) (empacct ⋈_{mangerno=empno} dept))
 --                     ⋈_{temp.title=job.title} (v_3 ∨ v_4 ⟨job,ε ⟩))
 -- 
--- Note: it's wrong because it's joining with empty!
-empVQ8_old_wrong = 
+-- Note: it's wrong because it's joining with empty! --> wrong!
+-- actually it's type correct since join unions the left and 
+-- right of the choice and if one is empty the type env
+-- has the extra stuff from the outside of choice. 
+-- in this example the stuff from temp.
+empVQ8_old_thought_wrong_but_correct = 
   project ([att2optatt managerno_ v345
           , att2optatt name_ v345])
                   (join (renameQ temp 
@@ -581,15 +583,15 @@ empVQ8_old_wrong =
                                 (tRef job)
                                 Empty)
                         (joinEqCond (att2attrQual title_ temp) 
-                                    (att2attrQualRel title_ dept)))
+                                    (att2attrQualRel title_ job)))
 
--- TODO type-ill. look into why.
 -- π (managerno, name)
 --   (v_3 ∨ v_4 ∨ v_5 ⟨(ρ (temp) (empacct ⋈_{mangerno=empno} dept))
 --                     ⋈_{temp.title=job.title} (v_3 ∨ v_4 ⟨job,ε ⟩), ε⟩)
--- Note: it's wrong b/c it generates a query π (..) ε.
--- this affect #unique_variants = 3.
-empVQ8_wrong = 
+-- Note: it's wrong b/c it generates a query π (..) ε. --> wrong
+-- it's type correct. talked about this in empvq2.
+-- this affect #unique_variants = 3. 
+empVQ8_thought_wrong_but_correct = 
   project ([att2optatt managerno_ v345
           , att2optatt name_ v345])
           (choice v345 
@@ -601,7 +603,7 @@ empVQ8_wrong =
                                 (tRef job)
                                 Empty)
                         (joinEqCond (att2attrQual title_ temp) 
-                                    (att2attrQualRel title_ dept)))
+                                    (att2attrQualRel title_ job)))
                   Empty)
 
 -- 11.intent: For all managers that the employee, whose employee number (\empno) is 10004, has worked with, 
