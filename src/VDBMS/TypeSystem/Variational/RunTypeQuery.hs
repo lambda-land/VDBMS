@@ -31,6 +31,9 @@ checkType :: MonadThrow m => Algebra -> Schema -> m ()
 checkType q s = simplType q s >> return ()
 
 
+-- NOTE: don't need the following two functions since
+-- the query is type checked first and then the schema
+-- is pushed onto it.
 -- | simpilifies a type after type checking the query after
 --   pushing the schema onto it.
 simplTypeWithPushSch :: MonadThrow m => Algebra -> Schema -> m TypeEnv

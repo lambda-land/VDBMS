@@ -24,7 +24,15 @@ import qualified Data.Map.Strict as M
 
 import Data.Maybe (isJust, fromJust)
 
+import Control.Monad.Catch (MonadThrow)
+
 -- import Control.Arrow (second)
+
+-- | pushes schema to a type correct query.
+pushSchToTypeCorrectQ :: MonadThrow m => Schema -> Algebra -> m Algebra
+pushSchToTypeCorrectQ s q = 
+  do t <- typeOfQuery q (featureModel s) s 
+     return $ pushSchToQ s q
 
 -- | pushes the schema onto the vq after type checking 
 --   the query. in order for the commuting diagram to
