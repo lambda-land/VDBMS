@@ -113,6 +113,9 @@ empVQ1 =
 -- π (empno^v_3, salary^v_3)
 --   (empacct ⋈_{empacct.title=job.title} job)
 -- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ1_alt =
   project ([att2optatt empno_ empv3
           , att2optatt salary_ empv3])
@@ -123,12 +126,16 @@ empVQ1_alt =
 
 -- v_3 ⟨π (salary) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job), ε⟩
 -- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ1_alt0 = 
   choice empv3 
          (project (pure $ trueAttr salary_)  
           (join (renameQ temp (select empSqlCond $ tRef empacct))
                 (tRef job)
-                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))))
+                (joinEqCond (att2attrQual title_ temp) 
+                            (att2attrQualRel title_ job))))
          Empty
 
 -- Note that there's a slight difference between empVQ1_old and empVQ1_alt0:
@@ -140,22 +147,33 @@ empVQ1_alt0 =
 -- 
 -- π (salary^\{v_3}) ((ρ temp (σ (empno=1004) empacct)) ⋈_{temp.title=job.title} job)
 -- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ1_old = 
   project (pure $ att2optatt salary_ empv3)  
           (join (renameQ temp (select empSqlCond $ tRef empacct))
                 (tRef job)
-                (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job)))
+                (joinEqCond (att2attrQual title_ temp) 
+                            (att2attrQualRel title_ job)))
 
 -- π (salary^\{v_3}) (σ (empno=1004) (empacct ⋈_{empacct.title=job.title} job))
+-- 
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 empVQ1_alt1 = 
   project (pure $ att2optatt salary_ empv3)  
           (select empSqlCond 
                  (join (tRef empacct)
                        (tRef job)
-                       (joinEqCond (att2attrQualRel title_ empacct) (att2attrQualRel title_ job))))
+                       (joinEqCond (att2attrQualRel title_ empacct) 
+                                   (att2attrQualRel title_ job))))
 
 -- v_3 ⟨π (salary) (σ (empno=1004) (empacct ⋈_{empacct.title=job.title} job)), ε ⟩
+-- 
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 empVQ1_alt2 = 
   choice empv3 
@@ -163,19 +181,29 @@ empVQ1_alt2 =
                   (select empSqlCond
                           (join (tRef empacct)
                                 (tRef job)
-                                (joinEqCond (att2attrQualRel title_ empacct) (att2attrQualRel title_ job)))))
+                                (joinEqCond (att2attrQualRel title_ empacct) 
+                                            (att2attrQualRel title_ job)))))
          Empty
+
 -- 
--- note: to ensure that naming is correct remove temp from the first, and have an incorrect query to check the system.
+-- note: to ensure that naming is correct remove temp from the first, 
+-- and have an incorrect query to check the system.
+-- 
 -- π (salary^\{v_3}) ((σ (empno=1004) empacct) ⋈_{empacct.title=job.title} job)
+-- 
 -- actually this is type correct b/c there's no need to rename the select empsqlcond
 -- subquery since in the type env title has two qualifiers one is empacct and 
 -- the other is job. so this will be fine.
+-- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ1_alt_typeErr = 
   project (pure $ att2optatt salary_ empv3)  
           (join (select empSqlCond (tRef empacct))
                 (tRef job)
-                (joinEqCond (att2attrQualRel title_ empacct) (att2attrQualRel title_ job)))
+                (joinEqCond (att2attrQualRel title_ empacct) 
+                            (att2attrQualRel title_ job)))
 
 -- 2. intent: Return the salary values of the employee whose employee number (\empno) is 10004, 
 --         for VDB variants \vThree\ to \vFive. 
@@ -235,6 +263,9 @@ empVQ2 =
 --                                             ⋈_{empacct.title=job.title} job 
 --                                ,empacct⟩), ε⟩
 -- 
+-- #variants = 3
+-- #unique_variants = 2
+-- 
 empVQ2_alt = 
   choice v345
          (project ([trueAttr empno_
@@ -249,6 +280,9 @@ empVQ2_alt =
 
 -- π (salary^{v_3 ∨ v_4 ∨ v_5}) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
 --                                          σ (empno=10004) empactt⟩)
+-- #variants = 3
+-- #unique_variants = 2
+-- 
 empVQ2_old = 
   project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
           (choice v34
@@ -260,7 +294,7 @@ empVQ2_old =
                 (joinEqCond (att2attrQual title_ temp) (att2attrQualRel title_ job))
       q2 = (select empSqlCond $ tRef empacct)
 
-empProj = project (pure $ trueAttr salary_) Empty
+-- empProj = project (pure $ trueAttr salary_) Empty
 
 -- π (salary) (v_3 ∨ v_4 ⟨ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} job,
 --                        v_5 ⟨σ (empno=10004) empactt, ε ⟩⟩)
@@ -269,6 +303,12 @@ empProj = project (pure $ trueAttr salary_) Empty
 -- which is ill-typed and incorrect. --> actually this is not type incorrect.
 -- b/c the type env is union of the left and right branch of the choice
 -- which isn't empty. so it's different than projecting an attribute from empty.
+-- 
+-- #variants = 3 
+--> have to push schema onto it for the correct number of vars.
+-- #unique_variants = 5 after push sch
+-- , 3 before push sch--> TODO look into this
+-- 
 empVQ2_alt_thought_wrong_but_correct = 
   project (pure $ trueAttr salary_)
           (choice v34
@@ -285,6 +325,9 @@ empVQ2_alt_thought_wrong_but_correct =
 --   (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.title=job.title} 
 --    v_3 ∨ v_4 ⟨job, ε⟩)
 -- 
+-- #variants = 3
+-- #unique_variants = 2
+-- 
 empVQ2_alt2 = 
   project (pure $ att2optatt salary_ v345)
           (join q1
@@ -298,6 +341,10 @@ empVQ2_alt2 =
 --    v_3 ∨ v_4 ⟨job, ε⟩)
 -- 
 -- Note: it's wrong for the same reason as empvq2_alt_wrong --> it is not!
+-- #variants = 3 
+--> have to push schema onto it for the correct number of vars.
+-- #unique_variants = 2
+-- 
 empVQ2_alt3_thought_wrong_but_correct = 
   project (pure $ trueAttr salary_)
           (join q1 
@@ -309,8 +356,8 @@ empVQ2_alt3_thought_wrong_but_correct =
 
 -- 3.intent: Return the manager's name (of department d001) for VDB variant V3. 
 -- 
--- #variants = 1?
--- #unique_variants = 1?
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 -- π (name^v_3) ((σ (deptno="d001") empacct)
 --               ⋈_{empacct.empno=dept.managerno} dept)
@@ -330,6 +377,9 @@ empvq3tst = (select (eqAttValSqlCond deptno_ departno_value)
 -- π (deptno^v_3, name^v_3) (empacct
 --               ⋈_{empacct.empno=dept.managerno} dept)
 -- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ3_alt = 
   project ([att2optatt deptno_ empv3
           , att2optatt name_ empv3])
@@ -339,6 +389,9 @@ empVQ3_alt =
                             (att2attrQualRel managerno_ dept)))
 
 -- v_3 ⟨π (name) ((ρ (temp) (σ (deptno=d001) empacct)) ⋈_{temp.empno=dept.managerno} dept), ε⟩ 
+-- 
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 empVQ3_old = 
   -- choice empv3 
@@ -372,6 +425,9 @@ empVQ4 =
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (deptno, name, firstname, lastname)
 --                    (v_3 ⟨empacct, empbio⟩ ⋈_{empno=managerno} dept), ε⟩
 -- 
+-- #variants = 3
+-- #unique_variants = 2
+-- 
 empVQ4_alt = 
   choice v345
          (project (fmap trueAttr [name_, firstname_, lastname_])
@@ -387,6 +443,9 @@ empVQ4_alt =
 -- 
 -- Note: differences in #unique_variants is due to the fact that schema hasn't been 
 -- pushed yet!
+-- 
+-- #variants = 3
+-- #unique_variants = 2
 -- 
 empVQ4_old = 
   choice v345
@@ -405,7 +464,9 @@ empVQ4_old =
 --                    (v_3⟨empacct, empbio⟩ ⋈_{empno=managerno} 
 --                                          σ (deptno="d001") dept, ε⟩
 -- 
--- Note: it has #unique_variants = 4!
+-- #variants = 3
+-- #unique_variants = 4
+-- 
 empVQ4_alt1 =
   choice v345
          (project ([att2optatt name_ v34, 
@@ -437,6 +498,9 @@ empVQ5 =
 
 -- π (deptno^v_3, managerno^v_3) (empacct ⋈_{empacct.empno=dept.managerno} dept)
 -- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ5_alt = 
   project [att2optatt managerno_ empv3
           , att2optattQualRel deptno_ dept empv3]
@@ -447,6 +511,9 @@ empVQ5_alt =
 
 -- v_3⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) 
 --                       ⋈_{temp.deptno=dept.deptno} dept), ε⟩
+-- 
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 empVQ5_old = 
   -- choice empv3 
@@ -475,6 +542,9 @@ empVQ6 =
 -- π (empno^{v_3 ∨ v_4 ∨ v_5}, managerno^{v_3 ∨ v_4 ∨ v_5}) 
 --   (empacct ⋈_{empacct.deptno=dept.deptno} dept)
 -- 
+-- #variants = 3
+-- #unique_variants = 1
+-- 
 empVQ6_alt = 
   project (fmap (flip att2optatt v345) [empno_, managerno_])
           (join (tRef empacct)
@@ -484,6 +554,9 @@ empVQ6_alt =
 
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (managerno) (ρ (temp) (σ (empno=10004) empacct) 
 --                    ⋈_{temp.deptno=dept.deptno} dept), ε⟩
+-- #variants = 3
+-- #unique_variants = 1
+-- 
 empVQ6_old = 
   -- choice v345
          (project (pure $ att2optatt managerno_ v345)
@@ -516,11 +589,18 @@ empVQ7 =
 --                               ⋈_{managerno=empno} (empacct 
 --                                                   ⋈_{empacct.title=job.title} job))
 -- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ7_alt = empVQ7
 
 -- π (managerno^{v_3}, salary^{v_3})
 --   (dept ⋈_{managerno=empno}
 --         (empacct ⋈_{empacct.title=job.title} job))
+-- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ7_old = 
   project ([att2optatt managerno_ empv3
           , att2optatt salary_ empv3])
@@ -561,6 +641,9 @@ empVQ8 =
 --                                ⋈_{empacct.title=job.title} job,
 --                        empacct ⋈_{managerno=empno} dept⟩), ε⟩
 -- 
+-- #variants = 3
+-- #unique_variants = 2
+-- 
 empVQ8_alt = empVQ8
 
 -- π (managerno, name)
@@ -572,6 +655,10 @@ empVQ8_alt = empVQ8
 -- right of the choice and if one is empty the type env
 -- has the extra stuff from the outside of choice. 
 -- in this example the stuff from temp.
+-- 
+-- #variants = 3
+-- #unique_variants = 2
+-- 
 empVQ8_old_thought_wrong_but_correct = 
   project ([att2optatt managerno_ v345
           , att2optatt name_ v345])
@@ -591,6 +678,10 @@ empVQ8_old_thought_wrong_but_correct =
 -- Note: it's wrong b/c it generates a query π (..) ε. --> wrong
 -- it's type correct. talked about this in empvq2.
 -- this affect #unique_variants = 3. 
+-- 
+-- #variants = 3
+-- #unique_variants = 3
+-- 
 empVQ8_thought_wrong_but_correct = 
   project ([att2optatt managerno_ v345
           , att2optatt name_ v345])
@@ -637,6 +728,8 @@ empVQ11 =
                                           (att2attrQualRel deptno_ dept))))
 
 -- 
+-- #variants = 1
+-- #unique_variants = 1
 -- 
 empVQ11_alt = empVQ11
 
@@ -645,6 +738,10 @@ empVQ11_alt = empVQ11
 --              (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept))
 -- π (managerno^{v_3}, deptno^{v_3})
 --   (temp0 ⋈_{temp0.managerno=dept.mangerno} dept)
+-- 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ11_old = 
   project ([att2optattQualRel managerno_ dept empv3
           , att2optattQualRel deptno_ dept empv3])
@@ -694,6 +791,9 @@ empVQ12 =
 
 -- 
 -- 
+-- #variants = 3
+-- #unique_variants = 1
+-- 
 empVQ12_alt = empVQ12
 
 -- temp0 = ρ (temp0) 
@@ -701,6 +801,9 @@ empVQ12_alt = empVQ12
 --              (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept))
 -- π (managerno^{v_3 ∨ v_4 ∨ v_5}, deptno^{v_3 ∨ v_4 ∨ v_5})
 --   (temp0 ⋈_{temp0.managerno=dept.mangerno} dept)
+-- #variants = 3
+-- #unique_variants = 1
+-- 
 empVQ12_old = 
   project ([att2optattQualRel managerno_ dept v345
           , att2optattQualRel deptno_ dept v345])
@@ -739,6 +842,9 @@ empVQ13 =
                 (joinEqCond (att2attrQual deptno_ temp) 
                             (att2attrQualRel deptno_ dept)))
 
+-- #variants = 1
+-- #unique_variants = 1
+-- 
 empVQ13_alt = empVQ13
 
 -- 14.intent: For all managers, find all managers in the department that he/she worked in, 
@@ -764,4 +870,7 @@ empVQ14 =
                 (joinEqCond (att2attrQual deptno_ temp) 
                             (att2attrQualRel deptno_ dept)))
 
+-- #variants = 3
+-- #unique_variants = 1
+-- 
 empVQ14_alt = empVQ14

@@ -544,7 +544,7 @@ typeComp a@(Val l)  a'@(Val r) _ t
   | typeOf l == typeOf r = return ()
   | otherwise = throwM $ CompInvalid a a' t 
 typeComp a@(Val l)  a'@(Att r) ctx t = 
-  do is <- nonAmbiguousAttr r t -- TODO lookup suffices. same for the rest.
+  do is <- nonAmbiguousAttr r t 
      -- ats <- lookupAttrTypeFromEnv r t 
      -- afs <- lookupAttrFexpFromEnv r t 
      let validInfos = filter (\i -> F.tautImplyFexps (attrFexp i) ctx) 

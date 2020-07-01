@@ -17,7 +17,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , qualOfOptAttr
         , conjFexpOptAttr
         , numUniqueVariantQ
-        , numVarintQ
+        , numVariantQ
         -- , optAlgebra
         
 
@@ -229,8 +229,8 @@ configureAlgebra _ Empty           = REmpty
 
 -- | returns the number of variants of configuring a v-query.
 --   Note that it excludes REmpty queries.
-numVarintQ :: Algebra -> [Config Bool] -> Int
-numVarintQ q cs = length $ filter (\rq -> rq /= REmpty) $ 
+numVariantQ :: Algebra -> [Config Bool] -> Int
+numVariantQ q cs = length $ filter (\rq -> rq /= REmpty) $ 
   map ((flip configureAlgebra) q) cs
 
 -- | configure a query wrt the schema.

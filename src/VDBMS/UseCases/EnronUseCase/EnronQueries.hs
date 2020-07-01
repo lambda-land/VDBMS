@@ -646,7 +646,6 @@ q_mailhost_old =
 --       ⋈_{emp2.eid=forward_msg.eid} forward_msg)
 -- , signature ⟪ q_signature, forwardmessages ⟪ q_forwardmessages, q_basic ⟫⟫⟫
 -- 
--- with and without pushing schema.
 enronQ1, enronQ1_alt :: Algebra
 enronQ1 = 
   choice (F.And signature forwardmessages)
