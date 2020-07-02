@@ -269,6 +269,7 @@ numVariantQ q cs = length $ filter (\rq -> rq /= REmpty) $
 --   Note that optionalization doesn't consider schema at all. it just
 --   optionalizes a query. So it doesn't group queries based on the 
 --   presence condition of attributes or relations.
+-- TODO doesn't seem to be working correctly.
 optAlgebra :: Algebra -> [VariantGroup Algebra]
 optAlgebra (SetOp s q1 q2) = 
   combOpts F.And (RSetOp s) (optAlgebra q1) (optAlgebra q2)

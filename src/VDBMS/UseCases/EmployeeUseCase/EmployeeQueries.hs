@@ -92,6 +92,9 @@ v45 = F.Or empv4 empv5
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 -- π (salary^{v_3}) 
 --   ((σ (empno=10004) empacct) ⋈_{empacct.title=job.title} job)
 -- 
@@ -116,6 +119,9 @@ empVQ1 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ1_alt =
   project ([att2optatt empno_ empv3
           , att2optatt salary_ empv3])
@@ -128,6 +134,9 @@ empVQ1_alt =
 -- 
 -- #variants = 1
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ1_alt0 = 
   choice empv3 
@@ -150,6 +159,9 @@ empVQ1_alt0 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ1_old = 
   project (pure $ att2optatt salary_ empv3)  
           (join (renameQ temp (select empSqlCond $ tRef empacct))
@@ -161,6 +173,9 @@ empVQ1_old =
 -- 
 -- #variants = 1
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ1_alt1 = 
   project (pure $ att2optatt salary_ empv3)  
@@ -174,6 +189,9 @@ empVQ1_alt1 =
 -- 
 -- #variants = 1
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ1_alt2 = 
   choice empv3 
@@ -198,6 +216,9 @@ empVQ1_alt2 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ1_alt_typeErr = 
   project (pure $ att2optatt salary_ empv3)  
           (join (select empSqlCond (tRef empacct))
@@ -213,6 +234,9 @@ empVQ1_alt_typeErr =
 -- 
 -- #variants = 3
 -- #unique_variants = 2
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 -- (v_3 ∨ v_4 ∨ v_5) ⟨π (salary) ((v_3 ∨ v_4)⟨(σ (empno=10004) empacct) 
 --                                             ⋈_{empacct.title=job.title} job 
@@ -266,6 +290,9 @@ empVQ2 =
 -- #variants = 3
 -- #unique_variants = 2
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ2_alt = 
   choice v345
          (project ([trueAttr empno_
@@ -282,6 +309,9 @@ empVQ2_alt =
 --                                          σ (empno=10004) empactt⟩)
 -- #variants = 3
 -- #unique_variants = 2
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ2_old = 
   project (pure $ att2optatt salary_ (F.Or (F.Or empv3 empv4) empv5))
@@ -305,9 +335,12 @@ empVQ2_old =
 -- which isn't empty. so it's different than projecting an attribute from empty.
 -- 
 -- #variants = 3 
---> have to push schema onto it for the correct number of vars.
+-- have to push schema onto it for the correct number of vars.
 -- #unique_variants = 5 after push sch
 -- , 3 before push sch--> TODO look into this
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ2_alt_thought_wrong_but_correct = 
   project (pure $ trueAttr salary_)
@@ -328,6 +361,9 @@ empVQ2_alt_thought_wrong_but_correct =
 -- #variants = 3
 -- #unique_variants = 2
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ2_alt2 = 
   project (pure $ att2optatt salary_ v345)
           (join q1
@@ -342,8 +378,11 @@ empVQ2_alt2 =
 -- 
 -- Note: it's wrong for the same reason as empvq2_alt_wrong --> it is not!
 -- #variants = 3 
---> have to push schema onto it for the correct number of vars.
+-- have to push schema onto it for the correct number of vars.
 -- #unique_variants = 2
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ2_alt3_thought_wrong_but_correct = 
   project (pure $ trueAttr salary_)
@@ -361,6 +400,9 @@ empVQ2_alt3_thought_wrong_but_correct =
 -- 
 -- π (name^v_3) ((σ (deptno="d001") empacct)
 --               ⋈_{empacct.empno=dept.managerno} dept)
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ3, empVQ3_alt, empVQ3_old :: Algebra
 empVQ3 = 
@@ -380,6 +422,9 @@ empvq3tst = (select (eqAttValSqlCond deptno_ departno_value)
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ3_alt = 
   project ([att2optatt deptno_ empv3
           , att2optatt name_ empv3])
@@ -392,6 +437,9 @@ empVQ3_alt =
 -- 
 -- #variants = 1
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ3_old = 
   -- choice empv3 
@@ -408,6 +456,9 @@ empVQ3_old =
 -- 
 -- #variants = 3
 -- #unique_variants = 2 but it should be 3
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (name, firstname, lastname)
 --                    (v_3 ⟨empacct, empbio⟩ ⋈_{empno=managerno} (σ (deptno="d001") dept)), ε⟩
@@ -428,6 +479,9 @@ empVQ4 =
 -- #variants = 3
 -- #unique_variants = 2
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ4_alt = 
   choice v345
          (project (fmap trueAttr [name_, firstname_, lastname_])
@@ -446,6 +500,9 @@ empVQ4_alt =
 -- 
 -- #variants = 3
 -- #unique_variants = 2
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ4_old = 
   choice v345
@@ -467,6 +524,9 @@ empVQ4_old =
 -- #variants = 3
 -- #unique_variants = 4
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ4_alt1 =
   choice v345
          (project ([att2optatt name_ v34, 
@@ -485,6 +545,9 @@ empVQ4_alt1 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 -- π (managerno^v_3) ((σ (deptno="d001") empacct) ⋈_{empacct.empno=dept.managerno} dept)
 -- 
 empVQ5, empVQ5_alt, empVQ5_old :: Algebra
@@ -501,6 +564,9 @@ empVQ5 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ5_alt = 
   project [att2optatt managerno_ empv3
           , att2optattQualRel deptno_ dept empv3]
@@ -515,6 +581,9 @@ empVQ5_alt =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ5_old = 
   -- choice empv3 
          (project (pure $ att2optatt managerno_ empv3)
@@ -527,6 +596,9 @@ empVQ5_old =
 --
 -- #variants = 3
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 -- π (managerno^{v_3 ∨ v_4 ∨ v_5}) ((σ (empno=10004) empacct) 
 --                                  ⋈_{empacct.deptno=dept.deptno} dept)
@@ -545,6 +617,9 @@ empVQ6 =
 -- #variants = 3
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ6_alt = 
   project (fmap (flip att2optatt v345) [empno_, managerno_])
           (join (tRef empacct)
@@ -556,6 +631,9 @@ empVQ6_alt =
 --                    ⋈_{temp.deptno=dept.deptno} dept), ε⟩
 -- #variants = 3
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ6_old = 
   -- choice v345
@@ -569,6 +647,9 @@ empVQ6_old =
 --
 -- #variants = 1
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 -- π (managerno^v_3, salary^v_3) (dept 
 --                               ⋈_{managerno=empno} (empacct 
@@ -592,6 +673,9 @@ empVQ7 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ7_alt = empVQ7
 
 -- π (managerno^{v_3}, salary^{v_3})
@@ -600,6 +684,9 @@ empVQ7_alt = empVQ7
 -- 
 -- #variants = 1
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ7_old = 
   project ([att2optatt managerno_ empv3
@@ -612,6 +699,9 @@ empVQ7_old =
 --
 -- #variants = 3
 -- #unique_variants = 2
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (managerno, name) 
 --                    (v_3 ∨ v_4 ⟨(empacct ⋈_{managerno=empno} dept) 
@@ -644,6 +734,9 @@ empVQ8 =
 -- #variants = 3
 -- #unique_variants = 2
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ8_alt = empVQ8
 
 -- π (managerno, name)
@@ -658,6 +751,9 @@ empVQ8_alt = empVQ8
 -- 
 -- #variants = 3
 -- #unique_variants = 2
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ8_old_thought_wrong_but_correct = 
   project ([att2optatt managerno_ v345
@@ -682,6 +778,9 @@ empVQ8_old_thought_wrong_but_correct =
 -- #variants = 3
 -- #unique_variants = 3
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ8_thought_wrong_but_correct = 
   project ([att2optatt managerno_ v345
           , att2optatt name_ v345])
@@ -702,6 +801,9 @@ empVQ8_thought_wrong_but_correct =
 --
 -- #variants = 1
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 -- tempQ = ρ (temp) 
 --           (π (managerno, deptno)
@@ -731,6 +833,9 @@ empVQ11 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ11_alt = empVQ11
 
 -- temp0 = ρ (temp0) 
@@ -741,6 +846,9 @@ empVQ11_alt = empVQ11
 -- 
 -- #variants = 1
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ11_old = 
   project ([att2optattQualRel managerno_ dept empv3
@@ -764,6 +872,9 @@ empVQ11_old =
 --
 -- #variants = 3
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 -- tempQ = ρ (temp) 
 --           (π (managerno, deptno)
@@ -794,6 +905,9 @@ empVQ12 =
 -- #variants = 3
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ12_alt = empVQ12
 
 -- temp0 = ρ (temp0) 
@@ -801,8 +915,12 @@ empVQ12_alt = empVQ12
 --              (ρ (temp) (σ (empno=10004) empacct) ⋈_{temp.deptno=dept.deptno} dept))
 -- π (managerno^{v_3 ∨ v_4 ∨ v_5}, deptno^{v_3 ∨ v_4 ∨ v_5})
 --   (temp0 ⋈_{temp0.managerno=dept.mangerno} dept)
+-- 
 -- #variants = 3
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ12_old = 
   project ([att2optattQualRel managerno_ dept v345
@@ -827,6 +945,9 @@ empVQ12_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 -- π (temp.managerno^{v_3}, deptname^{v_3}, dept.managerno^{v_3})
 --   ((ρ (temp) (π (managerno, deptno) dept)) ⋈_{temp.deptno=dept.deptno} dept)
 -- 
@@ -845,6 +966,9 @@ empVQ13 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
+-- 
 empVQ13_alt = empVQ13
 
 -- 14.intent: For all managers, find all managers in the department that he/she worked in, 
@@ -852,6 +976,9 @@ empVQ13_alt = empVQ13
 --
 -- #variants = 3
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 -- π (temp.managerno^{v_3 ∨ v_4 ∨ v_5}
 --    , deptname^{v_3 ∨ v_4 ∨ v_5}
@@ -872,5 +999,8 @@ empVQ14 =
 
 -- #variants = 3
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 
+-- after pushing schema: #unique_variants = 
 -- 
 empVQ14_alt = empVQ14

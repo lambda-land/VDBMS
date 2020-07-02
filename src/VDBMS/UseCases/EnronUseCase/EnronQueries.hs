@@ -83,8 +83,11 @@ temp = "temp"
 
 -- 0. Basic query when non of the features are enabled.
 -- 
--- #variants = 1
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 6
 -- 
 -- π (sender, rvalue, subject, body) ((σ (mid=X) messages) 
 --                                    ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -100,6 +103,12 @@ q_basic =
 -- π (sender, rvalue, subject, body) 
 --   (messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 -- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 6
+-- 
 q_basic_alt =
   project (fmap trueAttr [sender_, rvalue_, subject_, body_])
           (join (tRef messages)
@@ -109,8 +118,11 @@ q_basic_alt =
 
 -- 1. OLD Intent: Given a message X, return the recipient's nickname in feature ADDRESSBOOK.
 --
--- #variants = 1
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
 -- 
 -- π (sender, nickname, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recepientinfo)
@@ -139,6 +151,13 @@ q_addressbook =
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
 --    ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
 --    ⋈_{employeelist.eid=alias.eid} alias)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
+-- 
 q_addressbook_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
@@ -157,6 +176,12 @@ q_addressbook_alt =
 
 -- π (rvalue, nickname) (enronTemp ⋈_{temp.eid=alias.eid} alias)
 -- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 4
+-- 
 q_addressbook_old, q_addressbook_alt_old :: Algebra
 q_addressbook_old = 
   project ([trueAttr rvalue_
@@ -169,6 +194,13 @@ q_addressbook_old =
 -- enronTem <-- ρ (temp) 
 --                (π (eid, rvalue, mid, sender) 
 --                   ((σ (mid=X) recipientinfo) ⋈_{rvalue=email_id} employeelist)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 4
+-- 
 enronTemp :: Algebra
 enronTemp = renameQ temp $
   project ([trueAttr eid_
@@ -180,13 +212,22 @@ enronTemp = renameQ temp $
                 (joinEqCond (att2attr rvalue_)
                             (att2attr email_id_)))
 
+-- #variants = 2
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
+-- 
 q_addressbook_alt_old = 
   choice addressbook q_addressbook Empty
 
 -- 2. OLD Intent: Check if the message X is signed in feature SIGNATURE.
 -- 
--- #variants = 1
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 72
 -- 
 -- π (sender, rvalue, is_signed, verification_key, subject, body)
 --   (((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -212,6 +253,13 @@ q_signature =
 -- π (messages.mid, sender, rvalue, is_signed, verification_key, subject, body)
 --   ((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
 --    ⋈_{sender=email_id} employeelist)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 72
+-- 
 q_signature_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
@@ -231,6 +279,12 @@ q_signature_alt =
 
 -- π (is_signed) (σ (mid=X) messages)
 -- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 3
+-- after pushing schema: #unique_variants = 6
+-- 
 q_signature_old :: Algebra
 q_signature_old = 
   project (pure $ trueAttr is_signed_)
@@ -238,8 +292,11 @@ q_signature_old =
 
 -- 3. OLD Intent: Check if the message X is encrypted in feature ENCRYPTION.
 --
--- #variants = 1
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 72
 -- 
 -- π (sender, rvalue, is_encrypted, public_key, subject, body)
 --   (((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -265,6 +322,13 @@ q_encryption =
 -- π (messages.mid, sender, rvalue, is_encrypted, public_key, subject, body)
 --   ((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo) 
 --     ⋈_{sender=email_id} employeelist)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 72
+-- 
 q_encryption_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
@@ -283,6 +347,12 @@ q_encryption_alt =
 
 -- π (is_encrypted) (σ (mid=X) messages)
 -- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 3
+-- after pushing schema: #unique_variants = 6
+-- 
 q_encryption_old :: Algebra
 q_encryption_old = 
   project (pure $ trueAttr is_encrypted_)
@@ -292,8 +362,12 @@ q_encryption_old =
 --
 -- The rvalue is the sender and sender is the reciever.
 -- It is constructing the auto respond email to email X.
--- #variants = 1
+-- 
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
 -- 
 -- π (rvalue, sender, is_system_notification, auto_msg.subject, auto_msg.body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -323,6 +397,13 @@ q_autoresponder =
 --   (((messages ⋈_{messages.mid=temp.mid} recipientinfo) 
 --     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
 --     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
+-- 
 q_autoresponder_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr rvalue_
@@ -343,6 +424,12 @@ q_autoresponder_alt =
 
 -- π (subject, body) (enronTemp ⋈_{temp.eid=auto_msg.eid} auto_msg)
 -- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 4
+-- 
 q_autoresponder_old :: Algebra
 q_autoresponder_old = 
   project ([trueAttr subject_
@@ -353,8 +440,11 @@ q_autoresponder_old =
 
 -- 5. OLD Intent: Given a message X, return the recipient's forward address in the feature FORWARDMESSAGES.
 -- 
--- #variants = 1
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
 -- 
 -- π (rvalue, forwardaddr, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -383,6 +473,13 @@ q_forwardmessages =
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
+-- 
 q_forwardmessages_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr rvalue_
@@ -403,6 +500,12 @@ q_forwardmessages_alt =
 
 -- π (forwardaddr) (enronTemp ⋈_{temp.eid=forward_msg.eid} forward_msg)
 -- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 4
+-- 
 q_forwardmessages_old :: Algebra
 q_forwardmessages_old =
   project (pure $ trueAttr forwardaddr_)
@@ -415,8 +518,11 @@ q_forwardmessages_old =
 -- Note that pseudonym is the sender, rvalue is the reciver.
 -- It is constructing the header for the message to be forwarded.
 -- 
--- #variants = 1
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
 -- 
 -- π (pseudonym, sender, rvalue, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -446,6 +552,13 @@ q_remailmessage =
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist)
 --     ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
+-- 
 q_remailmessage_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr pseudonym_
@@ -467,6 +580,12 @@ q_remailmessage_alt =
 -- π (sender, pseudonym)
 --   ((ρ (temp) (π (eid, sender, mid) ((σ (mid=X) messages) ⋈_{sender=email_id} employeelist))) 
 --       ⋈_{temp.eid=remail_msg.eid} remail_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
 -- 
 q_remailmessage_old :: Algebra
 q_remailmessage_old = 
@@ -490,8 +609,11 @@ q_remailmessage_old =
 -- It (the email server) checks the suffix of the reciver and if the sender isn't included in it
 -- it delivers the email to the reciever, otherwise it rejects it.
 -- 
--- #variants = 1
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
 -- 
 -- π (sender, rvalue, suffix, is_system_notification, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -522,6 +644,13 @@ q_filtermessages =
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
+-- 
 q_filtermessages_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
@@ -558,8 +687,11 @@ q_filtermessages_alt =
 -- It checks if mailhost of the sender is in the set of mailhost for the reciever,
 -- it so it delivers the email to the reciever, otherwise it rejects it.
 -- 
--- #variants = 1
+-- #variants = 5
 -- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
 -- 
 -- π (sender, rvalue, username, mailhost, subject, body)
 --   ((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -590,6 +722,13 @@ q_mailhost =
 --   (((messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=mail_host.eid} mail_host)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 24
+-- 
 q_mailhost_alt = 
   project ([trueAttrQualRel mid_ messages
           , trueAttr sender_
@@ -611,6 +750,12 @@ q_mailhost_alt =
 
 -- π (rvalue, username, mailhost)
 --   (enronTemp ⋈_{temp.eid=mailhost.eid} mailhost)
+-- 
+-- #variants = 5
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 4
 -- 
 q_mailhost_old :: Algebra
 q_mailhost_old = 
@@ -635,8 +780,11 @@ q_mailhost_old =
 --             have been enabled(1). The header is for the email to be forwarded.
 --             --> this takes care of interaction 16 too.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 64
 -- 
 -- signature ∧ forwardmessages ⟪ 
 -- π (rvalue, forwardaddr, is_signed, emp1.verification_key)
@@ -688,6 +836,12 @@ enronQ1 =
 --       ⋈_{emp2.eid=forward_msg.eid} forward_msg)
 -- , signature ⟪ q_signature_alt, forwardmessages ⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 64
+-- 
 enronQ1_alt = 
   choice (F.And signature forwardmessages)
          (project ([trueAttrQualRel mid_ messages
@@ -727,8 +881,11 @@ enronQ1_alt =
 --             warning, otherwise the email will be delivered to the reciever where
 --             the sender name is their pseudonym.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 40
 -- 
 -- signature ∧ remailmessage ⟪π (sender) (σ (mid=X ∧ is_signed=True) messages),
 --   signature ⟪q_signature, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
@@ -743,6 +900,12 @@ enronQ2part1 =
 
 -- signature ∧ remailmessage ⟪π (mid, sender) (σ (is_signed=True) messages),
 --   signature ⟪q_signature_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+-- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 40
 -- 
 enronQ2part1_alt = 
   choice (F.And signature remailmessage)
@@ -759,6 +922,12 @@ enronQ2part1_alt =
 --   ((((σ (mid=X ∧ ¬is_signed) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --     ⋈_{messages.sender=employeelist.email_id} employeelist) 
 --     ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 50
 -- 
 enronQ2part2, enronQ2part2_alt :: Algebra
 enronQ2part2 = 
@@ -794,6 +963,12 @@ enronQ2part2 =
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 50
+-- 
 enronQ2part2_alt = 
   choice (F.And signature remailmessage)
          subq
@@ -826,8 +1001,11 @@ enronQ2part2_alt =
 --             because either way the header shouldn't include the security info in 
 --             the header of the email is being sent out.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 28
 -- 
 -- encryption ∧ autoresponder ⟪ q_autoresponder,
 --    encryption ⟪ q_encryption, autoresponded⟪ q_autoresponder, q_basic⟫⟫⟫
@@ -840,6 +1018,12 @@ enronQ3 =
 
 -- encryption ∧ autoresponder ⟪ q_autoresponder_alt,
 --    encryption ⟪ q_encryption_alt, autoresponded⟪ q_autoresponder_alt, q_basic_alt⟫⟫⟫
+-- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 28
 -- 
 enronQ3_alt = 
   choice (F.And encryption autoresponder)
@@ -854,8 +1038,11 @@ enronQ3_alt =
 --             forward the message) will get an UI 
 --             warning, otherwise the email will be forwarded.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 29
 -- 
 -- encryption ∧ forwardmessages ⟪π (rvalue) 
 --   (σ (mid=X ∧ is_encrypted) messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
@@ -881,6 +1068,12 @@ enronQ4part1 =
 --       (σ (is_encrypted) messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
 --    encryption⟪ q_encryption_alt,forwardmessages⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 29
+-- 
 enronQ4part1_alt = 
   choice (F.And encryption forwardmessages)
          (project [trueAttrQualRel mid_ messages
@@ -903,6 +1096,13 @@ enronQ4part1_alt =
 --   ((((σ (mid=X ∧ ¬is_encrypted) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 3
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 25
+-- 
 enronQ4part2, enronQ4part2_alt :: Algebra
 enronQ4part2 = 
   choice (F.And encryption forwardmessages)
@@ -937,6 +1137,13 @@ enronQ4part2 =
 --   ((((σ (¬is_encrypted) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --      ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 3
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 25
+-- 
 enronQ4part2_alt = 
   choice (F.And encryption forwardmessages)
          subq
@@ -967,8 +1174,11 @@ enronQ4part2_alt =
 --             include the sender information in the header however it still needs
 --             the public key to decode the email. 
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 39
 -- 
 -- encryption ∧ remailmessage⟪ subq_enc_remail_qs_combined,
 --    encryption⟪ q_encryption, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
@@ -1011,6 +1221,12 @@ enronQ5 =
 --       ⋈_{messages.sender=employeelist.email_id} employeelist) 
 --       ⋈_{employeelist.eid=remail_msg.eid} remail_msg)
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 39
+-- 
 enronQ5_alt = 
   choice (F.And encryption remailmessage)
          (project ([trueAttrQualRel mid_ messages
@@ -1042,8 +1258,11 @@ enronQ5_alt =
 --             to the original first sender and not the one who forwarded the message
 --             to avoid a cycle.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 60
 -- 
 -- autoresponder ∧ forwardmessages⟪ subq_gen_fwd, 
 --   autoresponder⟪ q_autoresponder, forwardmessages⟪ q_forwardmessages, q_basic⟫⟫⟫
@@ -1065,6 +1284,12 @@ enronQ6part1 =
 --   autoresponder⟪ q_autoresponder_alt, forwardmessages⟪ q_forwardmessages_alt, q_basic_alt⟫⟫⟫
 -- subq_gen_fwd ← q_forwardmessages_alt
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 60
+-- 
 enronQ6part1_alt = 
   choice (F.And autoresponder forwardmessages)
          (subq_gen_fwd)
@@ -1084,6 +1309,12 @@ enronQ6part1_alt =
 --     ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist)
 --     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
 --     ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 60
 -- 
 enronQ6part2, enronQ6part2_alt :: Algebra
 enronQ6part2 = 
@@ -1124,6 +1355,12 @@ enronQ6part2 =
 --     ⋈_{employeelist.eid=auto_msg.eid} auto_msg)
 --     ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 60
+-- 
 enronQ6part2_alt = 
   choice (F.And autoresponder forwardmessages)
          (subq_gen_auto)
@@ -1160,8 +1397,11 @@ enronQ6part2_alt =
 --             who has their autoresponder on won't send out an email and gets a warning
 --             message.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 50
 -- 
 -- autoresponder ∧ remailmessage⟪π (rvalue) 
 --          ((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
@@ -1184,6 +1424,12 @@ enronQ7 =
 -- autoresponder ∧ remailmessage⟪π (mid, rvalue) 
 --          (messages ⋈_{messages.mid=recipientinfo.mid} recipientinfo),
 --   autoresponder⟪ q_autoresponder_alt, remailmessage⟪ q_remailmessage_alt, q_basic_alt⟫⟫⟫
+-- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 50
 -- 
 enronQ7_alt =
   choice (F.And autoresponder remailmessage)
@@ -1208,8 +1454,11 @@ enronQ7_alt =
 --             that an incoming message is in fact autoresponse and should be delivered, 
 --             and the other where it is not and should be filtered.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 50
 -- 
 -- autoresponder ∧ filtermessages⟪π (sender, rvalue, subject, body)
 --        ((σ (mid=X ∧ is_autoresponse) messages) 
@@ -1237,6 +1486,12 @@ enronQ8part1 =
 --         ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --    , autoresponder⟪ q_autoresponder_alt, filtermessages⟪ q_filtermessages_alt, q_basic_alt⟫⟫⟫
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 50
+-- 
 enronQ8part1_alt = 
   choice (F.And autoresponder filtermessages)
          (project ((pure $ trueAttrQualRel mid_ messages)
@@ -1261,6 +1516,12 @@ enronQ8part1_alt =
 --   ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
+-- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 65
 -- 
 enronQ8part2, enronQ8part2_alt :: Algebra
 enronQ8part2 = 
@@ -1301,6 +1562,12 @@ enronQ8part2 =
 --   ⋈_{recipientinfo.rvalue=employeelist.email_id} employeelist) 
 --   ⋈_{employeelist.eid=filter_msg.eid} filter_msg)
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 65
+-- 
 enronQ8part2_alt = 
   choice (F.And autoresponder filtermessages)
          (subq_similar_to_filtermsg_q)
@@ -1335,8 +1602,11 @@ enronQ8part2_alt =
 
 -- 10. Purpose: When FORWARDMESSAGES is enabled and it creates a loop warn the users.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 2
+-- #unique_variants = 1
+-- 
+-- after pushing schema: #variants = 2
+-- after pushing schema: #unique_variants = 16
 -- 
 -- forwardmessages⟪ 
 --    π (emp2.email_id, emp1.email_id)
@@ -1376,9 +1646,12 @@ enronQ10_alt = enronQ10
 --              forwarded while checking if the foward address is the user's pseudonym
 --              so that the remailer can detect if a loop may happen and avoid it.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
 --
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 73
+-- 
 -- forwardmessages ∧ remailmessage⟪ subq_fwd_remail_comb,
 --    forwardmessages⟪ q_forwardmessages, remailmessage⟪ q_remailmessage, q_basic⟫⟫⟫
 -- subq_fwd_remail_comb ← π (rvalue, forwardaddr, pseudonym, subject, body)
@@ -1426,6 +1699,12 @@ enronQ11 =
 --      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
 --      ⋈_{forward_msg.eid=remail_msg.eid} remail_msg)
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 73
+-- 
 enronQ11_alt = 
   choice (F.And forwardmessages remailmessage)
          (subq_fwd_remail_comb)
@@ -1460,9 +1739,12 @@ enronQ11_alt =
 --              have been enabled. Generates the email to be forwarded (after recieving 
 --              email X) and checks if the forwardaddr is in the filtered list.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
 --
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 145
+-- 
 -- forwardmessages ∧ filtermessages⟪ subq_fwd_filter_comb,
 -- forwardmessages⟪ q_forwardmessages, filtermessages⟪ q_filtermessages, q_basic⟫⟫⟫
 -- subq_fwd_filter_comb ← π (rvalue, forwardaddr, suffix, subject, body)
@@ -1521,6 +1803,12 @@ enronQ12 =
 --      ⋈_{forward_msg.forwardaddr=emp2.email_id} (ρ (emp2) employeelist))
 --      ⋈_{emp2.eid=filter_msg.eid} filter_msg)
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 145
+-- 
 enronQ12_alt = 
   choice (F.And forwardmessages filtermessages)
          (subq_fwd_filter_comb)
@@ -1566,9 +1854,12 @@ enronQ12_alt =
 --              mailhost and causes a system notification email to be sent to the user.
 --              so the mailhost can detect if a loop may happen and avoid it.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
 --
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 73
+-- 
 -- forwardmessages ∧ mailhost⟪ subq_fwd_mailhost_comb,
 --    forwardmessages⟪ q_forwardmessages, mailhost⟪ q_mailhost, q_basic⟫⟫⟫
 -- subq_fwd_remail_comb ← π (rvalue, forwardaddr, username, mailhost, subject, body)
@@ -1618,6 +1909,12 @@ enronQ13 =
 --      ⋈_{employeelist.eid=forward_msg.eid} forward_msg)
 --      ⋈_{forward_msg.eid=mailhost.eid} mailhost)
 -- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 73
+-- 
 enronQ13_alt = 
   choice (F.And forwardmessages remailmessage)
          (subq_fwd_remail_comb)
@@ -1657,9 +1954,12 @@ enronQ13_alt =
 --              include the sender info. The ndn is being generated as a response
 --              to email X.
 -- 
--- #variants = 
--- #unique_variants =
+-- #variants = 5
+-- #unique_variants = 4
 --
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 78
+-- 
 -- remailmessage ∧ mailhost⟪
 --   π (sender, subject, body)
 --     (((((σ (mid=X) messages) ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
@@ -1700,6 +2000,12 @@ enronQ14 =
 --       ⋈_{remail_msg.eid=mail_host.eid} mail_host)
 --   , remailmessage⟪ q_remailmessage_alt,
 --        mailhost⟪ q_mailhost_alt, q_basic_alt⟫⟫⟫
+-- 
+-- #variants = 5
+-- #unique_variants = 4
+-- 
+-- after pushing schema: #variants = 5
+-- after pushing schema: #unique_variants = 78
 -- 
 enronQ14_alt = 
   choice (F.And remailmessage mailhost)
