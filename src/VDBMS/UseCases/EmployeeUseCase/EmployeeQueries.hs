@@ -92,8 +92,8 @@ v45 = F.Or empv4 empv5
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- after pushing schema: #variants = 
--- after pushing schema: #unique_variants = 
+-- after pushing schema: #variants = 1
+-- after pushing schema: #unique_variants = 6
 -- 
 -- π (salary^{v_3}) 
 --   ((σ (empno=10004) empacct) ⋈_{empacct.title=job.title} job)
@@ -119,7 +119,7 @@ empVQ1 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- after pushing schema: #variants = 
+-- after pushing schema: #variants = 1
 -- after pushing schema: #unique_variants = 
 -- 
 empVQ1_alt =
@@ -159,7 +159,7 @@ empVQ1_alt0 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- after pushing schema: #variants = 
+-- after pushing schema: #variants = 1
 -- after pushing schema: #unique_variants = 
 -- 
 empVQ1_old = 
@@ -174,7 +174,7 @@ empVQ1_old =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- after pushing schema: #variants = 
+-- after pushing schema: #variants = 1
 -- after pushing schema: #unique_variants = 
 -- 
 empVQ1_alt1 = 
@@ -190,7 +190,7 @@ empVQ1_alt1 =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- after pushing schema: #variants = 
+-- after pushing schema: #variants = 1
 -- after pushing schema: #unique_variants = 
 -- 
 empVQ1_alt2 = 

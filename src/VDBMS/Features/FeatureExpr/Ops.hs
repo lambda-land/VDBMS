@@ -1,13 +1,12 @@
 -- | Feature expression ops that rely on the SAT solver.
-module VDBMS.Features.FeatureExpr.Ops where
--- (
+module VDBMS.Features.FeatureExpr.Ops (
 
---         tautImplyFexps,
---         selectFeatureExpr,
---         shrinkFeatureExpr,
---         satAnds
+        tautImplyFexps,
+        selectFeatureExpr,
+        shrinkFeatureExpr,
+        satAnds
 
--- ) where
+) where
 
 import Data.SBV hiding (select)
 import VDBMS.Features.Feature
