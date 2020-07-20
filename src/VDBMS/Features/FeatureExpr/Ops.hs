@@ -14,7 +14,6 @@ import VDBMS.Features.FeatureExpr.Types
 import VDBMS.Features.FeatureExpr.Core (imply)
 import VDBMS.Features.FeatureExpr.Instances ()
 import VDBMS.Features.SAT
--- import VDBMS.Features.FeatureExpr.Reduce
 
 import Data.Generics.Uniplate.Operations (transform)
 
@@ -38,7 +37,23 @@ selectFeatureExpr f b e = shrinkFeatureExpr (select e)
     select (And l r)   = And (select l) (select r)
     select (Or  l r)   = Or  (select l) (select r)
 
--- |
+-- | reduces feature expression w.r.t how they're 
+--   being generated. 
+-- 
+-- ¬ true ≡ false
+-- ¬ false ≡ true
+-- true ∧ e ≡ e
+-- false ∧ e ≡ false
+-- true ∨ e ≡ true
+-- false ∨ e ≡ e
+-- (l1 ∧ l2) ∧ r ≡ l1 ∧ (l2 ∧ r)
+-- l ∧ (l ∧ r) ≡ l ∧ r
+-- l ∧ l ≡ l
+-- l ∨ l ≡ l
+-- 
+-- To test it on generated fexps try:
+-- simplType empVQ1 empVSchema
+-- 
 shrinkFeatureExpr :: FeatureExpr -> FeatureExpr
 shrinkFeatureExpr = factorOutFM . transform simpl
   where 
@@ -66,7 +81,9 @@ shrinkFeatureExpr = factorOutFM . transform simpl
       | l == r = l 
       | otherwise = Or l r
     simpl e = e
-  
+ 
+-- | factors out the feature model from the conjunctions 
+--   in a feature expression.
 factorOutFM :: FeatureExpr -> FeatureExpr
 factorOutFM (And fm rest) = And fm (transform (dropFM fm) rest)
   where 
@@ -78,55 +95,16 @@ factorOutFM (And fm rest) = And fm (transform (dropFM fm) rest)
     dropFM _ e = e
 factorOutFM e = e
 
-
--- | Reduce the size of a feature expression by applying some basic
---   simplification rules.
--- shrinkFeatureExpr :: FeatureExpr -> FeatureExpr
--- shrinkFeatureExpr e@(Lit _)    = e
--- shrinkFeatureExpr (And (Lit True) e) = shrinkFeatureExpr e
--- shrinkFeatureExpr (And e (Lit True)) = shrinkFeatureExpr e
--- shrinkFeatureExpr (And (Lit False) _) = Lit False
--- shrinkFeatureExpr (And _ (Lit False)) = Lit False
--- shrinkFeatureExpr (Or (Lit False) e) = shrinkFeatureExpr e
--- shrinkFeatureExpr (Or e (Lit False)) = shrinkFeatureExpr e
--- shrinkFeatureExpr (Or (Lit True) _) = Lit True
--- shrinkFeatureExpr (Or _ (Lit True)) = Lit True
--- shrinkFeatureExpr (Not (Not e)) = shrinkFeatureExpr e
--- shrinkFeatureExpr (Or (And l r) (And l' r'))
---     | l == l' = And (shrinkFeatureExpr l) 
---                     (Or (shrinkFeatureExpr r) (shrinkFeatureExpr r'))
---     | r == r' = And (shrinkFeatureExpr r)
---                     (Or (shrinkFeatureExpr l) (shrinkFeatureExpr l'))
---     | otherwise = Or (And (shrinkFeatureExpr l) (shrinkFeatureExpr r))
---                      (And (shrinkFeatureExpr l') (shrinkFeatureExpr r'))
--- shrinkFeatureExpr (And (Or l r) (Or l' r'))
---     | l == l' = Or (shrinkFeatureExpr l)
---                    (And (shrinkFeatureExpr r) (shrinkFeatureExpr r'))
---     | r == r' = Or (shrinkFeatureExpr r)
---                    (And (shrinkFeatureExpr l) (shrinkFeatureExpr l'))
---     | otherwise = (And (Or (shrinkFeatureExpr l) (shrinkFeatureExpr r))
---                        (Or (shrinkFeatureExpr l') (shrinkFeatureExpr r')))
--- shrinkFeatureExpr e
---     | unsatisfiable e           = Lit False
---     | tautology e               = Lit True
--- shrinkFeatureExpr (And e e)     = shrinkFeatureExpr e
--- shrinkFeatureExpr (And l r)
-    -- | l == r                    = shrinkFeatureExpr l
-    -- | l == Not r                = Lit False
-    -- | r == Not l                = Lit False
-    -- | tautology l               = shrinkFeatureExpr r
-    -- | tautology r               = shrinkFeatureExpr l
-    -- | otherwise                 = And (shrinkFeatureExpr l) (shrinkFeatureExpr r)
--- shrinkFeatureExpr (Or e e)      = shrinkFeatureExpr e
--- shrinkFeatureExpr (Or l r)
-    -- | l == r                    = shrinkFeatureExpr l
-    -- | l == Not r                = Lit True
-    -- | r == Not l                = Lit True
---     | unsatisfiable l           = shrinkFeatureExpr r
---     | unsatisfiable r           = shrinkFeatureExpr l
---     | otherwise                 = Or (shrinkFeatureExpr l) (shrinkFeatureExpr r)
--- shrinkFeatureExpr e = e
-
+-- |
+-- pushNeg :: FeatureExpr -> FeatureExpr
+-- pushNeg e = pushNeg1 e
+--   where
+--     pushNeg1 (Not (Lit True)) = Lit False
+--     pushNeg1 (Not (Lit False)) = Lit True
+--     pushNeg1 (Not (Not e')) = pushNeg e'
+--     pushNeg1 (Not (And l r)) = Or (pushNeg (Not l)) (pushNeg (Not r))
+--     pushNeg1 (Not (Or l r)) = And (pushNeg (Not l)) (pushNeg (Not l))
+--     pushNeg1 e' = e'
 
 -- etst1 = Lit True 
 -- etst2 = And etst1 etst1
