@@ -11,7 +11,7 @@ import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Features.Config (Config)
 
 
-egemp1 = employeeFeatureModel `And` employeeFeatureModel
+-- egemp1 = employeeFeatureModel `And` employeeFeatureModel
 
 -- 
 -- Features

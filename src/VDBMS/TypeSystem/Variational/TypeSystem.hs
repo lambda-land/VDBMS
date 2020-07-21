@@ -273,6 +273,25 @@ extrctType :: Maybe TypeEnv -> TypeEnv
 extrctType = fromJust
 
 
+-- | runs the typeofquery for a given query and schema,
+--   initiating tbe context to the feature model.
+runTypeQuery :: MonadThrow m => Algebra -> Schema -> m TypeEnv
+runTypeQuery q s = typeOfQuery q (featureModel s) s
+
+-- | Simplifies the type of a query.
+simplType :: MonadThrow m => Algebra -> Schema -> m TypeEnv
+simplType q s = 
+  do t <- runTypeQuery q s
+     let shrinkType :: TypeEnv -> TypeEnv
+         shrinkType env = applyFuncFexp F.shrinkFeatureExpr 
+           $ applyFuncObj (SM.map (applyFuncToAttFexp F.shrinkFeatureExpr)) env 
+     return $ shrinkType t
+
+-- |checks if a query is type correct or not. 
+checkType :: MonadThrow m => Algebra -> Schema -> m ()
+checkType q s = simplType q s >> return ()
+
+
 -- sameType_ (extrctType $ simplType empVQ1_alt0 empVSchema) (extrctType $ simplType empVQ1_alt empVSchema)
 
 -- 

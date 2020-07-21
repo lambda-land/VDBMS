@@ -15,9 +15,9 @@ import VDBMS.QueryLang.RelAlg.Variational.Algebra
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
-import VDBMS.Variational.Opt (getFexp, getObj, applyFuncFexp)
+import VDBMS.Variational.Opt (mapFst, getFexp, getObj, applyFuncFexp)
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnve2OptAtts)
+import VDBMS.TypeSystem.Variational.TypeSystem (simplType, typeOfQuery, typeEnve2OptAtts)
 
 -- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -41,12 +41,14 @@ pushSchToQ :: Schema -> Algebra -> Algebra
 pushSchToQ s (SetOp o l r) 
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
 pushSchToQ s (Proj as q) 
-  = Proj (intersectOptAtts as' as) subq 
+  = Proj (mapFst F.shrinkFeatureExpr $ intersectOptAtts as' as) subq 
+  -- Proj (intersectOptAtts as' as) subq 
     where subq = pushSchToQ s q
           as' = typeEnve2OptAtts $ 
-            fromJust $ typeOfQuery subq (featureModel s) s
+            fromJust $ simplType subq s
+            --       $ runTypeQuery subq s
 pushSchToQ s (Sel c q) 
-  = Sel (pushSchToCond s c) (pushSchToQ s q)
+  = Sel c (pushSchToQ s q)
 pushSchToQ s (AChc f l r)  
   = AChc f 
         (pushSchToQ (updateFM (F.And f) s) l) 
@@ -56,7 +58,8 @@ pushSchToQ s (Join l r c)
 pushSchToQ s (Prod l r) 
   = Prod (pushSchToQ s l) (pushSchToQ s r)
 pushSchToQ s q@(TRef r) = Proj as q
-  where as = typeEnve2OptAtts $ fromJust $ typeOfQuery q (featureModel s) s
+  where as = typeEnve2OptAtts $ fromJust $ simplType q s
+  --                                     $ runTypeQuery subq s
 pushSchToQ s (RenameAlg n q) = RenameAlg n (pushSchToQ s q)
 pushSchToQ _ Empty = Empty
 
@@ -70,6 +73,7 @@ pushSchToQ _ Empty = Empty
 --   the same name. 
 --   Note it needs to look into the first list completely
 --                  subsumes      -> isSubsumed    -> intersection
+-- TODO: to be tested and debugged!!
 intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
 intersectOptAtts big small = map (restrictOptAtt big) small
   where
@@ -88,16 +92,20 @@ intersectOptAtts big small = map (restrictOptAtt big) small
 
 -- | pushes schema to vsqlcond which pushes the schema into the
 --   query used in sqlin condition.
-pushSchToCond :: Schema -> VsqlCond -> VsqlCond
-pushSchToCond _ cnd@(VsqlCond _) = cnd
-pushSchToCond s (VsqlIn a q)     = VsqlIn a (pushSchToQ s q)
-pushSchToCond s (VsqlNot c)      = VsqlNot (pushSchToCond s c)
-pushSchToCond s (VsqlOr l r) 
-  = VsqlOr (pushSchToCond s l) (pushSchToCond s r)
-pushSchToCond s (VsqlAnd l r) 
-  = VsqlAnd (pushSchToCond s l) (pushSchToCond s r)
-pushSchToCond s (VsqlCChc f l r) 
-  = VsqlCChc f (pushSchToCond s l) (pushSchToCond s r)
+-- NOTE: don't really need this. since choices are top level
+--       in conditions.
+-- pushSchToCond :: Schema -> VsqlCond -> VsqlCond
+-- pushSchToCond _ cnd@(VsqlCond _) = cnd
+-- pushSchToCond s (VsqlIn a q)     = VsqlIn a (pushSchToQ s q)
+-- pushSchToCond s (VsqlNot c)      = VsqlNot (pushSchToCond s c)
+-- pushSchToCond s (VsqlOr l r) 
+--   = VsqlOr (pushSchToCond s l) (pushSchToCond s r)
+-- pushSchToCond s (VsqlAnd l r) 
+--   = VsqlAnd (pushSchToCond s l) (pushSchToCond s r)
+-- pushSchToCond s (VsqlCChc f l r) 
+--   = VsqlCChc f 
+--              (pushSchToCond (updateFM (F.And f) s) l) 
+--              (pushSchToCond (updateFM (F.And (F.Not f)) s) r)
 
 
 -- | takes a relation and schema and generates
