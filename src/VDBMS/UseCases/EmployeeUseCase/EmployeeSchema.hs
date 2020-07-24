@@ -6,9 +6,12 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import qualified VDBMS.VDB.Name as N 
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
-import VDBMS.UseCases.SmartConstructor
+import VDBMS.QueryLang.RelAlg.Variational.SmartConstructor
 import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Features.Config (Config)
+
+
+-- egemp1 = employeeFeatureModel `And` employeeFeatureModel
 
 -- 
 -- Features
@@ -164,13 +167,13 @@ empacct_v3 =  [ (empno_,   TInt32)
               , (name_,    TString)
               , (hiredate_,TUTCTime)
               , (title_,   TString)
-              , (deptno_,  TInt32)
+              , (deptno_,  TString)
               ]
 
 -- | dept (deptname_, deptno_, managerno_)
 dept_v345 :: [(N.Attribute,SqlType)]
 dept_v345 =   [ (deptname_, TString)
-              , (deptno_,   TInt32)
+              , (deptno_,   TString)
               , (managerno_,TInt32)
               ]
 
@@ -190,7 +193,7 @@ empacct_v4 :: [(N.Attribute,SqlType)]
 empacct_v4 =   [ (empno_,    TInt32)
                , (hiredate_, TUTCTime)
                , (title_,    TString)
-               , (deptno_,   TInt32)
+               , (deptno_,   TString)
                ]
 
 -- | empbio (empno_, sex_, birthdate_, name_)
@@ -215,7 +218,7 @@ empacct_v5 :: [(N.Attribute,SqlType)]
 empacct_v5 =   [ (empno_,     TInt32)
                , (hiredate_,  TUTCTime)
                , (title_,     TString)
-               , (deptno_,    TInt32)
+               , (deptno_,    TString)
                , (salary_,    TInt32)
                ]
 
@@ -267,14 +270,14 @@ empacct_vrelation = [ (Lit True, empno_,    TInt32)
                   , (Lit True, hiredate_, TUTCTime)
                   , (Lit True, title_,    TString)
                   , (empv2, deptname_, TString)
-                  , (empv3 `Or` empv4 `Or` empv5, deptno_,  TInt32)
+                  , (empv3 `Or` empv4 `Or` empv5, deptno_,  TString)
                   , (empv5, salary_,    TInt32)
                   ] 
 job_vrelation = [ (Lit True, title_, TString)
                 , (Lit True, salary_,  TInt32)
                 ] 
 dept_vrelation = [ (Lit True, deptname_, TString)
-                 , (Lit True, deptno_,   TInt32)
+                 , (Lit True, deptno_,   TString)
                  , (Lit True, managerno_,TInt32)
                  ]
  

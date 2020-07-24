@@ -52,7 +52,7 @@ data RTypeError =
   | RQualNotInInfo Qualifier RAttrInformation
   | RAttrQualNotInTypeEnv Attr RTypeEnv
   | RAttrNotInTypeEnv Attribute RTypeEnv
-  | REmptyAttrList Attributes (Rename RAlgebra)
+  | REmptyAttrList Attributes RAlgebra
   | RAmbiguousAttr Attr RTypeEnv
   | RNotUniqueRelAlias RTypeEnv RTypeEnv
   | RInOpMustContainOneClm RTypeEnv
@@ -76,16 +76,23 @@ typeOfRQuery (RSetOp _ l r)   s =
      tr <- typeOfRQuery r s
      sameRType tl tr 
      return tl
-typeOfRQuery (RProj as rq)     s = validSubQ rq >> typeRProj as rq s 
-typeOfRQuery (RSel c rq)       s = 
-  do validSubQ rq
-     t  <- typeOfRQuery (thing rq) s
-     let t' = updateType (name rq) t
-     typeSqlCond c t' s
-     return t'
-typeOfRQuery (RJoin rl rr c)   s = typeJoin rl rr c s 
-typeOfRQuery (RProd rl rr )    s = typeRProd rl rr s
-typeOfRQuery (RTRef rr)        s = typeRRel rr s 
+typeOfRQuery (RProj as q)     s = 
+  -- validSubQ q >> 
+  typeRProj as q s 
+typeOfRQuery (RSel c q)       s = 
+  do 
+     -- validSubQ rq
+     t  <- typeOfRQuery q s
+     -- let t' = updateType (name rq) t
+     typeSqlCond c t s
+     return t
+typeOfRQuery (RJoin l r c)   s = 
+  typeJoin l r c s 
+typeOfRQuery (RProd l r)    s = 
+  typeRProd l r s
+typeOfRQuery (RTRef r)        s = 
+  typeRRel r s 
+typeOfRQuery (RRenameAlg n q)  s = undefined
 typeOfRQuery REmpty            _ = return M.empty
 
 -- | Checks if two type are the same.
@@ -116,14 +123,14 @@ compRTypes tf qf lt rt = SM.keysSet lt == SM.keysSet rt
 
 -- | Determines the type of a relational projection.
 typeRProj :: MonadThrow m 
-          => Attributes -> Rename RAlgebra -> RSchema
+          => Attributes -> RAlgebra -> RSchema
           -> m RTypeEnv
-typeRProj as rq s 
-  | null as = throwM $ REmptyAttrList as rq
-  | otherwise =
-    do t   <- typeOfRQuery (thing rq) s
-       let t'  = updateType (name rq) t 
-       updateAttrs as t'
+typeRProj as q s 
+  | null as = throwM $ REmptyAttrList as q
+  | otherwise = typeOfRQuery q s
+    -- do t   <- typeOfRQuery q s
+       -- let t'  = updateType (name rq) t 
+       -- updateAttrs as t
 
 -- | Checks if a subquery is valid within a selection or projection.
 --   Assumption: optimization has already been done. so we don't have 
@@ -146,22 +153,22 @@ updateType a t = maybe t (\n -> SM.map (appName n) t) a
     updateQual q (RAttrInfo at _) = RAttrInfo at q
 
 -- | Projects one attribute from a type.
-projAtt :: MonadThrow m => Attr -> RTypeEnv -> m RTypeEnv
-projAtt a t = 
-  do i <- nonAmbiguousAttr a t
-     return $ SM.singleton (attribute a) (pure i)
+-- projAtt :: MonadThrow m => Attr -> RTypeEnv -> m RTypeEnv
+-- projAtt a t = undefined
+--   -- do i <- nonAmbiguousAttr a t
+--   --    return $ SM.singleton (attribute a) (pure i)
 
--- | Update the attribute names to their new name if available.
-updateAttrs :: MonadThrow m => Attributes -> RTypeEnv -> m RTypeEnv
-updateAttrs as t = 
-  do ts <- mapM (flip updateAtt t) as
-     return $ SM.unionsWith (++) ts
+-- -- | Update the attribute names to their new name if available.
+-- updateAttrs :: MonadThrow m => Attributes -> RTypeEnv -> m RTypeEnv
+-- updateAttrs as t = undefined
+--   -- do ts <- mapM (flip updateAtt t) as
+--   --    return $ SM.unionsWith (++) ts
 
 -- | Gives a type env of only the given attribute.
-updateAtt :: MonadThrow m => Rename Attr -> RTypeEnv -> m RTypeEnv
-updateAtt ra t =
-  do tOfa <- projAtt (thing ra) t 
-     return $ maybe tOfa (\n -> SM.mapKeys (\_ -> Attribute n) tOfa) (name ra)
+-- updateAtt :: MonadThrow m => Rename Attr -> RTypeEnv -> m RTypeEnv
+-- updateAtt ra t =
+--   do tOfa <- projAtt (thing ra) t 
+--      return $ maybe tOfa (\n -> SM.mapKeys (\_ -> Attribute n) tOfa) (name ra)
 
 -- | checks if an attribute used in conditions etc is ambiguous or not
 --   wrt the type env.
@@ -282,20 +289,20 @@ typeComp a@(Att l) a'@(Att r) t =
 
 -- | Gives the type of rename joins.
 typeJoin :: MonadThrow m 
-         => Rename RAlgebra -> Rename RAlgebra -> RCondition -> RSchema
+         => RAlgebra -> RAlgebra -> RCondition -> RSchema
          -> m RTypeEnv
-typeJoin rl rr c s = 
-  do t <- typeRProd rl rr s 
+typeJoin l r c s = 
+  do t <- typeRProd l r s 
      typeRCondition c t 
      return t 
 
 -- | Gives the type of cross producting multiple rename relations.
 typeRProd :: MonadThrow m 
-          => Rename RAlgebra -> Rename RAlgebra -> RSchema
+          => RAlgebra -> RAlgebra -> RSchema
           -> m RTypeEnv
-typeRProd rl rr s = 
-  do tl <- typeOfRQuery (thing rl) s
-     tr <- typeOfRQuery (thing rr) s
+typeRProd l r s = 
+  do tl <- typeOfRQuery l s
+     tr <- typeOfRQuery r s
      uniqueRelAlias tl tr
      return $ prodRTypes (pure tl ++ pure tr)
 
@@ -328,25 +335,25 @@ uniqueRelAlias lt rt
 
 -- | Returns the type of a rename relation.
 typeRRel :: MonadThrow m 
-          => Rename Relation -> RSchema
+          => Relation -> RSchema
           -> m RTypeEnv
-typeRRel rr s = 
-  do r <- rlookupRelation (thing rr) s
-     return $ SM.map (sqlType2RAttrInfo rr) r 
+typeRRel r s = 
+  do rel <- rlookupRelation r s
+     return $ SM.map (sqlType2RAttrInfo r) rel
 
 -- | Generates a relational attr info from a rename relation and sql type.
 --   If a name alias exists for the relation it considers it as the new 
 --   name for the sql type, otherwise it attaches the relation name itself
 --   to the sqltype.
-sqlType2RAttrInfo :: Rename Relation -> SqlType -> RAttrInformation
+sqlType2RAttrInfo :: Relation -> SqlType -> RAttrInformation
 sqlType2RAttrInfo rel at = pure $ 
-  RAttrInfo at 
-          $ maybe (RelQualifier (Relation relName))
-                  (\n -> RelQualifier (Relation n)) 
-                  newName
-  where 
-    relName = relationName $ thing rel 
-    newName = name rel 
+  RAttrInfo at (RelQualifier rel)
+  --         $ maybe (RelQualifier (Relation relName))
+  --                 (\n -> RelQualifier (Relation n)) 
+  --                 newName
+  -- where 
+  --   relName = relationName $ thing rel 
+  --   newName = name rel 
   
 
 

@@ -9,7 +9,7 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 -- import Data.Map (Map)
 import qualified Data.Map.Strict as Map
-import Data.ByteString.Char8 as BC (pack)
+import qualified Data.ByteString.Char8 as BC (pack)
 import Data.Convertible.Base
 import Data.SBV 
 
@@ -22,6 +22,11 @@ import VDBMS.Features.FeatureExpr.Types
 import VDBMS.Features.FeatureExpr.Core
 import VDBMS.Features.FeatureExpr.Parser
 import VDBMS.Features.SAT
+
+import Data.Generics.Uniplate.Direct
+import Data.Generics.Str
+
+
 
 -- | Pretty print a feature expression.
 prettyFeatureExpr :: FeatureExpr -> String
@@ -89,6 +94,13 @@ leFexp _           (And _ _)   = False
 leFexp (Or l r)    (Or l' r')  = leFexp l l' && leFexp r r'
 leFexp _ _ = False
 
+-- | The uniplate function for FeatureExpr.
+fexpUni :: FeatureExpr -> (Str FeatureExpr, Str FeatureExpr -> FeatureExpr)
+fexpUni (Lit b)   = (Zero, \Zero -> Lit b)
+fexpUni (Ref f)   = (Zero, \Zero -> Ref f)
+fexpUni (Not e)   = (One e, \(One e) -> Not e)
+fexpUni (And l r) = (Two (One l) (One r), \(Two (One l) (One r)) -> And l r)
+fexpUni (Or l r)  = (Two (One l) (One r), \(Two (One l) (One r)) -> Or l r)
 
 instance Boolean FeatureExpr where
   true  = Lit True
@@ -125,6 +137,16 @@ sqlval2fexp = fromSql
 
 fexp2sqlval :: FeatureExpr -> SqlValue
 fexp2sqlval = toSql
+
+instance Uniplate FeatureExpr where
+  uniplate = fexpUni
+
+instance Biplate FeatureExpr FeatureExpr where
+  biplate = plateSelf
+
+-- 
+-- 
+-- 
 
 
 

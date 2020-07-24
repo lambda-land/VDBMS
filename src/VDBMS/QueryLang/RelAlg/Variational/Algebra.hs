@@ -9,13 +9,16 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , module VDBMS.QueryLang.RelAlg.Variational.Condition 
         , attrOfOptAttr
         , attrName
-        , attrAlias
+        -- , attrAlias
         , vsqlCondEq
-        , configureAlgebra_
+        -- , configureAlgebra_ 
         , pushFexp2OptAtts
         , disjFexpOptAttr
         , qualOfOptAttr
         , conjFexpOptAttr
+        , numUniqueVariantQ
+        , numVariantQ
+        -- , optAlgebra
         
 
 ) where
@@ -147,7 +150,8 @@ instance Boolean VsqlCond where
   (|||) = VsqlOr
 
 -- | Optional attribute.
-type OptAttribute = Opt (Rename Attr)
+-- type OptAttribute = Opt (Rename Attr)
+type OptAttribute = Opt Attr
 
 -- | conjuncts a feature expr with attribute's pc.
 conjFexpOptAttr :: F.FeatureExpr -> OptAttribute -> OptAttribute
@@ -159,19 +163,19 @@ disjFexpOptAttr f = applyFuncFexp (F.Or f)
 
 -- | Gets the original attribute out of optattr.
 attrOfOptAttr :: OptAttribute -> Attribute 
-attrOfOptAttr = attribute . thing . getObj
+attrOfOptAttr = attribute . getObj
 
 -- | Gets the attribute name out of optattr.
 attrName :: OptAttribute -> String
 attrName = attributeName . attrOfOptAttr
 
 -- | Alias of optattr.
-attrAlias :: OptAttribute -> Alias
-attrAlias = name . getObj 
+-- attrAlias :: OptAttribute -> Alias
+-- attrAlias = name . getObj 
 
 -- | opt attr qualifier. 
 qualOfOptAttr :: OptAttribute -> Maybe Qualifier 
-qualOfOptAttr = qualifier . thing . getObj
+qualOfOptAttr = qualifier . getObj
 
 -- | Optional attributes.
 type OptAttributes = [OptAttribute]
@@ -183,19 +187,20 @@ pushFexp2OptAtts f = map (conjFexpOptAttr f)
 -- | More expressive variational relational algebra.
 data Algebra
    = SetOp SetOp Algebra Algebra
-   | Proj  OptAttributes (Rename Algebra)
-   | Sel   VsqlCond (Rename Algebra)
+   | Proj  OptAttributes Algebra
+   | Sel   VsqlCond Algebra
    | AChc  F.FeatureExpr Algebra Algebra
-   | Join  (Rename Algebra) (Rename Algebra) Condition
-   | Prod  (Rename Algebra) (Rename Algebra)
-   | TRef  (Rename Relation)
+   | Join  Algebra Algebra Condition
+   | Prod  Algebra Algebra
+   | TRef  Relation
+   | RenameAlg Name Algebra
    | Empty 
   deriving (Data,Eq,Show,Typeable)
 
 -- | Optionalizes a rename algebra.
 --   Helper for optAlgebra.
-optRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
-optRename r = mapSnd (Rename (name r)) $ optionalize_ (thing r)
+-- optRename :: Rename Algebra -> [Opt (Rename RAlgebra)]
+-- optRename r = mapSnd (Rename (name r)) $ optionalize_ (thing r)
 
 -- | Configures an algebra.
 configureAlgebra :: Config Bool -> Algebra -> RAlgebra
@@ -203,78 +208,93 @@ configureAlgebra c (SetOp o l r)
   = RSetOp o (configureAlgebra c l) (configureAlgebra c r)
 configureAlgebra c (Proj as q)     
   | confedAtts == [] = REmpty
-  | otherwise        = RProj confedAtts (renameMap (configureAlgebra c) q)
+  | otherwise        = RProj confedAtts (configureAlgebra c q)
     where
       confedAtts = configureOptList c as 
 configureAlgebra c (Sel cond q)     
-  = RSel (configure c cond) (renameMap (configureAlgebra c) q) 
+  = RSel (configure c cond) (configureAlgebra c q) 
 configureAlgebra c (AChc f l r) 
   | F.evalFeatureExpr c f   = configureAlgebra c l
   | otherwise               = configureAlgebra c r
 configureAlgebra c (Join l r cond) 
-  = RJoin (renameMap (configureAlgebra c) l)
-        (renameMap (configureAlgebra c) r)
-        (configure c cond)
-configureAlgebra c (Prod l r)       
-  = RProd (renameMap (configureAlgebra c) l) 
-          (renameMap (configureAlgebra c) r)
+  = RJoin (configureAlgebra c l)
+          (configureAlgebra c r)
+          (configure c cond)
+configureAlgebra c (Prod l r) 
+  = RProd (configureAlgebra c l) 
+          (configureAlgebra c r)
 configureAlgebra _ (TRef r)        = RTRef r 
+configureAlgebra c (RenameAlg n q) = RRenameAlg n (configureAlgebra c q)
 configureAlgebra _ Empty           = REmpty
 
+-- | returns the number of variants of configuring a v-query.
+--   Note that it excludes REmpty queries.
+numVariantQ :: Algebra -> [Config Bool] -> Int
+numVariantQ q cs = length $ filter (\rq -> rq /= REmpty) $ 
+  map ((flip configureAlgebra) q) cs
+
 -- | configure a query wrt the schema.
-configureAlgebra_ :: Config Bool -> Schema -> Algebra -> RAlgebra
-configureAlgebra_ c s (SetOp o l r) 
-  = RSetOp o (configureAlgebra_ c s l) (configureAlgebra_ c s r)
-configureAlgebra_ c s (Proj as rq) 
-  | confedAtts == [] = REmpty
-  | otherwise        = RProj confedAtts (renameMap (configureAlgebra_ c s) rq)
-    where
-      confedAtts = configureOptList c as 
-configureAlgebra_ c s (Sel cond rq) 
-  = RSel (configure c cond) (renameMap (configureAlgebra_ c s) rq) 
-configureAlgebra_ c s (AChc f l r) 
-  | F.evalFeatureExpr c f   = configureAlgebra_ c s l
-  | otherwise               = configureAlgebra_ c s r
-configureAlgebra_ c s (Join rl rr cond) 
-  = RJoin (renameMap (configureAlgebra_ c s) rl)
-          (renameMap (configureAlgebra_ c s) rr)
-          (configure c cond)
-configureAlgebra_ c s (Prod rl rr) 
-  = RProd (renameMap (configureAlgebra_ c s) rl) 
-          (renameMap (configureAlgebra_ c s) rr)
-configureAlgebra_ c s (TRef r) 
-  | check = RTRef r
-  | otherwise = RProj (fmap (\a -> Rename Nothing (Attr a Nothing)) ras) 
-                      (Rename Nothing (RTRef r))
-    where
-      check = Set.fromList vas == Set.fromList ras
-      vas = maybe [] id (lookupRelAttsList (thing r) s)
-      ras = maybe [] id (rlookupAttsList (thing r) confedsch)
-      confedsch = configure c s 
-configureAlgebra_ _ _ Empty = REmpty
+-- configureAlgebra_ :: Config Bool -> Schema -> Algebra -> RAlgebra
+-- configureAlgebra_ c s (SetOp o l r) 
+--   = RSetOp o (configureAlgebra_ c s l) (configureAlgebra_ c s r)
+-- configureAlgebra_ c s (Proj as rq) 
+--   | confedAtts == [] = REmpty
+--   | otherwise        = RProj confedAtts (renameMap (configureAlgebra_ c s) rq)
+--     where
+--       confedAtts = configureOptList c as 
+-- configureAlgebra_ c s (Sel cond rq) 
+--   = RSel (configure c cond) (renameMap (configureAlgebra_ c s) rq) 
+-- configureAlgebra_ c s (AChc f l r) 
+--   | F.evalFeatureExpr c f   = configureAlgebra_ c s l
+--   | otherwise               = configureAlgebra_ c s r
+-- configureAlgebra_ c s (Join rl rr cond) 
+--   = RJoin (renameMap (configureAlgebra_ c s) rl)
+--           (renameMap (configureAlgebra_ c s) rr)
+--           (configure c cond)
+-- configureAlgebra_ c s (Prod rl rr) 
+--   = RProd (renameMap (configureAlgebra_ c s) rl) 
+--           (renameMap (configureAlgebra_ c s) rr)
+-- configureAlgebra_ c s (TRef r) 
+--   | check = RTRef r
+--   | otherwise = RProj (fmap (\a -> Rename Nothing (Attr a Nothing)) ras) 
+--                       (Rename Nothing (RTRef r))
+--     where
+--       check = Set.fromList vas == Set.fromList ras
+--       vas = maybe [] id (lookupRelAttsList (thing r) s)
+--       ras = maybe [] id (rlookupAttsList (thing r) confedsch)
+--       confedsch = configure c s 
+-- configureAlgebra_ _ _ Empty = REmpty
 
 -- | Optionalizes an algebra.
 --   Note that optionalization doesn't consider schema at all. it just
 --   optionalizes a query. So it doesn't group queries based on the 
 --   presence condition of attributes or relations.
+-- TODO doesn't seem to be working correctly.
 optAlgebra :: Algebra -> [VariantGroup Algebra]
 optAlgebra (SetOp s q1 q2) = 
   combOpts F.And (RSetOp s) (optAlgebra q1) (optAlgebra q2)
-optAlgebra (Proj as q)     = combOpts F.And RProj (groupOpts as) (optRename q)
+optAlgebra (Proj as q)     = 
+  combOpts F.And RProj (groupOpts as) (optAlgebra q)
 optAlgebra (Sel c q)       = 
-  combOpts F.And RSel (optionalize_ c) (optRename q) 
-optAlgebra (AChc f q1 q2)  = mapFst (F.And f) (optAlgebra q1) ++
-                             mapFst (F.And (F.Not f)) (optAlgebra q2)
+  combOpts F.And RSel (optionalize_ c) (optAlgebra q) 
+optAlgebra (AChc f q1 q2)  = 
+  mapFst (F.And f) (optAlgebra q1) ++
+  mapFst (F.And (F.Not f)) (optAlgebra q2)
 optAlgebra (Join l r c)    = 
   combOpts F.And constRJoin (combRenameAlgs l r) (optionalize_ c)
     where 
-      combRenameAlgs rl rr = combOpts F.And (,) (optRename rl) (optRename rr)
-      constRJoin (rq1,rq2) cond = RJoin rq1 rq2 cond
+      combRenameAlgs l r = combOpts F.And (,) (optAlgebra l) (optAlgebra r)
+      constRJoin (q1,q2) cond = RJoin q1 q2 cond
 optAlgebra (Prod l r)      = 
-  combOpts F.And RProd (optRename l) (optRename r)
+  combOpts F.And RProd (optAlgebra l) (optAlgebra r)
 optAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
+optAlgebra (RenameAlg n q) = mapSnd (RRenameAlg n) (optAlgebra q)
 optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
 
+-- | returns the number of unique variants of v-query.
+--   Note that it excludes REmpty queries.
+numUniqueVariantQ :: Algebra -> Int 
+numUniqueVariantQ q = length $ filter (\(_,rq) -> rq /= REmpty) $ optAlgebra q
 
 instance Variational Algebra where
 

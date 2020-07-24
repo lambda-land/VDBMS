@@ -43,11 +43,21 @@ dependencies:
 - convertible
 - bytestring
 - directory
-- clock
 # - haskelldb >= 2.2.5 
 - pretty
 - exceptions
 - parser-combinators
+- async == 2.2.2
+- timeit == 2.0
+- clock
+- formatting >= 6.3.7
+- uniplate >= 1.6.12
+# - boolsimplifier >= 0.1.8
+# - logic-classes 
+# - PropLogic
+# - applicative-extras
+# - set-extra
+# - atp-haskell
 # - lens
 # - syb #scrap your boilerplate
 #- template-haskell
@@ -105,3 +115,30 @@ tests:
     - tasty-smallcheck
     - tasty-hunit
     - QuickCheck
+
+benchmarks:
+  employee:
+    main:     Main.hs 
+    source-dirs:
+      - bench/Employee
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+      - -Wall
+    dependencies:
+      - vdbms
+      - criterion
+
+  enron:
+    main:     Main.hs 
+    source-dirs:
+      - bench/EnronEmail
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+      - -Wall
+    dependencies:
+      - vdbms
+      - criterion

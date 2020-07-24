@@ -11,7 +11,7 @@ import Data.Convertible (safeConvert)
 import Data.Maybe (fromJust, isNothing)
 
 import VDBMS.VDB.Name (attributeName, Attr(..), qualName)
-import VDBMS.DBMS.Value.Value ()
+import VDBMS.DBMS.Value.Value 
 
 
 import Database.HDBC (SqlValue)

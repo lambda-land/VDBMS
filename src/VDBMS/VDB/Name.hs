@@ -55,11 +55,13 @@ data Attr = Attr {
   deriving (Data,Eq,Ord,Read,Show,Typeable)
 
 -- | Attributes that can be projected in queries.
-type Attributes = [Rename Attr]
+-- type Attributes = [Rename Attr]
+type Attributes = [Attr]
 
 -- | Gets a set of attributes.
 attsSet :: Attributes -> Set Attribute
-attsSet = Set.fromList . fmap (attribute . thing) 
+-- attsSet = Set.fromList . fmap (attribute . thing) 
+attsSet = Set.fromList . fmap attribute 
 
 -- | Possible names used for aliasing.
 type Alias = Maybe Name

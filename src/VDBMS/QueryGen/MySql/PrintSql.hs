@@ -36,15 +36,16 @@ ppSql (SqlBin o l r)
       prettyOp SqlUnion    = "UNION"
       prettyOp SqlUnionAll = "UNION ALL"
       prettyOp SqlDiff     = "EXCEPT"
-ppSql (SqlTRef r) 
-  = text "SELECT *"
-    $$ text "FROM"
-    <+> text (relationName r)
+ppSql (SqlTRef r) -- should never get here!!
+  = error "SHOULD NEVER HAVE SQLTREF RELATION!!!! IN PRINTING SQL!!!"
+    -- text "SELECT *"
+    -- $$ text "FROM"
+    -- <+> text (relationName r)
 ppSql SqlEmpty = text "SELECT NULL"
 
 -- | prints sql attribute expressions.
 ppAtts :: SqlAttrExpr -> Doc
-ppAtts SqlAllAtt = text "*"
+-- ppAtts SqlAllAtt = text "*"
 ppAtts (SqlAttr ra) 
   | isNothing n && isNothing q = a
   | isNothing n && isJust q    

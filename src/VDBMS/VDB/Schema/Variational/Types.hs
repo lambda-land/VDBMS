@@ -14,6 +14,7 @@ module VDBMS.VDB.Schema.Variational.Types (
         , tableSchAtts
         , schConfs
         , schemaRels
+        , updateFM
 
 ) where
 
@@ -47,6 +48,10 @@ type TableSchema = Opt RowType
 --   each row type are optionally included. The top-level 'Opt' corresponds to
 --   the feature model, which defines the set of valid configurations.
 type Schema = (([Feature], [Config Bool]), Opt (Map Relation TableSchema))
+
+-- | updates schema's pc.
+updateFM :: (FeatureExpr -> FeatureExpr) -> Schema -> Schema
+updateFM f ((fs, cs), m) = ((fs,cs), applyFuncFexp f m)
 
 -- | Configures a variational schema and returns an empty 
 --   map if the configuration isn't valid.

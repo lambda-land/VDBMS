@@ -23,6 +23,12 @@ flags: {}
 extra-deps: [
   HDBC-sqlite3-2.3.3.1,
              HDBC-postgresql-2.3.2.6
+             # boolsimplifier-0.1.8
+             # logic-classes-1.7.1,
+             # PropLogic-0.9.0.4,
+             # applicative-extras-0.1.8,
+             # set-extra-1.4.1,
+             # atp-haskell-1.14
              # ,HDBC-mysql-0.7.1.0]
             ]
 

@@ -24,9 +24,26 @@ import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 -- import VDBMS.Features.Config (Config)
 import VDBMS.QueryGen.Sql.GenSqlSameSch (optRAQs2Sql)
+import VDBMS.Approaches.Timing (timeItName)
+import VDBMS.QueryLang.RelAlg.Relational.Optimization (appOpt_)
 
--- import Control.Arrow (first, second, (***))
+import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
+
+import System.TimeIt
+import System.Clock
+import Formatting
+import Formatting.Clock
+
+-- Clock data type
+-- Monotonic: a monotonic but not-absolute time which never changes after start-up.
+-- Realtime: an absolute Epoch-based time (which is the system clock and can change).
+-- ProcessCPUTime: CPU time taken by the process.
+-- ThreadCPUTime: CPU time taken by the thread.
+
+-- |
+runQ3_ :: Database conn => conn -> Algebra -> IO ()
+runQ3_ conn vq = runQ3 conn vq >> return ()
 
 -- |
 runQ3 :: Database conn => conn -> Algebra -> IO Table
@@ -36,7 +53,8 @@ runQ3 conn vq =
          features = dbFeatures conn
          configs = getAllConfig conn
          pc = presCond conn
-     vq_type <- typeOfQuery vq vsch_pc vsch
+     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     start_constQ <- getTime Monotonic
      let 
          -- type_pc = typePC vq_type
          type_sch = typeEnv2tableSch vq_type
@@ -45,7 +63,13 @@ runQ3 conn vq =
          vq_constrained_opt = appMin vq_constrained vsch_pc vsch
          -- try removing opt
          ra_qs = optionalize_ vq_constrained_opt
-         sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
-     sqlTab <- fetchQRows conn sql
-     return $ mkVTable type_sch sqlTab
+         -- the following line are for optimizing the generated RA queries
+         ras_opt = map (second appOpt_) ra_qs
+         -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
+         sql = ppSqlString $ optRAQs2Sql type_as pc ras_opt
+     end_constQ <- getTime Monotonic
+     fprint (timeSpecs % "\n") start_constQ end_constQ
+     sqlTab <- timeItName "running query" Monotonic $ fetchQRows conn sql
+     timeItName "make vtable" Monotonic $ return 
+       $ mkVTable type_sch sqlTab
 

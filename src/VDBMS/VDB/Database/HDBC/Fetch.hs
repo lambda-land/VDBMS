@@ -22,6 +22,8 @@ import Database.HDBC
 fetch :: IConnection conn => conn -> Query -> IO SqlTable
 fetch c q = 
   do s <- prepare c q
+     -- _ <- execute s []
+     _ <- executeRaw s 
      fetchAllRowsMap s 
      
 
@@ -29,5 +31,7 @@ fetch c q =
 fetch' :: IConnection conn => conn -> Query -> IO SqlTable
 fetch' c q = 
   do s <- prepare c q
+     -- _ <- execute s []
+     _ <- executeRaw s 
      fetchAllRowsMap' s
 

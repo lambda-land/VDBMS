@@ -45,7 +45,7 @@ genCTE = updateCTE . initCTE
 initCTE :: SqlSelect -> SqlTempRes
 initCTE q@(SqlSelect _ _ _) = SqlCTE M.empty q
 initCTE q@(SqlBin _ _ _)    = SqlCTE M.empty q
-initCTE q@(SqlTRef _)       = SqlCTE M.empty q
+-- initCTE q@(SqlTRef _)       = SqlCTE M.empty q -- should never get to this!!
 initCTE SqlEmpty            = SqlCTE M.empty SqlEmpty 
 
 -- | updates a sql temp res one relation at the time.
@@ -66,7 +66,7 @@ updateCTE (SqlCTE cls (SqlBin o q1 q2))
         do cte1 <- updateCTE (SqlCTE cls q1)
            cte2 <- updateCTE (SqlCTE (closure cte1) q2)
            return $ SqlCTE (closure cte2) (SqlBin o (query cte1) (query cte2))
-updateCTE cte@(SqlCTE _ (SqlTRef _)) = return cte
+-- updateCTE cte@(SqlCTE _ (SqlTRef _)) = return cte -- should never get here!!
 updateCTE cte@(SqlCTE _ SqlEmpty) = return cte 
 -- updateCTE cte = 
 --   let cls = closure cte in 
@@ -164,8 +164,18 @@ updateJoinRel = undefined
 
 
 
+data Condd = Blah
 
+data Stmt = While Condd Stmt (Maybe Stmt)
+          | If Condd Stmt [(Condd,Stmt)] (Maybe Stmt)
 
+c1, c2 :: Condd
+c1 = undefined
+c2 = undefined
+s1,s2 :: Stmt
+s1 = undefined
+s2 = undefined
+ex = While c1 s1 (Just (If c2 s2 [] Nothing))
 
 
 
