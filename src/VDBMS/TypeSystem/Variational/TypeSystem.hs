@@ -311,7 +311,9 @@ typeOfQuery (Sel c q)        ctx s = typeSel c q ctx s
 typeOfQuery (AChc f l r)     ctx s = 
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
-     return $ unionTypes tl tr
+     appCtxtToEnv (F.Or (F.And (getFexp tl) f) 
+                        (F.And (getFexp tr) (F.Not f)))
+      $ unionTypes (applyFuncFexp (F.And f) tl) (applyFuncFexp (F.And (F.Not f)) tr)
 typeOfQuery (Join l r c)    ctx s = typeJoin l r c ctx s 
 typeOfQuery (Prod l r)      ctx s = typeProd l r ctx s 
 typeOfQuery (TRef r)        ctx s = typeRel r ctx s 
@@ -319,7 +321,7 @@ typeOfQuery (RenameAlg n q) ctx s =
   typeOfQuery q ctx s
   >>= return . updateType n 
 typeOfQuery Empty           ctx _ = 
-  appCtxtToEnv ctx (mkOpt (F.Lit True) SM.empty)
+  appCtxtToEnv ctx (mkOpt (F.Lit False) SM.empty)
 
 -- | Determines the type a set operation query.
 typeSetOp :: MonadThrow m 
