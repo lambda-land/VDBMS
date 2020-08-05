@@ -109,13 +109,13 @@ getRels s = Set.filter (flip validRel $ s) rels
 
 -- | propagates the table pres cond to its attributes.
 propagateFexpToTsch :: TableSchema -> TableSchema 
-propagateFexpToTsch t = mkOpt (shrinkFeatureExpr tf) $ shrinkFexRowType $ appFexpRowType tf t
+propagateFexpToTsch t = mkOpt (shrinkFExp tf) $ shrinkFexRowType $ appFexpRowType tf t
   where
     tf = getFexp t
 
 -- | shrinks the feature expression of all attributes in a row type
 shrinkFexRowType :: RowType -> RowType
-shrinkFexRowType = M.map (\(f,t) -> (shrinkFeatureExpr f,t))
+shrinkFexRowType = M.map (\(f,t) -> (shrinkFExp f,t))
 
 ------------- constructing table schema (opt rowtype) ----------
 

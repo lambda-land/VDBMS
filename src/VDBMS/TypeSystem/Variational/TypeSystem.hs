@@ -97,7 +97,8 @@ typeEnve2OptAtts env = concatMap attrTrans (M.toList (getObj env))
     envPC = typePC env
     attrTrans :: (Attribute, AttrInformation) -> OptAttributes
     attrTrans (a, ais) = map (\ai -> mkOpt 
-      (F.And envPC (attrFexp ai)) 
+      -- (F.shrinkFExpWRTfm $ F.And envPC (attrFexp ai)) 
+      (attrFexp ai)
       (Attr a (Just $ attrQual ai))) ais 
 
 -- | returns the attributes of type env. 
@@ -283,8 +284,8 @@ simplType :: MonadThrow m => Algebra -> Schema -> m TypeEnv
 simplType q s = 
   do t <- runTypeQuery q s
      let shrinkType :: TypeEnv -> TypeEnv
-         shrinkType env = applyFuncFexp F.shrinkFeatureExpr 
-           $ applyFuncObj (SM.map (applyFuncToAttFexp F.shrinkFeatureExpr)) env 
+         shrinkType env = applyFuncFexp F.shrinkFExpWRTfm
+           $ applyFuncObj (SM.map (applyFuncToAttFexp F.shrinkFExpWRTfm)) env 
      return $ shrinkType t
 
 -- |checks if a query is type correct or not. 
@@ -471,7 +472,7 @@ projOptAtt oa t =
 projOptAttrs :: MonadThrow m => OptAttributes -> TypeEnv -> m TypeEnv
 projOptAttrs oras t = 
   do ts <- mapM (flip projOptAtt t) oras
-     return $ mkOpt (F.shrinkFeatureExpr $ F.disjFexp $ fmap getFexp ts)
+     return $ mkOpt (F.disjFexp $ fmap getFexp ts)
                     (SM.unionsWith (++) $ fmap getObj ts)
 
 -- | Type of a selection query.
@@ -827,7 +828,7 @@ tableSch2TypeEnv r tsch s =
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
 appCtxtToEnv ctx t 
-    | satisfiable f = appCtxtToTypeMap f (getObj t) >>= return . updateFexp (F.shrinkFeatureExpr f) 
+    | satisfiable f = appCtxtToTypeMap f (getObj t) >>= return . updateFexp (F.shrinkFExpWRTfm f) 
     | otherwise = throwM $ CtxUnsatOverEnv ctx t
   where 
     f = F.And ctx $ getFexp t

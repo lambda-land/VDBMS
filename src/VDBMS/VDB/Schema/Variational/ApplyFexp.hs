@@ -17,7 +17,7 @@ import VDBMS.Features.SAT (satisfiable)
 import Control.Monad.Catch (throwM, MonadThrow)
 
 -- | applying a feature expression to table schema and 
---   and dropping the attributes that shouldn't be present anymore.
+--   dropping the attributes that shouldn't be present anymore.
 --   i.e. their pres cond is unsatisfiable.
 appFexpTableSch :: MonadThrow m => FeatureExpr -> TableSchema -> m TableSchema
 appFexpTableSch f t
@@ -25,7 +25,7 @@ appFexpTableSch f t
     | otherwise = throwM $ InconsistentFexpWithTableSch f t
     -- error $ "applying the fexp " ++ show f ++ "to table schema results in an invalid table schema!!"
   where 
-    f' = shrinkFeatureExpr (And f $ getFexp t)
+    f' = shrinkFExpWRTfm (And f $ getFexp t)
 
 -- | applies a feature expression to a table schema and returns a row type.
 --   note that it doesn't apply the fexp to the attributes.

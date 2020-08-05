@@ -17,7 +17,7 @@ import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
 import VDBMS.Variational.Opt (mapFst, getFexp, getObj, applyFuncFexp)
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import VDBMS.TypeSystem.Variational.TypeSystem (simplType, typeOfQuery, typeEnve2OptAtts)
+import VDBMS.TypeSystem.Variational.TypeSystem (simplType, typeOfQuery, typeEnve2OptAtts, runTypeQuery)
 
 -- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -41,7 +41,7 @@ pushSchToQ :: Schema -> Algebra -> Algebra
 pushSchToQ s (SetOp o l r) 
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
 pushSchToQ s (Proj as q) 
-  = Proj (mapFst F.shrinkFeatureExpr $ intersectOptAtts as' as) subq 
+  = Proj (mapFst F.shrinkFExp $ intersectOptAtts as' as) subq 
   -- Proj (intersectOptAtts as' as) subq 
     where subq = pushSchToQ s q
           as' = typeEnve2OptAtts $ 
@@ -73,7 +73,6 @@ pushSchToQ _ Empty = Empty
 --   the same name. 
 --   Note it needs to look into the first list completely
 --                  subsumes      -> isSubsumed    -> intersection
--- TODO: to be tested and debugged!!
 intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
 intersectOptAtts big small = map (restrictOptAtt big) small
   where
