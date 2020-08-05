@@ -72,6 +72,15 @@ shrinkFExp = transform simpl
     simpl (Or _ (Lit True)) = Lit True
     simpl (Or (Lit False) e) = e 
     simpl (Or e (Lit False)) = e
+    -- demorgan's law (l ∨ r) ∧ rr ≡ rr
+    simpl e@(And (Or l r) rr)
+      | rr == l = rr
+      | r == rr = rr
+      | otherwise = e
+    simpl e@(And ll (Or l r))
+      | ll == l = ll
+      | ll == r = ll
+      | otherwise = e 
     simpl (And (And l1 l2) r) = And l1 (And l2 r)
     -- simpl (And (And l1 l2) (And r1 r2))= And l1 (And l2 (And r1 r2))
     simpl (And l (And r1 r2))
@@ -85,16 +94,6 @@ shrinkFExp = transform simpl
     simpl (Or l r)
       | l == r = l 
       | otherwise = Or l r
-    -- demorgan's law (l ∨ r) ∧ rr ≡ rr
-    -- the following two aren't working!!
-    -- simpl e@(And (Or l r) rr)
-    --   | rr == l = rr
-    --   | r == rr = rr
-    --   | otherwise = e
-    -- simpl e@(And ll (Or l r))
-    --   | ll == l = ll
-    --   | ll == r = ll
-    --   | otherwise = e 
     -- simpl e@()
     simpl e = e
  
