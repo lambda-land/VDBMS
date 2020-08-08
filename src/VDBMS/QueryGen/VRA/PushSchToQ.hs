@@ -57,9 +57,11 @@ pushSchToQ s (Join l r c)
   = Join (pushSchToQ s l) (pushSchToQ s r) c
 pushSchToQ s (Prod l r) 
   = Prod (pushSchToQ s l) (pushSchToQ s r)
-pushSchToQ s q@(TRef r) = Proj as q
-  where as = typeEnve2OptAtts $ fromJust $ simplType q s
+pushSchToQ s q@(TRef r) = AChc rpc (Proj as q) Empty -- TODO: TEST again!
+  where 
+    as = typeEnve2OptAtts $ fromJust $ simplType q s
   --                                     $ runTypeQuery subq s
+    rpc = fromJust $ lookupRelationFexp r s
 pushSchToQ s (RenameAlg n q) = RenameAlg n (pushSchToQ s q)
 pushSchToQ _ Empty = Empty
 

@@ -66,5 +66,5 @@ qelleven = choice
   (project (pure $ trueAttr aone_) (tRef rone))
   (project (pure $ trueAttr aone_) (tRef rsix))
 
--- 
+-- π (a1) (f2 ⟨π (a1) r1, π (a1) r6 ⟩)
 qtwelve = project (pure $ trueAttr aone_) qelleven

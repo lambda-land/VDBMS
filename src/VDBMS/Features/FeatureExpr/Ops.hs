@@ -51,6 +51,7 @@ selectFeatureExpr f b e = shrinkFExp (select e)
 -- l ∧ (l ∧ r) ≡ l ∧ r
 -- l ∧ l ≡ l
 -- l ∨ l ≡ l
+-- (l ∨ r) ∧ rr ≡ rr
 -- 
 -- To test it on generated fexps try:
 -- simplType empVQ1 empVSchema
@@ -72,7 +73,6 @@ shrinkFExp = transform simpl
     simpl (Or _ (Lit True)) = Lit True
     simpl (Or (Lit False) e) = e 
     simpl (Or e (Lit False)) = e
-    -- demorgan's law (l ∨ r) ∧ rr ≡ rr
     simpl e@(And (Or l r) rr)
       | rr == l = rr
       | r == rr = rr
