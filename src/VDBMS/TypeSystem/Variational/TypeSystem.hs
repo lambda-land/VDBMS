@@ -97,7 +97,8 @@ typeEnve2OptAtts env = concatMap attrTrans (M.toList (getObj env))
     envPC = typePC env
     attrTrans :: (Attribute, AttrInformation) -> OptAttributes
     attrTrans (a, ais) = map (\ai -> mkOpt 
-      (F.And envPC (attrFexp ai)) 
+      -- (F.shrinkFExpWRTfm $ F.And envPC (attrFexp ai)) 
+      (attrFexp ai)
       (Attr a (Just $ attrQual ai))) ais 
 
 -- | returns the attributes of type env. 
@@ -121,7 +122,7 @@ data TypeError
   | MissingAlias (Rename Algebra)
   | NotEquiveEnv TypeEnv TypeEnv
   | CompInvalid Atom Atom TypeEnv
-  | EmptyAttrList OptAttributes Algebra
+  | EmptyAttrListInCtx OptAttributes VariationalContext Algebra
   | TypeEnvNotDisjoint TypeEnv TypeEnv
   | UnsatFexAppliedToTypeMap F.FeatureExpr TypeMap
   | EnvsMapNotEqDueToQualMismatch Attribute Qualifier Qualifier
@@ -283,8 +284,8 @@ simplType :: MonadThrow m => Algebra -> Schema -> m TypeEnv
 simplType q s = 
   do t <- runTypeQuery q s
      let shrinkType :: TypeEnv -> TypeEnv
-         shrinkType env = applyFuncFexp F.shrinkFeatureExpr 
-           $ applyFuncObj (SM.map (applyFuncToAttFexp F.shrinkFeatureExpr)) env 
+         shrinkType env = applyFuncFexp F.shrinkFExpWRTfm
+           $ applyFuncObj (SM.map (applyFuncToAttFexp F.shrinkFExpWRTfm)) env 
      return $ shrinkType t
 
 -- |checks if a query is type correct or not. 
@@ -302,7 +303,7 @@ typeOfQuery :: MonadThrow m
              => Algebra -> VariationalContext -> Schema 
              -> m TypeEnv
 typeOfQuery (SetOp _ l r)    ctx s = typeSetOp l r ctx s 
-typeOfQuery (Proj oas q)     ctx s = typeProj oas q ctx s
+typeOfQuery (Proj oas q)     ctx s = typeProj oas q ctx s -- TODO: TEST again!
 typeOfQuery (Sel c q)        ctx s = typeSel c q ctx s
 -- note that achc doesn't need to app ctxt to type because
 -- it's been applied already in tl and tr and the new pc is
@@ -311,7 +312,10 @@ typeOfQuery (Sel c q)        ctx s = typeSel c q ctx s
 typeOfQuery (AChc f l r)     ctx s = 
   do tl <- typeOfQuery l (F.And ctx f) s 
      tr <- typeOfQuery r (F.And ctx (F.Not f)) s 
-     return $ unionTypes tl tr
+     appCtxtToEnv (F.Or (F.And (getFexp tl) f) 
+                        (F.And (getFexp tr) (F.Not f)))
+      $ unionTypes tl tr -- TODO: TEST again!
+      -- $ unionTypes (applyFuncFexp (F.And f) tl) (applyFuncFexp (F.And (F.Not f)) tr)
 typeOfQuery (Join l r c)    ctx s = typeJoin l r c ctx s 
 typeOfQuery (Prod l r)      ctx s = typeProd l r ctx s 
 typeOfQuery (TRef r)        ctx s = typeRel r ctx s 
@@ -319,7 +323,7 @@ typeOfQuery (RenameAlg n q) ctx s =
   typeOfQuery q ctx s
   >>= return . updateType n 
 typeOfQuery Empty           ctx _ = 
-  appCtxtToEnv ctx (mkOpt (F.Lit True) SM.empty)
+  appCtxtToEnv ctx (mkOpt (F.Lit False) SM.empty)
 
 -- | Determines the type a set operation query.
 typeSetOp :: MonadThrow m 
@@ -405,15 +409,18 @@ compTypes_ ff tf qf lt rt = SM.keysSet lObj == SM.keysSet rObj
                 | li <- lis, ri <- ris, q (attrQual li) (attrQual ri) ]
 
 -- | Type of a projection query.
+-- TODO: test with the new null check.
 typeProj :: MonadThrow m 
          => OptAttributes -> Algebra -> VariationalContext -> Schema 
          -> m TypeEnv
 typeProj oas q ctx s 
-  | null oas = throwM $ EmptyAttrList oas q 
-  | otherwise = 
-    do t <- typeOfQuery q ctx s 
-       t' <- projOptAttrs oas t 
-       appCtxtToEnv ctx t' 
+  | null oas' = throwM $ EmptyAttrListInCtx oas ctx q 
+  | otherwise = do t <- typeOfQuery q ctx s 
+                   t' <- projOptAttrs oas t 
+                   appCtxtToEnv ctx t' 
+    where 
+      oas' = filter (satisfiable . getFexp) $ pushFexp2OptAtts ctx oas
+
 
 -- | Checks if an attribute (possibly with its qualifier) exists in a type env.
 -- note that it's checking subsumption too.
@@ -469,7 +476,7 @@ projOptAtt oa t =
 projOptAttrs :: MonadThrow m => OptAttributes -> TypeEnv -> m TypeEnv
 projOptAttrs oras t = 
   do ts <- mapM (flip projOptAtt t) oras
-     return $ mkOpt (F.shrinkFeatureExpr $ F.disjFexp $ fmap getFexp ts)
+     return $ mkOpt (F.disjFexp $ fmap getFexp ts)
                     (SM.unionsWith (++) $ fmap getObj ts)
 
 -- | Type of a selection query.
@@ -825,7 +832,7 @@ tableSch2TypeEnv r tsch s =
 -- | Applies a variational ctxt to a type.
 appCtxtToEnv :: MonadThrow m => VariationalContext -> TypeEnv -> m TypeEnv
 appCtxtToEnv ctx t 
-    | satisfiable f = appCtxtToTypeMap f (getObj t) >>= return . updateFexp (F.shrinkFeatureExpr f) 
+    | satisfiable f = appCtxtToTypeMap f (getObj t) >>= return . updateFexp (F.shrinkFExpWRTfm f) 
     | otherwise = throwM $ CtxUnsatOverEnv ctx t
   where 
     f = F.And ctx $ getFexp t

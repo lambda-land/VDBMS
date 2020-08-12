@@ -3,7 +3,8 @@ module VDBMS.Features.FeatureExpr.Ops (
 
         tautImplyFexps,
         selectFeatureExpr,
-        shrinkFeatureExpr,
+        shrinkFExp,
+        shrinkFExpWRTfm,
         satAnds
 
 ) where
@@ -27,7 +28,7 @@ satAnds l r = satisfiable (And l r)
 
 -- | Select a feature within a feature expressions, potentially simplifying it.
 selectFeatureExpr :: Feature -> Bool -> FeatureExpr -> FeatureExpr
-selectFeatureExpr f b e = shrinkFeatureExpr (select e)
+selectFeatureExpr f b e = shrinkFExp (select e)
   where
     select fe@(Lit _)  = fe
     select fe@(Ref f')
@@ -50,12 +51,17 @@ selectFeatureExpr f b e = shrinkFeatureExpr (select e)
 -- l ∧ (l ∧ r) ≡ l ∧ r
 -- l ∧ l ≡ l
 -- l ∨ l ≡ l
+-- (l ∨ r) ∧ rr ≡ rr
 -- 
 -- To test it on generated fexps try:
 -- simplType empVQ1 empVSchema
 -- 
-shrinkFeatureExpr :: FeatureExpr -> FeatureExpr
-shrinkFeatureExpr = factorOutFM . transform simpl
+shrinkFExpWRTfm :: FeatureExpr -> FeatureExpr
+shrinkFExpWRTfm = factorOutFM . shrinkFExp
+
+-- |
+shrinkFExp :: FeatureExpr -> FeatureExpr
+shrinkFExp = transform simpl
   where 
     simpl (Not (Lit True)) = Lit False
     simpl (Not (Lit False)) = Lit True
@@ -67,6 +73,14 @@ shrinkFeatureExpr = factorOutFM . transform simpl
     simpl (Or _ (Lit True)) = Lit True
     simpl (Or (Lit False) e) = e 
     simpl (Or e (Lit False)) = e
+    simpl e@(And (Or l r) rr)
+      | rr == l = rr
+      | r == rr = rr
+      | otherwise = e
+    simpl e@(And ll (Or l r))
+      | ll == l = ll
+      | ll == r = ll
+      | otherwise = e 
     simpl (And (And l1 l2) r) = And l1 (And l2 r)
     -- simpl (And (And l1 l2) (And r1 r2))= And l1 (And l2 (And r1 r2))
     simpl (And l (And r1 r2))
@@ -80,6 +94,7 @@ shrinkFeatureExpr = factorOutFM . transform simpl
     simpl (Or l r)
       | l == r = l 
       | otherwise = Or l r
+    -- simpl e@()
     simpl e = e
  
 -- | factors out the feature model from the conjunctions 

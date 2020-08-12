@@ -66,7 +66,7 @@ disjoinDuplicate p t = destVTuples p shrinkedFexpRes
     mapFst' g (a,b) = (g a,b)
     resTs = map (mapFst' disjFexp) groupedFexpTs
     dropFalseRowsRes = filter (satisfiable . fst) resTs
-    shrinkedFexpRes = map (mapFst' shrinkFeatureExpr) dropFalseRowsRes
+    shrinkedFexpRes = map (mapFst' shrinkFExp) dropFalseRowsRes
 
 
 -- | constructs a list of fexp for the group of vtuples
