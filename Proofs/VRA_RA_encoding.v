@@ -2,31 +2,35 @@
 Set Warnings "-notation-overridden,-parsing".
 Import Init.Datatypes.
 Import Coq.Init.Nat.
-Require Import Maps.
+(*Require Import Maps.*)
 Require Export List.
 (*Require Export Arith.
 Require Export String.*)
 Require Export Logic.
+Require Import Coq.Strings.String.
+Require Import Coq.Lists.ListSet.
+Require Import Coq.Structures.OrderedTypeEx.
+Require Import Coq.FSets.FSetAVL.
+Require Import Coq.Sorting.Sorted.
+Import Coq.Lists.List.ListNotations.
+
 
 Load Feature.
 Import Feature.
 
 Module VRA_RA_encoding.
 
+Module SSet := FSetAVL.Make String_as_OT.
 
-(** nat ascii comparison*)
+Definition v : Type := SSet.t.
 
-Lemma nat_of_ascii_injective:
-  forall c1 c2, Ascii.nat_of_ascii c1 = Ascii.nat_of_ascii c2 -> c1 = c2.
-Proof.
-  intros; simpl.
-  assert (Ascii.ascii_of_nat (Ascii.nat_of_ascii c1) =
-          Ascii.ascii_of_nat (Ascii.nat_of_ascii c2))
-      as Hinvol. auto.
-  repeat rewrite Ascii.ascii_nat_embedding in Hinvol.
-  trivial.
-Qed.
+Check LocallySorted.
 
+Check String_as_OT.compare.
+
+Locate string_dec.
+
+Definition s1 : list string := nil. 
 
 (** -------------------------------------------------------------
   Attribute: Type and Comparison Function, Lemmas
@@ -39,136 +43,21 @@ Inductive comp : Type :=
 
 (* Variational Attribute *)
 Definition vatt : Type := (att * fexp)%type. (*assuming always annotated; could've used option*)
+Locate eqb.
+Definition vfeqb (v v' : vatt) := String.eqb (fst v) (fst v').
+
+Definition veqb (v v' : vatt) := String.eqb (fst v) (fst v') && eqb (snd v) (snd v').
+(*Definition e : fexp := litB true.
+
+Definition s : string := "ba".
+Definition s' : string := "ab". 
+Compute (veqb (s, e) (s, e)).*)
+
+Locate eqb_string.
 
 (** Attribute (string-)comparison function and associated lemmas *)
-Fixpoint string_comp (s1 s2: att): comp :=
-   match s1, s2 with
- | EmptyString, EmptyString => EQc
- | String c1 s1', String c2 s2' => 
-             match (compare (Ascii.nat_of_ascii c1) (Ascii.nat_of_ascii c2)) with
-             | Eq => string_comp s1' s2'
-             | Lt => LTc
-             | Gt => GTc
-             end
- | EmptyString,_ => LTc
- | _, EmptyString => GTc
- end.
 
-Lemma string_compEq_refl: forall s, string_comp s s = EQc.
-Proof. intros. induction s. - reflexivity. 
-       - simpl. induction (Ascii.nat_of_ascii a). simpl. assumption. simpl.
-         assumption.
-Qed.
-         
-Lemma string_compEq_eq : forall a a0, string_comp a a0 = EQc <-> a = a0.
-Proof. 
-     split. 
-     - intros. generalize dependent a0.
-       induction a as [|c a].
-       + destruct a0 as [|c0 a0]. 
-         ++ simpl. reflexivity.
-         ++ intro. discriminate H.
-       + destruct a0 as [|c0 a0].
-         ++ intro. discriminate H.
-         ++ intro. simpl in H. 
-            destruct (Ascii.nat_of_ascii c ?= Ascii.nat_of_ascii c0) eqn: C.
-            +++ apply nat_compare_eq in C. apply nat_of_ascii_injective in C.
-                apply IHa in H. rewrite C, H. reflexivity.
-            +++ discriminate H. +++ discriminate H.
-     - intros. destruct a as [|c a].
-       + intros. destruct a0 as [|c0 a0]. 
-         ++ simpl. reflexivity. 
-         ++ discriminate H. 
-       + intros. destruct a0 as [|c0 a0]. 
-         ++ discriminate H. 
-         ++ inversion H. rewrite string_compEq_refl. reflexivity.
-Qed.
-
-Lemma string_comp_eqc_symm : forall a a0, string_comp a a0 = EQc
-    -> string_comp a0 a = EQc.
-Proof. intros. apply string_compEq_eq in H.  symmetry in H. rewrite string_compEq_eq.
-       assumption. 
-Qed.
-
-Lemma string_comp_lt_trans : forall a a1 a2, 
-      (string_comp a1 a = EQc \/ string_comp a1 a = LTc)
-      /\ string_comp a a2 = LTc -> string_comp a1 a2 = LTc.
-Proof. intros. destruct H as [H1 H2].
-       destruct H1 as [H1 | H1].
-       - destruct a as [|b]; try (destruct a1 as [|b1]);  
-         try (destruct a1 as [|b1]); try (discriminate H2);
-         try (discriminate H1); try (assumption); try (discriminate H1).
-         + rewrite string_compEq_eq in H1.
-           rewrite <- H1 in H2. assumption.
-       - generalize dependent a2. generalize dependent a1. induction a as [|b];
-         destruct a1 as [|b1]; destruct a2 as [|b2]; intros; try (discriminate H2);
-         try (discriminate H1); try (assumption); try (reflexivity).
-         + simpl in H1, H2. simpl. 
-           destruct (Ascii.nat_of_ascii b1 ?= Ascii.nat_of_ascii b) eqn: b1b.
-           ++ destruct (Ascii.nat_of_ascii b ?= Ascii.nat_of_ascii b2) eqn: bb2.
-              +++ apply nat_compare_eq in b1b. apply nat_compare_eq in bb2.
-                  eapply Nat.eq_trans in b1b. apply b1b in bb2.
-                  rewrite bb2.
-                  rewrite Nat.compare_refl.
-                  apply IHa. assumption. assumption.
-              +++ apply nat_compare_eq in b1b. 
-                  apply nat_of_ascii_injective in b1b.
-                  apply nat_compare_lt in bb2.
-                  rewrite <- b1b in bb2. 
-                  rewrite nat_compare_lt in bb2. rewrite bb2.
-                  reflexivity.
-              +++ discriminate H2.
-           ++ destruct (Ascii.nat_of_ascii b ?= Ascii.nat_of_ascii b2) eqn: bb2.
-              +++ apply nat_compare_eq in bb2. 
-                 apply nat_of_ascii_injective in bb2.
-                 apply nat_compare_lt in b1b.
-                 rewrite bb2 in b1b. 
-                 rewrite nat_compare_lt in b1b. rewrite b1b.
-                 reflexivity.
-              +++ apply nat_compare_lt in bb2.
-                 apply nat_compare_lt in b1b. 
-                 eapply Nat.lt_trans in bb2. 
-                 rewrite nat_compare_lt in bb2.
-                 rewrite bb2. reflexivity. assumption.
-              +++ discriminate H2.
-           ++ destruct (Ascii.nat_of_ascii b ?= Ascii.nat_of_ascii b2) eqn: bb2.
-              +++ discriminate H1.
-              +++ discriminate H1.
-              +++ discriminate H2. 
-Qed.
-
-Lemma string_comp_lt_gt: forall a a0, string_comp a a0 = LTc
-    <-> string_comp a0 a = GTc.
-Proof. intros. split. 
-       - intros. generalize dependent a. induction a0 as [| b0]. 
-         + intros. destruct a as [|b]; simpl in H; discriminate H. 
-         + intros. destruct a as [|b]. ++ simpl. reflexivity.
-           ++ simpl.
-            destruct (Ascii.nat_of_ascii b ?= Ascii.nat_of_ascii b0) eqn: anat.
-            +++ simpl in H. rewrite anat in H. apply nat_compare_eq in anat. 
-             rewrite anat. rewrite Nat.compare_refl.
-             apply IHa0 in H.  assumption.
-             +++ apply nat_compare_lt in anat.
-                 apply nat_compare_gt in anat.  
-                 rewrite anat. 
-                 reflexivity. 
-             +++ simpl in H. 
-                 rewrite anat in H. discriminate H. 
-      - intros. generalize dependent a. induction a0 as [| b0]. 
-         + intros. destruct a as [|b]; simpl in H; discriminate H. 
-         + intros. destruct a as [|b]. ++ simpl. reflexivity.
-           ++ simpl.
-            destruct (Ascii.nat_of_ascii b0 ?= Ascii.nat_of_ascii b) eqn: anat.
-            +++ simpl in H. rewrite anat in H. apply nat_compare_eq in anat. 
-             rewrite anat.
-             rewrite Nat.compare_refl. apply IHa0 in H.  assumption.
-             +++ simpl in H. 
-                 rewrite anat in H. discriminate H. 
-             +++ apply nat_compare_gt in anat.
-                 apply nat_compare_lt in anat.  
-                 rewrite anat. 
-                 reflexivity.
-Qed. 
+(* String_as_OT.compare *)
 
 (** -----------------------att vatt-------------------------- **)
 
@@ -180,40 +69,20 @@ Qed.
 (* Plain Attribute List *)
 Definition atts : Type := list att.
 
-(** Properties *)
-(* List of attributes are Locally sorted (see A2) *)
-Inductive LocallySortedAtts : list att -> Prop :=
-  | LSorted_nil : LocallySortedAtts []
-  | LSorted_cons1 a : LocallySortedAtts [a]
-  | LSorted_consn a b l :
-      LocallySortedAtts (b :: l) -> string_comp a b = LTc
-       -> LocallySortedAtts (a :: b :: l).
-
-(* List of attributes are set (non-dup)*)
-Inductive NoDup {A: Type}: list A -> Prop :=
- | NoDup_nil : NoDup nil
- | NoDup_cons : forall x l, ~ In x l -> NoDup l -> NoDup (x::l).
-
-(** Assumption *)
-Definition assumption_atts (a:atts): Prop:= 
-forall (a:atts), LocallySortedAtts a /\ NoDup a.
 (*------------------------------------------------------------------------*)
 
 (* Variational Attribute List *)
 Definition vatts : Type := list vatt.
 
-(** Properties *)
-(* List of variational attributes are Locally sorted *)
-Inductive LocallySortedVAtts : list vatt -> Prop :=
-  | LSorted_nil_v : LocallySortedVAtts []
-  | LSorted_cons1_v a : LocallySortedVAtts [a]
-  | LSorted_consn_v a b l :
-      LocallySortedVAtts (b :: l) ->  string_comp (fst a) (fst b) = LTc
-       -> LocallySortedVAtts (a :: b :: l).
-
-(** Assumption*)
-Lemma assumption_vatts : forall (v:vatts), (LocallySortedVAtts v)  /\ (NoDup v).
-Proof. Admitted.
+Fixpoint findIfExists (a : att) (v:vatts) : option fexp := 
+   match v with
+   | []           => None
+   | (x, e) :: xs => 
+       match (String.eqb a x) with
+       | true  => Some e
+       | false => findIfExists a xs
+       end
+   end.
 (*---------------------------------------------------------------------------*)
 
 (* Configuration Variational Attribute List(Set) A[]c (see A3)*)
@@ -343,7 +212,7 @@ Definition configVQtype (vqt : vqtype) (c : config) : qtype :=
       end.
 
 Lemma configVQtype_nil: forall e c, (configVQtype ([], e) c) = [].
-Proof. intros. simpl. destruct (E[[ e]] c); reflexivity. Qed.
+Proof. intros e c. simpl. destruct (E[[ e]] c); reflexivity. Qed.
 (** ---------------------qtype vqtype---------------------- **)
 
 
@@ -362,7 +231,7 @@ Fixpoint sublist (X X': list string): bool :=
              end
     | cons x xs => match X' with 
                    | nil => false
-                   | cons x' xs' => if eqb_string x x' then sublist xs xs'
+                   | cons x' xs' => if String.eqb x x' then sublist xs xs'
                                          else sublist (x::xs) xs'
                    end
     end.
@@ -389,7 +258,7 @@ Fixpoint equiv_qtype_bool (A A': qtype) : bool :=
              end
     | cons x xs => match A' with 
                    | nil => false
-                   | cons x' xs' => eqb_string x x' && equiv_qtype_bool xs xs'
+                   | cons x' xs' => String.eqb x x' && equiv_qtype_bool xs xs'
                    end
     end.
 
@@ -404,7 +273,7 @@ Lemma equiv_qtype_bool_refl: forall A, equiv_qtype_bool A A = true.
 Proof.
   intros. induction A. 
   + reflexivity. 
-  + simpl. rewrite <- eqb_string_refl. simpl. apply IHA.
+  + simpl. rewrite String.eqb_refl. simpl. apply IHA.
 Qed.
 
 (*---------------------------equiv-----------------------------*)
@@ -453,75 +322,98 @@ Qed.
   Set Operation for Attribute List(Set) & Query type(annotated attr list)
   Union Intersection
 ---------------------------------------------------------------*)
-
-(* see A4. Ackermann Function *)
-
 (** Union *)
 (* Plain Attr List *)
-Fixpoint atts_union (A A': atts) : atts :=
-  let fix merge_aux_atts A' :=
-  match A, A' with
-  | [], _ => A'
-  | _, [] => A
-  |  a ::xs,  a' ::xs' =>
-      match (string_comp a a') with
-          | EQc => a :: (atts_union xs xs')
-          | LTc => a :: (atts_union xs A')
-          | GTc => a':: merge_aux_atts xs' 
-      end
-  end
-  in merge_aux_atts A'.
+Fixpoint atts_union_c (A A': atts) : atts :=
+  match A with
+  | []      => []
+  | a :: xs =>
+     match (existsb (String.eqb a) A') with
+        | true  => a :: (atts_union_c xs A')
+        | false => (atts_union_c xs A')
+     end
+  end.
+
+Fixpoint vatts_union_c (A A': vatts) : vatts :=
+  match A with
+  | []           => []
+  | (a, e) :: xs =>
+     match (findIfExists a A') with
+        | Some e'  => (a, e \/(F) e') :: (vatts_union_c xs A')
+        | None => (vatts_union_c xs A')
+     end
+  end.
+
+
+(*Fixpoint union_l {X:Type} (eq:X->X->bool) (A A': list X) : list X :=
+  match A with
+  | []           => []
+  | x :: xs =>
+     match (existsb (eq x) A') with
+        | true  => (union_l eq xs A')
+        | false =>  x :: (union_l eq xs A')
+     end
+  end. *)
+
+Fixpoint atts_union_l (A A': atts) : atts :=
+  match A with
+  | []           => []
+  | x :: xs =>
+     match (existsb (String.eqb x) A') with
+        | true  => (atts_union_l xs A')
+        | false =>  x :: (atts_union_l xs A')
+     end
+  end. 
+
+Fixpoint vatts_union_l (A A': vatts) : vatts :=
+  match A with
+  | []           => []
+  | (a, e) :: xs =>
+     match (findIfExists a A') with
+        | Some _  => (vatts_union_l xs A')
+        | None    =>  (a, e) :: (vatts_union_l xs A')
+     end
+  end. 
+
+(* Plain Attr List *)
+Definition atts_union (A A': atts) : atts := 
+    atts_union_c A  A' ++
+    atts_union_l A  A' ++
+    atts_union_l A' A.
 
 (* Variational Attr List *)
-Fixpoint vatts_union (A A': vatts) : vatts :=
-  let fix merge_aux_vatts A' :=
-  match A, A' with
-  | [], _ => A'
-  | _, [] => A
-  | (a, e) ::xs,  (a', e') ::xs' =>
-      match (string_comp a a') with
-          | EQc => (a, e \/(F) e') :: (vatts_union xs xs')
-          | LTc => (a, e) :: (vatts_union xs A')
-          | GTc => (a', e') :: merge_aux_vatts xs'
-      end
-  end
-  in merge_aux_vatts A'.
+Definition vatts_union (A A': vatts) : vatts := 
+    vatts_union_c A  A' ++
+    vatts_union_l A  A' ++
+    vatts_union_l A' A.
+
 
 (* Variational Query Type*)
 Definition vqtype_union (Q Q': vqtype) : vatts := 
      vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')).
 (*------------------------------------------------------------------------------*)
-
 (** Intersection *)
 (* Plain Attr List *)
 Fixpoint atts_inter (A A': atts) : atts :=
-  let fix merge_aux_attsi A' :=
-  match A, A' with
-  | [], _ => []
-  | _, [] => []
-  |  a ::xs,  a' ::xs' =>
-      match (string_comp a a') with
-          | EQc => a :: (atts_inter xs xs')
-          | LTc =>      (atts_inter xs A')
-          | GTc =>       merge_aux_attsi xs' 
-      end
-  end
-  in merge_aux_attsi A'.
+  match A with
+  | []      => []
+  | a :: xs =>
+     match (existsb (String.eqb a) A') with
+        | true  => a :: (atts_inter xs A')
+        | false => (atts_inter xs A')
+     end
+  end.
 
 (* Variational Attr List *)
 Fixpoint vatts_inter (A A': vatts) : vatts :=
-  let fix merge_aux_vattsi A' :=
-  match A, A' with
-  | [], _ => []
-  | _, [] => []
-  | (a, e) ::xs,  (a', e') ::xs' =>
-      match (string_comp a a') with
-          | EQc => (a, e /\(F) e') :: (vatts_inter xs xs')
-          | LTc =>                    (vatts_inter xs A')
-          | GTc =>                     merge_aux_vattsi xs'
-      end
-  end
-  in merge_aux_vattsi A'.
+  match A with
+  | []           => []
+  | (a, e) :: xs =>
+     match (findIfExists a A') with
+        | Some e'  => (a, e /\(F) e') :: (vatts_inter xs A')
+        | None => (vatts_inter xs A')
+     end
+  end.
 
 (* Variational Query Type*)
 Definition vqtype_inter (Q Q': vqtype) : vatts := 
@@ -534,81 +426,107 @@ Definition is_disjoint_bool (A A': atts) : bool :=
   | _  => false
   end.
 (*-------------------------------------------------------------------------------*)
+(** Remove *)
+(* Plain Attr List *)
+(*Fixpoint atts_remove (a : att) (A : atts) : atts :=
+    match A with
+      | [] => []
+      | x::xs => 
+         match (String.eqb a x) with
+        | true  => (atts_remove a xs)
+        | false => a :: (atts_remove x xs)
+        end
+    end. 
 
+Fixpoint vatts_remove (a : vatt) (A : vatts) : vatts :=
+    match A with
+      | [] => []
+      | x::xs => 
+         match (veqb a x) with
+        | true  => (vatts_remove a xs)
+        | false => a :: (vatts_remove x xs)
+        end
+    end. 
+*)
+
+Fixpoint remove {X:Type} (f:X->X->bool) (a : X) (A : list X) : list X :=
+    match A with
+      | [] => []
+      | x::xs => 
+         match (f a x) with
+        | true  => (remove f a xs)
+        | false => a :: (remove f x xs)
+        end
+    end. 
+    
+(*-------------------------------------------------------------------------------*)
 (** lemmas to expand second recursive function used for ackermann *)
 (* better name *)
-Lemma ackerman_resolve_vatts_inter: forall (v v': vatt) (xs xs': vatts),
- (string_comp (fst v) (fst v')) = GTc ->
-   vatts_inter (v ::xs)  (v' ::xs') = vatts_inter (v ::xs) xs'.
-Proof. intros. simpl. destruct v. destruct v'. simpl in H. 
-       rewrite H. reflexivity. 
-Qed.
 
-Lemma ackerman_resolve_atts_inter: forall (a a':att) (xs xs':atts),
- (string_comp a a') = GTc ->
-   atts_inter (a ::xs)  (a' ::xs') = atts_inter (a ::xs) xs'.
-Proof. intros. simpl. rewrite H. reflexivity. Qed.
-
-
-Lemma ackerman_resolve_vatts_union: forall (v v': vatt) (xs xs': vatts),
- (string_comp (fst v) (fst v')) = GTc ->
-   vatts_union (v ::xs)  (v' ::xs') = v' :: vatts_union (v ::xs) xs'.
-Proof. intros. simpl. destruct v. destruct v'. simpl in H. 
-       rewrite H. reflexivity. 
-Qed.
-
-Lemma ackerman_resolve_atts_union: forall (a a':att) (xs xs':atts),
- (string_comp a a') = GTc ->
-   atts_union (a ::xs)  (a' ::xs') = a' :: atts_union (a ::xs) xs'.
-Proof. intros. simpl. rewrite H. reflexivity. Qed.
-(*---------------------------------------------------------------*)
+(*-------------------------------------------------------------------------------*)
 
 (** lemmas for set OP with identity and union commutivity *)
+(*Lemma union_l_nil_r: forall X f (A: list X), union_l f A [] = A.
+Proof. intros X f A. induction A as [|a A IHA]. auto. 
+simpl. rewrite IHA. reflexivity. Qed. *)
+
+Lemma atts_union_c_nil_r: forall A, atts_union_c A [] = [].
+Proof. intro A. induction A; auto. Qed.
+
+Lemma atts_union_l_nil_r: forall (A: atts), atts_union_l A [] = A.
+Proof. intro A. induction A as [|a A IHA]. auto. 
+simpl. rewrite IHA. reflexivity. Qed.
 
 Lemma atts_union_nil_r: forall A, atts_union A [] = A.
-Proof. intros. destruct A; reflexivity. Qed.
+Proof. intros. unfold atts_union. 
+rewrite atts_union_c_nil_r. rewrite atts_union_l_nil_r. simpl. 
+rewrite app_nil_r. reflexivity. Qed.
 
 Lemma atts_union_nil_l: forall A, atts_union [] A = A.
-Proof. intros. simpl. destruct A; reflexivity. Qed.
+Proof. intros. unfold atts_union. simpl. 
+rewrite atts_union_l_nil_r. reflexivity. Qed.
 
 Lemma atts_inter_nil_r: forall A, atts_inter A [] = [].
-Proof. intros. destruct A; reflexivity. Qed.
+Proof. intro A. induction A. auto. simpl. assumption. Qed.
 
 Lemma atts_inter_nil_l: forall A, atts_inter [] A = [].
-Proof. intros. simpl. destruct A; reflexivity. Qed.
+Proof. auto. Qed.
+
+Lemma vatts_union_c_nil_r: forall A, vatts_union_c A [] = [].
+Proof. intro A. induction A as [|a A IHA]; 
+try (destruct a as (a,e)); try(auto). Qed.
+
+Lemma vatts_union_l_nil_r: forall (A: vatts), vatts_union_l A [] = A.
+Proof. intro A. induction A as [|a A IHA]. auto. 
+destruct a as (a,e). simpl. rewrite IHA. reflexivity. Qed.
 
 Lemma vatts_union_nil_r : forall A, vatts_union A [] = A.
-Proof. intros. simpl. destruct A. reflexivity. simpl. 
-       destruct v. reflexivity. Qed.
+Proof. intros. unfold vatts_union. 
+rewrite vatts_union_c_nil_r. rewrite vatts_union_l_nil_r. simpl. 
+rewrite app_nil_r. reflexivity. Qed.
 
 Lemma vatts_union_nil_l : forall A, vatts_union [] A = A.
-Proof. intros. destruct A. reflexivity. destruct v. reflexivity. Qed.
+Proof. intros. unfold vatts_union. simpl. 
+rewrite vatts_union_l_nil_r. reflexivity. Qed.
 
 Lemma vatts_inter_nil_r : forall A, vatts_inter A [] = [].
-Proof. intros. simpl. destruct A. reflexivity. simpl. 
-       destruct v. reflexivity. Qed.
+Proof. intro A. induction A as [|(a, e)]. reflexivity. simpl. 
+       assumption. Qed.
 
 Lemma vatts_inter_nil_l : forall A, vatts_inter [] A = [].
-Proof. intros. destruct A. reflexivity. destruct v. reflexivity. Qed.
+Proof. auto. Qed.
 
-Lemma atts_union_comm: forall A A', 
+
+(* atts_union_comm is not commutative anymore*)
+
+(*Lemma atts_union_comm: forall A A', 
    atts_union A A' = atts_union A' A.
-Proof. intros. generalize dependent A'. induction A.
-       + destruct A'. 
-         ++ reflexivity.
-         ++ simpl. reflexivity.
-       + induction A'. ++ reflexivity.
-         ++  destruct (string_comp a a0) eqn: SC.
-             +++ simpl. rewrite SC. apply string_comp_eqc_symm in SC. rewrite SC.
-                  rewrite IHA. rewrite string_compEq_eq in SC. rewrite SC. reflexivity.
-             +++ unfold atts_union at 1; fold atts_union. rewrite SC.
-                 apply string_comp_lt_gt in SC. rewrite ackerman_resolve_atts_union. 
-                 rewrite IHA. reflexivity. assumption.
-             +++ rewrite ackerman_resolve_atts_union. 
-                 apply string_comp_lt_gt in SC as SC_rev. 
-                 unfold atts_union at 2; fold atts_union. rewrite SC_rev. 
-                 rewrite IHA'. reflexivity. assumption.
-Qed.
+Proof. intros A A'. destruct A.
+       + rewrite atts_union_nil_r. 
+         rewrite atts_union_nil_l.
+         reflexivity.
+       + unfold atts_union. 
+Qed.*)
 
 (*--------------------Set Operation End ---------------------------*)
 

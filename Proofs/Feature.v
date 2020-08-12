@@ -40,7 +40,30 @@ Fixpoint semE (e : fexp) (c : config) : bool :=
   | e1 /\(F) e2 => (semE e1 c) && (semE e2 c)
   end.
 
-Notation "E[[ e ]] c" := (semE e c) (at level 99, left associativity).
+Notation "E[[ e ]] c" := (semE e c) (at level 90, left associativity).
+
+(** Feature Expression Equality *)
+Fixpoint eqb (e1 e2: fexp) : bool :=
+  match e1, e2 with
+  | litB b, litB c => Bool.eqb b c 
+  | litF f, litF g => String.eqb f g
+  | ~(F) e1', ~(F) e2' => eqb e1' e2'
+  | e1' \/(F) e1'', e2' \/(F) e2'' => eqb e1' e2' && eqb e1'' e2''
+  | e1' /\(F) e1'', e2' /\(F) e2'' => eqb e1' e2' && eqb e1'' e2''
+  | _, _ => false
+  end.
+
+Notation "=?" := eqb (at level 95) : type_scope.
+
+Lemma eqb_refl: forall e, eqb e e = true.
+Proof. intro e. induction e. 
+       - simpl. destruct b; reflexivity.
+       - simpl. induction f as [| a f IHf]. reflexivity. simpl.
+         rewrite Ascii.eqb_refl. apply IHf.
+       - simpl. assumption.
+       - simpl. rewrite IHe1, IHe2. reflexivity.
+       - simpl. rewrite IHe1, IHe2. reflexivity.
+Qed.
 
 (** Feature Expression Equivalemce *)
 Definition equivE : relation fexp :=
