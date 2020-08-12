@@ -21,6 +21,9 @@ import VDBMS.Features.SAT (equivalent)
 
 import Prelude hiding (Ordering(..))
 
+import Data.Generics.Uniplate.Direct
+import Data.Generics.Str
+
 -- | Variational relational conditions.
 data Condition 
    = Lit  Bool
@@ -125,4 +128,32 @@ instance Boolean Condition where
   bnot  = Not
   (&&&) = And
   (|||) = Or
+
+
+-- | Uniplate of condition.
+condUni :: Condition -> (Str Condition, Str Condition -> Condition)
+condUni (Lit b)      = plate Lit |- b 
+condUni (Comp o l r) = plate Comp |- o |- l |- r
+condUni (Not c)      = plate Not |* c
+condUni (Or l r)     = plate Or |* l |* r 
+condUni (And l r)    = plate And |* l |* r
+condUni (CChc f l r) = plate CChc |- f |* l |* r
+
+-- | Biplate of condition to fexp.
+condFexpBi :: Condition -> (Str F.FeatureExpr, Str F.FeatureExpr -> Condition)
+condFexpBi (Lit b)      = plate Lit |- b 
+condFexpBi (Comp o l r) = plate Comp |- o |- l |- r
+condFexpBi (Not c)      = plate Not |+ c
+condFexpBi (Or l r)     = plate Or |+ l |+ r 
+condFexpBi (And l r)    = plate And |+ l |+ r
+condFexpBi (CChc f l r) = plate CChc |* f |+ l |+ r
+
+instance Uniplate Condition where
+  uniplate = condUni
+
+instance Biplate Condition Condition where
+  biplate = plateSelf
+
+instance Biplate Condition F.FeatureExpr where
+  biplate = condFexpBi
 

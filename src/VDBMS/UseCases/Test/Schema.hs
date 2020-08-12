@@ -175,6 +175,7 @@ schemaMap = fromList [(rone, rsone), (rtwo, rstwo), (rthree, rsthree)
 
 sone, stwo, sthree, sone', stwo', sthree' :: Schema
 sone = ((fs, cs), mkOpt fmone schemaMap)
+sonefeone = updateFM (And feone) sone
 stwo = ((fs, cs), mkOpt fmtwo schemaMap)
 sthree = ((fs, cs), mkOpt fmthree schemaMap)
 sone' = ((fs, tail cs), mkOpt fmone schemaMap)

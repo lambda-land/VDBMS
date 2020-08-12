@@ -57,7 +57,7 @@ pushSchToQ s (Join l r c)
   = Join (pushSchToQ s l) (pushSchToQ s r) c
 pushSchToQ s (Prod l r) 
   = Prod (pushSchToQ s l) (pushSchToQ s r)
-pushSchToQ s q@(TRef r) = AChc rpc (Proj as q) Empty -- TODO: TEST again!
+pushSchToQ s q@(TRef r) = AChc (F.shrinkFExp rpc) (Proj as q) Empty 
   where 
     as = typeEnve2OptAtts $ fromJust $ simplType q s
   --                                     $ runTypeQuery subq s

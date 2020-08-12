@@ -4,6 +4,7 @@
 module VDBMS.QueryLang.RelAlg.Variational.Minimization (
 
        appMin
+       , runAppMin
        
 ) where 
 
@@ -13,10 +14,21 @@ import VDBMS.VDB.Name
 import VDBMS.TypeSystem.Variational.TypeSystem
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
+import VDBMS.Features.SAT
 
 import qualified Data.Map.Strict as SM (lookup)
 import Data.Maybe (catMaybes, fromJust)
 import Data.List (partition)
+
+import Data.Generics.Uniplate.Operations (transform)
+
+-- TODO: add the rules:
+-- true ⟨q, q' ⟩ ≡ q
+-- false ⟨q, q' ⟩ ≡ q'
+
+
+runAppMin :: Schema -> Algebra -> Algebra
+runAppMin s q = appMin q (featureModel s) s
 
 -- | Applies the minimization rules until the query doesn't change.
 appMin :: Algebra -> VariationalContext -> Schema -> Algebra
@@ -36,6 +48,17 @@ minVar q ctx s =
 -- denoted as: lᶠ
 appFexpOptAtts :: F.FeatureExpr -> OptAttributes -> OptAttributes
 appFexpOptAtts f = mapFst (F.And f) 
+
+chcSimpleReduceRecure :: Algebra -> Algebra
+chcSimpleReduceRecure = transform chcSimpleReduce
+
+-- |
+chcSimpleReduce :: Algebra -> Algebra
+chcSimpleReduce (AChc (F.Lit True) q1 q2) = q1
+chcSimpleReduce (AChc (F.Lit False) q1 q2) = q2
+chcSimpleReduce (AChc f q1 q2)
+  | tautology f = q1
+  | unsatisfiable f = q2
 
 -- | Choice distributive laws.
 chcDistr :: Algebra -> Algebra
