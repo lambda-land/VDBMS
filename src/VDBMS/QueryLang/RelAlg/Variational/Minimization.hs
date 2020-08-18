@@ -5,6 +5,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Minimization (
 
        appMin
        , runAppMin
+       , minPushedSch
        
 ) where 
 
@@ -15,6 +16,7 @@ import VDBMS.TypeSystem.Variational.TypeSystem
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
 import VDBMS.Features.SAT
+import VDBMS.QueryGen.VRA.PushSchToQ
 
 import qualified Data.Map.Strict as SM (lookup)
 import Data.Maybe (catMaybes, fromJust)
@@ -22,11 +24,11 @@ import Data.List (partition)
 
 import Data.Generics.Uniplate.Operations (transform)
 
--- TODO: add the rules:
--- true ⟨q, q' ⟩ ≡ q
--- false ⟨q, q' ⟩ ≡ q'
+-- | min q after push sch to it.
+minPushedSch :: Schema -> Algebra -> Algebra
+minPushedSch s q = runAppMin s (pushSchToQ s q)
 
-
+-- | appMin initiated with feature model of the schema.
 runAppMin :: Schema -> Algebra -> Algebra
 runAppMin s q = appMin q (featureModel s) s
 
@@ -42,23 +44,29 @@ appMin q ctx s
 --       approach we take.
 minVar :: Algebra -> VariationalContext -> Schema -> Algebra 
 minVar q ctx s = 
-  prjDistr (selDistr ((chcRel . optSel . pushOutProj . chcDistr) q) ctx s) ctx s
+  prjDistr (selDistrRec ((chcRelRec . optSelRec . pushOutProjRec . chcDistrRec . chcSimpleReduceRec) q) ctx s) ctx s
 
 -- | Applies a feature expression to all attributes in an opt attrs.
 -- denoted as: lᶠ
 appFexpOptAtts :: F.FeatureExpr -> OptAttributes -> OptAttributes
 appFexpOptAtts f = mapFst (F.And f) 
 
-chcSimpleReduceRecure :: Algebra -> Algebra
-chcSimpleReduceRecure = transform chcSimpleReduce
+-- | recursive application of chcsimple.
+chcSimpleReduceRec :: Algebra -> Algebra
+chcSimpleReduceRec = transform chcSimpleReduce
 
--- |
+-- | simple reductions of chc.
 chcSimpleReduce :: Algebra -> Algebra
 chcSimpleReduce (AChc (F.Lit True) q1 q2) = q1
 chcSimpleReduce (AChc (F.Lit False) q1 q2) = q2
 chcSimpleReduce (AChc f q1 q2)
   | tautology f = q1
   | unsatisfiable f = q2
+chcSimpleReduce q = q
+
+-- | recursive application of chcdistr rules.
+chcDistrRec :: Algebra -> Algebra
+chcDistrRec = transform chcDistr
 
 -- | Choice distributive laws.
 chcDistr :: Algebra -> Algebra
@@ -66,36 +74,29 @@ chcDistr :: Algebra -> Algebra
 -- f<π l₁ q₁, π l₂ q₂> ≡ π ((l₁ᶠ), (l₂ \^¬f )) f<q₁, q₂>
 chcDistr (AChc f (Proj l1 q1) (Proj l2 q2))
   = Proj (appFexpOptAtts f l1 ++ appFexpOptAtts (F.Not f) l2)
-         (AChc f (chcDistr q1) 
-                 (chcDistr q2))
+         (AChc f q1 q2)
 -- f<σ c₁ q₁, σ c₂ q₂> ≡ σ f<c₁, c₂> f<q₁, q₂>
 chcDistr (AChc f (Sel c1 q1) (Sel c2 q2))
   = Sel (VsqlCChc f c1 c2) 
-        (AChc f (chcDistr q1)
-                (chcDistr q2))
+        (AChc f q1 q2)
 -- f<q₁ × q₂, q₃ × q₄> ≡ f<q₁, q₃> × f<q₂, q₄>
 chcDistr (AChc f (Prod q1 q2) (Prod q3 q4)) 
-  = Prod (AChc f (chcDistr q1)
-                 (chcDistr q3))
-         (AChc f (chcDistr q2)
-                 (chcDistr q4))
+  = Prod (AChc f q1 q3) (AChc f q2 q4)
 -- f<q₁ ⋈\_c₁ q₂, q₃ ⋈\_c₂ q₄> ≡ f<q₁, q₃> ⋈\_(f<c₁, c₂>) f<q₂, q₄>
 chcDistr (AChc f (Join q1 q2 c1) (Join q3 q4 c2))
-  = Join (AChc f (chcDistr q1)
-                 (chcDistr q3))
-         (AChc f (chcDistr q2)
-                 (chcDistr q4))
-         (CChc f c1 c2)
+  = Join (AChc f q1 q3) (AChc f q2 q4) (CChc f c1 c2)
 -- f<q₁ ∪ q₂, q₃ ∪ q₄> ≡ f<q₁, q₃> ∪ f<q₂, q₄>
 chcDistr (AChc f (SetOp Union q1 q2) (SetOp Union q3 q4))
-  = SetOp Union (AChc f (chcDistr q1) (chcDistr q3))
-                (AChc f (chcDistr q2) (chcDistr q4))
+  = SetOp Union (AChc f q1 q3) (AChc f q2 q4)
 -- f<q₁ ∩ q₂, q₃ ∩ q₄> ≡ f<q₁, q₃> ∩ f<q₂, q₄>
 chcDistr (AChc f (SetOp Diff q1 q2) (SetOp Diff q3 q4))
-  = SetOp Diff (AChc f (chcDistr q1) (chcDistr q3))
-               (AChc f (chcDistr q2) (chcDistr q4))
-chcDistr (RenameAlg n q) = RenameAlg n (chcDistr q)
+  = SetOp Diff (AChc f q1 q3) (AChc f q2 q4)
+-- chcDistr (RenameAlg n q) = RenameAlg n (chcDistr q)
 chcDistr q = q
+
+-- | recursive application of push out prj.
+pushOutProjRec :: Algebra -> Algebra
+pushOutProjRec = transform pushOutProj
 
 -- | Pushes out projection as far as possible.
 -- Note that you don't necessarily want to push out all projs.
@@ -106,41 +107,38 @@ chcDistr q = q
 -- Eg: proj l1 q1 `union` proj l1 q2 <> proj l1 (q1 `union` q2)
 pushOutProj :: Algebra -> Algebra
 -- σ c (π l q) ≡ π l (σ c q)
-pushOutProj (Sel c (Proj as q))
-  = Proj as (Sel c (pushOutProj q))
+pushOutProj (Sel c (Proj as q)) = Proj as (Sel c q)
 -- π l₁ (π l₂ q) ≡ π l₁ q
--- checks if renaming happened in l₂ and update 
--- l₁ appropriately! also if the attribute in as1 is previously
+-- if the attribute in as1 is previously
 -- projected in as2 you need to conjunct their fexps!
-pushOutProj (Proj as1 (Proj as2 q)) = undefined
-  -- = Proj (updateAtts as1 as2) (pushOutProj q)
-  --   where
-  --     updateAtts :: OptAttributes -> OptAttributes -> OptAttributes
-  --     updateAtts orgs subs = [ compAtts a subs | a <- orgs]
-  --     compAtts :: OptAttribute -> OptAttributes -> OptAttribute
-  --     compAtts a as 
-  --       | null attList = a 
-  --       | otherwise = head attList 
-  --         where attList = catMaybes [ compAtt a att | att <- as]
-  --     compAtt :: OptAttribute -> OptAttribute -> Maybe OptAttribute
-  --     compAtt a1 a2 
-  --       | attrAlias a2 == Nothing 
-  --         && attrOfOptAttr a1 == attrOfOptAttr a2 
-  --           = Just $ mkOpt (F.And (getFexp a1) (getFexp a2)) 
-  --                          (Rename (attrAlias a1) ((thing . getObj) a2))
-  --       | attrAlias a2 /= Nothing 
-  --         && attrName a1 == (fromJust (attrAlias a2))
-  --           = Just $ applyFuncFexp (F.And (getFexp a1)) a2
-  --       | otherwise = Nothing
-pushOutProj (SetOp o q1 q2) 
-  = SetOp o (pushOutProj q1) (pushOutProj q2)
-pushOutProj (AChc f q1 q2) 
-  = AChc f (pushOutProj q1) (pushOutProj q2)
-pushOutProj (Join q1 q2 c) 
-  = Join (pushOutProj q1) (pushOutProj q2) c
-pushOutProj (Prod q1 q2)  
-  = Prod (pushOutProj q1) (pushOutProj q2)
-pushOutProj (RenameAlg n q) = RenameAlg n (pushOutProj q)
+pushOutProj (Proj as1 (Proj as2 q)) 
+  = Proj (updateAtts as1 as2) q
+    where
+      updateAtts :: OptAttributes -> OptAttributes -> OptAttributes
+      updateAtts orgs subs = [ compAtts a subs | a <- orgs]
+      compAtts :: OptAttribute -> OptAttributes -> OptAttribute
+      compAtts a as 
+        | null attList = a 
+        | otherwise = head attList 
+          where attList = catMaybes [ compAtt a att | att <- as]
+      compAtt :: OptAttribute -> OptAttribute -> Maybe OptAttribute
+      compAtt a1 a2 
+        | attrOfOptAttr a1 == attrOfOptAttr a2 
+            = Just $ applyFuncFexp (F.shrinkFExp . (F.And (getFexp a1))) a2
+                           -- (Rename (attrAlias a1) ((thing . getObj) a2))
+        -- | attrAlias a2 /= Nothing 
+        --   && attrName a1 == (fromJust (attrAlias a2))
+        --     = Just $ applyFuncFexp (F.And (getFexp a1)) a2
+        | otherwise = Nothing
+-- pushOutProj (SetOp o q1 q2) 
+--   = SetOp o (pushOutProj q1) (pushOutProj q2)
+-- pushOutProj (AChc f q1 q2) 
+--   = AChc f (pushOutProj q1) (pushOutProj q2)
+-- pushOutProj (Join q1 q2 c) 
+--   = Join (pushOutProj q1) (pushOutProj q2) c
+-- pushOutProj (Prod q1 q2)  
+--   = Prod (pushOutProj q1) (pushOutProj q2)
+-- pushOutProj (RenameAlg n q) = RenameAlg n (pushOutProj q)
 pushOutProj q = q 
 
 -- | checks if a sql condition is of the form "attr in query" condition.
@@ -162,47 +160,51 @@ relCond (VsqlOr l r)     = Or (relCond l) (relCond r)
 relCond (VsqlAnd l r)    = And (relCond l) (relCond r)
 relCond (VsqlCChc f l r) = CChc f (relCond l) (relCond r)
 
+-- | recursive application of optsel.
+optSelRec :: Algebra -> Algebra
+optSelRec = transform optSel
+
 -- | optimizes the selection queries.
 optSel :: Algebra -> Algebra
 -- σ c₁ (σ c₂ q) ≡ σ (c₁ ∧ c₂) q
 optSel (Sel c1 (Sel c2 q))
-  = Sel (VsqlAnd c1 c2) (optSel q)
+  = Sel (VsqlAnd c1 c2) q
 -- σ c₁ (π l (σ c₂ q)) ≡ π l (σ (c₁ ∧ c₂) q)
 optSel (Sel c1 (Proj as (Sel c2 q)))
-  = Proj as (Sel (VsqlAnd c1 c2) (optSel q))
+  = Proj as (Sel (VsqlAnd c1 c2) q)
 -- σ c (q₁ × q₂) ≡ q₁ ⋈\_c q₂
 optSel q@(Sel c (Prod q1 q2))
-  | notInCond c = Join (optSel q1) (optSel q2) (relCond c)
+  | notInCond c = Join q1 q2 (relCond c)
   | otherwise   = q 
 -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_(c₁ ∧ c₂) q₂
 optSel q@(Sel c1 (Join q1 q2 c2))
   | notInCond c1 = Join q1 q2 (And (relCond c1) c2)
   | otherwise    = q
-optSel (Sel c q)       = Sel c (optSel q)
-optSel (SetOp o q1 q2)  = SetOp o (optSel q1) (optSel q2)
-optSel (Proj as q)     = Proj as (optSel q)
-optSel (AChc f q1 q2)   = AChc f (optSel q1) (optSel q2)
-optSel (Join q1 q2 c) = Join (optSel q1) (optSel q2) c 
-optSel (Prod q1 q2)   = Prod (optSel q1) (optSel q2)
-optSel (RenameAlg n q) = RenameAlg n (optSel q)
+-- optSel (Sel c q)       = Sel c (optSel q)
+-- optSel (SetOp o q1 q2)  = SetOp o (optSel q1) (optSel q2)
+-- optSel (Proj as q)     = Proj as (optSel q)
+-- optSel (AChc f q1 q2)   = AChc f (optSel q1) (optSel q2)
+-- optSel (Join q1 q2 c) = Join (optSel q1) (optSel q2) c 
+-- optSel (Prod q1 q2)   = Prod (optSel q1) (optSel q2)
+-- optSel (RenameAlg n q) = RenameAlg n (optSel q)
 optSel q                = q
+
+-- | recursive appication of sel distr.
+selDistrRec :: Algebra -> VariationalContext -> Schema -> Algebra
+selDistrRec q ctx s = transform (flip (flip selDistr ctx) s) q
 
 -- | selection distributive properties.
 selDistr :: Algebra -> VariationalContext -> Schema -> Algebra
 selDistr q@(Sel (VsqlAnd c1 c2) (Join q1 q2 c)) ctx s 
   -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₁ q₁) ⋈\_c (σ c₂ q₂)
   | check c1 t1 && check c2 t2 
-    = Join (Sel c1 (selDistr' q1)) 
-           (Sel c2 (selDistr' q2))
-           c
+    = Join (Sel c1 q1) (Sel c2 q2) c
   -- σ (c₁ ∧ c₂) (q₁ ⋈\_c q₂) ≡ (σ c₂ q₁) ⋈\_c (σ c₁ q₂)
   | check c2 t1 && check c1 t2 
-    = Join (Sel c2 (selDistr' q1)) 
-           (Sel c1 (selDistr' q2)) 
-           c
+    = Join (Sel c2 q1) (Sel c1 q2) c
   | otherwise = q
     where 
-      selDistr' q' = selDistr q' ctx s 
+      -- selDistr' q' = selDistr q' ctx s 
       check cond env = (not (notInCond cond) && inAttInEnv cond env)
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfQuery q1 ctx s 
@@ -210,37 +212,33 @@ selDistr q@(Sel (VsqlAnd c1 c2) (Join q1 q2 c)) ctx s
 selDistr q@(Sel c1 (Join q1 q2 c2)) ctx s
   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ (σ c₁ q₁) ⋈\_c₂ q₂
   | check c1 t1
-    = Join (Sel c1 (selDistr' q1))
-           (selDistr' q2) 
-           c2
+    = Join (Sel c1 q1) q2 c2
   -- σ c₁ (q₁ ⋈\_c₂ q₂) ≡ q₁ ⋈\_c₂ (σ c₁ q₂)
   | check c1 t2
-    = Join (selDistr' q1) 
-           (Sel c1 (selDistr' q2))
-           c2
+    = Join q1 (Sel c1 q2) c2
   | otherwise = q 
     where
-      selDistr' q' = selDistr q' ctx s 
+      -- selDistr' q' = selDistr q' ctx s 
       check cond env = (not (notInCond cond) && inAttInEnv cond env)
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfQuery q1 ctx s 
       t2 = fromJust $ typeOfQuery q2 ctx s 
-selDistr (Sel c q)       ctx s 
-  = Sel c (selDistr q ctx s)
-selDistr (SetOp o q1 q2)  ctx s 
-  = SetOp o (selDistr q1 ctx s ) (selDistr q2 ctx s)
-selDistr (Proj as q)     ctx s 
-  = Proj as (selDistr q ctx s)
-selDistr (AChc f q1 q2)   ctx s 
-  = AChc f (selDistr q1 ctx s) (selDistr q2 ctx s)
-selDistr (Join q1 q2 c) ctx s
-  = Join (selDistr q1 ctx s)
-         (selDistr q2 ctx s)
-         c 
-selDistr (Prod q1 q2)   ctx s 
-  = Prod (selDistr q1 ctx s)
-         (selDistr q2 ctx s)
-selDistr (RenameAlg n q) ctx s = RenameAlg n (selDistr q ctx s)
+-- selDistr (Sel c q)       ctx s 
+--   = Sel c (selDistr q ctx s)
+-- selDistr (SetOp o q1 q2)  ctx s 
+--   = SetOp o (selDistr q1 ctx s ) (selDistr q2 ctx s)
+-- selDistr (Proj as q)     ctx s 
+--   = Proj as (selDistr q ctx s)
+-- selDistr (AChc f q1 q2)   ctx s 
+--   = AChc f (selDistr q1 ctx s) (selDistr q2 ctx s)
+-- selDistr (Join q1 q2 c) ctx s
+--   = Join (selDistr q1 ctx s)
+--          (selDistr q2 ctx s)
+--          c 
+-- selDistr (Prod q1 q2)   ctx s 
+--   = Prod (selDistr q1 ctx s)
+--          (selDistr q2 ctx s)
+-- selDistr (RenameAlg n q) ctx s = RenameAlg n (selDistr q ctx s)
 selDistr q _ _ = q 
 
 -- | gets a condition of the "IN" format and determines if
@@ -267,6 +265,10 @@ condAttsInEnv (Or c1 c2)     t = condAttsInEnv c1 t && condAttsInEnv c2 t
 condAttsInEnv (And c1 c2)    t = condAttsInEnv c1 t && condAttsInEnv c2 t 
 condAttsInEnv (CChc _ c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
 
+-- | recursive application of prj dist.
+prjDistrRec :: Algebra -> VariationalContext -> Schema -> Algebra
+prjDistrRec q ctx s = transform (flip (flip prjDistr ctx) s) q
+
 -- | projection distributive properties.
 prjDistr :: Algebra -> VariationalContext -> Schema -> Algebra
 -- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
@@ -280,22 +282,22 @@ prjDistr (Proj as (Join q1 q2 c)) ctx s = undefined
   --     as1 = fst pas 
   --     as2 = snd pas 
   --     prjDistr' q = prjDistr q ctx s 
-prjDistr (Proj as q)     ctx s 
-  = Proj as (prjDistr q ctx s)
-prjDistr (SetOp o q1 q2)  ctx s 
-  = SetOp o (prjDistr q1 ctx s) (prjDistr q2 ctx s)
-prjDistr (Sel c q)       ctx s 
-  = Sel c (prjDistr q ctx s) 
-prjDistr (AChc f q1 q2)   ctx s 
-  = AChc f (prjDistr q1 ctx s) (prjDistr q2 ctx s)
-prjDistr (Join q1 q2 c) ctx s 
-  = Join (prjDistr q1 ctx s)
-         (prjDistr q2 ctx s)
-         c
-prjDistr (Prod q1 q2)   ctx s
-  = Prod (prjDistr q1 ctx s)
-         (prjDistr q2 ctx s)
-prjDistr (RenameAlg n q) ctx s = RenameAlg n (prjDistr q ctx s)
+-- prjDistr (Proj as q)     ctx s 
+--   = Proj as (prjDistr q ctx s)
+-- prjDistr (SetOp o q1 q2)  ctx s 
+--   = SetOp o (prjDistr q1 ctx s) (prjDistr q2 ctx s)
+-- prjDistr (Sel c q)       ctx s 
+--   = Sel c (prjDistr q ctx s) 
+-- prjDistr (AChc f q1 q2)   ctx s 
+--   = AChc f (prjDistr q1 ctx s) (prjDistr q2 ctx s)
+-- prjDistr (Join q1 q2 c) ctx s 
+--   = Join (prjDistr q1 ctx s)
+--          (prjDistr q2 ctx s)
+--          c
+-- prjDistr (Prod q1 q2)   ctx s
+--   = Prod (prjDistr q1 ctx s)
+--          (prjDistr q2 ctx s)
+-- prjDistr (RenameAlg n q) ctx s = RenameAlg n (prjDistr q ctx s)
 prjDistr q _ _ = q 
 -- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
 -- discuss with Eric. don't think we need this since we can regenerate
@@ -316,8 +318,12 @@ partitionAtts as n t = undefined
 
 -- | choices rules.
 
+-- | recursive application of chc.
+chcRelRec :: Algebra -> Algebra
+chcRelRec = transform chcRel
+
 -- | relational alg and choices combined rules.
--- Note: the last three combination rules in my thesis 
+-- Note: the last three combination rules in my masters thesis 
 --       can be generated from the combination of other rules.
 -- Discuss the note with Eric.
 chcRel :: Algebra -> Algebra
@@ -402,7 +408,7 @@ chcRel q@(AChc f (Join q1 q2 (And c1 c2))
           (Join (AChc f q1 q3)
                 (AChc f q2 q4) c2)
   | otherwise = q
-chcRel (RenameAlg n q) = RenameAlg n (chcRel q)
+-- chcRel (RenameAlg n q) = RenameAlg n (chcRel q)
 chcRel q = q
 
 
