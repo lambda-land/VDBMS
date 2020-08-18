@@ -451,27 +451,50 @@ prettyAlg = P.render . ppAlg
 
 -- | print alg.
 ppAlg :: Algebra -> P.Doc
-ppAlg (SetOp o l r) = P.text (ppOp o) P.$$ P.parens (ppAlg l) P.$$ P.parens (ppAlg r)
+ppAlg (SetOp o l r)   = P.text (ppOp o) 
+                     P.$$ P.parens (ppAlg l) 
+                     P.$$ P.parens (ppAlg r)
   where
     ppOp Union = "UNION"
     ppOp Diff = "DIFF"
-ppAlg (Proj oas q) = P.text "PROJ" P.<+> P.braces (ppAtts oas) P.$$ P.parens (ppAlg q)
+ppAlg (Proj oas q)    = P.text "PROJ" 
+                     P.<+> P.braces (ppAtts oas) 
+                     P.$$ P.parens (ppAlg q)
   where
     ppQual :: Qualifier -> P.Doc
-    ppQual (RelQualifier r) = P.text (relationName r)
+    ppQual (RelQualifier r)       = P.text (relationName r)
     ppQual (SubqueryQualifier qn) = P.text qn
     ppAtts :: OptAttributes -> P.Doc
     ppAtts as = (P.vcat . P.punctuate P.comma . map ppAtt) as
     ppAtt :: OptAttribute -> P.Doc
     ppAtt a 
-      | isNothing ((qualifier . getObj) a) = P.text ((attributeName . attribute . getObj) a) P.<> P.brackets (P.text (show (getFexp a)))
-      | otherwise = ppQual (fromJust ((qualifier . getObj) a)) P.<> P.char '.' P.<> P.text ((attributeName . attribute . getObj) a) P.<> P.brackets (P.text (show (getFexp a)))
-ppAlg (Sel c q) = P.text "SEL" P.<+> P.text (show c) P.$$ P.parens (ppAlg q)
-ppAlg (AChc f l r) = P.text "ACHC" P.<+> P.brackets (P.text (show f)) P.$$ P.parens (ppAlg l) P.$$ P.semi P.<> P.parens (ppAlg r)
-ppAlg (Join l r c) = P.text "JOIN" P.$$ P.parens (ppAlg l) P.$$ P.parens (ppAlg r) P.$$ P.text (show c)
-ppAlg (Prod l r) = P.text "PROD" P.$$ P.parens (ppAlg l) P.$$ P.parens (ppAlg r)
-ppAlg (TRef r) = P.text $ relationName r
-ppAlg (RenameAlg n q) = P.text "RENAME" P.<+> P.text n P.$$ P.parens (ppAlg q)
+      | isNothing ((qualifier . getObj) a) 
+        = P.text ((attributeName . attribute . getObj) a) 
+        P.<> P.brackets (P.text (show (getFexp a)))
+      | otherwise 
+        = ppQual (fromJust ((qualifier . getObj) a)) 
+        P.<> P.char '.' 
+        P.<> P.text ((attributeName . attribute . getObj) a) 
+        P.<> P.brackets (P.text (show (getFexp a)))
+ppAlg (Sel c q)       = P.text "SEL" 
+                     P.<+> P.text (show c) 
+                     P.$$ P.parens (ppAlg q)
+ppAlg (AChc f l r)    = P.text "ACHC" 
+                     P.<+> P.brackets (P.text (show f)) 
+                     P.$$ P.parens (ppAlg l) 
+                     P.$$ P.semi 
+                     P.<> P.parens (ppAlg r)
+ppAlg (Join l r c)    = P.text "JOIN" 
+                     P.$$ P.parens (ppAlg l) 
+                     P.$$ P.parens (ppAlg r) 
+                     P.$$ P.text (show c)
+ppAlg (Prod l r)      = P.text "PROD" 
+                     P.$$ P.parens (ppAlg l) 
+                     P.$$ P.parens (ppAlg r)
+ppAlg (TRef r)        = P.text $ relationName r
+ppAlg (RenameAlg n q) = P.text "RENAME" 
+                     P.<+> P.text n 
+                     P.$$ P.parens (ppAlg q)
 ppAlg Empty = P.text "EMPTY"
 
 instance Show Algebra where
