@@ -6,7 +6,7 @@ import qualified VDBMS.VDB.Name as N
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.QueryLang.RelAlg.Variational.SmartConstructor
-import VDBMS.VDB.Schema.Relational.Types
+-- import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Features.Config (Config)
 import VDBMS.Variational.Opt
 
@@ -99,6 +99,9 @@ fmtwo = Or
                   ((fefour `And` Not fefive) `Or` (Not fefour `And` fefive))))
 -- fm3 = f1 ∨ ... ∨ f5
 fmthree = disjFexp [feone, fetwo, fethree, fefour, fefive]
+
+fetesting = And fmthree fmthree
+festilltest = And feone fetesting
 
 -- 
 -- * Attributes

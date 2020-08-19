@@ -462,7 +462,7 @@ ppAlg (Proj oas q)    = P.text "PROJ"
                      P.$$ P.parens (ppAlg q)
   where
     ppQual :: Qualifier -> P.Doc
-    ppQual (RelQualifier r)       = P.text (relationName r)
+    ppQual (RelQualifier rn)       = P.text (relationName rn)
     ppQual (SubqueryQualifier qn) = P.text qn
     ppAtts :: OptAttributes -> P.Doc
     ppAtts as = (P.vcat . P.punctuate P.comma . map ppAtt) as
@@ -485,9 +485,9 @@ ppAlg (AChc f l r)    = P.text "ACHC"
                      P.$$ P.semi 
                      P.<> P.parens (ppAlg r)
 ppAlg (Join l r c)    = P.text "JOIN" 
+                     P.<+> P.text (show c)
                      P.$$ P.parens (ppAlg l) 
                      P.$$ P.parens (ppAlg r) 
-                     P.$$ P.text (show c)
 ppAlg (Prod l r)      = P.text "PROD" 
                      P.$$ P.parens (ppAlg l) 
                      P.$$ P.parens (ppAlg r)

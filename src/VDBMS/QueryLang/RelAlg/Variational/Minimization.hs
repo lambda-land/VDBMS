@@ -6,6 +6,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Minimization (
        appMin
        , runAppMin
        , minPushedSch
+       , confMinPushedQ
        
 ) where 
 
@@ -17,12 +18,22 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
 import VDBMS.Features.SAT
 import VDBMS.QueryGen.VRA.PushSchToQ
+-- for test
+import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
+import VDBMS.Features.Config (Config)
+import VDBMS.Variational.Variational (Variational(..))
+-- 
+
 
 import qualified Data.Map.Strict as SM (lookup)
 import Data.Maybe (catMaybes, fromJust)
 import Data.List (partition)
 
 import Data.Generics.Uniplate.Operations (transform)
+
+-- | configures a query after minpush.
+confMinPushedQ :: Config Bool -> Schema -> Algebra -> RAlgebra
+confMinPushedQ c s q = configure c (minPushedSch s q)
 
 -- | min q after push sch to it.
 minPushedSch :: Schema -> Algebra -> Algebra
@@ -130,6 +141,9 @@ pushOutProj (Proj as1 (Proj as2 q))
         --   && attrName a1 == (fromJust (attrAlias a2))
         --     = Just $ applyFuncFexp (F.And (getFexp a1)) a2
         | otherwise = Nothing
+-- TODO: possible refactory: 
+-- π l f⟨q1, q2⟩ ≡ f ⟨π l' q1, π l'' q2⟩
+-- where l' and l'' are subsets of l that are included in q1 and q2's types respectively.
 -- pushOutProj (SetOp o q1 q2) 
 --   = SetOp o (pushOutProj q1) (pushOutProj q2)
 -- pushOutProj (AChc f q1 q2) 
