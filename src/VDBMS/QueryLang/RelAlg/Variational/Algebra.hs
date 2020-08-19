@@ -46,7 +46,6 @@ import Data.Generics.Uniplate.Direct
 import Data.Generics.Str
 
 import Data.Maybe (isNothing, fromJust)
-
 import qualified Text.PrettyPrint as P
 
 --
