@@ -12,8 +12,8 @@ Require Import Coq.Lists.ListSet.
 Require Import Coq.Structures.OrderedTypeEx.
 Require Import Coq.FSets.FSetAVL.
 Require Import Coq.Sorting.Sorted.
-Import Coq.Lists.List.ListNotations.
 
+Import Coq.Lists.List.ListNotations.
 
 Load Feature.
 Import Feature.
@@ -43,13 +43,23 @@ Inductive comp : Type :=
 
 (* Variational Attribute *)
 Definition vatt : Type := (att * fexp)%type. (*assuming always annotated; could've used option*)
-Locate eqb.
+
+(*Inductive vatt' : Type :=
+   | P: string -> fexp -> vatt'. *)
+
 Definition vfeqb (v v' : vatt) := String.eqb (fst v) (fst v').
 
 Definition veqb (v v' : vatt) := String.eqb (fst v) (fst v') && eqb (snd v) (snd v').
-(*Definition e : fexp := litB true.
 
-Definition s : string := "ba".
+(*Scheme Equality for vatt'. Print vatt'_beq. Print fexp_beq. Print string_beq. *)
+
+
+
+Lemma veqb_refl: forall (a:vatt), veqb a a = true.
+Proof. destruct a. unfold veqb. simpl. rewrite String.eqb_refl.
+rewrite eqb_refl. reflexivity. Qed.
+
+(*Definition s : string := "ba".
 Definition s' : string := "ab". 
 Compute (veqb (s, e) (s, e)).*)
 
@@ -83,7 +93,100 @@ Fixpoint findIfExists (a : att) (v:vatts) : option fexp :=
        | false => findIfExists a xs
        end
    end.
-(*---------------------------------------------------------------------------*)
+(*-------------------------------------------------------------------------------*)
+
+(*-------------------------------------------------------------------------------*)
+(** Remove replace with List.remove *)
+
+(* it's bag remove but once *)
+Fixpoint remove {X:Type} (f:X->X->bool) (a : X) (A : list X) : list X :=
+    match A with
+      | [] => []
+      | x::xs => 
+         match (f a x) with
+        | true  => xs (*(remove f a xs)*)
+        | false => x :: (remove f a xs)
+        end
+    end. 
+
+
+Lemma in_remove_atts: forall l x y, In x (remove String.eqb y l) 
+                                -> x <> y -> In x l.
+Proof. intro l. induction l. intros. simpl in H. simpl. assumption.
+simpl. intros. destruct ((y =? a)%string). right. assumption. simpl in H.
+destruct H. left. assumption. apply IHl in H. right. assumption. assumption.
+Qed.
+
+(*Definition  listElEq {X:Type} (A B: list X):= forall (x: X), In x A <-> In x B.
+
+Lemma ListElEq_refl_atts: forall (A:list att), listElEq A A.
+Proof. intro A. split; destruct A; repeat(auto). Qed. *)
+
+
+Fixpoint listElEq {X:Type} (f:X->X->bool) (A1 : list X) (A2 : list X) : bool :=
+    match A1 with
+      | [] => match A2 with
+              | []  => true
+              | _   => false
+              end
+      | x::xs => match (existsb (f x) A2) with
+                  | true  => listElEq f xs (remove f x A2)
+                  | false => false
+                  end
+    end. 
+
+Lemma ListElEq_refl_atts: forall (A:list att), listElEq String.eqb A A = true.
+Proof. intro A. induction A. - auto. - simpl. rewrite String.eqb_refl.
+simpl. apply IHA. Qed.
+
+Lemma ListElEq_refl_vatts: forall (A:list vatt), listElEq veqb A A = true.
+Proof. intro A. induction A. 
+       - auto. 
+       - simpl. rewrite veqb_refl. simpl. apply IHA.
+Qed.
+
+Lemma ListElEq_In: forall (A B: atts), listElEq String.eqb A B = true <->
+forall (x: att), In x A -> In x B.
+Proof. intros. split. 
+       - (*->*)
+         generalize dependent B. induction A; intros. 
+         + simpl in H. destruct B. intros. assumption.
+           discriminate H.
+         + simpl in H0. destruct H0.
+           ++ rewrite <- H0. simpl in H. destruct (existsb (String.eqb a) B) eqn:HaB.
+              +++ apply (existsb_exists (String.eqb a)) in HaB. 
+                  destruct HaB as [x' HaBx]. destruct HaBx as [HaBx1 HaBx2].  
+                  rewrite String.eqb_eq in HaBx2. rewrite <- HaBx2 in HaBx1. assumption.
+              +++ discriminate H.
+           ++ simpl in H. destruct (existsb (String.eqb a) B) eqn:HaB. 
+
+Admitted.
+     (*      rewrite <- H0. assumption.
+         + destruct (existsb (String.eqb a) B) eqn:HaB. rewrite HaB in H.
+           ++ apply (existsb_exists (String.eqb a)) in HaB. 
+           destruct HaB as [x' HaBx]. destruct HaBx as [HaBx1 HaBx2].  
+           rewrite String.eqb_eq in HaBx2. rewrite <- HaBx2 in HaBx1.
+           
+           simpl in H. intros x H1. simpl in H1. destruct H1.
+           rewrite <- H0. assumption.
+           
+           
+
+
+Lemma ListElEq_trans_atts: forall (A B C:list att), listElEq String.eqb A B = true
+    -> listElEq String.eqb B C = true -> listElEq String.eqb A C = true.
+Proof. intro A. induction A as [|a As IHA].
+       - intros B C H1 H2. destruct B as [|b Bs]; simpl in H1. assumption. discriminate H1. 
+       - intros B C H1 H2. destruct B as [|b Bs]. 
+         + discriminate H1. 
+         + simpl in H1. destruct ((a =? b)%string) eqn:Hab. 
+           ++ simpl in H1. apply String.eqb_eq in Hab. destruct Hab. 
+              simpl in H2. destruct (existsb (String.eqb a) C) eqn: HaC.
+              +++ simpl. rewrite HaC. apply (IHA Bs). assumption. assumption.
+              +++ discriminate H2.
+           ++ simpl in H1. destruct (existsb (String.eqb a) Bs) eqn: HaBs.
+              
+Check (listElEq String.eqb [] []). *)
 
 (* Configuration Variational Attribute List(Set) A[]c (see A3)*)
 Fixpoint configVAttSet (vA : vatts) (c : config) : atts :=
@@ -345,16 +448,6 @@ Fixpoint vatts_union_c (A A': vatts) : vatts :=
   end.
 
 
-(*Fixpoint union_l {X:Type} (eq:X->X->bool) (A A': list X) : list X :=
-  match A with
-  | []           => []
-  | x :: xs =>
-     match (existsb (eq x) A') with
-        | true  => (union_l eq xs A')
-        | false =>  x :: (union_l eq xs A')
-     end
-  end. *)
-
 Fixpoint atts_union_l (A A': atts) : atts :=
   match A with
   | []           => []
@@ -371,10 +464,31 @@ Fixpoint vatts_union_l (A A': vatts) : vatts :=
   | (a, e) :: xs =>
      match (findIfExists a A') with
         | Some _  => (vatts_union_l xs A')
-        | None    =>  (a, e) :: (vatts_union_l xs A')
+        | None    => (a, e) :: (vatts_union_l xs A')
      end
   end. 
 
+Fixpoint atts_union (A A': atts) : atts :=
+  match A with
+  | []           => A'
+  | x :: xs =>
+     match (existsb (String.eqb x) A') with
+        | true  => x :: (atts_union xs (remove String.eqb x A'))
+        | false => x :: (atts_union xs A')
+     end
+  end. 
+
+Fixpoint vatts_union (A A': vatts) : vatts :=
+  match A with
+  | []           => A'
+  | (a, e) :: xs =>
+     match (findIfExists a A') with
+        | Some e'  => (a, e \/(F) e') ::(vatts_union xs (remove veqb (a, e') A'))
+        | None    =>  (a, e)          ::(vatts_union xs A')
+     end
+  end. 
+
+(*
 (* Plain Attr List *)
 Definition atts_union (A A': atts) : atts := 
     atts_union_c A  A' ++
@@ -386,7 +500,7 @@ Definition vatts_union (A A': vatts) : vatts :=
     vatts_union_c A  A' ++
     vatts_union_l A  A' ++
     vatts_union_l A' A.
-
+*)
 
 (* Variational Query Type*)
 Definition vqtype_union (Q Q': vqtype) : vatts := 
@@ -425,41 +539,7 @@ Definition is_disjoint_bool (A A': atts) : bool :=
   | [] => true
   | _  => false
   end.
-(*-------------------------------------------------------------------------------*)
-(** Remove *)
-(* Plain Attr List *)
-(*Fixpoint atts_remove (a : att) (A : atts) : atts :=
-    match A with
-      | [] => []
-      | x::xs => 
-         match (String.eqb a x) with
-        | true  => (atts_remove a xs)
-        | false => a :: (atts_remove x xs)
-        end
-    end. 
 
-Fixpoint vatts_remove (a : vatt) (A : vatts) : vatts :=
-    match A with
-      | [] => []
-      | x::xs => 
-         match (veqb a x) with
-        | true  => (vatts_remove a xs)
-        | false => a :: (vatts_remove x xs)
-        end
-    end. 
-*)
-
-Fixpoint remove {X:Type} (f:X->X->bool) (a : X) (A : list X) : list X :=
-    match A with
-      | [] => []
-      | x::xs => 
-         match (f a x) with
-        | true  => (remove f a xs)
-        | false => a :: (remove f x xs)
-        end
-    end. 
-    
-(*-------------------------------------------------------------------------------*)
 (** lemmas to expand second recursive function used for ackermann *)
 (* better name *)
 
@@ -470,12 +550,12 @@ Fixpoint remove {X:Type} (f:X->X->bool) (a : X) (A : list X) : list X :=
 Proof. intros X f A. induction A as [|a A IHA]. auto. 
 simpl. rewrite IHA. reflexivity. Qed. *)
 
-Lemma atts_union_c_nil_r: forall A, atts_union_c A [] = [].
+(*Lemma atts_union_c_nil_r: forall A, atts_union_c A [] = [].
 Proof. intro A. induction A; auto. Qed.
 
 Lemma atts_union_l_nil_r: forall (A: atts), atts_union_l A [] = A.
 Proof. intro A. induction A as [|a A IHA]. auto. 
-simpl. rewrite IHA. reflexivity. Qed.
+simpl. rewrite IHA. reflexivity. Qed. 
 
 Lemma atts_union_nil_r: forall A, atts_union A [] = A.
 Proof. intros. unfold atts_union. 
@@ -484,7 +564,14 @@ rewrite app_nil_r. reflexivity. Qed.
 
 Lemma atts_union_nil_l: forall A, atts_union [] A = A.
 Proof. intros. unfold atts_union. simpl. 
-rewrite atts_union_l_nil_r. reflexivity. Qed.
+rewrite atts_union_l_nil_r. reflexivity. Qed.*)
+
+Lemma atts_union_nil_r: forall A, atts_union A [] = A.
+Proof. intro A. induction A as [|a A IHA]. auto. 
+simpl. rewrite IHA. reflexivity. Qed.
+
+Lemma atts_union_nil_l: forall A, atts_union [] A = A.
+Proof. auto. Qed.
 
 Lemma atts_inter_nil_r: forall A, atts_inter A [] = [].
 Proof. intro A. induction A. auto. simpl. assumption. Qed.
@@ -492,7 +579,7 @@ Proof. intro A. induction A. auto. simpl. assumption. Qed.
 Lemma atts_inter_nil_l: forall A, atts_inter [] A = [].
 Proof. auto. Qed.
 
-Lemma vatts_union_c_nil_r: forall A, vatts_union_c A [] = [].
+(*Lemma vatts_union_c_nil_r: forall A, vatts_union_c A [] = [].
 Proof. intro A. induction A as [|a A IHA]; 
 try (destruct a as (a,e)); try(auto). Qed.
 
@@ -507,7 +594,14 @@ rewrite app_nil_r. reflexivity. Qed.
 
 Lemma vatts_union_nil_l : forall A, vatts_union [] A = A.
 Proof. intros. unfold vatts_union. simpl. 
-rewrite vatts_union_l_nil_r. reflexivity. Qed.
+rewrite vatts_union_l_nil_r. reflexivity. Qed.*)
+
+Lemma vatts_union_nil_r : forall A, vatts_union A [] = A.
+Proof. intro A. induction A as [|a A IHA]. auto. 
+destruct a as (a,e). simpl. rewrite IHA. reflexivity. Qed.
+
+Lemma vatts_union_nil_l : forall A, vatts_union [] A = A.
+Proof. auto. Qed.
 
 Lemma vatts_inter_nil_r : forall A, vatts_inter A [] = [].
 Proof. intro A. induction A as [|(a, e)]. reflexivity. simpl. 
@@ -535,6 +629,7 @@ Qed.*)
   | Type of variational query
    ---------------------------------------------------------------
 *)
+
 Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
   (*  -- intro LESS specific context --
     empty |- rn : A^e'  ~sat(e' /\ (~m))

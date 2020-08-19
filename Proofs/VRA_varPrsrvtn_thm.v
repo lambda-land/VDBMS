@@ -19,134 +19,7 @@ Module VRA_varPrsrvtn_thm.
 (** ------------------------------------------------------------
   Sorted Attribute Set implication lemmas
 ---------------------------------------------------------------*)
-(* Less than first implies less than all  *)
-(*Lemma fst_elm_lt_all_elm: forall (vt: vatt) (vs:vatts) (x : att), 
-        (exists e, In (x, e) (tl (vt :: vs))) -> 
-                     string_comp (fst vt) x = LTc.
-Proof. 
-       intros. generalize dependent x. 
-       generalize dependent vt.
-       induction vs as [| (v', ev') vs' IHvs]; destruct vt as (v, ev).
-          + intros. simpl in H. destruct H as [e H]. contradiction.
-          + intros x. 
-            specialize IHvs with (vt:=(v', ev')) (x:=x). 
-            (*destruct IHvs as [ex IHvs].*) simpl in IHvs. 
-           assert ( I1: (LocallySortedVAtts ((v, ev) :: (v', ev') :: vs'))  /\ 
-                               (NoDup ((v, ev) :: (v', ev') :: vs')) ). 
-                  { apply assumption_vatts. }
-           destruct I1 as [ I11 I12]. simpl. 
-           (*exists ex.*)
-           intros. destruct H as [ex H]. destruct H as [ H1| H2].
-           ++ inversion H1; subst.  inversion I11; subst.  simpl in H4.
-              assumption.
-           ++ (*apply IHvs in H2.*) inversion I11; subst. simpl in H4.
-              apply (string_comp_lt_trans v'). split.
-              right. assumption. apply IHvs. exists ex. assumption.
-Qed.
 
-(* Less than n-th imples lesss than (n-end) [see A1] *)
-Lemma lless_implies_gless :
-   forall (a: vatt) (vs:vatts), (string_comp (fst a) (fst (hd a vs)) = EQc 
-                              \/ string_comp (fst a) (fst (hd a vs)) = LTc ->
-     (forall (x:att), (exists e, In (x, e) (tail vs)) -> 
-       string_comp (fst a) x = LTc)).
-Proof. intros. generalize dependent x. 
-       destruct vs as [| (v', ev') vs']. 
-       + intros.  destruct a as (a', e').
-         simpl in H0. destruct H0 as [e0 H0]. contradiction.
-       + intro x. simpl in H. 
-         assert (I:  
-        (exists e, In (x, e) (tl ((v', ev') :: vs'))) -> 
-                     string_comp (fst (v', ev')) x = LTc ).
-        { apply ( fst_elm_lt_all_elm (v', ev') vs' x). }
-        simpl in I. intros. apply (string_comp_lt_trans v'). 
-        split. assumption. apply I. destruct H0 as [ex H0].
-        simpl in H0. exists ex. assumption.
-Qed. *)
-
-
-(*-------------------------------sortedlemmas-------------------------------------*)
-
-
-(*Lemma config_filters_subset: forall vs c x xs, configVAttSet vs c = x :: xs 
- -> exists e, In (x, e) vs.
-Proof. intros. induction vs as [| v vs]. 
-       - simpl in H.  discriminate H. 
-       - destruct v. simpl in H. destruct (E[[ f]] c) eqn: F.
-         + inversion H. exists f. simpl. left. reflexivity.
-         + simpl. apply IHvs in H. destruct H as [e H].
-           exists e. right. assumption.
-Qed. 
-
-Lemma case1_req_global_lt_prop: forall (v v': vatt) (xs xs': vatts),
- (string_comp (fst v) (fst v')) = EQc \/ (string_comp (fst v) (fst v')) = LTc -> 
-  (forall c, (E[[(snd v)]] c) = true  /\ (E[[(snd v')]] c) = false ->
-   atts_union (configVAttSet (v :: xs) c) (configVAttSet (v' :: xs') c) 
-     = (fst v) :: atts_union (configVAttSet xs c) (configVAttSet xs' c) ).
-Proof. 
-      intros v v' xs xs' H0 c H1.
-      destruct v as (a, e). destruct v' as (a',e'). 
-      simpl in H0. simpl in H1. simpl. 
-      destruct H1 as [H1 H2]. 
-      rewrite H1. rewrite H2. destruct (configVAttSet xs' c) eqn: Imp. 
-        + simpl. rewrite atts_union_nil_r. reflexivity.
-        + pose proof lless_implies_gless as H.
-          specialize H with (vs:=((a',e')::xs')).
-          simpl in H.
-          specialize H with (a:=(a,e)). 
-          simpl in H. 
-          simpl. specialize H with a0. 
-          simpl in H. rewrite H.
-          reflexivity. assumption. 
-          apply config_filters_subset in Imp. assumption.   
-Qed.
-
-Lemma case2_req_global_lt_prop: forall (v v': vatt) (xs xs': vatts),
- (string_comp (fst v) (fst v')) = EQc \/ (string_comp (fst v) (fst v')) = GTc -> 
-  (forall c, (E[[(snd v)]] c) = false /\ (E[[(snd v')]] c) = true  ->
-   atts_union (configVAttSet (v :: xs) c) (configVAttSet (v' :: xs') c) 
-     = (fst v') :: atts_union (configVAttSet xs c) (configVAttSet xs' c) ).
-Proof. 
-      intros. rewrite atts_union_comm. 
-      rewrite (atts_union_comm (configVAttSet xs c) (configVAttSet xs' c)). 
-      apply case1_req_global_lt_prop.
-      - destruct H. 
-      + left. apply string_comp_eqc_symm. assumption. 
-      + right. rewrite string_comp_lt_gt. assumption.
-      - rewrite and_comm. assumption.
-Qed.
-
-Lemma case1_req_global_lt_prop_inter: forall (v v': vatt) (xs xs': vatts),
- (string_comp (fst v) (fst v')) = EQc  \/ (string_comp (fst v) (fst v')) = LTc -> 
-  (forall c, (E[[(snd v)]] c) = true  /\ (E[[(snd v')]] c) = false ->
-   atts_inter (configVAttSet (v :: xs) c) (configVAttSet (v' :: xs') c) 
-     = atts_inter (configVAttSet xs c) (configVAttSet xs' c) ).
-Proof. 
-      (*intros v v' xs xs' H0 c H1.
-      destruct v as (a, e). destruct v' as (a',e'). 
-      simpl in H0. simpl in H1. simpl. 
-      destruct H1 as [H1 H2]. 
-      rewrite H1. rewrite H2. destruct (configVAttSet xs' c) eqn: Imp. 
-        + simpl. rewrite atts_union_nil_r. reflexivity.
-        + assert (H: globally_less). { unfold globally_less.
-          apply lless_implies_gless. }
-          unfold globally_less in H. specialize H with (vs:=((a',e')::xs')). 
-          simpl in H.
-          specialize H with (a:=(a,e)). 
-          simpl in H. 
-          simpl. specialize H with a0. 
-          simpl in H. rewrite H.
-          reflexivity. assumption. 
-          apply config_filters_subset in Imp. assumption.   
-Qed.*)
-Admitted.
-
-Lemma case2_req_global_lt_prop_inter: forall (v v': vatt) (xs xs': vatts),
- (string_comp (fst v) (fst v')) = EQc \/ (string_comp (fst v) (fst v')) = GTc -> 
-  (forall c, (E[[(snd v)]] c) = false /\ (E[[(snd v')]] c) = true  ->
-   atts_inter (configVAttSet (v :: xs) c) (configVAttSet (v' :: xs') c) 
-     = atts_inter (configVAttSet xs c) (configVAttSet xs' c) ).
-Proof. Admitted. *)
 Print list_eq_dec.
 Lemma list_beq_refl: forall (l :atts), list_beq att String.eqb l l = true.
 Proof. intros l. induction l as [|x' l' IHl']. reflexivity. simpl. 
@@ -176,27 +49,6 @@ Proof. intros a A e H. induction A as [|(a', e') A' IHA'].
          ++ intro es. specialize IHA' with es. apply IHA' in H. rewrite H. apply orb_true_r.
 Qed.
 
-(*Lemma configVAttSet_dist_vatts_union_c : forall A  A' c, configVAttSet (vatts_union_c A A') c =
-      atts_union_c (configVAttSet A c) (configVAttSet A' c) .
-Proof. 
-  intros A A' c. generalize dependent A'.
-  induction A as [|(a, e) As IHAs].
-  - (* A = nil *)
-    intro A'. auto.
-  - (* A = (a, e) :: As *)
-    intros A'. 
-    unfold vatts_union_c; fold vatts_union_c.
-    destruct (findIfExists a A') as [e' | ] eqn: I.
-    + (* findIfExists a A' = Some e' *)
-      unfold configVAttSet; fold configVAttSet.
-      destruct (E[[ e]] c) eqn:E.
-      ++ (* E[[ e]] c) = true *)
-         unfold atts_union_c; fold atts_union_c.
-         apply findIfExists_existsb in I.
-      ++ (* E[[ e]] c) = false *)
-    + (* findIfExists a A' = None *)
-Admitted.*)
-
 Lemma one: forall a A e, findIfExists a A = Some e-> 
     forall c, (E[[ e]] c) = false -> existsb (String.eqb a) (configVAttSet A c)= false.
 Proof. Admitted.
@@ -209,19 +61,71 @@ Lemma three: forall a A A', existsb (String.eqb a) A' = true ->
     atts_union_l A' (a::A) = atts_union_l (remove String.eqb a A') A.
 Proof. Admitted.
 
-Lemma four: forall a A e c, findIfExists a A = Some e -> (E[[ e]] c) = true
+Lemma four: forall a A e c, findIfExists a A = Some e 
   -> remove String.eqb a (configVAttSet A c) =
     configVAttSet (remove veqb (a, e) A) c.
 Proof. Admitted.
 
-Lemma five: forall a A A', existsb (veqb a) A' = true -> 
-    vatts_union_l A' (a::A) = vatts_union_l (remove veqb a A') A.
+Lemma five: forall a A e c, findIfExists a A = Some e 
+  -> (E[[ e]] c) = false
+  -> (configVAttSet A c) = configVAttSet (remove veqb (a, e) A) c.
 Proof. Admitted.
-Locate eqb.
+
+Lemma six: forall a A e c, findIfExists a A = Some e 
+  -> (E[[ e]] c) = true
+  -> (configVAttSet A c) = a::configVAttSet (remove veqb (a, e) A) c.
+Proof. Admitted.
+
+(*Lemma five: forall a A A', existsb (veqb a) A' = true -> 
+    vatts_union_l A' (a::A) = vatts_union_l (remove veqb a A') A.
+Proof. Admitted.*)
+
+
 Lemma configVAttSet_dist_vatts_union : forall A  A' c, configVAttSet (vatts_union A A') c =
       atts_union (configVAttSet A c) (configVAttSet A' c) .
 Proof. 
   intros A A' c. generalize dependent A'.
+  induction A as [|(a, e) As IHAs].
+  - (* A = nil *)
+    intro A'. simpl. reflexivity.
+  - (* A = (a, e) :: As *)
+    intro A'.
+    (*unfold vatts_union. 
+    rewrite ?union_dist_app. 
+    unfold atts_union. 
+    unfold vatts_union_c; fold vatts_union_c.*)
+    destruct (findIfExists a A') as [e' | ] eqn: I.
+    
+    + (* findIfExists a A' = Some e' *)
+      unfold vatts_union; fold vatts_union.
+      rewrite I.
+      destruct (E[[ e]] c) eqn:E;
+      unfold configVAttSet; fold configVAttSet.
+      ++ (* E[[ e]] c) = true *)
+         unfold atts_union; fold atts_union.
+         destruct (E[[ e']] c) eqn:E'.
+         +++ (* E[[ e']] c) = true *)
+             simpl semE. rewrite E, E'. simpl.
+             rewrite two with (e:=e').
+             rewrite four with (e:=e'). 
+             rewrite IHAs. reflexivity.
+             assumption. assumption. assumption. 
+         +++ simpl semE. rewrite E, E'. simpl.
+             rewrite one with (e:=e').
+             rewrite (five a A' e' c).
+             rewrite IHAs. reflexivity.
+             assumption. assumption. assumption.
+             assumption. 
+      ++ unfold atts_union; fold atts_union.
+         destruct (E[[ e']] c) eqn:E'.
+         +++ (* E[[ e']] c) = true *)
+             simpl semE. rewrite E, E'. simpl.
+             rewrite (six a A' e' c).
+             rewrite IHAs. (* unfold atts_union; fold atts_union. reflexivity.
+             assumption. assumption. assumption.
+             assumption. *)
+Admitted.
+(*intros A A' c. generalize dependent A'.
   induction A as [|(a, e) As IHAs].
   - (* A = nil *)
     intro A'. simpl. rewrite vatts_union_nil_l.
@@ -247,8 +151,7 @@ Proof.
          unfold vatts_union in IHAs. 
          rewrite <- ?union_dist_app.
          unfold atts_union in IHAs. 
-Admitted.
-(*         +++ (* E[[ e']] c) = false *)
+         +++ (* E[[ e']] c) = false *)
       ++ (* E[[ e]] c) = false *)
          +++ (* E[[ e']] c) = true *)
          +++ (* E[[ e']] c) = false *)
@@ -271,7 +174,6 @@ Lemma configVQType_dist_vatts_union : forall A A' e c, configVQtype (vatts_union
 Proof. 
 
 Admitted.
-
 
 Lemma configVQType_dist_vatts_inter : forall A A' e e' c, 
 configVQtype (vatts_inter (push_annot A e)
@@ -340,35 +242,73 @@ Qed.
    ------------------------------------------------------------
 *)
 
+Lemma subsump_listELEq: forall (A B A' B': atts), listElEq String.eqb A A' = true ->
+              listElEq String.eqb B B' = true -> 
+               subsump_qtype_bool A B = subsump_qtype_bool A' B'.
+Proof. Admitted.
+
+
+Lemma is_disjoint_bool_listELEq: forall (A B A' B': atts), listElEq String.eqb A A' = true ->
+          listElEq String.eqb B B' = true -> 
+             is_disjoint_bool A B = is_disjoint_bool A' B'.
+Proof. Admitted.
+
+Lemma atts_union_listELEq: forall (A B A' B': atts), listElEq String.eqb A A' = true ->
+             listElEq String.eqb B B' = true -> 
+                (atts_union A B) = (atts_union A' B').
+             (*listElEq String.eqb (atts_union A B) (atts_union A' B') = true. -- requires transivity*)
+Proof. Admitted.
+
+
+Lemma equiv_qtype_bool_listELEq: forall (A B A' B': atts), listElEq String.eqb A A' = true ->
+             listElEq String.eqb B B' = true -> 
+             equiv_qtype_bool A B = equiv_qtype_bool A' B'.
+Proof. Admitted.
+
 (*high level proof explanantion*)
 Theorem variation_preservation : forall e vq A, 
        vtype e vq A ->
        forall c, (E[[e]] c) = true ->
-           type' (configVQuery vq c) = configVQtype A c.
+           listElEq String.eqb (type' (configVQuery vq c)) (configVQtype A c) = true.
 Proof. 
   intros. induction H.
   (* Relation - E *) (*get rid of this*)
   - unfold configVQuery. unfold configVRelS. simpl. 
     rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
     unfold configVQtype. simpl. destruct (E[[e']] c) eqn: HsemE.
-    + reflexivity.
-    + reflexivity. 
+    + rewrite ListElEq_refl_atts. reflexivity.
+    + rewrite ListElEq_refl_atts. reflexivity. 
   (* Relation - E *)
   - unfold configVQuery. unfold configVRelS. unfold configVQtype. simpl. 
     rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
-    rewrite H0. apply H in H0. rewrite H0. reflexivity.
+    rewrite H0. apply H in H0. rewrite H0. rewrite ListElEq_refl_atts. reflexivity.
  (* Project - E *)
  - unfold subsump_vqtype, configVQtype in H1. simpl in H1.
    unfold configVQtype in IHvtype. simpl in IHvtype. 
    unfold configVQtype. simpl. 
    destruct (E[[ e']] c) eqn: He'.
-     ++ rewrite IHvtype. simpl. unfold subsump_qtype_bool. 
+     ++ (*rewrite IHvtype1. ->*)
+        rewrite (subsump_listELEq 
+                  (configVAttSet A c) (type' (configVQuery vq c))
+                  (configVAttSet A c) (configVAttSet A' c)).
+        (*<-*) 
+        simpl. unfold subsump_qtype_bool. 
         specialize H1 with c. rewrite H0, He' in H1. rewrite H1. rewrite H0. 
-        reflexivity. assumption.
-     ++ rewrite IHvtype. simpl. unfold subsump_qtype_bool. 
+        rewrite ListElEq_refl_atts. reflexivity. 
+        (*assumption.->*) apply ListElEq_refl_atts. 
+        apply IHvtype in H0. assumption. (*<-*)
+     ++ (*rewrite IHvtype1. ->*)
+        rewrite (subsump_listELEq 
+                  (configVAttSet A c) (type' (configVQuery vq c))
+                  (configVAttSet A c) []).
+        (*<-*)
+        simpl. unfold subsump_qtype_bool. 
         specialize H1 with c. rewrite H0, He' in H1. 
         destruct (configVAttSet A c). rewrite H0.
-        reflexivity. simpl in H1. discriminate H1. assumption.
+        rewrite ListElEq_refl_atts. reflexivity. simpl in H1. discriminate H1.
+        (*assumption.->*)apply ListElEq_refl_atts. 
+        apply IHvtype in H0. assumption. (*<-*)
+
  (* Choice - E *)
  - unfold vqtype_union. simpl fst. simpl snd.
    simpl in IHvtype1. simpl in IHvtype2. rewrite H0 in IHvtype1, IHvtype2.
@@ -408,10 +348,18 @@ Proof.
     repeat (rewrite configVQType_push_annot). 
     unfold configVQtype. simpl. rewrite absorption_andb. rewrite orb_comm. 
     rewrite absorption_andb. 
-    rewrite H01. rewrite H02.
+    (*rewrite H01. rewrite H02.->*)
+     rewrite (atts_union_listELEq 
+               (type' (configVQuery vq1 c)) (type' (configVQuery vq2 c)) 
+               (configVQtype (A1, e1) c)    (configVQtype (A2, e2) c)).
+
+     rewrite (is_disjoint_bool_listELEq 
+               (type' (configVQuery vq1 c)) (type' (configVQuery vq2 c)) 
+               (configVQtype (A1, e1) c)    (configVQtype (A2, e2) c)).
+    (*<-*)
     destruct (is_disjoint_bool (configVQtype (A1, e1) c)
     (configVQtype (A2, e2) c)) eqn: Hatts.
-    + simpl. destruct (E[[ e1]] c) eqn: E1; reflexivity.
+    + simpl. destruct (E[[ e1]] c) eqn: E1; rewrite ListElEq_refl_atts; reflexivity.
     + unfold is_disjoint_bool in Hatts.
       simpl in H2. 
       rewrite <- configVQType_dist_vatts_inter in Hatts.
@@ -419,16 +367,22 @@ Proof.
       rewrite H2 in Hatts. simpl in Hatts. 
       destruct ((E[[ e1]] c) || (E[[ e2]] c)). discriminate Hatts.
       discriminate Hatts.
+    + assumption. + assumption. + assumption. + assumption.
  (* Select - E *)
  (* SetOp - E *)
  - simpl in IHvtype1. simpl in IHvtype2. simpl. 
-   + simpl. rewrite IHvtype1. rewrite IHvtype2.
+   + simpl. (*rewrite IHvtype1. rewrite IHvtype2.->*)
+     rewrite (equiv_qtype_bool_listELEq 
+               (type' (configVQuery vq1 c)) (type' (configVQuery vq2 c)) 
+               (if E[[ e1]] c then configVAttSet A1 c else [])    
+               (if E[[ e2]] c then configVAttSet A2 c else [])).
+     (*<-*)
      unfold configVQtype. simpl. 
      destruct H2. simpl in H2. simpl in H3. unfold equiv_vatts in H2.
-     unfold equivE in H3. rewrite H2. rewrite H3. destruct (E[[ e2]] c) eqn: E'.
-     ++ rewrite (equiv_qtype_bool_refl (configVAttSet A2 c)). reflexivity.
-     ++ simpl. reflexivity. 
-     ++ assumption. ++ assumption.
+     unfold equivE in H3. rewrite <- H2. rewrite <- H3. destruct (E[[ e1]] c) eqn: E'.
+     ++ rewrite (equiv_qtype_bool_refl (configVAttSet A1 c)). apply IHvtype1. apply H0.
+     ++ simpl. apply IHvtype1. apply H0.
+     ++ apply IHvtype1 in H0. assumption. ++ apply IHvtype2 in H0. assumption.
  
 Qed.
 
