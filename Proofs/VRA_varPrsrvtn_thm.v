@@ -7,84 +7,50 @@ Require Export List.
 Require Export Logic.
 Import Coq.Lists.List.ListNotations.
 
-Scheme Equality for list.
 
-Print list_beq.
-
-Load VRA_RA_encoding.
-Import VRA_RA_encoding.
+Load VRA_encoding_lemmas.
+Import VRA_encoding_lemmas.
 
 Module VRA_varPrsrvtn_thm.
 
 (** ------------------------------------------------------------
-  Sorted Attribute Set implication lemmas
+  Relating equiv_vatts to atts
 ---------------------------------------------------------------*)
 
-Print list_eq_dec.
-Lemma list_beq_refl: forall (l :atts), list_beq att String.eqb l l = true.
-Proof. intros l. induction l as [|x' l' IHl']. reflexivity. simpl. 
-rewrite String.eqb_refl. auto. Qed.
-
-Lemma list_beq_eq: forall (l l':atts), l = l' -> list_beq att String.eqb l l' = true.
-Proof. intros l l'. intro H. rewrite H. apply list_beq_refl. Qed.
-
-Lemma list_cons_eq: forall A (a a':A) (l l':list A), (a::l) = (a'::l') -> a = a' /\ l = l'.
-Proof. intros. inversion H. Admitted.
-
-Lemma union_dist_app : forall A  A' c, configVAttSet (A ++ A') c =
-      (configVAttSet A c) ++ (configVAttSet A' c) .
-Proof. 
-   intros A A' c.
-Admitted.
-
-
-Lemma findIfExists_existsb: forall a A e, findIfExists a A = Some e
-     -> forall es, existsb (vfeqb (a, es)) A = true.
-Proof. intros a A e H. induction A as [|(a', e') A' IHA']. 
-       + (* A = nil, contradiction *)
-         simpl in H. discriminate H.
-       + (* A = (a', e') :: A' *)
-         simpl. simpl in H. destruct (String.eqb a a') eqn: aeqa'.
-         ++ unfold vfeqb. simpl. rewrite aeqa'. simpl. reflexivity.
-         ++ intro es. specialize IHA' with es. apply IHA' in H. rewrite H. apply orb_true_r.
-Qed.
-
-Lemma one: forall a A e, findIfExists a A = Some e-> 
-    forall c, (E[[ e]] c) = false -> existsb (String.eqb a) (configVAttSet A c)= false.
+Lemma equiv_vatts_to_atts: forall A A', A =va= A' ->
+     forall c, ((configVAttSet A  c) =a= (configVAttSet A' c)).
 Proof. Admitted.
 
-Lemma two: forall a A e, findIfExists a A = Some e -> 
-    forall c, (E[[ e]] c) = true -> existsb (String.eqb a) (configVAttSet A c)= true.
+
+(*---------------------------------------------------------------*)
+
+(** ------------------------------------------------------------
+  equiv_bool correct
+---------------------------------------------------------------*)
+
+Lemma equiv_qtype_bool_correct: forall A A' {Ha: NoDup A} {Ha': NoDup A'}, equiv_qtype_bool A A' = true
+                        <-> equiv_qtype A A'.
+Proof.  Admitted.
+
+(** ------------equiv_bool correct ------------------------*)
+
+
+Lemma equiv_sublist: forall A B B' {HB: NoDup B} {HB': NoDup B'}, 
+     B =a= B' -> sublist_bool A B = sublist_bool A B'.
+Proof. intros. Admitted.
+
+(* 
+   <- doesn't apply: NoDup A (= {(a, e1), (a, e2)}) can result in
+   Dup configVAttSet A c = ({a a}) for c, e1 c = true && e2 c = true
+*)
+Lemma NoDup_configVAttSet: forall A, (forall c, NoDup (configVAttSet A c)) ->
+      NoDup A.
 Proof. Admitted.
-
-Lemma three: forall a A A', existsb (String.eqb a) A' = true -> 
-    atts_union_l A' (a::A) = atts_union_l (remove String.eqb a A') A.
-Proof. Admitted.
-
-Lemma four: forall a A e c, findIfExists a A = Some e 
-  -> remove String.eqb a (configVAttSet A c) =
-    configVAttSet (remove veqb (a, e) A) c.
-Proof. Admitted.
-
-Lemma five: forall a A e c, findIfExists a A = Some e 
-  -> (E[[ e]] c) = false
-  -> (configVAttSet A c) = configVAttSet (remove veqb (a, e) A) c.
-Proof. Admitted.
-
-Lemma six: forall a A e c, findIfExists a A = Some e 
-  -> (E[[ e]] c) = true
-  -> (configVAttSet A c) = a::configVAttSet (remove veqb (a, e) A) c.
-Proof. Admitted.
-
-(*Lemma five: forall a A A', existsb (veqb a) A' = true -> 
-    vatts_union_l A' (a::A) = vatts_union_l (remove veqb a A') A.
-Proof. Admitted.*)
-
 
 Lemma configVAttSet_dist_vatts_union : forall A  A' c, configVAttSet (vatts_union A A') c =
       atts_union (configVAttSet A c) (configVAttSet A' c) .
-Proof. 
-  intros A A' c. generalize dependent A'.
+Proof. Admitted.
+  (*intros A A' c. generalize dependent A'.
   induction A as [|(a, e) As IHAs].
   - (* A = nil *)
     intro A'. simpl. reflexivity.
@@ -123,8 +89,8 @@ Proof.
              rewrite (six a A' e' c).
              rewrite IHAs. (* unfold atts_union; fold atts_union. reflexivity.
              assumption. assumption. assumption.
-             assumption. *)
-Admitted.
+             assumption. *) *)
+
 (*intros A A' c. generalize dependent A'.
   induction A as [|(a, e) As IHAs].
   - (* A = nil *)
@@ -242,7 +208,7 @@ Qed.
    ------------------------------------------------------------
 *)
 
-Lemma subsump_listELEq: forall (A B A' B': atts), listElEq String.eqb A A' = true ->
+(*Lemma subsump_listELEq: forall (A B A' B': atts), listElEq String.eqb A A' = true ->
               listElEq String.eqb B B' = true -> 
                subsump_qtype_bool A B = subsump_qtype_bool A' B'.
 Proof. Admitted.
@@ -263,38 +229,37 @@ Proof. Admitted.
 Lemma equiv_qtype_bool_listELEq: forall (A B A' B': atts), listElEq String.eqb A A' = true ->
              listElEq String.eqb B B' = true -> 
              equiv_qtype_bool A B = equiv_qtype_bool A' B'.
-Proof. Admitted.
+Proof. Admitted. *)
 
 (*high level proof explanantion*)
 Theorem variation_preservation : forall e vq A, 
        vtype e vq A ->
        forall c, (E[[e]] c) = true ->
-           listElEq String.eqb (type' (configVQuery vq c)) (configVQtype A c) = true.
-Proof. 
+           (type' (configVQuery vq c)) =a= (configVQtype A c).
+Proof.
   intros. induction H.
   (* Relation - E *) (*get rid of this*)
   - unfold configVQuery. unfold configVRelS. simpl. 
     rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
     unfold configVQtype. simpl. destruct (E[[e']] c) eqn: HsemE.
-    + rewrite ListElEq_refl_atts. reflexivity.
-    + rewrite ListElEq_refl_atts. reflexivity. 
+    + reflexivity.
+    + reflexivity. 
   (* Relation - E *)
   - unfold configVQuery. unfold configVRelS. unfold configVQtype. simpl. 
     rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
-    rewrite H0. apply H in H0. rewrite H0. rewrite ListElEq_refl_atts. reflexivity.
+    rewrite H0. apply H in H0. rewrite H0. reflexivity.
  (* Project - E *)
  - unfold subsump_vqtype, configVQtype in H1. simpl in H1.
    unfold configVQtype in IHvtype. simpl in IHvtype. 
-   unfold configVQtype. simpl. 
+   unfold configVQtype. simpl.  
    destruct (E[[ e']] c) eqn: He'.
-     ++ (*rewrite IHvtype1. ->*)
-        rewrite (subsump_listELEq 
-                  (configVAttSet A c) (type' (configVQuery vq c))
-                  (configVAttSet A c) (configVAttSet A' c)).
-        (*<-*) 
-        simpl. unfold subsump_qtype_bool. 
-        specialize H1 with c. rewrite H0, He' in H1. rewrite H1. rewrite H0. 
-        rewrite ListElEq_refl_atts. reflexivity. 
+     ++ 
+        simpl. unfold subsump_qtype_bool. rewrite H0.
+        specialize H1 with c. rewrite H0, He' in H1. 
+        destruct (sublist_bool (configVAttSet A c) (type' (configVQuery vq c))) eqn:Hsubl.
+        reflexivity.
+        rewrite H1. rewrite H0. 
+        reflexivity. 
         (*assumption.->*) apply ListElEq_refl_atts. 
         apply IHvtype in H0. assumption. (*<-*)
      ++ (*rewrite IHvtype1. ->*)

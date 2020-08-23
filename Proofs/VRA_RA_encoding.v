@@ -9,20 +9,74 @@ Require Export String.*)
 Require Export Logic.
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.ListSet.
-Require Import Coq.Structures.OrderedTypeEx.
+Require Import Relations.Relation_Definitions.
+Require Import Coq.Classes.RelationClasses.
 Require Import Coq.FSets.FSetAVL.
 Require Import Coq.Sorting.Sorted.
-
 Import Coq.Lists.List.ListNotations.
+
+(*Require Import Coq.MSets.MSetInterface.
+
+Require Import Coq.MSets.MSetWeakList. 
+
+Require Import MSets.
+
+Module MDT_String.
+Definition t := string.
+Definition eq_dec := string_dec.
+End MDT_String.
+
+Module StringDec := DecidableTypeEx.Make_UDT(MDT_String).
+
+(** → Then build the MSet module *)
+Module StringWL := MSetWeakList.Make StringDec.
+
+Import StringWL.Raw.*)
 
 Load Feature.
 Import Feature.
 
 Module VRA_RA_encoding.
 
-Module SSet := FSetAVL.Make String_as_OT.
+(* Module SSet := FSetAVL.Make String_as_OT. 
 
-Definition v : Type := SSet.t.
+Definition v : Type := SSet.t.*)
+
+(* Locate union. 
+
+Locate eq.
+
+Example s1:string :="Hello".
+Example s2:string :="World".
+
+Example l1:list string := nil.
+
+Example l2:list string := cons s1 nil.
+
+Example eq_wl :=
+eq (add s2 (add s1 empty)) (add s1 (add s2 empty)).
+Eval compute in eq_wl.
+
+Lemma equivE: eq (add s2 (add s1 empty)) (add s1 (add s2 empty)).
+Proof. simpl. unfold eq. unfold Equal. intros. split.
+intro. 
+
+Print symmetry.
+
+Example string_wl :=
+Raw.union Raw add (Raw.add s1 Raw.empty) (l1).
+Eval compute in string_wl.
+
+Print SSet.MSet.Raw.inv_ok.
+
+Definition attss : Type := Raw.t.
+
+
+(*Definition no_dup l := List.fold_left (fun s x => add x s) l empty.
+
+
+Lemma union_nil_r: forall (l:Raw.t), Raw.union (no_dup l) [] = no_dup l.
+Proof. intros. unfold Raw.union. assert (I: NoDup A). induction A. *)
 
 Check LocallySorted.
 
@@ -30,7 +84,21 @@ Check String_as_OT.compare.
 
 Locate string_dec.
 
-Definition s1 : list string := nil. 
+Definition s3 : list string := nil.  *)
+
+(** -------------------------------------------------------------
+  Logic Lemmas
+-----------------------------------------------------------------*)
+
+(* ~ exists x, P -> forall x, ~ P x *)
+Lemma dist_not_exists {X:Type} (P:X->Prop): 
+         ~(exists x, P x) -> forall x, ~ P x.
+Proof. intro H.
+ pose proof (fun x Px => H (ex_intro _ x Px)) as H'; simpl in H'.
+ auto.
+Qed.
+
+(*---------------------------------------------------------------*)
 
 (** -------------------------------------------------------------
   Attribute: Type and Comparison Function, Lemmas
@@ -42,28 +110,101 @@ Inductive comp : Type :=
   | EQc | LTc | GTc.
 
 (* Variational Attribute *)
-Definition vatt : Type := (att * fexp)%type. (*assuming always annotated; could've used option*)
+(*Definition vatt : Type := (att * fexp)%type.*) (*assuming always annotated; could've used option*)
 
-(*Inductive vatt' : Type :=
-   | P: string -> fexp -> vatt'. *)
+Inductive vatt : Type :=
+   | ae : att -> fexp -> vatt. 
 
-Definition vfeqb (v v' : vatt) := String.eqb (fst v) (fst v').
+(*----------------------Equality Schemes----------------------------*)
 
-Definition veqb (v v' : vatt) := String.eqb (fst v) (fst v') && eqb (snd v) (snd v').
+(* Comment :- why not using equality and relevant facts from string libary?
+vatt (string, fexp) equality scheme, generates equality scheme for string and fexp.
+Although string library provides string equality and all relevant facts, 
+I don't know how to make scheme command use that when scheming equality for vatt.
+Thus for the sake of consistency i.e. not using two types of string equality, we will
+use schemed equality and equality facts from equality module for string like fexp and vatt 
+------------------------------------------------------------------------------------------*)
+
+
+Scheme Equality for string. 
+
+(* Equalities for string *)
+Module DT_string.
+Definition t := string.
+Definition eq_dec := string_eq_dec.
+Definition eqb := string_beq.
+Definition eq :=  @Logic.eq t.
+Lemma eqb_eq : forall x y, eqb x y = true <-> eq x y.
+Proof. split. 
+       apply internal_string_dec_bl.
+       apply internal_string_dec_lb. 
+Qed.
+End DT_string.
+
+(** Usual Decidable Type Full for string *)
+Module stringDecF := Equalities.Make_UDTF(DT_string).
+(* Generate Boolean Equality Facts (e.g. eqb_neq, eqb_refl) for string*)
+Module stringBEF := Equalities.BoolEqualityFacts(stringDecF). 
+
+Scheme Equality for fexp. 
+
+(* Equalities for fexp *)
+Module DT_fexp.
+Definition t := fexp.
+Definition eq_dec := fexp_eq_dec.
+Definition eqb := fexp_beq.
+Definition eq :=  @Logic.eq t.
+Lemma eqb_eq : forall x y, eqb x y = true <-> eq x y.
+Proof. split. 
+       apply internal_fexp_dec_bl.
+       apply internal_fexp_dec_lb. 
+Qed.
+End DT_fexp.
+
+(** Usual Decidable Type Full for fexp *)
+Module fexpDecF := Equalities.Make_UDTF(DT_fexp).
+(* Generate Boolean Equality Facts (e.g. eqb_neq, eqb_refl) for fexp*)
+Module fexpBEF := Equalities.BoolEqualityFacts(fexpDecF). 
+
+
+Scheme Equality for vatt. 
+(* Equalities for vatt*)
+
+(* Decidable Module for vatt *)
+Module DT_vatt.
+Definition t := vatt.
+Definition eq_dec := vatt_eq_dec.
+Definition eqb := vatt_beq.
+Definition eq :=  @Logic.eq t.
+Lemma eqb_eq : forall x y, eqb x y = true <-> eq x y.
+Proof. split. 
+       apply internal_vatt_dec_bl.
+       apply internal_vatt_dec_lb. 
+Qed.
+End DT_vatt.
+
+(** Usual Decidable Type Full for vatt *)
+Module vattDecF := Equalities.Make_UDTF(DT_vatt).
+(* Generate Boolean Equality Facts (e.g. eqb_neq, eqb_refl) for Vatt*)
+Module vattBEF := Equalities.BoolEqualityFacts(vattDecF). 
+
+(*----------------------Equality Schemes End----------------------------*)
+
+(*Lemma veqb_refl:*)
+
+(*Definition vfeqb (v v' : vatt) := String.eqb (fst v) (fst v').
+
+Definition veqb (v v' : vatt) := String.eqb (fst v) (fst v') && eqb (snd v) (snd v').*)
 
 (*Scheme Equality for vatt'. Print vatt'_beq. Print fexp_beq. Print string_beq. *)
 
-
-
-Lemma veqb_refl: forall (a:vatt), veqb a a = true.
+(*Lemma veqb_refl: forall (a:vatt), veqb a a = true.
 Proof. destruct a. unfold veqb. simpl. rewrite String.eqb_refl.
-rewrite eqb_refl. reflexivity. Qed.
+rewrite eqb_refl. reflexivity. Qed. *)
 
 (*Definition s : string := "ba".
 Definition s' : string := "ab". 
 Compute (veqb (s, e) (s, e)).*)
-
-Locate eqb_string.
 
 (** Attribute (string-)comparison function and associated lemmas *)
 
@@ -77,29 +218,62 @@ Locate eqb_string.
 ---------------------------------------------------------------*)
 
 (* Plain Attribute List *)
-Definition atts : Type := list att.
+Definition atts : Type := set att.
 
 (*------------------------------------------------------------------------*)
 
 (* Variational Attribute List *)
-Definition vatts : Type := list vatt.
+Definition vatts : Type := set vatt.
 
-Fixpoint findIfExists (a : att) (v:vatts) : option fexp := 
+Fixpoint count_occ_Att (a : att) (v:vatts) : nat := 
    match v with
-   | []           => None
-   | (x, e) :: xs => 
-       match (String.eqb a x) with
-       | true  => Some e
-       | false => findIfExists a xs
+   | []           => O
+   | ae x e :: xs => 
+       match (string_beq a x) with
+       | true  => S (count_occ_Att a xs)
+       | false => count_occ_Att a xs
        end
    end.
+
+Fixpoint InAtt (a : att) (v:vatts) : Prop := 
+   match v with
+   | []           => False
+   | ae x e :: xs => 
+       match (string_beq a x) with
+       | true  => True
+       | false => InAtt a xs
+       end
+   end.
+
+(* relate InAtt with In from library *)
+
+Lemma InAtt_In : forall (a:att) (A:vatts), InAtt a A  <-> exists e, In (ae a e) A.
+Proof. intros. split. 
+       - induction A as [|a' A' IHa']. 
+         + intro H. simpl in H. destruct H.
+         + intro H. destruct a' as (a', e'). 
+           simpl. simpl in H. destruct (string_beq a a') eqn: Heq.
+           rewrite stringDecF.eqb_eq in Heq.
+           ++ exists e'. simpl. left. rewrite <- vattDecF.eqb_eq.
+           simpl. rewrite fexpBEF.eqb_refl. rewrite andb_true_r.
+           rewrite stringDecF.eqb_eq. auto.
+           ++ apply IHa' in H. destruct H as [e'' H]. exists e''.
+              right. auto.
+      - induction A as [|a' A' IHa']; intro H; destruct H as [e H]; simpl in H;
+        destruct H.
+        + rewrite H. simpl. rewrite stringBEF.eqb_refl. apply I.
+        + destruct a' as (a', e'). simpl. destruct (string_beq a a') eqn: Haeq. 
+          apply I. apply IHa'. exists e. auto.
+Qed.
+
 (*-------------------------------------------------------------------------------*)
 
 (*-------------------------------------------------------------------------------*)
 (** Remove replace with List.remove *)
 
 (* it's bag remove but once *)
-Fixpoint remove {X:Type} (f:X->X->bool) (a : X) (A : list X) : list X :=
+
+(*Fixpoint remove {X:Type} (f:X->X->bool) (a : X) (A : list X) : list X :=
     match A with
       | [] => []
       | x::xs => 
@@ -160,7 +334,7 @@ Proof. intros. split.
               +++ discriminate H.
            ++ simpl in H. destruct (existsb (String.eqb a) B) eqn:HaB. 
 
-Admitted.
+Admitted.*)
      (*      rewrite <- H0. assumption.
          + destruct (existsb (String.eqb a) B) eqn:HaB. rewrite HaB in H.
            ++ apply (existsb_exists (String.eqb a)) in HaB. 
@@ -188,11 +362,12 @@ Proof. intro A. induction A as [|a As IHA].
               
 Check (listElEq String.eqb [] []). *)
 
+
 (* Configuration Variational Attribute List(Set) A[]c (see A3)*)
 Fixpoint configVAttSet (vA : vatts) (c : config) : atts :=
   match vA with
   | nil                  => nil
-  | cons (a, e) vas => if semE e c 
+  | cons (ae a e) vas => if semE e c 
                              then (cons a (configVAttSet vas c))
                              else (           configVAttSet vas c )
   end.
@@ -326,60 +501,224 @@ Proof. intros e c. simpl. destruct (E[[ e]] c); reflexivity. Qed.
 (** ------------------------------------------------------------
   Subsumption (of Variational Set) defintion
 ---------------------------------------------------------------*)
-Fixpoint sublist (X X': list string): bool :=
-    match X with
-    | nil => match X' with 
-             | nil => true
-             | cons _ _ => false
-             end
-    | cons x xs => match X' with 
-                   | nil => false
-                   | cons x' xs' => if String.eqb x x' then sublist xs xs'
-                                         else sublist (x::xs) xs'
+(* Checks count
+   Ex: sublist_bool [1;1;2] [1;2] = false 
+*)
+Fixpoint sublist_bool (A A': list string): bool :=
+    match A with
+    | nil => true
+    | cons x xs => match set_mem string_dec x A' with 
+                   | false => false
+                   | true  => sublist_bool xs (set_remove string_dec x A')
                    end
-    end.
+    end. 
+
+(* Also check count
+   sublist [1; 1; 2] [1; 2] doesn't hold
+*)
+Definition sublist (A A': list string):= forall x, (In x A -> In x A') /\ 
+           (count_occ string_dec A x = count_occ string_dec A' x).
+
 
 (* Subsumption of Plain Set (Query Type) *)
-Definition subsump_qtype_bool (A A': qtype) : bool := sublist A A'.
+Definition subsump_qtype_bool (A A': qtype) := sublist_bool A A'.
 
 (* Subsumption of Variational Set (Query Type) *)
 Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c, 
-    sublist (configVQtype X c) (configVQtype X' c) = true.
+    sublist (configVQtype X c) (configVQtype X' c).
 
 (*----------------------subsump--------------------------------*)
+
+
 
 
 (** ------------------------------------------------------------
   Equivalence (of Variational Set) definition
 ---------------------------------------------------------------*)
 (* Plain Set (Query Type) Equivalence*)
-Fixpoint equiv_qtype_bool (A A': qtype) : bool := 
+Fixpoint equiv_atts_bool (A A': qtype) : bool := 
     match A with
     | nil => match A' with 
              | nil => true
              | cons _ _ => false
              end
-    | cons x xs => match A' with 
-                   | nil => false
-                   | cons x' xs' => String.eqb x x' && equiv_qtype_bool xs xs'
+    | cons x xs => match set_mem string_dec x A' with 
+                   | false => false
+                   | true  => equiv_atts_bool xs (set_remove string_dec x A')
                    end
     end.
 
+Definition equiv_atts : relation atts:= 
+       fun A A' => forall a, (In a A <-> In a A') /\ 
+                      ( count_occ string_dec A a = count_occ string_dec A' a).
+
+Infix "=a=" := equiv_atts (at level 50) : type_scope.
+
 (* Variational Set (non-annnot-Var Attr) Equivalence (Only needed for next one)*)
-Definition equiv_vatts ( X X': vatts ) : Prop := forall c, configVAttSet X c = configVAttSet X' c.
+Definition equiv_vatts : relation vatts := 
+        fun A A' => forall c, configVAttSet A c =a= configVAttSet A' c.
+
+Infix "=va=" := equiv_vatts (at level 50) : type_scope.
+
+
+Definition equiv_qtype_bool (A A': qtype) := equiv_atts_bool A A'.
+
+Definition equiv_qtype : relation qtype := 
+        fun A A' => A =a= A'.
+
+Infix "=t=" := equiv_qtype (at level 50) : type_scope.
 
 (* Variational Set (annotated-Var Query Type) Equivalence *)
-Definition equiv_vqtype ( X X': vqtype ) : Prop := equiv_vatts (fst X) (fst X') /\ equivE (snd X) (snd X').
+Definition equiv_vqtype : relation vqtype := 
+        fun X X' => (fst X) =va= (fst X') /\ (snd X) =e= (snd X').
 
-(* Type Equivalence is reflexive*)
-Lemma equiv_qtype_bool_refl: forall A, equiv_qtype_bool A A = true.
+Infix "=T=" := equiv_vqtype (at level 50) : type_scope.
+
+(* equiv_qtype is Equivalence relation *)
+Remark equiv_atts_refl: Reflexive equiv_atts.
 Proof.
-  intros. induction A. 
-  + reflexivity. 
-  + simpl. rewrite String.eqb_refl. simpl. apply IHA.
+  intros A a. split; reflexivity.
 Qed.
 
+Remark equiv_atts_sym : Symmetric equiv_atts.
+Proof.
+  intros A A' H a.
+  split; symmetry;
+  apply H.
+Qed.
+
+Remark equiv_atts_trans : Transitive equiv_atts.
+Proof.
+  intros A A'' A' H1 H2 a.
+  split; try (transitivity (In a A'')); 
+         try (transitivity (count_occ string_dec A'' a));
+   try (apply H1);
+   try (apply H2). 
+Qed.
+
+ Instance atts_Equivalence : Equivalence equiv_atts := {
+    Equivalence_Reflexive := equiv_atts_refl;
+    Equivalence_Symmetric := equiv_atts_sym;
+    Equivalence_Transitive := equiv_atts_trans }.
+
+Instance qtype_Equivalence : Equivalence equiv_qtype := {
+    Equivalence_Reflexive := equiv_atts_refl;
+    Equivalence_Symmetric := equiv_atts_sym;
+    Equivalence_Transitive := equiv_atts_trans }.
+
+(** atts equivalence is an equivalence relation. *)
+(*Instance equiv_attsE : Equivalence equiv_atts.
+Proof.
+  split.
+    apply equiv_atts_refl.
+    apply equiv_atts_sym.
+    apply equiv_atts_trans.
+Qed.
+
+(** atts equivalence is an equivalence relation. *)
+Instance equiv_qtypeE : Equivalence equiv_qtype.
+Proof.
+  split.
+    apply equiv_atts_refl.
+    apply equiv_atts_sym.
+    apply equiv_atts_trans.
+Qed.*)
+
+(* equiv_vatts is Equivalence relation *)
+
+Remark equiv_vatts_refl: Reflexive equiv_vatts.
+Proof.
+  intros A a. reflexivity.
+Qed.
+
+Remark equiv_vatts_sym : Symmetric equiv_vatts.
+Proof.
+  intros A A' H a.
+  symmetry.
+  apply H.
+Qed.
+
+Remark equiv_vatts_trans : Transitive equiv_vatts.
+Proof.
+  intros A A'' A' H1 H2 a.
+  transitivity (configVAttSet A'' a).
+    apply H1.
+    apply H2.
+Qed.
+
+(** vatts equivalence is an equivalence relation. *)
+Instance vatts_Equivalence : Equivalence equiv_vatts := {
+    Equivalence_Reflexive := equiv_vatts_refl;
+    Equivalence_Symmetric := equiv_vatts_sym;
+    Equivalence_Transitive := equiv_vatts_trans }.
+
+(* equiv_vqtype is Equivalence relation *)
+
+Remark equiv_vqtype_refl: Reflexive equiv_vqtype.
+Proof.
+  intro X. destruct X. unfold equiv_vqtype. split; 
+  reflexivity. 
+Qed.
+
+Remark equiv_vqtype_sym : Symmetric equiv_vqtype.
+Proof.
+  intros X Y. intros H. destruct X, Y. unfold equiv_vqtype. 
+  unfold equiv_vqtype in H. destruct H. split. symmetry. 
+  apply H. symmetry. 
+  apply H0.
+Qed.
+
+
+Remark equiv_vqtype_trans : Transitive equiv_vqtype.
+Proof.
+  intros X Y Z. intros H1 H2. 
+  destruct X as (vx, fx), Y as (vy, fy), Z as (vz, fz). 
+  unfold equiv_vqtype in H1. destruct H1 as [H11 H12].
+  unfold equiv_vqtype in H2. destruct H2 as [H21 H22].
+  unfold equiv_vqtype. split.
+  transitivity (fst (vy, fy)).
+    apply H11.
+    apply H21.
+  transitivity (snd (vy, fy)).
+    apply H12.
+    apply H22.
+Qed.
+
+(** vatts equivalence is an equivalence relation. *)
+Instance vqtype_Equivalence : Equivalence equiv_vqtype := {
+    Equivalence_Reflexive := equiv_vqtype_refl;
+    Equivalence_Symmetric := equiv_vqtype_sym;
+    Equivalence_Transitive := equiv_vqtype_trans }.
+
+
 (*---------------------------equiv-----------------------------*)
+
+(** ------------------------------------------------------------
+  Restrict vatts to have no duplicate atts 
+                       i.e. same atts with diff fexp
+---------------------------------------------------------------*)
+
+(*stronger condition than mere NoDup vatts*)
+
+Inductive NoDupAtt : list vatt -> Prop :=
+  | NoDupAtt_nil : NoDupAtt nil
+  | NoDupAtt_cons : forall a e l, ~ InAtt a l -> NoDupAtt l 
+                            -> NoDupAtt ((ae a e)::l).
+
+(* relate NoDupAtt with NoDup from library *)
+
+
+Lemma NoDupAtt_NoDup: forall A, NoDupAtt A -> NoDup A.
+Proof. intros A H. induction H as [| a e l H1 H2 IHa]. 
+       + apply NoDup_nil.
+       + apply NoDup_cons.
+         ++ rewrite (InAtt_In) in H1. 
+            apply dist_not_exists with (x:= e) in H1.
+            auto. 
+         ++ auto.
+Qed.
+
+(*-----------------------NoDup_atts_in_vatts--------------------------*)
 
 (** ------------------------------------------------------------
   Push (attribute list) annotation (to individual attributes)
@@ -392,11 +731,11 @@ Qed.
 Fixpoint push_annot (A: vatts) (m: fexp) : (vatts):=
   match A with
   | nil => nil
-  | (x, e) :: xs => (x, e /\(F) m) :: push_annot xs m
+  | ae x e :: xs => (ae x (e /\(F) m)) :: push_annot xs m
   end.
 
 Lemma fold_push_annot: forall x e xs m, 
-(x, e /\(F) m) :: push_annot xs m = push_annot ((x, e) :: xs) m.
+(ae x (e /\(F) m)) :: push_annot xs m = push_annot ((ae x e) :: xs) m.
 Proof. auto. Qed. 
 
 Lemma push_annot_nil: forall e, push_annot [] e = [].
@@ -427,7 +766,7 @@ Qed.
 ---------------------------------------------------------------*)
 (** Union *)
 (* Plain Attr List *)
-Fixpoint atts_union_c (A A': atts) : atts :=
+(*Fixpoint atts_union_c (A A': atts) : atts :=
   match A with
   | []      => []
   | a :: xs =>
@@ -504,11 +843,24 @@ Definition vatts_union (A A': vatts) : vatts :=
 
 (* Variational Query Type*)
 Definition vqtype_union (Q Q': vqtype) : vatts := 
-     vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')).
+     vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). *)
+
+(* Plain Attr List *)
+Definition atts_union (A A': atts) : atts := 
+   set_union string_dec A A'.
+
+(* Variational Attr List *)
+Definition vatts_union (A A': vatts) : vatts := 
+    set_union vatt_eq_dec A A'.
+
+(* Variational Query Type*)
+Definition vqtype_union (Q Q': vqtype) : vatts := 
+     vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). 
+
 (*------------------------------------------------------------------------------*)
 (** Intersection *)
 (* Plain Attr List *)
-Fixpoint atts_inter (A A': atts) : atts :=
+(*Fixpoint atts_inter (A A': atts) : atts :=
   match A with
   | []      => []
   | a :: xs =>
@@ -529,6 +881,19 @@ Fixpoint vatts_inter (A A': vatts) : vatts :=
      end
   end.
 
+(* Variational Query Type*)
+Definition vqtype_inter (Q Q': vqtype) : vatts := 
+     vatts_inter (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). *)
+
+(* Plain Attr List *)
+Definition atts_inter (A A': atts) : atts := 
+   set_inter string_dec A A'.
+
+(* Variational Attr List *)
+Definition vatts_inter (A A': vatts) : vatts := 
+    set_inter vatt_eq_dec A A'.
+
+(* Variational Query Type*)
 (* Variational Query Type*)
 Definition vqtype_inter (Q Q': vqtype) : vatts := 
      vatts_inter (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')).
@@ -566,18 +931,105 @@ Lemma atts_union_nil_l: forall A, atts_union [] A = A.
 Proof. intros. unfold atts_union. simpl. 
 rewrite atts_union_l_nil_r. reflexivity. Qed.*)
 
-Lemma atts_union_nil_r: forall A, atts_union A [] = A.
-Proof. intro A. induction A as [|a A IHA]. auto. 
-simpl. rewrite IHA. reflexivity. Qed.
+(*Lemma eq_equiv_atts: forall A A', A = A' -> A =a= A'.
+Proof. intros. rewrite H. reflexivity. Qed.*)
+(* count_occ_cons_eq, count_occ_cons_neq *)
+Lemma count_occ_set_add_eq: forall l x y,
+    x = y -> ~(In x l) -> (count_occ string_dec (set_add string_dec x l) y 
+                           = S (count_occ string_dec l y)).
+Proof. intros. rewrite H. induction l as [ |a l IHal]. 
+       - simpl. destruct (string_dec y y). 
+         reflexivity. destruct n. reflexivity. 
+       - simpl. 
+         rewrite not_in_cons in H0. destruct H0.
+         destruct (string_dec a y); subst.
+         + destruct H0. reflexivity. 
+         + destruct (string_dec y a); subst. 
+           ++ destruct n. reflexivity.
+           ++ simpl. destruct (string_dec a y); subst. 
+              +++ destruct n. reflexivity.
+              +++ apply IHal. auto.
+Qed.
 
-Lemma atts_union_nil_l: forall A, atts_union [] A = A.
-Proof. auto. Qed.
+Lemma count_occ_set_add_neq : forall l x y,
+    x <> y -> count_occ string_dec (set_add string_dec x l) y = count_occ string_dec l y.
+Proof. 
+   intros l x y Hxy. induction l as [ |a l IHal]. 
+   - simpl. destruct (string_dec x y); subst.  
+      + destruct Hxy. reflexivity.
+      + reflexivity.
+   - simpl. destruct (string_dec x a). 
+      + destruct (string_dec a y); subst. destruct Hxy. reflexivity.
+           simpl. destruct (string_dec a y); subst. destruct n. 
+           destruct Hxy. reflexivity. reflexivity.
+      + destruct (string_dec a y); subst. simpl. 
+        ++ destruct (string_dec y y); subst.
+            +++ auto.
+            +++ destruct n0. reflexivity. 
+        ++ simpl. destruct (string_dec a y); subst. 
+            destruct n0. reflexivity. auto. 
+Qed.
 
-Lemma atts_inter_nil_r: forall A, atts_inter A [] = [].
-Proof. intro A. induction A. auto. simpl. assumption. Qed.
 
-Lemma atts_inter_nil_l: forall A, atts_inter [] A = [].
-Proof. auto. Qed.
+Lemma count_occ_set_add_cons l x y:
+         ~(In x l) -> (count_occ string_dec (set_add string_dec x l) y =
+                count_occ string_dec (x::l) y).
+Proof. intros H0. destruct (string_dec x y) as [H | H]. 
+       + apply (count_occ_set_add_eq l x y) in H as H1. rewrite H1.
+         symmetry. apply count_occ_cons_eq. auto. auto.
+       + apply (count_occ_set_add_neq l x y) in H as H1. rewrite H1.
+         symmetry. apply count_occ_cons_neq. auto. 
+Qed.
+
+Lemma equiv_atts_set_add_cons a A:
+         ~ In a A -> (set_add string_dec a A) =a= (a::A) .
+Proof. unfold equiv_atts. intros Ha a0. split.
+       - split.
+         + intro H. simpl. rewrite set_add_iff in H. 
+           destruct H. ++ left. auto.
+                       ++ right. auto.
+         + intro H. rewrite set_add_iff. simpl in H. 
+           destruct H. ++ left. auto.
+                       ++ right. auto.
+      - apply (count_occ_set_add_cons A a a0).
+        auto.
+Qed.
+
+Lemma atts_union_nil_r: forall A, atts_union A [] =a= A.
+Proof. intros. simpl. reflexivity. Qed.
+
+(* atts_union use set_add; thus bag A will become set A on LHS*)
+Lemma atts_union_nil_l: forall A (H: NoDup A), atts_union [] A =a= A.
+Proof. intros. induction A. apply atts_union_nil_r.
+       simpl. unfold equiv_atts in IHA. rewrite NoDup_cons_iff in H.
+       destruct H as [H1 H2].
+       split; intros; destruct (IHA H2 a0) as [IHA1 IHA2].
+       ++ split; intro H. 
+          - apply set_add_elim  in H. 
+            destruct H. 
+            -- left. auto. 
+            -- right. 
+               rewrite <- IHA1. apply H. 
+          - simpl in H.  destruct H. 
+            -- apply set_add_intro2. auto.
+            -- apply set_add_intro1. 
+               rewrite IHA1. assumption.
+       ++ destruct (string_dec a a0) as [H | H].
+          +++ apply (count_occ_set_add_eq (atts_union [] A) a a0) in H as H'.
+              rewrite H'. rewrite IHA2. symmetry. apply count_occ_cons_eq.
+              auto. rewrite H in H1. rewrite <- IHA1 in H1. rewrite H. apply H1.
+          +++ apply (count_occ_set_add_neq (atts_union [] A) a a0) in H as H'.
+              rewrite H'. rewrite IHA2. symmetry. apply count_occ_cons_neq.
+              auto.
+Qed.
+
+Lemma atts_inter_nil_r: forall A, atts_inter A [] =a= [].
+Proof. intro A. induction A. simpl. reflexivity. simpl.
+       assumption.
+Qed.
+
+Lemma atts_inter_nil_l: forall A, atts_inter [] A =a= [].
+Proof. intros. simpl. reflexivity. Qed.
 
 (*Lemma vatts_union_c_nil_r: forall A, vatts_union_c A [] = [].
 Proof. intro A. induction A as [|a A IHA]; 
@@ -596,19 +1048,62 @@ Lemma vatts_union_nil_l : forall A, vatts_union [] A = A.
 Proof. intros. unfold vatts_union. simpl. 
 rewrite vatts_union_l_nil_r. reflexivity. Qed.*)
 
-Lemma vatts_union_nil_r : forall A, vatts_union A [] = A.
-Proof. intro A. induction A as [|a A IHA]. auto. 
-destruct a as (a,e). simpl. rewrite IHA. reflexivity. Qed.
+Lemma eq_equiv_vatts: forall A A', A = A' -> A =va= A'.
+Proof. intros. rewrite H. reflexivity. Qed.
 
-Lemma vatts_union_nil_l : forall A, vatts_union [] A = A.
-Proof. auto. Qed.
+Lemma vatts_union_nil_r : forall A, vatts_union A [] =va= A.
+Proof. intro A. induction A as [|a A IHA]. simpl. reflexivity.
+destruct a as (a,e). simpl. reflexivity. Qed.
 
-Lemma vatts_inter_nil_r : forall A, vatts_inter A [] = [].
+Lemma configVAttSet_set_add: forall a e A c, 
+        configVAttSet (set_add vatt_eq_dec (ae a e) A) c =a=
+           if (E[[ e]] c) then set_add string_dec a (configVAttSet A c)
+                                   else                  (configVAttSet A c).
+Proof. Admitted.
+
+Lemma equiv_atts_set_add: forall a A A', A =a= A' -> 
+       set_add string_dec a A =a=  set_add string_dec a A'.
+Proof. Admitted.
+
+Lemma vatts_union_nil_l : forall A (H: NoDup A), vatts_union [] A =va= A.
+Proof. induction A. 
+      simpl. reflexivity. simpl.  
+      unfold equiv_vatts in IHA. intro H.
+      rewrite NoDup_cons_iff in H.
+      destruct H as [H1 H2].
+      unfold equiv_vatts. 
+      intros. destruct a as (a, e). unfold configVAttSet; fold configVAttSet.
+      rewrite configVAttSet_set_add. destruct (E[[ e]] c) eqn: He. 
+      + rewrite (equiv_atts_set_add _ _ _ (IHA H2 c)). 
+        apply equiv_atts_set_add_cons.
+      + apply (IHA c).
+Qed. 
+
+Lemma not_in_configVAttSet: forall a A, (forall e, ~ In (ae a e) A) ->
+      forall c,~ In a (configVAttSet A c).
+Proof. intros. induction A. 
+       - simpl. simpl in H. auto.
+       - simpl in H. destruct a0 as (a', e'). specialize H with e'. 
+         apply Classical_Prop.not_or_and in H. destruct H. 
+         rewrite <- vattBEF.eqb_neq in H. simpl in H. 
+         rewrite fexpBEF.eqb_refl in H. rewrite andb_true_r in H.
+         rewrite stringBEF.eqb_neq in H.
+         unfold configVAttSet; fold configVAttSet. destruct (E[[ e']] c).
+         simpl. apply Classical_Prop.and_not_or. split.
+         + assumption.
+         + apply IHA. apply H0. 
+         simpl in H. destruct (fexp_eq_dec f e). rewrite e0 in H. 
+         destruct H. Admitted.
+
+Lemma not_equal: forall a a' e', a' <> a ->ae a' e' <> ae a e'.
+Proof. intros. rewrite <- vattBEF.eqb_neq. simpl.  Admitted.
+
+Lemma vatts_inter_nil_r : forall A, vatts_inter A [] =va= [].
 Proof. intro A. induction A as [|(a, e)]. reflexivity. simpl. 
        assumption. Qed.
 
-Lemma vatts_inter_nil_l : forall A, vatts_inter [] A = [].
-Proof. auto. Qed.
+Lemma vatts_inter_nil_l : forall A, vatts_inter [] A =va= [].
+Proof. intros. simpl. reflexivity. Qed. 
 
 
 (* atts_union_comm is not commutative anymore*)
@@ -636,7 +1131,7 @@ Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
     ------------------------------------ intro less specific context
                m  |- rn : A^e'
    *)
-  | Relation_vE_fm : forall e rn A e',
+  | Relation_vE_fm : forall e rn A {HA: NoDup A} e',
         ~ sat (  e'    /\(F)   (~(F) (e)) ) ->
        vtype e (rel_v (rn, (A, e'))) (A, e') (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
   (*   -- intro MORE specific context --
@@ -644,31 +1139,30 @@ Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
     ------------------------------------  RELATION-E 
                e  |- rn : A^e
    *)
-  | Relation_vE : forall e rn A e',
+  | Relation_vE : forall e rn A {HA: NoDup A} e',
        ~ sat (  e    /\(F)   (~(F) (e')) ) ->
        vtype e (rel_v (rn, (A, e'))) (A, e)
   (*   -- PROJECT-E --  *)
-  | Project_vE: forall e vq e' A' A,
+  | Project_vE: forall e vq e' A' {HA': NoDup A'} A {HA: NoDup A},
        vtype e vq (A', e') -> 
        subsump_vqtype (A, e) (A', e') ->
        vtype e (proj_v A vq) (A, e)
   (*  -- CHOICE-E --  *)
-  | Choice_vE: forall e e' vq1 vq2 A1 e1 A2 e2,
-       (*LocallySortedVAtts A1 /\ LocallySortedVAtts A2 ->*)
+  | Choice_vE: forall e e' vq1 vq2 A1 {HA1: NoDup A1} e1 A2 {HA2: NoDup A2} e2,
        vtype (e /\(F) e') vq1 (A1, e1) ->
        vtype (e /\(F) (~(F) e')) vq2 (A2, e2) ->
        vtype e (chcQ e' vq1 vq2)
         (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
             (*e1 and e2 can't be simultaneously true.*)
   (*  -- PRODUCT-E --  *)
-  | Product_vE: forall e vq1 vq2 A1 e1 A2 e2 ,
+  | Product_vE: forall e vq1 vq2 A1 {HA1: NoDup A1} e1 A2 {HA2: NoDup A2} e2 ,
        vtype e  vq1 (A1, e1) ->
        vtype e  vq2 (A2, e2) ->
        vqtype_inter (A1, e1) (A2, e2) = nil ->
        vtype e  (prod_v vq1 vq2)
         (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
   (*  -- SETOP-E --  *)
-  | SetOp_vE: forall e vq1 vq2 A1 e1 A2 e2 op,
+  | SetOp_vE: forall e vq1 vq2 A1 {HA1: NoDup A1} e1 A2 {HA2: NoDup A2} e2 op,
        vtype e vq1 (A1, e1) ->
        vtype e vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
@@ -687,7 +1181,7 @@ Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
 Fixpoint type' (q:query) : qtype :=
  match q with
  | (rel (rn, A)) => A
- | (proj A q)    => let A' := type' q in
+ | (proj A q)    => let A' := type' q in 
                       if subsump_qtype_bool A A' then A else nil 
  | (setU op q1 q2) => if equiv_qtype_bool (type' q1) (type' q2) then type' q1 else nil
  | (prod  q1 q2) => if (is_disjoint_bool (type' q1) (type' q2)) then 
