@@ -6,7 +6,7 @@ import qualified VDBMS.VDB.Name as N
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
 import VDBMS.QueryLang.RelAlg.Variational.SmartConstructor
-import VDBMS.VDB.Schema.Relational.Types
+-- import VDBMS.VDB.Schema.Relational.Types
 import VDBMS.Features.Config (Config)
 import VDBMS.Variational.Opt
 
@@ -100,6 +100,9 @@ fmtwo = Or
 -- fm3 = f1 ∨ ... ∨ f5
 fmthree = disjFexp [feone, fetwo, fethree, fefour, fefive]
 
+fetesting = And fmthree fmthree
+festilltest = And feone fetesting
+
 -- 
 -- * Attributes
 -- 
@@ -175,6 +178,7 @@ schemaMap = fromList [(rone, rsone), (rtwo, rstwo), (rthree, rsthree)
 
 sone, stwo, sthree, sone', stwo', sthree' :: Schema
 sone = ((fs, cs), mkOpt fmone schemaMap)
+sonefeone = updateFM (And feone) sone
 stwo = ((fs, cs), mkOpt fmtwo schemaMap)
 sthree = ((fs, cs), mkOpt fmthree schemaMap)
 sone' = ((fs, tail cs), mkOpt fmone schemaMap)

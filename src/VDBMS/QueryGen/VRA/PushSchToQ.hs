@@ -8,10 +8,16 @@
 module VDBMS.QueryGen.VRA.PushSchToQ (
 
        pushSchToQ
+       , confPushedQ
 
 )where 
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra
+-- for test
+import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
+import VDBMS.Features.Config (Config)
+import VDBMS.Variational.Variational (Variational(..))
+-- 
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
@@ -28,6 +34,10 @@ import Control.Monad.Catch (MonadThrow)
 
 -- import Control.Arrow (second)
 
+-- | configure a query after pushing the schema to it.
+confPushedQ :: Config Bool -> Schema -> Algebra -> RAlgebra
+confPushedQ c s q = configure c (pushSchToQ s q)
+
 -- | pushes schema to a type correct query.
 pushSchToTypeCorrectQ :: MonadThrow m => Schema -> Algebra -> m Algebra
 pushSchToTypeCorrectQ s q = 
@@ -42,7 +52,7 @@ pushSchToQ s (SetOp o l r)
   = SetOp o (pushSchToQ s l) (pushSchToQ s r) 
 pushSchToQ s (Proj as q) 
   = Proj (mapFst F.shrinkFExp $ intersectOptAtts as' as) subq 
-  -- Proj (intersectOptAtts as' as) subq 
+  -- = Proj (intersectOptAtts as' as) subq 
     where subq = pushSchToQ s q
           as' = typeEnve2OptAtts $ 
             fromJust $ simplType subq s
@@ -57,7 +67,7 @@ pushSchToQ s (Join l r c)
   = Join (pushSchToQ s l) (pushSchToQ s r) c
 pushSchToQ s (Prod l r) 
   = Prod (pushSchToQ s l) (pushSchToQ s r)
-pushSchToQ s q@(TRef r) = AChc rpc (Proj as q) Empty -- TODO: TEST again!
+pushSchToQ s q@(TRef r) = AChc (F.shrinkFExp rpc) (Proj as q) Empty 
   where 
     as = typeEnve2OptAtts $ fromJust $ simplType q s
   --                                     $ runTypeQuery subq s

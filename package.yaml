@@ -86,6 +86,7 @@ default-extensions:
   - StandaloneDeriving
   - InstanceSigs
   - FunctionalDependencies
+  - UndecidableInstances
 
 
 executables:

@@ -73,13 +73,15 @@ shrinkFExp = transform simpl
     simpl (Or _ (Lit True)) = Lit True
     simpl (Or (Lit False) e) = e 
     simpl (Or e (Lit False)) = e
-    simpl e@(And (Or l r) rr)
+    simpl e@(And el@(Or l r) rr)
       | rr == l = rr
       | r == rr = rr
+      | el == rr = rr
       | otherwise = e
-    simpl e@(And ll (Or l r))
+    simpl e@(And ll er@(Or l r))
       | ll == l = ll
       | ll == r = ll
+      | er == ll = ll
       | otherwise = e 
     simpl (And (And l1 l2) r) = And l1 (And l2 r)
     -- simpl (And (And l1 l2) (And r1 r2))= And l1 (And l2 (And r1 r2))
@@ -88,12 +90,12 @@ shrinkFExp = transform simpl
       | l == r2 = And r1 r2
       -- | r1 == r2 = And l r1
       | otherwise = And l (And r1 r2)
-    simpl (And l r) 
+    simpl e@(And l r) 
       | l == r = l
-      | otherwise = And l r
-    simpl (Or l r)
+      | otherwise = e
+    simpl e@(Or l r)
       | l == r = l 
-      | otherwise = Or l r
+      | otherwise = e
     -- simpl e@()
     simpl e = e
  

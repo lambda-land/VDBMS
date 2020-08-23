@@ -42,6 +42,12 @@ import VDBMS.VDB.Schema.Variational.Schema
 -- import Data.Set (Set)
 import qualified Data.Set as Set
 
+import Data.Generics.Uniplate.Direct
+import Data.Generics.Str
+
+import Data.Maybe (isNothing, fromJust)
+import qualified Text.PrettyPrint as P
+
 --
 -- * Variaitonal sql condition data type and instances.
 --
@@ -195,7 +201,7 @@ data Algebra
    | TRef  Relation
    | RenameAlg Name Algebra
    | Empty 
-  deriving (Data,Eq,Show,Typeable)
+  deriving (Data,Eq,Typeable)
 
 -- | Optionalizes a rename algebra.
 --   Helper for optAlgebra.
@@ -304,6 +310,192 @@ instance Variational Algebra where
 
   optionalize_ = optAlgebra
 
-  
-  
+-- | Uniplate of vsqlCond.
+vsqlcondUni :: VsqlCond -> (Str VsqlCond, Str VsqlCond -> VsqlCond)
+vsqlcondUni (VsqlCond c)     = plate VsqlCond |- c
+vsqlcondUni (VsqlIn a q)     = plate VsqlIn |- a |+ q
+vsqlcondUni (VsqlNot c)      = plate VsqlNot |* c
+vsqlcondUni (VsqlOr l r)     = plate VsqlOr |* l |* r
+vsqlcondUni (VsqlAnd l r)    = plate VsqlAnd |* l |* r
+vsqlcondUni (VsqlCChc f l r) = plate VsqlCChc |- f |* l |* r
+
+-- | Biplateof vsqlcond to fexp.
+vsqlcondFexpBi :: VsqlCond -> (Str F.FeatureExpr, Str F.FeatureExpr -> VsqlCond)
+vsqlcondFexpBi (VsqlCond c)     = plate VsqlCond |+ c
+vsqlcondFexpBi (VsqlIn a q)     = plate VsqlIn |- a |+ q
+vsqlcondFexpBi (VsqlNot c)      = plate VsqlNot |+ c
+vsqlcondFexpBi (VsqlOr l r)     = plate VsqlOr |+ l |+ r
+vsqlcondFexpBi (VsqlAnd l r)    = plate VsqlAnd |+ l |+ r
+vsqlcondFexpBi (VsqlCChc f l r) = plate VsqlCChc |* f |+ l |+ r
+
+-- | Biplate of vsqlcond to condition.
+vsqlcondCondBi :: VsqlCond -> (Str Condition, Str Condition -> VsqlCond)
+vsqlcondCondBi (VsqlCond c)     = plate VsqlCond |* c
+vsqlcondCondBi (VsqlIn a q)     = plate VsqlIn |- a |+ q
+vsqlcondCondBi (VsqlNot c)      = plate VsqlNot |+ c
+vsqlcondCondBi (VsqlOr l r)     = plate VsqlOr |+ l |+ r
+vsqlcondCondBi (VsqlAnd l r)    = plate VsqlAnd |+ l |+ r
+vsqlcondCondBi (VsqlCChc f l r) = plate VsqlCChc |- f |+ l |+ r
+
+-- | Uniplate of algebra.
+algUni :: Algebra -> (Str Algebra, Str Algebra -> Algebra)  
+algUni (SetOp o l r)   = (Two (One l) (One r), \(Two (One l) (One r)) -> SetOp o l r)
+algUni (Proj oas q)    = (One q, \(One q) -> Proj oas q)
+algUni (Sel c q)       = (One q, \(One q) -> Sel c q)
+algUni (AChc f l r)    = (Two (One l) (One r), \(Two (One l) (One r)) -> AChc f l r)
+algUni (Join l r c)    = plate Join |* l |* r |- c
+-- (Two (One l) (One r), \(Two (One l) (One r)) -> Join l r c)
+algUni (Prod l r)      = (Two (One l) (One r), \(Two (One l) (One r)) -> Prod l r)
+algUni (TRef r)        = (Zero, \Zero -> TRef r)
+algUni (RenameAlg n q) = (One q, \(One q) -> RenameAlg n q)
+algUni Empty           = (Zero, \Zero -> Empty)
+
+
+-- | Biplate of algebra to vsqlcond.
+algVsqlcondBi :: Algebra -> (Str VsqlCond, Str VsqlCond -> Algebra)
+algVsqlcondBi (SetOp o l r)   = plate SetOp |- o |+ l |+ r
+algVsqlcondBi (Proj oas q)    = plate Proj |- oas |+ q
+algVsqlcondBi (Sel c q)       = plate Sel |* c |+ q
+algVsqlcondBi (AChc f l r)    = plate AChc |- f |+ l |+ r
+algVsqlcondBi (Join l r c)    = plate Join |+ l |+ r |- c
+algVsqlcondBi (Prod l r)      = plate Prod |+ l |+ r
+algVsqlcondBi (TRef r)        = plate TRef |- r
+algVsqlcondBi (RenameAlg n q) = plate RenameAlg |- n |+ q
+algVsqlcondBi Empty           = plate Empty
+
+-- | Biplate of algebra to condition.
+algCondBi :: Algebra -> (Str Condition, Str Condition -> Algebra)
+algCondBi (SetOp o l r)   = plate SetOp |- o |+ l |+ r
+algCondBi (Proj oas q)    = plate Proj |- oas |+ q
+algCondBi (Sel c q)       = plate Sel |+ c |+ q
+algCondBi (AChc f l r)    = plate AChc |- f |+ l |+ r
+algCondBi (Join l r c)    = plate Join |+ l |+ r |* c
+algCondBi (Prod l r)      = plate Prod |+ l |+ r
+algCondBi (TRef r)        = plate TRef |- r
+algCondBi (RenameAlg n q) = plate RenameAlg |- n |+ q
+algCondBi Empty           = plate Empty
+
+-- | Biplate of algebra to fexp.
+algFexpBi :: Algebra -> (Str F.FeatureExpr, Str F.FeatureExpr -> Algebra)
+algFexpBi (SetOp o l r)   = plate SetOp |- o |+ l |+ r
+algFexpBi (Proj oas q)    = plate Proj ||+ oas |+ q
+algFexpBi (Sel c q)       = plate Sel |+ c |+ q
+algFexpBi (AChc f l r)    = plate AChc |* f |+ l |+ r
+algFexpBi (Join l r c)    = plate Join |+ l |+ r |+ c
+algFexpBi (Prod l r)      = plate Prod |+ l |+ r
+algFexpBi (TRef r)        = plate TRef |- r
+algFexpBi (RenameAlg n q) = plate RenameAlg |- n |+ q
+algFexpBi Empty           = plate Empty
+
+-- | Uniplate of optatt.
+optAttUni :: OptAttribute -> (Str OptAttribute, Str OptAttribute -> OptAttribute)
+optAttUni a = (Zero, \Zero -> a)
+
+-- | Biplate of algebra and optAtt.
+algAttBi :: Algebra -> (Str OptAttribute, Str OptAttribute -> Algebra)
+algAttBi (SetOp o l r)   = plate SetOp |- o |+ l |+ r
+algAttBi (Proj oas q)    = plate Proj ||+ oas |+ q
+algAttBi (Sel c q)       = plate Sel |- c |+ q
+algAttBi (AChc f l r)    = plate AChc |- f |+ l |+ r
+algAttBi (Join l r c)    = plate Join |+ l |+ r |- c
+algAttBi (Prod l r)      = plate Prod |+ l |+ r
+algAttBi (TRef r)        = plate TRef |- r
+algAttBi (RenameAlg n q) = plate RenameAlg |- n |+ q
+algAttBi Empty           = plate Empty
+
+-- | Biplate of optatt to fexp.
+optAttFexpBi :: OptAttribute -> (Str F.FeatureExpr, Str F.FeatureExpr -> OptAttribute)
+optAttFexpBi oa@(f,a) = (One f, \(One f) -> oa)
+
+
+instance Uniplate Algebra where
+  uniplate = algUni
+
+instance Biplate Algebra Algebra where
+  biplate = plateSelf
+
+instance Uniplate VsqlCond where
+  uniplate = vsqlcondUni
+
+instance Biplate VsqlCond F.FeatureExpr where
+  biplate = vsqlcondFexpBi
+
+instance Biplate VsqlCond Condition where
+  biplate = vsqlcondCondBi
+
+instance Biplate Algebra VsqlCond where
+  biplate = algVsqlcondBi
+
+instance Biplate Algebra Condition where
+  biplate = algCondBi
+
+instance Biplate OptAttribute F.FeatureExpr where
+  biplate = optAttFexpBi 
+
+instance Uniplate OptAttribute where
+  uniplate = optAttUni
+
+instance Biplate Algebra OptAttribute where
+  biplate = algAttBi
+
+instance Biplate OptAttribute OptAttribute where
+  biplate = plateSelf
+
+instance Biplate Algebra F.FeatureExpr where
+  biplate = algFexpBi
+
+-- | return the string of alg.
+prettyAlg :: Algebra -> String
+prettyAlg = P.render . ppAlg
+
+-- | print alg.
+ppAlg :: Algebra -> P.Doc
+ppAlg (SetOp o l r)   = P.text (ppOp o) 
+                     P.$$ P.parens (ppAlg l) 
+                     P.$$ P.parens (ppAlg r)
+  where
+    ppOp Union = "UNION"
+    ppOp Diff = "DIFF"
+ppAlg (Proj oas q)    = P.text "PROJ" 
+                     P.<+> P.braces (ppAtts oas) 
+                     P.$$ P.parens (ppAlg q)
+  where
+    ppQual :: Qualifier -> P.Doc
+    ppQual (RelQualifier rn)       = P.text (relationName rn)
+    ppQual (SubqueryQualifier qn) = P.text qn
+    ppAtts :: OptAttributes -> P.Doc
+    ppAtts as = (P.vcat . P.punctuate P.comma . map ppAtt) as
+    ppAtt :: OptAttribute -> P.Doc
+    ppAtt a 
+      | isNothing ((qualifier . getObj) a) 
+        = P.text ((attributeName . attribute . getObj) a) 
+        P.<> P.brackets (P.text (show (getFexp a)))
+      | otherwise 
+        = ppQual (fromJust ((qualifier . getObj) a)) 
+        P.<> P.char '.' 
+        P.<> P.text ((attributeName . attribute . getObj) a) 
+        P.<> P.brackets (P.text (show (getFexp a)))
+ppAlg (Sel c q)       = P.text "SEL" 
+                     P.<+> P.text (show c) 
+                     P.$$ P.parens (ppAlg q)
+ppAlg (AChc f l r)    = P.text "ACHC" 
+                     P.<+> P.brackets (P.text (show f)) 
+                     P.$$ P.parens (ppAlg l) 
+                     P.$$ P.semi 
+                     P.<> P.parens (ppAlg r)
+ppAlg (Join l r c)    = P.text "JOIN" 
+                     P.<+> P.text (show c)
+                     P.$$ P.parens (ppAlg l) 
+                     P.$$ P.parens (ppAlg r) 
+ppAlg (Prod l r)      = P.text "PROD" 
+                     P.$$ P.parens (ppAlg l) 
+                     P.$$ P.parens (ppAlg r)
+ppAlg (TRef r)        = P.text $ relationName r
+ppAlg (RenameAlg n q) = P.text "RENAME" 
+                     P.<+> P.text n 
+                     P.$$ P.parens (ppAlg q)
+ppAlg Empty = P.text "EMPTY"
+
+instance Show Algebra where
+  show = prettyAlg
 

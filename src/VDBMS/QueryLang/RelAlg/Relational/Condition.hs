@@ -20,6 +20,9 @@ import VDBMS.QueryLang.RelAlg.Basics.Atom
 
 -- import Database.HDBC (SqlValue)
 
+import Data.Generics.Uniplate.Direct
+import Data.Generics.Str
+
 -- Pure relational conditions.
 data RCondition
    = RLit  Bool
@@ -28,6 +31,20 @@ data RCondition
    | ROr   RCondition RCondition 
    | RAnd  RCondition RCondition 
   deriving (Data,Eq,Typeable,Ord)
+
+-- | Uniplate for relational condition.
+rcondUni :: RCondition -> (Str RCondition, Str RCondition -> RCondition)
+rcondUni (RLit b)      = plate RLit |- b
+rcondUni (RComp o l r) = plate RComp |- o |- l |- r
+rcondUni (RNot c)      = plate RNot |* c 
+rcondUni (ROr l r)     = plate ROr |* l |* r
+rcondUni (RAnd l r)    = plate RAnd |* l |* r
+
+instance Uniplate RCondition where
+  uniplate = rcondUni
+
+instance Biplate RCondition RCondition where
+  biplate = plateSelf
 
 -- | pretty prints pure relational conditions.
 prettyRCondition :: RCondition -> String
@@ -43,7 +60,6 @@ prettyRCondition c = top c
 
 instance Show RCondition where
   show = prettyRCondition
-
 
 instance Boolean RCondition where
   true  = RLit True

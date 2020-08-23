@@ -68,3 +68,13 @@ qelleven = choice
 
 -- π (a1) (f2 ⟨π (a1) r1, π (a1) r6 ⟩)
 qtwelve = project (pure $ trueAttr aone_) qelleven
+
+-- 
+qthirteen = choice
+  feone
+  (tRef rfive)
+  (tRef rsix)
+
+qrfive = tRef rfive
+
+qrsix = tRef rsix
