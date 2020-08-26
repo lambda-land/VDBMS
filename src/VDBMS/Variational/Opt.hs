@@ -16,6 +16,8 @@ module VDBMS.Variational.Opt (
         configureOptList,
         configureOptListRetOpt,
         groupOpts,
+        groupOn,
+        pushDownFst,
         validifyOpts,
         applyFuncObj,
         applyFuncFexp
@@ -35,6 +37,8 @@ import VDBMS.Features.SAT (equivalent,satisfiable)
 -- import VDBMS.Features.Feature
 
 import Control.Arrow (first, second, (***))
+
+import qualified Data.Map as M
 
 --
 -- * Optional values
@@ -75,11 +79,11 @@ applyFuncFexp f (fexp, a) = (f fexp, a)
 -- | maps a function to the fexp of an opt a.
 mapFst :: Traversable t => (FeatureExpr -> FeatureExpr) 
   -> t (Opt a) -> t (Opt a)
-mapFst f = fmap (first f)
+mapFst = fmap . first 
 
 -- | maps a function to the second of an opt a.
 mapSnd :: Traversable t => (a -> b) -> t (Opt a) -> t (Opt b)
-mapSnd f = fmap (second f)
+mapSnd = fmap . second
 
 -- | maps first and second at the same time.
 mapFstSnd :: Traversable t 
@@ -106,11 +110,27 @@ pushDown [(a,b)] = (a,[b])
 pushDown ((a,b):l) = (a,b:snd (pushDown l))
 pushDown [] = error "got an empty list of opts!!!"
 
+-- | push down the list for the first element.
+pushDownFst :: [(a,b)] -> ([a],b)
+pushDownFst [(a,b)] = ([a],b)
+pushDownFst ((a,b):l) = (a:fst (pushDownFst l),b)
+pushDownFst [] = error "got an empty list of opts!!!"
+
+-- | groups elements of a list based on a given function.
+groupOn :: (Ord b) => (a -> b) -> [a] -> [[a]]
+groupOn f =
+  let unpack = fmap snd . M.toList
+      fld m a = case M.lookup (f a) m of
+        Nothing -> M.insert (f a) [a] m
+        Just as -> M.insert (f a) (a:as) m
+  in unpack . foldl fld M.empty
+
 -- | groups objects of opt that their fexp are equiv together. 
 groupOpts :: [Opt a] -> [Opt [a]]
-groupOpts os = fmap pushDown groupOs
-  where
-    groupOs = groupBy (\x y -> equivalent (fst x) (fst y)) os
+groupOpts os = fmap pushDown $ groupOn fst os
+  -- where
+  --   -- groupOs = groupBy (\x y -> equivalent (fst x) (fst y)) os
+  --   groupOs = 
 
 -- | checks to see if elements of the list are satisfiable.
 --   if so keeps them, if not drops them.

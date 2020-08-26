@@ -3,10 +3,13 @@
 --             optimized!! 
 module VDBMS.QueryLang.RelAlg.Variational.Minimization (
 
-       appMin
-       , runAppMin
-       , minPushedSch
-       , confMinPushedQ
+       -- appMin
+       -- , runAppMin
+       -- , minPushedSch
+       -- , confMinPushedQ
+       -- , optMinPushedQ
+       -- , 
+       chcSimpleReduceRec
        
 ) where 
 
@@ -15,7 +18,7 @@ import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.VDB.Name
 import VDBMS.TypeSystem.Variational.TypeSystem
 import VDBMS.VDB.Schema.Variational.Schema
-import VDBMS.Variational.Opt (mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
+import VDBMS.Variational.Opt (Opt(..), mapFst, getObj, getFexp, applyFuncFexp, mkOpt)
 import VDBMS.Features.SAT
 import VDBMS.QueryGen.VRA.PushSchToQ
 -- for test
@@ -31,31 +34,35 @@ import Data.List (partition)
 
 import Data.Generics.Uniplate.Operations (transform)
 
--- | configures a query after minpush.
-confMinPushedQ :: Config Bool -> Schema -> Algebra -> RAlgebra
-confMinPushedQ c s q = configure c (minPushedSch s q)
+-- | optionalizes a query after minpush.
+-- optMinPushedQ :: Schema -> Algebra -> [Opt RAlgebra]
+-- optMinPushedQ s q = optionalize_ (minPushedSch s q)
 
--- | min q after push sch to it.
-minPushedSch :: Schema -> Algebra -> Algebra
-minPushedSch s q = runAppMin s (pushSchToQ s q)
+-- -- | configures a query after minpush.
+-- confMinPushedQ :: Config Bool -> Schema -> Algebra -> RAlgebra
+-- confMinPushedQ c s q = configure c (minPushedSch s q)
 
--- | appMin initiated with feature model of the schema.
-runAppMin :: Schema -> Algebra -> Algebra
-runAppMin s q = appMin q (featureModel s) s
+-- -- | min q after push sch to it.
+-- minPushedSch :: Schema -> Algebra -> Algebra
+-- minPushedSch s q = runAppMin s (pushSchToQ s q)
 
--- | Applies the minimization rules until the query doesn't change.
-appMin :: Algebra -> VariationalContext -> Schema -> Algebra
-appMin q ctx s
-  | minVar q ctx s == q = q 
-  | otherwise           = appMin (minVar q ctx s) ctx s
+-- -- | appMin initiated with feature model of the schema.
+-- runAppMin :: Schema -> Algebra -> Algebra
+-- runAppMin s q = appMin q (featureModel s) s
 
--- | Variation minimization rules.
--- Note: not sure which side is more optimized. We can determine that by
---       running some experiments. It also probably depends on the 
---       approach we take.
-minVar :: Algebra -> VariationalContext -> Schema -> Algebra 
-minVar q ctx s = 
-  prjDistr (selDistrRec ((chcRelRec . optSelRec . pushOutProjRec . chcDistrRec . chcSimpleReduceRec) q) ctx s) ctx s
+-- -- | Applies the minimization rules until the query doesn't change.
+-- appMin :: Algebra -> VariationalContext -> Schema -> Algebra
+-- appMin q ctx s
+--   | minVar q ctx s == q = q 
+--   | otherwise           = appMin (minVar q ctx s) ctx s
+
+-- -- | Variation minimization rules.
+-- -- Note: not sure which side is more optimized. We can determine that by
+-- --       running some experiments. It also probably depends on the 
+-- --       approach we take.
+-- minVar :: Algebra -> VariationalContext -> Schema -> Algebra 
+-- minVar q _ _ = chcSimpleReduceRec q
+  -- prjDistr (selDistrRec ((chcRelRec . optSelRec . pushOutProjRec . chcDistrRec . chcSimpleReduceRec) q) ctx s) ctx s
 
 -- | Applies a feature expression to all attributes in an opt attrs.
 -- denoted as: lᶠ
@@ -144,15 +151,6 @@ pushOutProj (Proj as1 (Proj as2 q))
 -- TODO: possible refactory: 
 -- π l f⟨q1, q2⟩ ≡ f ⟨π l' q1, π l'' q2⟩
 -- where l' and l'' are subsets of l that are included in q1 and q2's types respectively.
--- pushOutProj (SetOp o q1 q2) 
---   = SetOp o (pushOutProj q1) (pushOutProj q2)
--- pushOutProj (AChc f q1 q2) 
---   = AChc f (pushOutProj q1) (pushOutProj q2)
--- pushOutProj (Join q1 q2 c) 
---   = Join (pushOutProj q1) (pushOutProj q2) c
--- pushOutProj (Prod q1 q2)  
---   = Prod (pushOutProj q1) (pushOutProj q2)
--- pushOutProj (RenameAlg n q) = RenameAlg n (pushOutProj q)
 pushOutProj q = q 
 
 -- | checks if a sql condition is of the form "attr in query" condition.
@@ -194,13 +192,6 @@ optSel q@(Sel c (Prod q1 q2))
 optSel q@(Sel c1 (Join q1 q2 c2))
   | notInCond c1 = Join q1 q2 (And (relCond c1) c2)
   | otherwise    = q
--- optSel (Sel c q)       = Sel c (optSel q)
--- optSel (SetOp o q1 q2)  = SetOp o (optSel q1) (optSel q2)
--- optSel (Proj as q)     = Proj as (optSel q)
--- optSel (AChc f q1 q2)   = AChc f (optSel q1) (optSel q2)
--- optSel (Join q1 q2 c) = Join (optSel q1) (optSel q2) c 
--- optSel (Prod q1 q2)   = Prod (optSel q1) (optSel q2)
--- optSel (RenameAlg n q) = RenameAlg n (optSel q)
 optSel q                = q
 
 -- | recursive appication of sel distr.
@@ -237,22 +228,6 @@ selDistr q@(Sel c1 (Join q1 q2 c2)) ctx s
                     || (notInCond cond && condAttsInEnv (relCond cond) env)
       t1 = fromJust $ typeOfQuery q1 ctx s 
       t2 = fromJust $ typeOfQuery q2 ctx s 
--- selDistr (Sel c q)       ctx s 
---   = Sel c (selDistr q ctx s)
--- selDistr (SetOp o q1 q2)  ctx s 
---   = SetOp o (selDistr q1 ctx s ) (selDistr q2 ctx s)
--- selDistr (Proj as q)     ctx s 
---   = Proj as (selDistr q ctx s)
--- selDistr (AChc f q1 q2)   ctx s 
---   = AChc f (selDistr q1 ctx s) (selDistr q2 ctx s)
--- selDistr (Join q1 q2 c) ctx s
---   = Join (selDistr q1 ctx s)
---          (selDistr q2 ctx s)
---          c 
--- selDistr (Prod q1 q2)   ctx s 
---   = Prod (selDistr q1 ctx s)
---          (selDistr q2 ctx s)
--- selDistr (RenameAlg n q) ctx s = RenameAlg n (selDistr q ctx s)
 selDistr q _ _ = q 
 
 -- | gets a condition of the "IN" format and determines if
@@ -279,56 +254,40 @@ condAttsInEnv (Or c1 c2)     t = condAttsInEnv c1 t && condAttsInEnv c2 t
 condAttsInEnv (And c1 c2)    t = condAttsInEnv c1 t && condAttsInEnv c2 t 
 condAttsInEnv (CChc _ c1 c2) t = condAttsInEnv c1 t && condAttsInEnv c2 t
 
--- | recursive application of prj dist.
-prjDistrRec :: Algebra -> VariationalContext -> Schema -> Algebra
-prjDistrRec q ctx s = transform (flip (flip prjDistr ctx) s) q
+-- -- | recursive application of prj dist.
+-- prjDistrRec :: Algebra -> VariationalContext -> Schema -> Algebra
+-- prjDistrRec q ctx s = transform (flip (flip prjDistr ctx) s) q
 
--- | projection distributive properties.
-prjDistr :: Algebra -> VariationalContext -> Schema -> Algebra
--- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
-prjDistr (Proj as (Join q1 q2 c)) ctx s = undefined
-  -- = Join (Rename Nothing (Proj as1 (renameMap prjDistr' rq1)))
-  --        (Rename Nothing (Proj as2 (renameMap prjDistr' rq2)))
-  --        c
-  --   where
-  --     t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
-  --     pas = partitionAtts as (name rq1) t1
-  --     as1 = fst pas 
-  --     as2 = snd pas 
-  --     prjDistr' q = prjDistr q ctx s 
--- prjDistr (Proj as q)     ctx s 
---   = Proj as (prjDistr q ctx s)
--- prjDistr (SetOp o q1 q2)  ctx s 
---   = SetOp o (prjDistr q1 ctx s) (prjDistr q2 ctx s)
--- prjDistr (Sel c q)       ctx s 
---   = Sel c (prjDistr q ctx s) 
--- prjDistr (AChc f q1 q2)   ctx s 
---   = AChc f (prjDistr q1 ctx s) (prjDistr q2 ctx s)
--- prjDistr (Join q1 q2 c) ctx s 
---   = Join (prjDistr q1 ctx s)
---          (prjDistr q2 ctx s)
---          c
--- prjDistr (Prod q1 q2)   ctx s
---   = Prod (prjDistr q1 ctx s)
---          (prjDistr q2 ctx s)
--- prjDistr (RenameAlg n q) ctx s = RenameAlg n (prjDistr q ctx s)
-prjDistr q _ _ = q 
--- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
--- discuss with Eric. don't think we need this since we can regenerate
--- it with prjDistr and pushOutPrj
+-- -- | projection distributive properties.
+-- prjDistr :: Algebra -> VariationalContext -> Schema -> Algebra
+-- -- π (l₁, l₂) (q₁ ⋈\_c q₂) ≡ (π l₁ q₁) ⋈\_c (π l₂ q₂)
+-- prjDistr (Proj as (Join q1 q2 c)) ctx s = undefined
+--   -- = Join (Rename Nothing (Proj as1 (renameMap prjDistr' rq1)))
+--   --        (Rename Nothing (Proj as2 (renameMap prjDistr' rq2)))
+--   --        c
+--   --   where
+--   --     t1 = fromJust $ typeOfQuery (thing rq1) ctx s 
+--   --     pas = partitionAtts as (name rq1) t1
+--   --     as1 = fst pas 
+--   --     as2 = snd pas 
+--   --     prjDistr' q = prjDistr q ctx s 
+-- prjDistr q _ _ = q 
+-- -- π (l₁, l₂) ((π (l₁, l₃) q₁) ⋈\_c (π (l₂, l₄) q₂)) ≡ π (l₁, l₂) (q₁ ⋈\_c q₂)
+-- -- discuss with Eric. don't think we need this since we can regenerate
+-- -- it with prjDistr and pushOutPrj
 
--- | partitions a list of attributes based on a given type env.
-partitionAtts :: OptAttributes -> Alias -> TypeEnv -> (OptAttributes, OptAttributes)
-partitionAtts as n t = undefined
-  -- partition divideAtt as 
-  -- where
-  --   divideAtt :: OptAttribute -> Bool
-  --   divideAtt a = maybe False 
-  --                       (\inf -> maybe True
-  --                          (`elem` fmap attrQual inf) 
-  --                          ((qualifier . thing . getObj) a))
-  --                       (SM.lookup (attrOfOptAttr a) (getObj t'))
-  --   t' = updateType n t 
+-- -- | partitions a list of attributes based on a given type env.
+-- partitionAtts :: OptAttributes -> Alias -> TypeEnv -> (OptAttributes, OptAttributes)
+-- partitionAtts as n t = undefined
+--   -- partition divideAtt as 
+--   -- where
+--   --   divideAtt :: OptAttribute -> Bool
+--   --   divideAtt a = maybe False 
+--   --                       (\inf -> maybe True
+--   --                          (`elem` fmap attrQual inf) 
+--   --                          ((qualifier . thing . getObj) a))
+--   --                       (SM.lookup (attrOfOptAttr a) (getObj t'))
+--   --   t' = updateType n t 
 
 -- | choices rules.
 

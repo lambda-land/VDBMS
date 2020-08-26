@@ -35,13 +35,29 @@ fefive = Ref ffive
 -- 
 -- * configurations of variants
 -- 
-ctwo, ctwofour, ctwofive, cthree, cthreefour, cthreefive :: Config Bool
+ctwo, ctwothree, ctwofour, ctwofive, cthree, cthreefour, cthreefive, conetwo :: Config Bool
 ctwo (Feature "f1") = False
 ctwo (Feature "f2") = True
 ctwo (Feature "f3") = False
 ctwo (Feature "f4") = False
 ctwo (Feature "f5") = False
 ctwo _ = False
+
+-- 
+conetwo (Feature "f1") = True
+conetwo (Feature "f2") = True
+conetwo (Feature "f3") = False
+conetwo (Feature "f4") = False
+conetwo (Feature "f5") = False
+conetwo _ = False
+
+-- 
+ctwothree (Feature "f1") = False
+ctwothree (Feature "f2") = True
+ctwothree (Feature "f3") = True
+ctwothree (Feature "f4") = False
+ctwothree (Feature "f5") = False
+ctwothree _ = False
 
 -- 
 ctwofour (Feature "f1") = True
@@ -84,7 +100,7 @@ cthreefive (Feature "f5") = True
 cthreefive _ = False
 
 cs :: [Config Bool]
-cs = [ctwo, ctwofour, ctwofive, cthree, cthreefour, cthreefive]
+cs = [ctwo, ctwothree, ctwofour, ctwofive, cthree, cthreefour, cthreefive]
 
 -- 
 -- * Feature models
@@ -100,8 +116,8 @@ fmtwo = Or
 -- fm3 = f1 ∨ ... ∨ f5
 fmthree = disjFexp [feone, fetwo, fethree, fefour, fefive]
 
-fetesting = And fmthree fmthree
-festilltest = And feone fetesting
+-- fetesting = And fmthree fmthree
+-- festilltest = And feone fetesting
 
 -- 
 -- * Attributes

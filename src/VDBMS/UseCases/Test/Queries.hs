@@ -20,6 +20,9 @@ import Data.Map (fromList)
 import VDBMS.DBMS.Value.Type
 
 
+-- opttest :: [Opt a]
+opttest = [(F.And feone fetwo,1), (fetwo,2),(F.And fetwo feone,3),(feone,4)]
+
 -- 
 qone, qtwo, qthree :: Algebra
 qempty = Empty
@@ -40,7 +43,7 @@ qfour = project [trueAttr aone_, trueAttr atwo_] qone
 qfive = project (pure $ att2optatt aone_ feone) qone
 
 -- π (a1^f2, a2^f3) r1
-qfive' = project [att2optatt aone_ feone, att2optatt atwo_ fethree] qone
+qfive' = project [att2optatt aone_ fetwo, att2optatt atwo_ fethree] qone
 
 -- π (a1) r4
 qsix = project (pure $ trueAttr aone_) (tRef rfour)

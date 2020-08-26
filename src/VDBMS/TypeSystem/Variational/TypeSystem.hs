@@ -847,4 +847,14 @@ appCtxtToTypeMap f m
     -- appCtxtToMap fexp envMap = SM.filter null (SM.map (appCtxtToAttInfo fexp) envMap)
     appCtxtToAttInfo fexp is = filter (satisfiable . attrFexp ) $ applyFuncToAttFexp (F.And fexp) is
 
+-- |
+filterType :: F.FeatureExpr -> TypeEnv -> TypeEnv
+filterType = undefined
 
+-- |
+cleanupType :: TypeEnv -> TypeEnv
+cleanupType = undefined
+
+-- |
+pushFexpToType :: F.FeatureExpr -> TypeEnv -> TypeEnv
+pushFexpToType = undefined
