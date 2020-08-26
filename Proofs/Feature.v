@@ -2,6 +2,7 @@
 Set Warnings "-notation-overridden,-parsing".
 Require Import Bool.
 Require Import String.
+Require Import Coq.Strings.String.
 Require Import Relations.Relation_Definitions.
 Require Import Classes.Morphisms.
 Require Import Setoids.Setoid.
@@ -26,6 +27,7 @@ Notation "~(F) f" := (comp f) (at level 75, right associativity).
 Infix "/\(F)" := meet (at level 80, right associativity).
 Infix "\/(F)" := join (at level 85, right associativity).
 
+
 (** Configurations. *)
 Definition config := fname -> bool.
 
@@ -42,8 +44,8 @@ Fixpoint semE (e : fexp) (c : config) : bool :=
 
 Notation "E[[ e ]] c" := (semE e c) (at level 90, left associativity).
 
-(** Feature Expression Equality *)
-Fixpoint eqb (e1 e2: fexp) : bool :=
+(** Feature Expression Equality - see above *)
+(*Fixpoint eqb (e1 e2: fexp) : bool :=
   match e1, e2 with
   | litB b, litB c => Bool.eqb b c 
   | litF f, litF g => String.eqb f g
@@ -63,7 +65,7 @@ Proof. intro e. induction e.
        - simpl. assumption.
        - simpl. rewrite IHe1, IHe2. reflexivity.
        - simpl. rewrite IHe1, IHe2. reflexivity.
-Qed.
+Qed.*)
 
 (** Feature Expression Equivalemce *)
 Definition equivE : relation fexp :=
