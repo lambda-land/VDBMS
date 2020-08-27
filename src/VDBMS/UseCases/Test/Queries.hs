@@ -72,7 +72,7 @@ qelleven = choice
 -- π (a1) (f2 ⟨π (a1) r1, π (a1) r6 ⟩)
 qtwelve = project (pure $ trueAttr aone_) qelleven
 
--- 
+-- f1 ⟨r5, r6⟩
 qthirteen = choice
   feone
   (tRef rfive)

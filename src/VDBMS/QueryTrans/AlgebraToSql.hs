@@ -32,17 +32,18 @@ transAlgebra2Sql (RProj as q) = undefined
   --     -- sql = thing rsql
   --     atts = attributes sql 
   --     -- \\ [SqlAllAtt]
-transAlgebra2Sql (RSel c q) = undefined
-  -- = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) 
-  --   where 
-  --     rsql = alg2SqlWithName q 
-  --     sql = thing rsql
-transAlgebra2Sql (RJoin rl rr c) = undefined
+transAlgebra2Sql (RSel c q) 
+  = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) 
+    where 
+      sql = transAlgebra2Sql q
+      -- rsql = alg2SqlWithName q 
+      -- sql = thing rsql
+transAlgebra2Sql (RJoin l r c) = undefined
   -- = SqlSelect latts [SqlInnerJoin (SqlSubQuery lsql) (SqlSubQuery rsql) c] []
   --   where
-  --     lsql =  alg2SqlWithName rl
-  --     rsql = alg2SqlWithName rr
-  --     latts = (attributes . thing) lsql
+  --     lsql = transAlgebra2Sql l
+  --     rsql = transAlgebra2Sql r
+  --     latts = attributes lsql
   --     -- ratts = (attributes . thing) rsql
 transAlgebra2Sql (RProd rl rr)   = undefined
   -- = SqlSelect (latts ++ ratts) 
@@ -65,8 +66,8 @@ alg2SqlWithName = renameMap transAlgebra2Sql
 
 -- | Constructs a sql relation from a rename relation.
 --   Helper for transAlgebra2Sql.
-constructRel :: Rename Relation -> SqlRelation
-constructRel r = SqlSubQuery $ renameMap SqlTRef r
+-- constructRel :: Rename Relation -> SqlRelation
+-- constructRel r = SqlSubQuery $ renameMap SqlTRef r
 
 -- | Translates algebra conditions to sql conditions.
 --   Helper for transAlgebra2Sql.

@@ -40,10 +40,10 @@ genSql = evalQState . nameSubSql
 
 -- | names subqueries within a sql query.
 nameSubSql :: SqlSelect -> QState SqlSelect
-nameSubSql (SqlSelect as ts cs) 
-  = do ts' <- mapM nameRel ts 
-       return $ SqlSelect as ts' cs
-  -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
+nameSubSql (SqlSelect as ts cs) = undefined
+  -- = do ts' <- mapM nameRel ts 
+  --      return $ SqlSelect as ts' cs
+  -- -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
 nameSubSql (SqlBin o lq rq) 
   = do lq' <- nameSubSql lq
        rq' <- nameSubSql rq 
@@ -52,17 +52,17 @@ nameSubSql q = return q
 
 -- | names a sql relation without a name.
 nameRel :: SqlRelation -> QState SqlRelation
-nameRel q@(SqlSubQuery rq)
-  = do q' <- nameSubSql (thing rq)
-       s <- get 
-       if name rq == Nothing
-       then do let q'' = SqlSubQuery (Rename (Just ("t"++ show s)) (thing rq))
-               modify succ
-               return q''
-       else return q
-nameRel (SqlInnerJoin l r c) 
-  = do l' <- nameRel l
-       r' <- nameRel r
-       return $ SqlInnerJoin l' r' c
+nameRel q@(SqlSubQuery rq) = undefined
+  -- = do q' <- nameSubSql (thing rq)
+  --      s <- get 
+  --      if name rq == Nothing
+  --      then do let q'' = SqlSubQuery (Rename (Just ("t"++ show s)) (thing rq))
+  --              modify succ
+  --              return q''
+  --      else return q
+nameRel (SqlInnerJoin l r c) = undefined
+  -- = do l' <- nameRel l
+  --      r' <- nameRel r
+  --      return $ SqlInnerJoin l' r' c
 
 

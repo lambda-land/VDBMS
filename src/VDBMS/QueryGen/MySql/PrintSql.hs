@@ -21,13 +21,13 @@ ppSqlString = render . ppSql
 
 -- | prints sql select queries.
 ppSql :: SqlSelect -> Doc
-ppSql (SqlSelect as ts cs) 
-  = text "SELECT"
-    <+> vcomma ppAtts as
-    $$ text "FROM"
-    <+> vcomma ppRel ts
-    $$ text "WHERE"
-    <+> vcomma ppCond cs
+ppSql (SqlSelect as ts cs) = undefined
+  -- = text "SELECT"
+  --   <+> vcomma ppAtts as
+  --   $$ text "FROM"
+  --   <+> vcomma ppRel ts
+  --   $$ text "WHERE"
+  --   <+> vcomma ppCond cs
 ppSql (SqlBin o l r) 
   = ppSql l
     <+> text (prettyOp o)
@@ -36,11 +36,11 @@ ppSql (SqlBin o l r)
       prettyOp SqlUnion    = "UNION"
       prettyOp SqlUnionAll = "UNION ALL"
       prettyOp SqlDiff     = "EXCEPT"
-ppSql (SqlTRef r) -- should never get here!!
-  = error "SHOULD NEVER HAVE SQLTREF RELATION!!!! IN PRINTING SQL!!!"
-    -- text "SELECT *"
-    -- $$ text "FROM"
-    -- <+> text (relationName r)
+-- ppSql (SqlTRef r) = undefined -- should never get here!!
+  -- = error "SHOULD NEVER HAVE SQLTREF RELATION!!!! IN PRINTING SQL!!!"
+  --   -- text "SELECT *"
+  --   -- $$ text "FROM"
+  --   -- <+> text (relationName r)
 ppSql SqlEmpty = text "SELECT NULL"
 
 -- | prints sql attribute expressions.
@@ -87,14 +87,14 @@ ppAtts (SqlConcatAtt ra ss)
 
 -- | prints sql relations.
 ppRel :: SqlRelation -> Doc
-ppRel (SqlSubQuery rq) 
-  | isNothing n = q 
-  | otherwise   = parens q <+> text "AS" <+> text (fromJust n)
-    where
-      n = name rq
-      q = (ppSql . thing) rq
-ppRel (SqlInnerJoin l r c) 
-  = ppRel l <+> text "INNER JOIN" <+> ppRel r <+> text "ON" <+> ppRCond c
+ppRel (SqlSubQuery rq) = undefined
+  -- | isNothing n = q 
+  -- | otherwise   = parens q <+> text "AS" <+> text (fromJust n)
+  --   where
+  --     n = name rq
+  --     q = (ppSql . thing) rq
+ppRel (SqlInnerJoin l r c) = undefined
+  -- = ppRel l <+> text "INNER JOIN" <+> ppRel r <+> text "ON" <+> ppRCond c
 
 -- | prints sql conditions.
 ppCond :: SqlCond SqlSelect -> Doc

@@ -112,7 +112,8 @@ isSqlRelInCls = undefined
 
 -- |
 sqlRel :: Name -> SqlSelect
-sqlRel = SqlTRef . Relation
+sqlRel = undefined
+-- = SqlTRef . Relation
 
 -- | update a sql rel.
 -- gets a rename q. checks to see if it exists in closure.
