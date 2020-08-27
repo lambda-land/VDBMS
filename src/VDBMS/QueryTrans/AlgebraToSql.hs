@@ -32,12 +32,12 @@ transAlgebra2Sql (RProj as q) = undefined
   --     -- sql = thing rsql
   --     atts = attributes sql 
   --     -- \\ [SqlAllAtt]
-transAlgebra2Sql (RSel c q) 
-  = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) 
-    where 
-      sql = transAlgebra2Sql q
-      -- rsql = alg2SqlWithName q 
-      -- sql = thing rsql
+transAlgebra2Sql (RSel c q) = undefined
+  -- = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) 
+  --   where 
+  --     sql = transAlgebra2Sql q
+  --     -- rsql = alg2SqlWithName q 
+  --     -- sql = thing rsql
 transAlgebra2Sql (RJoin l r c) = undefined
   -- = SqlSelect latts [SqlInnerJoin (SqlSubQuery lsql) (SqlSubQuery rsql) c] []
   --   where
@@ -55,14 +55,17 @@ transAlgebra2Sql (RProd rl rr)   = undefined
   --     latts = (attributes . thing) lsql
   --     ratts = (attributes . thing) rsql
 transAlgebra2Sql (RTRef r)     = undefined
-  -- = SqlSelect [] [constructRel r] [] 
-transAlgebra2Sql (RRenameAlg q n) = undefined
+  -- = SqlSelect [] [SqlTRef r] [] Nothing
+transAlgebra2Sql (RRenameAlg n q) = undefined
+  -- = SqlSelect (attributes sql) (tables sql) (condition sql) (Just n)
+  --   where
+  --     sql = transAlgebra2Sql q
 transAlgebra2Sql REmpty         = SqlEmpty
 
 -- | Attaches the name of a relational alg query to its equiv
 --   sql query.
-alg2SqlWithName :: Rename RAlgebra -> Rename SqlSelect
-alg2SqlWithName = renameMap transAlgebra2Sql
+-- alg2SqlWithName :: Rename RAlgebra -> Rename SqlSelect
+-- alg2SqlWithName = renameMap transAlgebra2Sql
 
 -- | Constructs a sql relation from a rename relation.
 --   Helper for transAlgebra2Sql.

@@ -28,7 +28,7 @@ data SqlSelect =
       attributes :: [SqlAttrExpr],
       tables :: [Rename SqlRelation],
       condition :: [SqlCond SqlSelect]
-      -- sqlName :: Maybe String 
+      -- sqlName :: Maybe Name
     }
   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
   -- | SqlTRef Relation -- ^ return a table

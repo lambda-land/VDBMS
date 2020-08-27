@@ -43,10 +43,11 @@ genCTE = updateCTE . initCTE
 
 -- | takes a sql select query and generates the initial sql temp res.
 initCTE :: SqlSelect -> SqlTempRes
-initCTE q@(SqlSelect _ _ _) = SqlCTE M.empty q
-initCTE q@(SqlBin _ _ _)    = SqlCTE M.empty q
--- initCTE q@(SqlTRef _)       = SqlCTE M.empty q -- should never get to this!!
-initCTE SqlEmpty            = SqlCTE M.empty SqlEmpty 
+initCTE = undefined
+-- initCTE q@(SqlSelect _ _ _) = SqlCTE M.empty q
+-- initCTE q@(SqlBin _ _ _)    = SqlCTE M.empty q
+-- -- initCTE q@(SqlTRef _)       = SqlCTE M.empty q -- should never get to this!!
+-- initCTE SqlEmpty            = SqlCTE M.empty SqlEmpty 
 
 -- | updates a sql temp res one relation at the time.
 updateCTE :: SqlTempRes -> CteState SqlTempRes
