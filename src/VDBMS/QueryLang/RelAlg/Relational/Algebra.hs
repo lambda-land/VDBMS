@@ -124,3 +124,10 @@ ppRAlg REmpty           = text "EMPTY"
 
 instance Show RAlgebra where
   show = prettyRAlg
+
+-- |
+-- ralgEq :: RAlgebra -> RAlgebra -> Bool
+-- ralgEq = undefined
+
+-- instance Eq RAlgebra where
+--   (==) = ralgEq

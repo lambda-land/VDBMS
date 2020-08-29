@@ -19,7 +19,7 @@ numVariantPushedSchQ s cs q = numVariantQ (pushSchToQ s q) cs
 
 -- |
 numUniqVarPushedSchQ :: Schema -> Algebra -> Int 
-numUniqVarPushedSchQ s q = numUniqueVariantQ (pushSchToQ s q)
+numUniqVarPushedSchQ s q = numUniqueVariantQ s (pushSchToQ s q)
 
 
 -- NOTE: don't need the following two functions since

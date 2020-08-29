@@ -9,8 +9,9 @@ module VDBMS.QueryGen.VRA.PushSchToQ (
 
        pushSchToQ
        , confPushedQ
+       , optPushedQ
 
-)where 
+) where 
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra
 -- for test
@@ -21,7 +22,7 @@ import VDBMS.Variational.Variational (Variational(..))
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
-import VDBMS.Variational.Opt (mapFst, getFexp, getObj, applyFuncFexp)
+import VDBMS.Variational.Opt (Opt(..), mapFst, getFexp, getObj, applyFuncFexp)
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
 import VDBMS.TypeSystem.Variational.TypeSystem (simplType, typeOfQuery, typeEnve2OptAtts, runTypeQuery)
 
@@ -33,6 +34,10 @@ import Data.Maybe (isJust, fromJust)
 import Control.Monad.Catch (MonadThrow)
 
 -- import Control.Arrow (second)
+
+-- | optionalizes a query after pushing the schema to it.
+optPushedQ :: Schema -> Algebra -> [Opt RAlgebra]
+optPushedQ s q = optionalize_ (pushSchToQ s q)
 
 -- | configure a query after pushing the schema to it.
 confPushedQ :: Config Bool -> Schema -> Algebra -> RAlgebra

@@ -26,12 +26,12 @@ import qualified Data.Map.Strict as M
 data SqlSelect =  
     SqlSelect {
       attributes :: [SqlAttrExpr],
-      tables :: [SqlRelation],
+      tables :: [Rename SqlRelation],
       condition :: [SqlCond SqlSelect]
-      -- sqlName :: Maybe String 
+      -- sqlName :: Maybe Name
     }
   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
-  | SqlTRef Relation -- ^ return a table
+  -- | SqlTRef Relation -- ^ return a table
   | SqlEmpty -- ^ empty query
   -- deriving Show
 
@@ -64,8 +64,9 @@ aExprAtt (SqlConcatAtt (Rename (Just n) _) _) = Attribute n
 --   Also note that if you want to cross product you'll have:
 --   [Rename SqlTRef R, Rename SqlTRef T]
 data SqlRelation = 
-    SqlSubQuery (Rename SqlSelect)
-  | SqlInnerJoin SqlRelation SqlRelation RCondition
+    SqlTRef Relation
+  | SqlSubQuery SqlSelect
+  | SqlInnerJoin (Rename SqlRelation) (Rename SqlRelation) RCondition
   -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
 
 -- | Sql set operations.

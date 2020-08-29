@@ -18,7 +18,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , conjFexpOptAttr
         , numUniqueVariantQ
         , numVariantQ
-        -- , optAlgebra
+        , optAlgebra
         
 
 ) where
@@ -30,6 +30,7 @@ import VDBMS.QueryLang.SQL.Condition
 import VDBMS.QueryLang.RelAlg.Variational.Condition
 import VDBMS.VDB.Name
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
+import VDBMS.Features.ConfFexp (confs2fexp)
 import VDBMS.Features.Config (Config)
 import VDBMS.Variational.Variational
 import VDBMS.Variational.Opt
@@ -47,6 +48,8 @@ import Data.Generics.Str
 
 import Data.Maybe (isNothing, fromJust)
 import qualified Text.PrettyPrint as P
+
+import Control.Arrow (first)
 
 --
 -- * Variaitonal sql condition data type and instances.
@@ -239,68 +242,43 @@ numVariantQ :: Algebra -> [Config Bool] -> Int
 numVariantQ q cs = length $ filter (\rq -> rq /= REmpty) $ 
   map ((flip configureAlgebra) q) cs
 
--- | configure a query wrt the schema.
--- configureAlgebra_ :: Config Bool -> Schema -> Algebra -> RAlgebra
--- configureAlgebra_ c s (SetOp o l r) 
---   = RSetOp o (configureAlgebra_ c s l) (configureAlgebra_ c s r)
--- configureAlgebra_ c s (Proj as rq) 
---   | confedAtts == [] = REmpty
---   | otherwise        = RProj confedAtts (renameMap (configureAlgebra_ c s) rq)
---     where
---       confedAtts = configureOptList c as 
--- configureAlgebra_ c s (Sel cond rq) 
---   = RSel (configure c cond) (renameMap (configureAlgebra_ c s) rq) 
--- configureAlgebra_ c s (AChc f l r) 
---   | F.evalFeatureExpr c f   = configureAlgebra_ c s l
---   | otherwise               = configureAlgebra_ c s r
--- configureAlgebra_ c s (Join rl rr cond) 
---   = RJoin (renameMap (configureAlgebra_ c s) rl)
---           (renameMap (configureAlgebra_ c s) rr)
---           (configure c cond)
--- configureAlgebra_ c s (Prod rl rr) 
---   = RProd (renameMap (configureAlgebra_ c s) rl) 
---           (renameMap (configureAlgebra_ c s) rr)
--- configureAlgebra_ c s (TRef r) 
---   | check = RTRef r
---   | otherwise = RProj (fmap (\a -> Rename Nothing (Attr a Nothing)) ras) 
---                       (Rename Nothing (RTRef r))
---     where
---       check = Set.fromList vas == Set.fromList ras
---       vas = maybe [] id (lookupRelAttsList (thing r) s)
---       ras = maybe [] id (rlookupAttsList (thing r) confedsch)
---       confedsch = configure c s 
--- configureAlgebra_ _ _ Empty = REmpty
-
 -- | Optionalizes an algebra.
 --   Note that optionalization doesn't consider schema at all. it just
 --   optionalizes a query. So it doesn't group queries based on the 
 --   presence condition of attributes or relations.
 -- TODO doesn't seem to be working correctly.
-optAlgebra :: Algebra -> [VariantGroup Algebra]
-optAlgebra (SetOp s q1 q2) = 
-  combOpts F.And (RSetOp s) (optAlgebra q1) (optAlgebra q2)
-optAlgebra (Proj as q)     = 
-  combOpts F.And RProj (groupOpts as) (optAlgebra q)
-optAlgebra (Sel c q)       = 
-  combOpts F.And RSel (optionalize_ c) (optAlgebra q) 
-optAlgebra (AChc f q1 q2)  = 
-  mapFst (F.And f) (optAlgebra q1) ++
-  mapFst (F.And (F.Not f)) (optAlgebra q2)
-optAlgebra (Join l r c)    = 
-  combOpts F.And constRJoin (combRenameAlgs l r) (optionalize_ c)
-    where 
-      combRenameAlgs l r = combOpts F.And (,) (optAlgebra l) (optAlgebra r)
-      constRJoin (q1,q2) cond = RJoin q1 q2 cond
-optAlgebra (Prod l r)      = 
-  combOpts F.And RProd (optAlgebra l) (optAlgebra r)
-optAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
-optAlgebra (RenameAlg n q) = mapSnd (RRenameAlg n) (optAlgebra q)
-optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
+-- optAlgebra :: Algebra -> [VariantGroup Algebra]
+-- optAlgebra (SetOp s q1 q2) = 
+--   combOpts F.And (RSetOp s) (optAlgebra q1) (optAlgebra q2)
+-- optAlgebra (Proj as q)     = 
+--   combOpts F.And RProj (groupOpts as) (optAlgebra q)
+-- optAlgebra (Sel c q)       = 
+--   combOpts F.And RSel (optionalize_ c) (optAlgebra q) 
+-- optAlgebra (AChc f q1 q2)  = 
+--   mapFst (F.And f) (optAlgebra q1) ++
+--   mapFst (F.And (F.Not f)) (optAlgebra q2)
+-- optAlgebra (Join l r c)    = 
+--   combOpts F.And constRJoin (combRenameAlgs l r) (optionalize_ c)
+--     where 
+--       combRenameAlgs l r = combOpts F.And (,) (optAlgebra l) (optAlgebra r)
+--       constRJoin (q1,q2) cond = RJoin q1 q2 cond
+-- optAlgebra (Prod l r)      = 
+--   combOpts F.And RProd (optAlgebra l) (optAlgebra r)
+-- optAlgebra (TRef r)        = pure $ mkOpt (F.Lit True) (RTRef r)
+-- optAlgebra (RenameAlg n q) = mapSnd (RRenameAlg n) (optAlgebra q)
+-- optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
+
+-- |
+optAlgebra :: Schema -> Algebra -> [VariantGroup Algebra]
+optAlgebra s q = groupedQs
+  where
+    qs = fmap (\c -> (c, configureAlgebra c q)) (schConfs s)
+    groupedQs = fmap (first (confs2fexp (schFeatures s))) $ fmap pushDownFst $ groupOn snd qs
 
 -- | returns the number of unique variants of v-query.
 --   Note that it excludes REmpty queries.
-numUniqueVariantQ :: Algebra -> Int 
-numUniqueVariantQ q = length $ filter (\(_,rq) -> rq /= REmpty) $ optAlgebra q
+numUniqueVariantQ :: Schema -> Algebra -> Int 
+numUniqueVariantQ s q = length $ filter (\(_,rq) -> rq /= REmpty) $ optAlgebra s q
 
 instance Variational Algebra where
 
@@ -308,7 +286,9 @@ instance Variational Algebra where
 
   configure = configureAlgebra
 
-  optionalize_ = optAlgebra
+  optionalize_ = undefined
+    -- optAlgebra
+    -- mapFst F.shrinkFExp . optAlgebra
 
 -- | Uniplate of vsqlCond.
 vsqlcondUni :: VsqlCond -> (Str VsqlCond, Str VsqlCond -> VsqlCond)
