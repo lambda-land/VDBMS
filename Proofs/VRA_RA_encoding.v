@@ -697,7 +697,7 @@ Definition hasAtt (a : att) (v:vatt)  : bool := let  'ae x e := v  in (string_be
 Definition extract_e (a : att) (A: vatts) : fexp :=  
                    fold_right Feature.join (litB false) (map (sndVatt) (filter (hasAtt a) A)). 
 
-Fixpoint removeAtt (a : att) (A: vatts) : vatts := 
+Function removeAtt (a : att) (A: vatts) {struct A} : vatts := 
     match A with 
    | nil => nil
    | ae a' e' :: A' => match (string_beq a a') with
@@ -705,8 +705,6 @@ Fixpoint removeAtt (a : att) (A: vatts) : vatts :=
                      | false => ae a' e' :: removeAtt a A'
                      end
    end.
-
-
 
 (* InAtt removeAtt Corollary *)
 
@@ -785,10 +783,7 @@ Hint Resolve nodupatt_equation.
 
 Check nodupatt_rec.
 
-(* Functional Scheme nondupatt_ind := Induction for nodupatt Sort Prop.
- with removeAtt_ind := Induction for removeAtt Sort Prop.*)
-
-
+Check nodupatt_ind.
 
 Lemma nodupatt_nil : nodupatt [] = [].
 Proof. eauto. Qed.
@@ -810,79 +805,13 @@ rewrite <- existsbAtt_InAtt in H. rewrite H. auto.
 Qed.
 
 
-Lemma InAtt_nodupatt_removeAtt: forall x y l, x <> y ->
-InAtt x (nodupatt l) <-> InAtt x (nodupatt (removeAtt y l)).
-Proof. 
-intros x y l Hxy. split.
-- induction l as  [|v ls IHl]; intro H. 
-  + rewrite nodupatt_equation in H. eauto. 
-  + destruct v.  
-    simpl. 
-    destruct (string_beq y a) eqn: Hya.
-    ++ rewrite stringDecF.eqb_eq in Hya.
-       rewrite nodupatt_equation in H.
-       destruct (existsbAtt a ls) eqn:Hex.
-       +++ simpl in H. destruct H.
-           ++++ rewrite <- Hya in H. symmetry in H. contradiction.
-           ++++ rewrite <- Hya in H. auto.
-       +++ simpl in H. destruct H.
-           ++++ rewrite <- Hya in H. symmetry in H. contradiction.
-           ++++ apply IHl. auto.
-    ++ rewrite stringBEF.eqb_neq in Hya.
-       rewrite nodupatt_equation in H.
-       destruct (existsbAtt a ls) eqn:Hex.
-       +++ simpl in H. destruct H.
-           ++++ rewrite nodupatt_equation. 
-                
-                rewrite existsbAtt_InAtt in Hex. 
-                rewrite (InAtt_InAtt_removeAtt) with (y:=y) in Hex.
-                rewrite <- existsbAtt_InAtt in Hex. rewrite Hex.
-                simpl. left. auto. auto.
-           ++++ rewrite nodupatt_equation. 
-                rewrite existsbAtt_InAtt in Hex. 
-                rewrite (InAtt_InAtt_removeAtt) with (y:=y) in Hex.
-                rewrite <- existsbAtt_InAtt in Hex. rewrite Hex.
-                simpl.  
-Admitted.
+Lemma InAtt_inv_noteq : forall a b l, (fstVatt a) <>  b -> InAtt b (a :: l)
+-> InAtt b l.
+intros. destruct a. simpl in *.
+destruct H0. contradiction. auto.
+Qed.
 
-Lemma In_inv : forall (A:Type) (a b:A) (l:list A), In b (a :: l) -> a = b \/ (a <> b /\ In b l).
-Admitted.
-
-Lemma InAtt_inv : forall a b l, InAtt b (a :: l) -> (fstVatt a) = b \/ 
-       ((fstVatt a) <> b /\ InAtt b l).
-Admitted.
-
-
-Lemma nodupatt_removeAtt: forall a l, nodupatt (removeAtt a l) = removeAtt a (nodupatt l).
-Proof. intros. generalize dependent a. induction l. 
-- simpl_nondupatt. simpl. auto. 
-- intro a0.
-  destruct a. simpl. destruct (string_beq a0 a) eqn: Haa0.
-  + rewrite stringDecF.eqb_eq in Haa0. rewrite Haa0.
-    destruct (existsbAtt a l) eqn: Hal.
-    ++ rewrite nodupatt_in_cons.
-       simpl. rewrite stringBEF.eqb_refl.
-       rewrite IHl. rewrite removeAtt_removeAtt_eq.
-       reflexivity.
-       rewrite <- existsbAtt_InAtt. auto.
-    ++ rewrite nodupatt_not_in_cons. 
-       simpl. rewrite stringBEF.eqb_refl. auto.
-       rewrite <- existsbAtt_InAtt. rewrite Hal.
-       eauto.
-  + 
-    symmetry. rewrite nodupatt_equation. 
-    destruct (existsbAtt a l) eqn:Ha0l.
-    ++ simpl. rewrite Haa0. symmetry.
-       rewrite nodupatt_equation. 
-       rewrite existsbAtt_InAtt in Ha0l. 
-       rewrite (InAtt_InAtt_removeAtt) with (y:=a0) in Ha0l.
-       rewrite <- existsbAtt_InAtt in Ha0l. rewrite Ha0l.
-       rewrite IHl.
-Admitted.
-
-
-
-
+(* Find how to stipulate x<>a in In simplify *)
 
 Lemma InAtt_nondupatt: forall x l, InAtt x (nodupatt l) <-> InAtt x l.
 Proof. 
@@ -905,29 +834,23 @@ destruct H.
      auto. auto.
 - functional induction (nodupatt l) using nodupatt_ind.
 + eauto.
-+ intro H. simpl. simpl in H.
-destruct H. ++ eauto.
-            ++ eauto.
-+ intro H. simpl. simpl in H.
-destruct H. 
- ++ eauto.
- ++ right. 
-     rewrite  existsbAtt_InAtt in e1. Check removeAtt_rec.
-     pose (removeAtt_InAtt) as Hc.
-     specialize Hc with vs a.
-     
-     destruct (string_beq x a) eqn: Hxa.
-     +++ rewrite stringDecF.eqb_eq in Hxa.
-     rewrite Hxa in IHl0.
-     Search (~(_->_)).
-      
-     rewrite  existsbAtt_InAtt in e1.
-     rewrite Hxa. auto.
-     +++ rewrite stringBEF.eqb_neq in Hxa. 
-     apply IHl0 in H. 
-     rewrite <- (InAtt_InAtt_removeAtt) in H.
-     auto. auto.
++ intro H. simpl. 
+destruct (string_beq x a) eqn: Hxa.
+++ rewrite stringDecF.eqb_eq in Hxa.
+   symmetry in Hxa. eauto.
+++ rewrite stringBEF.eqb_neq in Hxa.
+apply InAtt_inv_noteq in H. eauto. simpl. eauto.
 
++ intro H. simpl. 
+destruct (string_beq x a) eqn: Hxa.
+++ rewrite stringDecF.eqb_eq in Hxa.
+   eauto.
+++ rewrite stringBEF.eqb_neq in Hxa.
+apply InAtt_inv_noteq in H. right. 
+rewrite (InAtt_InAtt_removeAtt) with (y:=a) in H.
+apply IHl0 in H. auto. auto. eauto.
+Qed.
+    
 (* 
 rewrite stringDecF.eqb_eq in Hxa. 
      apply IHl0 in H. rewrite Hxa in H.
@@ -1842,3 +1765,70 @@ Fixpoint nodupatt (A: vatts) : vatts :=
    end.
 *)
  
+(*
+IF YOU NEED FOLLOWING LEMMAS USE FUNCTIONAL INDUCTION FOR PROVING 
+THEM; NOT WHAT IS THERE BELOW.
+*)
+
+(*Lemma nodupatt_removeAtt: forall a l, nodupatt (removeAtt a l) = removeAtt a (nodupatt l).
+Proof. intros. generalize dependent a. induction l. 
+- simpl_nondupatt. simpl. auto. 
+- intro a0.
+  destruct a. simpl. destruct (string_beq a0 a) eqn: Haa0.
+  + rewrite stringDecF.eqb_eq in Haa0. rewrite Haa0.
+    destruct (existsbAtt a l) eqn: Hal.
+    ++ rewrite nodupatt_in_cons.
+       simpl. rewrite stringBEF.eqb_refl.
+       rewrite IHl. rewrite removeAtt_removeAtt_eq.
+       reflexivity.
+       rewrite <- existsbAtt_InAtt. auto.
+    ++ rewrite nodupatt_not_in_cons. 
+       simpl. rewrite stringBEF.eqb_refl. auto.
+       rewrite <- existsbAtt_InAtt. rewrite Hal.
+       eauto.
+  + 
+    symmetry. rewrite nodupatt_equation. 
+    destruct (existsbAtt a l) eqn:Ha0l.
+    ++ simpl. rewrite Haa0. symmetry.
+       rewrite nodupatt_equation. 
+       rewrite existsbAtt_InAtt in Ha0l. 
+       rewrite (InAtt_InAtt_removeAtt) with (y:=a0) in Ha0l.
+       rewrite <- existsbAtt_InAtt in Ha0l. rewrite Ha0l.
+       rewrite IHl.
+Admitted.*)
+
+
+(*Lemma InAtt_nodupatt_removeAtt: forall x y l, x <> y ->
+InAtt x (nodupatt l) <-> InAtt x (nodupatt (removeAtt y l)).
+Proof. 
+intros x y l Hxy. split.
+- induction l as  [|v ls IHl]; intro H. 
+  + rewrite nodupatt_equation in H. eauto. 
+  + destruct v.  
+    simpl. 
+    destruct (string_beq y a) eqn: Hya.
+    ++ rewrite stringDecF.eqb_eq in Hya.
+       rewrite nodupatt_equation in H.
+       destruct (existsbAtt a ls) eqn:Hex.
+       +++ simpl in H. destruct H.
+           ++++ rewrite <- Hya in H. symmetry in H. contradiction.
+           ++++ rewrite <- Hya in H. auto.
+       +++ simpl in H. destruct H.
+           ++++ rewrite <- Hya in H. symmetry in H. contradiction.
+           ++++ apply IHl. auto.
+    ++ rewrite stringBEF.eqb_neq in Hya.
+       rewrite nodupatt_equation in H.
+       destruct (existsbAtt a ls) eqn:Hex.
+       +++ simpl in H. destruct H.
+           ++++ rewrite nodupatt_equation. 
+                
+                rewrite existsbAtt_InAtt in Hex. 
+                rewrite (InAtt_InAtt_removeAtt) with (y:=y) in Hex.
+                rewrite <- existsbAtt_InAtt in Hex. rewrite Hex.
+                simpl. left. auto. auto.
+           ++++ rewrite nodupatt_equation. 
+                rewrite existsbAtt_InAtt in Hex. 
+                rewrite (InAtt_InAtt_removeAtt) with (y:=y) in Hex.
+                rewrite <- existsbAtt_InAtt in Hex. rewrite Hex.
+                simpl.  
+Admitted. *)
