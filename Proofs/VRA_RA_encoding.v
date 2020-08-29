@@ -7,13 +7,18 @@ Require Export List.
 (*Require Export Arith.
 Require Export String.*)
 Require Export Logic.
+Require Import Coq.Program.Basics.
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.ListSet.
 Require Import Relations.Relation_Definitions.
 Require Import Coq.Classes.RelationClasses.
 Require Import Coq.FSets.FSetAVL.
 Require Import Coq.Sorting.Sorted.
+Require Import FunInd.
+Require Import Recdef.
 Import Coq.Lists.List.ListNotations.
+Load CpdtTactics.
+
 
 (*Require Import Coq.MSets.MSetInterface.
 
@@ -114,6 +119,10 @@ Inductive comp : Type :=
 
 Inductive vatt : Type :=
    | ae : att -> fexp -> vatt. 
+
+(* Shorthands for finding/accessing elements *)
+Definition fstVatt (v:vatt) : att  := let  'ae x e := v  in x.
+Definition sndVatt (v:vatt) : fexp := let  'ae x e := v  in e.
 
 (*----------------------Equality Schemes----------------------------*)
 
@@ -235,23 +244,75 @@ Fixpoint count_occ_Att (a : att) (v:vatts) : nat :=
        end
    end.
 
-Fixpoint InAtt (a : att) (v:vatts) : Prop := 
-   match v with
-   | []           => False
-   | ae x e :: xs => 
-       match (string_beq a x) with
-       | true  => True
-       | false => InAtt a xs
-       end
-   end.
+Definition eqbAtt (a: att) (v:vatt) : bool := string_beq a (fstVatt v).
+
+(* similar to list existsb *)
+Definition existsbAtt (a : att) (l : list vatt) := existsb (eqbAtt a) l.
+
+Lemma existsbAtt_exists :
+      forall a l, existsbAtt a l = true <-> exists x, In x l /\ (eqbAtt a) x = true.
+Proof. unfold existsbAtt. intros. apply existsb_exists. Qed.
+
+Hint Resolve existsbAtt_exists.
+
+(*Fixpoint existsbAtt (a : att) (l : list vatt) : bool := 
+   match l with
+   | []           => false
+   | ae x e :: xs => (string_beq a x) || existsbAtt a xs
+   end.*)
+
+(* similar to list In *)
+Function InAtt (a:att) (l:list vatt) {struct l}: Prop :=
+    match l with
+    | []           => False
+    | ae x e :: xs => x = a \/ InAtt a xs
+    end.
+
+Check InAtt_ind.
+
+Lemma existsbAtt_InAtt : 
+    forall a l, existsbAtt a l = true <-> InAtt a l.
+Proof. unfold existsbAtt. intros; split; 
+functional induction (InAtt a l) using InAtt_ind.
+- simpl. congruence. 
+- intro H. simpl in H. apply orb_true_iff in H.
+  destruct H. 
+  ++ unfold eqbAtt in H. rewrite stringDecF.eqb_eq in H.
+     eauto.
+  ++ eauto.
+- eauto. 
+- intro H. simpl. apply orb_true_iff.
+  destruct H.
+  ++ unfold eqbAtt. simpl. rewrite stringDecF.eqb_eq.
+     eauto.
+  ++ eauto.
+Qed.
+
+Hint Resolve existsbAtt_InAtt.
+
+Ltac existsbAtt_InAtt := rewrite existsbAtt_InAtt.
+Ltac InAtt_existsbAtt := rewrite <- existsbAtt_InAtt.
 
 (* relate InAtt with In from library *)
+Lemma InAtt_In : forall (a:att) (A:vatts), InAtt a A  <-> exists x, In x A /\ (eqbAtt a) x = true.
+Proof.  intros. InAtt_existsbAtt. eauto. Qed.
 
-Lemma InAtt_In : forall (a:att) (A:vatts), InAtt a A  <-> exists e, In (ae a e) A.
+(*Lemma InAtt_In_a : forall (A:vatts), (exists a, In a A <-> InAtt (fstVatt a) A ).
+Proof. intros. exists a. InAtt_existsbAtt. eauto. Qed.*)
+
+Lemma In_InAtt_fstVatt : forall (a:vatt) (A:vatts), In a A  -> InAtt (fstVatt a) A.
+Proof. intros. rewrite InAtt_In. 
+       exists a. split. auto.
+       unfold eqbAtt. rewrite stringBEF.eqb_refl. reflexivity.
+Qed.
+
+(* exists x, In x A /\ (eqbAtt a) x = true <-> exists e, In (ae a e) A *)
+
+(*Lemma InAtt_In : forall (a:att) (A:vatts), InAtt a A  <-> exists e, In (ae a e) A.
 Proof. intros. split. 
        - induction A as [|a' A' IHa']. 
-         + intro H. simpl in H. destruct H.
-         + intro H. destruct a' as (a', e'). 
+         + intro H. unfold InAtt in H. simpl in H. discriminate H.
+         + intro H. unfold InAtt in H. unfold InAtt in IHa'. destruct a' as (a', e'). 
            simpl. simpl in H. destruct (string_beq a a') eqn: Heq.
            rewrite stringDecF.eqb_eq in Heq.
            ++ exists e'. simpl. left. rewrite <- vattDecF.eqb_eq.
@@ -261,107 +322,16 @@ Proof. intros. split.
               right. auto.
       - induction A as [|a' A' IHa']; intro H; destruct H as [e H]; simpl in H;
         destruct H.
-        + rewrite H. simpl. rewrite stringBEF.eqb_refl. apply I.
-        + destruct a' as (a', e'). simpl. destruct (string_beq a a') eqn: Haeq. 
-          apply I. apply IHa'. exists e. auto.
-Qed.
+        + rewrite H. unfold InAtt. simpl. rewrite stringBEF.eqb_refl. reflexivity.
+        + destruct a' as (a', e'). unfold InAtt. simpl. destruct (string_beq a a') eqn: Haeq. 
+          auto. unfold InAtt in IHa'. apply IHa'. exists e. auto.
+Qed.*)
+ 
+Lemma InAtt_cons: forall a l, InAtt a l -> forall e, InAtt a ((ae a e)::l).
+Proof. intros. simpl. auto. Qed.
+
 
 (*-------------------------------------------------------------------------------*)
-
-(*-------------------------------------------------------------------------------*)
-(** Remove replace with List.remove *)
-
-(* it's bag remove but once *)
-
-(*Fixpoint remove {X:Type} (f:X->X->bool) (a : X) (A : list X) : list X :=
-    match A with
-      | [] => []
-      | x::xs => 
-         match (f a x) with
-        | true  => xs (*(remove f a xs)*)
-        | false => x :: (remove f a xs)
-        end
-    end. 
-
-
-Lemma in_remove_atts: forall l x y, In x (remove String.eqb y l) 
-                                -> x <> y -> In x l.
-Proof. intro l. induction l. intros. simpl in H. simpl. assumption.
-simpl. intros. destruct ((y =? a)%string). right. assumption. simpl in H.
-destruct H. left. assumption. apply IHl in H. right. assumption. assumption.
-Qed.
-
-(*Definition  listElEq {X:Type} (A B: list X):= forall (x: X), In x A <-> In x B.
-
-Lemma ListElEq_refl_atts: forall (A:list att), listElEq A A.
-Proof. intro A. split; destruct A; repeat(auto). Qed. *)
-
-
-Fixpoint listElEq {X:Type} (f:X->X->bool) (A1 : list X) (A2 : list X) : bool :=
-    match A1 with
-      | [] => match A2 with
-              | []  => true
-              | _   => false
-              end
-      | x::xs => match (existsb (f x) A2) with
-                  | true  => listElEq f xs (remove f x A2)
-                  | false => false
-                  end
-    end. 
-
-Lemma ListElEq_refl_atts: forall (A:list att), listElEq String.eqb A A = true.
-Proof. intro A. induction A. - auto. - simpl. rewrite String.eqb_refl.
-simpl. apply IHA. Qed.
-
-Lemma ListElEq_refl_vatts: forall (A:list vatt), listElEq veqb A A = true.
-Proof. intro A. induction A. 
-       - auto. 
-       - simpl. rewrite veqb_refl. simpl. apply IHA.
-Qed.
-
-Lemma ListElEq_In: forall (A B: atts), listElEq String.eqb A B = true <->
-forall (x: att), In x A -> In x B.
-Proof. intros. split. 
-       - (*->*)
-         generalize dependent B. induction A; intros. 
-         + simpl in H. destruct B. intros. assumption.
-           discriminate H.
-         + simpl in H0. destruct H0.
-           ++ rewrite <- H0. simpl in H. destruct (existsb (String.eqb a) B) eqn:HaB.
-              +++ apply (existsb_exists (String.eqb a)) in HaB. 
-                  destruct HaB as [x' HaBx]. destruct HaBx as [HaBx1 HaBx2].  
-                  rewrite String.eqb_eq in HaBx2. rewrite <- HaBx2 in HaBx1. assumption.
-              +++ discriminate H.
-           ++ simpl in H. destruct (existsb (String.eqb a) B) eqn:HaB. 
-
-Admitted.*)
-     (*      rewrite <- H0. assumption.
-         + destruct (existsb (String.eqb a) B) eqn:HaB. rewrite HaB in H.
-           ++ apply (existsb_exists (String.eqb a)) in HaB. 
-           destruct HaB as [x' HaBx]. destruct HaBx as [HaBx1 HaBx2].  
-           rewrite String.eqb_eq in HaBx2. rewrite <- HaBx2 in HaBx1.
-           
-           simpl in H. intros x H1. simpl in H1. destruct H1.
-           rewrite <- H0. assumption.
-           
-           
-
-
-Lemma ListElEq_trans_atts: forall (A B C:list att), listElEq String.eqb A B = true
-    -> listElEq String.eqb B C = true -> listElEq String.eqb A C = true.
-Proof. intro A. induction A as [|a As IHA].
-       - intros B C H1 H2. destruct B as [|b Bs]; simpl in H1. assumption. discriminate H1. 
-       - intros B C H1 H2. destruct B as [|b Bs]. 
-         + discriminate H1. 
-         + simpl in H1. destruct ((a =? b)%string) eqn:Hab. 
-           ++ simpl in H1. apply String.eqb_eq in Hab. destruct Hab. 
-              simpl in H2. destruct (existsb (String.eqb a) C) eqn: HaC.
-              +++ simpl. rewrite HaC. apply (IHA Bs). assumption. assumption.
-              +++ discriminate H2.
-           ++ simpl in H1. destruct (existsb (String.eqb a) Bs) eqn: HaBs.
-              
-Check (listElEq String.eqb [] []). *)
-
 
 (* Configuration Variational Attribute List(Set) A[]c (see A3)*)
 Fixpoint configVAttSet (vA : vatts) (c : config) : atts :=
@@ -713,10 +683,364 @@ Proof. intros A H. induction H as [| a e l H1 H2 IHa].
        + apply NoDup_nil.
        + apply NoDup_cons.
          ++ rewrite (InAtt_In) in H1. 
-            apply dist_not_exists with (x:= e) in H1.
-            auto. 
+            apply dist_not_exists with (x:= (ae a e)) in H1.
+            apply Classical_Prop.not_and_or in H1.
+            destruct H1. auto.
+            unfold eqbAtt in H. simpl in H.
+            rewrite stringBEF.eqb_refl in H.
+            eauto.
          ++ auto.
 Qed.
+
+Definition hasAtt (a : att) (v:vatt)  : bool := let  'ae x e := v  in (string_beq a x). 
+
+Definition extract_e (a : att) (A: vatts) : fexp :=  
+                   fold_right Feature.join (litB false) (map (sndVatt) (filter (hasAtt a) A)). 
+
+Fixpoint removeAtt (a : att) (A: vatts) : vatts := 
+    match A with 
+   | nil => nil
+   | ae a' e' :: A' => match (string_beq a a') with
+                     | true => removeAtt a A'
+                     | false => ae a' e' :: removeAtt a A'
+                     end
+   end.
+
+
+
+(* InAtt removeAtt Corollary *)
+
+Theorem removeAtt_InAtt : forall l x, ~ InAtt x (removeAtt x l).
+Proof. Admitted.
+
+Lemma InAtt_InAtt_removeAtt : forall l x y, x <> y ->
+InAtt x l <-> InAtt x (removeAtt y l).
+Proof. intros l x y H. split; induction l; intros  H0. 
+- simpl in H0. destruct H0.
+- destruct a. simpl. destruct (string_beq y a) eqn: Hya. 
+  + simpl in H0. destruct H0.
+    ++ rewrite stringDecF.eqb_eq in Hya. 
+    rewrite Hya in H . symmetry in H0. contradiction.
+    ++ eauto. 
+  + simpl. simpl in H0. 
+    destruct H0. eauto. 
+    eauto.
+- simpl in H0. destruct H0.
+- destruct a. simpl. simpl in H0.
+  destruct (string_beq y a) eqn: Hya.
+  ++ eauto.
+  ++ simpl in H0. destruct H0.
+     +++ eauto.
+     +++ eauto.
+Qed.
+
+Lemma notInAtt_removeAtt: forall l x, ~ InAtt x l -> removeAtt x l = l.
+Admitted.
+
+Lemma InAtt_removeAtt: forall l x y, InAtt x (removeAtt y l) -> InAtt x l /\ x <> y.
+Admitted.
+
+Lemma removeAtt_removeAtt_comm : forall l x y,
+    removeAtt x (removeAtt y l) = removeAtt y (removeAtt x l).
+Admitted.
+
+Lemma removeAtt_removeAtt_eq : forall l x, removeAtt x (removeAtt x l) = removeAtt x l.
+Admitted.
+
+
+
+(* function to merge duplicate atts in vatts *)
+
+Lemma remove_reduce (a:att) (l:vatts) : List.length (removeAtt a l) < S(List.length l).
+Proof. intros. induction l.
+       - unfold removeAtt.  unfold List.length. 
+         apply PeanoNat.Nat.lt_0_succ. 
+       - simpl. destruct a0. destruct (string_beq a a0). auto. 
+         simpl. apply Lt.lt_n_S. auto. 
+Qed.
+
+Hint Resolve remove_reduce.
+
+Lemma cons_injective: forall (A : Type)(a a' : A)(l l' : list A),
+   (a = a') /\ (l = l') -> (a :: l) = (a' :: l').
+Proof. intros. destruct H. rewrite H, H0. reflexivity. Qed.
+
+
+
+Function nodupatt (v : list vatt) {measure List.length v} : list vatt :=
+   match v with 
+   | nil          => nil
+   | ae a e :: vs =>  match existsbAtt a vs with
+                      | false => ae a e :: nodupatt vs
+                      | true  => let e' := extract_e a vs in
+                         (ae a (e /\(F) e') ) :: nodupatt (removeAtt a vs)
+                      end
+   end.
+all:intros; simpl; eauto.
+Defined.
+
+Ltac simpl_nondupatt := rewrite nodupatt_equation.
+
+Hint Resolve nodupatt_equation.
+
+Check nodupatt_rec.
+
+(* Functional Scheme nondupatt_ind := Induction for nodupatt Sort Prop.
+ with removeAtt_ind := Induction for removeAtt Sort Prop.*)
+
+
+
+Lemma nodupatt_nil : nodupatt [] = [].
+Proof. eauto. Qed.
+
+Lemma nodupatt_not_in_cons : forall a e l,
+      ~ InAtt a l -> nodupatt (ae a e::l) = ae a e :: nodupatt l.
+Proof. intros. simpl_nondupatt. 
+simpl. destruct (existsbAtt a l) eqn:Hf.
+rewrite <- existsbAtt_InAtt in H. contradiction.
+auto. Qed.
+
+
+Lemma nodupatt_in_cons : forall a e l,
+        InAtt a l -> 
+          nodupatt (ae a e::l) = ae a (e /\(F) extract_e a l) 
+                     :: nodupatt (removeAtt a l).
+Proof. intros. simpl_nondupatt. simpl.
+rewrite <- existsbAtt_InAtt in H. rewrite H. auto.
+Qed.
+
+
+Lemma InAtt_nodupatt_removeAtt: forall x y l, x <> y ->
+InAtt x (nodupatt l) <-> InAtt x (nodupatt (removeAtt y l)).
+Proof. 
+intros x y l Hxy. split.
+- induction l as  [|v ls IHl]; intro H. 
+  + rewrite nodupatt_equation in H. eauto. 
+  + destruct v.  
+    simpl. 
+    destruct (string_beq y a) eqn: Hya.
+    ++ rewrite stringDecF.eqb_eq in Hya.
+       rewrite nodupatt_equation in H.
+       destruct (existsbAtt a ls) eqn:Hex.
+       +++ simpl in H. destruct H.
+           ++++ rewrite <- Hya in H. symmetry in H. contradiction.
+           ++++ rewrite <- Hya in H. auto.
+       +++ simpl in H. destruct H.
+           ++++ rewrite <- Hya in H. symmetry in H. contradiction.
+           ++++ apply IHl. auto.
+    ++ rewrite stringBEF.eqb_neq in Hya.
+       rewrite nodupatt_equation in H.
+       destruct (existsbAtt a ls) eqn:Hex.
+       +++ simpl in H. destruct H.
+           ++++ rewrite nodupatt_equation. 
+                
+                rewrite existsbAtt_InAtt in Hex. 
+                rewrite (InAtt_InAtt_removeAtt) with (y:=y) in Hex.
+                rewrite <- existsbAtt_InAtt in Hex. rewrite Hex.
+                simpl. left. auto. auto.
+           ++++ rewrite nodupatt_equation. 
+                rewrite existsbAtt_InAtt in Hex. 
+                rewrite (InAtt_InAtt_removeAtt) with (y:=y) in Hex.
+                rewrite <- existsbAtt_InAtt in Hex. rewrite Hex.
+                simpl.  
+Admitted.
+
+Lemma In_inv : forall (A:Type) (a b:A) (l:list A), In b (a :: l) -> a = b \/ (a <> b /\ In b l).
+Admitted.
+
+Lemma InAtt_inv : forall a b l, InAtt b (a :: l) -> (fstVatt a) = b \/ 
+       ((fstVatt a) <> b /\ InAtt b l).
+Admitted.
+
+
+Lemma nodupatt_removeAtt: forall a l, nodupatt (removeAtt a l) = removeAtt a (nodupatt l).
+Proof. intros. generalize dependent a. induction l. 
+- simpl_nondupatt. simpl. auto. 
+- intro a0.
+  destruct a. simpl. destruct (string_beq a0 a) eqn: Haa0.
+  + rewrite stringDecF.eqb_eq in Haa0. rewrite Haa0.
+    destruct (existsbAtt a l) eqn: Hal.
+    ++ rewrite nodupatt_in_cons.
+       simpl. rewrite stringBEF.eqb_refl.
+       rewrite IHl. rewrite removeAtt_removeAtt_eq.
+       reflexivity.
+       rewrite <- existsbAtt_InAtt. auto.
+    ++ rewrite nodupatt_not_in_cons. 
+       simpl. rewrite stringBEF.eqb_refl. auto.
+       rewrite <- existsbAtt_InAtt. rewrite Hal.
+       eauto.
+  + 
+    symmetry. rewrite nodupatt_equation. 
+    destruct (existsbAtt a l) eqn:Ha0l.
+    ++ simpl. rewrite Haa0. symmetry.
+       rewrite nodupatt_equation. 
+       rewrite existsbAtt_InAtt in Ha0l. 
+       rewrite (InAtt_InAtt_removeAtt) with (y:=a0) in Ha0l.
+       rewrite <- existsbAtt_InAtt in Ha0l. rewrite Ha0l.
+       rewrite IHl.
+Admitted.
+
+
+
+
+
+Lemma InAtt_nondupatt: forall x l, InAtt x (nodupatt l) <-> InAtt x l.
+Proof. 
+intros. split.
+- functional induction (nodupatt l) using nodupatt_ind.
++ eauto.
++ intro H. simpl. simpl in H.
+destruct H. ++ eauto.
+            ++ eauto.
++ intro H. simpl. simpl in H.
+destruct H. 
+ ++ eauto.
+ ++ right. destruct (string_beq x a) eqn: Hxa.
+     +++ rewrite stringDecF.eqb_eq in Hxa.
+     rewrite  existsbAtt_InAtt in e1.
+     rewrite Hxa. auto.
+     +++ rewrite stringBEF.eqb_neq in Hxa. 
+     apply IHl0 in H. 
+     rewrite <- (InAtt_InAtt_removeAtt) in H.
+     auto. auto.
+- functional induction (nodupatt l) using nodupatt_ind.
++ eauto.
++ intro H. simpl. simpl in H.
+destruct H. ++ eauto.
+            ++ eauto.
++ intro H. simpl. simpl in H.
+destruct H. 
+ ++ eauto.
+ ++ right. 
+     rewrite  existsbAtt_InAtt in e1. Check removeAtt_rec.
+     pose (removeAtt_InAtt) as Hc.
+     specialize Hc with vs a.
+     
+     destruct (string_beq x a) eqn: Hxa.
+     +++ rewrite stringDecF.eqb_eq in Hxa.
+     rewrite Hxa in IHl0.
+     Search (~(_->_)).
+      
+     rewrite  existsbAtt_InAtt in e1.
+     rewrite Hxa. auto.
+     +++ rewrite stringBEF.eqb_neq in Hxa. 
+     apply IHl0 in H. 
+     rewrite <- (InAtt_InAtt_removeAtt) in H.
+     auto. auto.
+
+(* 
+rewrite stringDecF.eqb_eq in Hxa. 
+     apply IHl0 in H. rewrite Hxa in H.
+     pose (removeAtt_InAtt) as Hc.
+     specialize Hc with vs a. contradiction.
+
+induction l; intro H. 
+- simpl in H. destruct H.
+- destruct a. simpl. 
+  rewrite nodupatt_equation in H.   
+  destruct (existsbAtt a l) eqn: Hal.
+  ++ apply InAtt_inv in H. simpl in H. destruct H.
+     +++ eauto.
+     +++ destruct H. admit.
+Admitted.*)
+
+
+Lemma In_InAtt_nodupatt : forall a l,
+           In a l -> InAtt (fstVatt a) (nodupatt l).
+Proof. intros. 
+- intros. 
+  rewrite InAtt_nondupatt. rewrite InAtt_In.
+  exists a. split. auto.
+  destruct a eqn:Ha. simpl. 
+  unfold eqbAtt. simpl.
+  rewrite stringBEF.eqb_refl. auto.
+Qed.
+
+(* don't prove this now, straightforward but don't need it*)
+Lemma In_eqbAtt_InAtt_nodupatt : forall a l,
+           InAtt a (nodupatt l) <-> exists x, In x l /\ eqbAtt a x = true.
+Proof.
+(*intros. split.
+- intros. 
+  rewrite InAtt_nondupatt. rewrite InAtt_In.
+  exists a. split. auto.
+  destruct a eqn:Ha. simpl. 
+  unfold eqbAtt. simpl.
+  rewrite stringBEF.eqb_refl. auto.
+- intro. rewrite InAtt_nondupatt in H. 
+  rewrite InAtt_In in H. destruct H as [a' H].
+  destruct H. unfold eqbAtt in H0. simpl in H0.
+  rewrite stringDecF.eqb_eq in H0. 
+  apply In_InAtt_fstVatt in H.
+  rewrite <- H0 in H. *)
+
+Admitted.
+
+(*intros. split. 
++ intros. generalize dependent a.
+induction l as [| a' l' IHl']. 
+++ intros. simpl in H. destruct H.
+++ intros. 
+   simpl in H. 
+   destruct H. 
+   +++ rewrite H.
+       simpl. simpl_nondupatt.
+       destruct a. simpl.
+       destruct (existsbAtt a l');
+       unfold InAtt; simpl;
+       rewrite stringBEF.eqb_refl;
+       reflexivity.
+   +++ simpl_nondupatt. simpl. 
+       destruct (existsbAtt (fstVatt a') l') eqn: Hf.
+       unfold InAtt. simpl.
+       destruct (string_beq (fstVatt a) (fstVatt a')) eqn: Haa'.
+       reflexivity. 
+       fold (InAtt (fstVatt a) (nodupatt (removeAtt (fstVatt a') l'))).
+       rewrite <- InAtt_InAtt_removeAtt_nodupatt.
+       auto. rewrite <- stringBEF.eqb_neq. auto. 
+       unfold InAtt. destruct a'.
+       destruct (string_beq (fstVatt a) a0) eqn: Hax.
+       simpl. rewrite Hax. reflexivity. simpl. rewrite Hax. 
+       rewrite IHl'. auto. auto.
++ intros. generalize dependent a.
+induction l as [| a' l' IHl']; intros. 
+       - rewrite nodupatt_nil in H. unfold InAtt in H. simpl in H.
+         discriminate H.
+       - simpl.
+         unfold InAtt in H. 
+         destruct (string_beq x a) eqn: Hxa.
+         reflexivity. rewrite nodupatt_eq, removeAtt_hd in H.
+         simpl in H. destruct (existsbAtt a l) eqn:Hal. 
+         unfold InAtt in H. simpl in H. rewrite Hxa in H.     
+         
+
+
+
+
+
+specialize IHl' with a'. 
+rewrite H in IHl'. simpl in IHl'.
+apply InAtt_In in IHl'.
+rewrite <- InAtt_In in IHl'.
+apply (InAtt_cons _ (sndVatt a)) in IHl'.
+
+
+
+rewrite nodupatt_eq. simpl.
+destruct (existsbAtt (fstVatt a) l) eqn:Hf.
+unfold InAtt in H. contradiction.
+auto. Qed. *)
+
+(* apply well_founded_induction.*)
+
+Lemma NoDupAtt_nodupatt (v:vatts) : NoDupAtt (nodupatt v).
+Proof. induction v; rewrite nodupatt_equation. 
++ simpl. apply NoDupAtt_nil.
++ simpl. destruct a. simpl. 
+destruct (existsbAtt a v) eqn:Hf.
+apply NoDupAtt_cons. Admitted.
+
+
 
 (*-----------------------NoDup_atts_in_vatts--------------------------*)
 
@@ -764,87 +1088,6 @@ Qed.
   Set Operation for Attribute List(Set) & Query type(annotated attr list)
   Union Intersection
 ---------------------------------------------------------------*)
-(** Union *)
-(* Plain Attr List *)
-(*Fixpoint atts_union_c (A A': atts) : atts :=
-  match A with
-  | []      => []
-  | a :: xs =>
-     match (existsb (String.eqb a) A') with
-        | true  => a :: (atts_union_c xs A')
-        | false => (atts_union_c xs A')
-     end
-  end.
-
-Fixpoint vatts_union_c (A A': vatts) : vatts :=
-  match A with
-  | []           => []
-  | (a, e) :: xs =>
-     match (findIfExists a A') with
-        | Some e'  => (a, e \/(F) e') :: (vatts_union_c xs A')
-        | None => (vatts_union_c xs A')
-     end
-  end.
-
-
-Fixpoint atts_union_l (A A': atts) : atts :=
-  match A with
-  | []           => []
-  | x :: xs =>
-     match (existsb (String.eqb x) A') with
-        | true  => (atts_union_l xs A')
-        | false =>  x :: (atts_union_l xs A')
-     end
-  end. 
-
-Fixpoint vatts_union_l (A A': vatts) : vatts :=
-  match A with
-  | []           => []
-  | (a, e) :: xs =>
-     match (findIfExists a A') with
-        | Some _  => (vatts_union_l xs A')
-        | None    => (a, e) :: (vatts_union_l xs A')
-     end
-  end. 
-
-Fixpoint atts_union (A A': atts) : atts :=
-  match A with
-  | []           => A'
-  | x :: xs =>
-     match (existsb (String.eqb x) A') with
-        | true  => x :: (atts_union xs (remove String.eqb x A'))
-        | false => x :: (atts_union xs A')
-     end
-  end. 
-
-Fixpoint vatts_union (A A': vatts) : vatts :=
-  match A with
-  | []           => A'
-  | (a, e) :: xs =>
-     match (findIfExists a A') with
-        | Some e'  => (a, e \/(F) e') ::(vatts_union xs (remove veqb (a, e') A'))
-        | None    =>  (a, e)          ::(vatts_union xs A')
-     end
-  end. 
-
-(*
-(* Plain Attr List *)
-Definition atts_union (A A': atts) : atts := 
-    atts_union_c A  A' ++
-    atts_union_l A  A' ++
-    atts_union_l A' A.
-
-(* Variational Attr List *)
-Definition vatts_union (A A': vatts) : vatts := 
-    vatts_union_c A  A' ++
-    vatts_union_l A  A' ++
-    vatts_union_l A' A.
-*)
-
-(* Variational Query Type*)
-Definition vqtype_union (Q Q': vqtype) : vatts := 
-     vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). *)
-
 (* Plain Attr List *)
 Definition atts_union (A A': atts) : atts := 
    set_union string_dec A A'.
@@ -858,33 +1101,6 @@ Definition vqtype_union (Q Q': vqtype) : vatts :=
      vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). 
 
 (*------------------------------------------------------------------------------*)
-(** Intersection *)
-(* Plain Attr List *)
-(*Fixpoint atts_inter (A A': atts) : atts :=
-  match A with
-  | []      => []
-  | a :: xs =>
-     match (existsb (String.eqb a) A') with
-        | true  => a :: (atts_inter xs A')
-        | false => (atts_inter xs A')
-     end
-  end.
-
-(* Variational Attr List *)
-Fixpoint vatts_inter (A A': vatts) : vatts :=
-  match A with
-  | []           => []
-  | (a, e) :: xs =>
-     match (findIfExists a A') with
-        | Some e'  => (a, e /\(F) e') :: (vatts_inter xs A')
-        | None => (vatts_inter xs A')
-     end
-  end.
-
-(* Variational Query Type*)
-Definition vqtype_inter (Q Q': vqtype) : vatts := 
-     vatts_inter (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). *)
-
 (* Plain Attr List *)
 Definition atts_inter (A A': atts) : atts := 
    set_inter string_dec A A'.
@@ -1347,3 +1563,282 @@ Admitted.*)
 then  configVAttSet (fst vqt) c
 else  nil. *)
 
+(*-------------------------------------------------------------------------------*)
+(** Remove replace with List.remove *)
+
+(* it's bag remove but once *)
+
+(*Fixpoint remove {X:Type} (f:X->X->bool) (a : X) (A : list X) : list X :=
+    match A with
+      | [] => []
+      | x::xs => 
+         match (f a x) with
+        | true  => xs (*(remove f a xs)*)
+        | false => x :: (remove f a xs)
+        end
+    end. 
+
+
+Lemma in_remove_atts: forall l x y, In x (remove String.eqb y l) 
+                                -> x <> y -> In x l.
+Proof. intro l. induction l. intros. simpl in H. simpl. assumption.
+simpl. intros. destruct ((y =? a)%string). right. assumption. simpl in H.
+destruct H. left. assumption. apply IHl in H. right. assumption. assumption.
+Qed.
+
+(*Definition  listElEq {X:Type} (A B: list X):= forall (x: X), In x A <-> In x B.
+
+Lemma ListElEq_refl_atts: forall (A:list att), listElEq A A.
+Proof. intro A. split; destruct A; repeat(auto). Qed. *)
+
+
+Fixpoint listElEq {X:Type} (f:X->X->bool) (A1 : list X) (A2 : list X) : bool :=
+    match A1 with
+      | [] => match A2 with
+              | []  => true
+              | _   => false
+              end
+      | x::xs => match (existsb (f x) A2) with
+                  | true  => listElEq f xs (remove f x A2)
+                  | false => false
+                  end
+    end. 
+
+Lemma ListElEq_refl_atts: forall (A:list att), listElEq String.eqb A A = true.
+Proof. intro A. induction A. - auto. - simpl. rewrite String.eqb_refl.
+simpl. apply IHA. Qed.
+
+Lemma ListElEq_refl_vatts: forall (A:list vatt), listElEq veqb A A = true.
+Proof. intro A. induction A. 
+       - auto. 
+       - simpl. rewrite veqb_refl. simpl. apply IHA.
+Qed.
+
+Lemma ListElEq_In: forall (A B: atts), listElEq String.eqb A B = true <->
+forall (x: att), In x A -> In x B.
+Proof. intros. split. 
+       - (*->*)
+         generalize dependent B. induction A; intros. 
+         + simpl in H. destruct B. intros. assumption.
+           discriminate H.
+         + simpl in H0. destruct H0.
+           ++ rewrite <- H0. simpl in H. destruct (existsb (String.eqb a) B) eqn:HaB.
+              +++ apply (existsb_exists (String.eqb a)) in HaB. 
+                  destruct HaB as [x' HaBx]. destruct HaBx as [HaBx1 HaBx2].  
+                  rewrite String.eqb_eq in HaBx2. rewrite <- HaBx2 in HaBx1. assumption.
+              +++ discriminate H.
+           ++ simpl in H. destruct (existsb (String.eqb a) B) eqn:HaB. 
+
+Admitted.*)
+     (*      rewrite <- H0. assumption.
+         + destruct (existsb (String.eqb a) B) eqn:HaB. rewrite HaB in H.
+           ++ apply (existsb_exists (String.eqb a)) in HaB. 
+           destruct HaB as [x' HaBx]. destruct HaBx as [HaBx1 HaBx2].  
+           rewrite String.eqb_eq in HaBx2. rewrite <- HaBx2 in HaBx1.
+           
+           simpl in H. intros x H1. simpl in H1. destruct H1.
+           rewrite <- H0. assumption.
+           
+           
+
+
+Lemma ListElEq_trans_atts: forall (A B C:list att), listElEq String.eqb A B = true
+    -> listElEq String.eqb B C = true -> listElEq String.eqb A C = true.
+Proof. intro A. induction A as [|a As IHA].
+       - intros B C H1 H2. destruct B as [|b Bs]; simpl in H1. assumption. discriminate H1. 
+       - intros B C H1 H2. destruct B as [|b Bs]. 
+         + discriminate H1. 
+         + simpl in H1. destruct ((a =? b)%string) eqn:Hab. 
+           ++ simpl in H1. apply String.eqb_eq in Hab. destruct Hab. 
+              simpl in H2. destruct (existsb (String.eqb a) C) eqn: HaC.
+              +++ simpl. rewrite HaC. apply (IHA Bs). assumption. assumption.
+              +++ discriminate H2.
+           ++ simpl in H1. destruct (existsb (String.eqb a) Bs) eqn: HaBs.
+              
+Check (listElEq String.eqb [] []). *)
+
+(** ---------------------------------------------------------------------------------
+  Set Operations
+-----------------------------------------------------------------------------------*)
+
+(** Union *)
+(* Plain Attr List *)
+(*Fixpoint atts_union_c (A A': atts) : atts :=
+  match A with
+  | []      => []
+  | a :: xs =>
+     match (existsb (String.eqb a) A') with
+        | true  => a :: (atts_union_c xs A')
+        | false => (atts_union_c xs A')
+     end
+  end.
+
+Fixpoint vatts_union_c (A A': vatts) : vatts :=
+  match A with
+  | []           => []
+  | (a, e) :: xs =>
+     match (findIfExists a A') with
+        | Some e'  => (a, e \/(F) e') :: (vatts_union_c xs A')
+        | None => (vatts_union_c xs A')
+     end
+  end.
+
+
+Fixpoint atts_union_l (A A': atts) : atts :=
+  match A with
+  | []           => []
+  | x :: xs =>
+     match (existsb (String.eqb x) A') with
+        | true  => (atts_union_l xs A')
+        | false =>  x :: (atts_union_l xs A')
+     end
+  end. 
+
+Fixpoint vatts_union_l (A A': vatts) : vatts :=
+  match A with
+  | []           => []
+  | (a, e) :: xs =>
+     match (findIfExists a A') with
+        | Some _  => (vatts_union_l xs A')
+        | None    => (a, e) :: (vatts_union_l xs A')
+     end
+  end. 
+
+Fixpoint atts_union (A A': atts) : atts :=
+  match A with
+  | []           => A'
+  | x :: xs =>
+     match (existsb (String.eqb x) A') with
+        | true  => x :: (atts_union xs (remove String.eqb x A'))
+        | false => x :: (atts_union xs A')
+     end
+  end. 
+
+Fixpoint vatts_union (A A': vatts) : vatts :=
+  match A with
+  | []           => A'
+  | (a, e) :: xs =>
+     match (findIfExists a A') with
+        | Some e'  => (a, e \/(F) e') ::(vatts_union xs (remove veqb (a, e') A'))
+        | None    =>  (a, e)          ::(vatts_union xs A')
+     end
+  end. 
+
+(*
+(* Plain Attr List *)
+Definition atts_union (A A': atts) : atts := 
+    atts_union_c A  A' ++
+    atts_union_l A  A' ++
+    atts_union_l A' A.
+
+(* Variational Attr List *)
+Definition vatts_union (A A': vatts) : vatts := 
+    vatts_union_c A  A' ++
+    vatts_union_l A  A' ++
+    vatts_union_l A' A.
+*)
+
+(* Variational Query Type*)
+Definition vqtype_union (Q Q': vqtype) : vatts := 
+     vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). *)
+
+(** Intersection *)
+(* Plain Attr List *)
+(*Fixpoint atts_inter (A A': atts) : atts :=
+  match A with
+  | []      => []
+  | a :: xs =>
+     match (existsb (String.eqb a) A') with
+        | true  => a :: (atts_inter xs A')
+        | false => (atts_inter xs A')
+     end
+  end.
+
+(* Variational Attr List *)
+Fixpoint vatts_inter (A A': vatts) : vatts :=
+  match A with
+  | []           => []
+  | (a, e) :: xs =>
+     match (findIfExists a A') with
+        | Some e'  => (a, e /\(F) e') :: (vatts_inter xs A')
+        | None => (vatts_inter xs A')
+     end
+  end.
+
+(* Variational Query Type*)
+Definition vqtype_inter (Q Q': vqtype) : vatts := 
+     vatts_inter (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). *)
+
+
+
+
+(** ---------------------------------------------------------------------------------
+  nodupatt
+-----------------------------------------------------------------------------------*)
+
+(*Definition rm_hd_never_fail (lst : list vatt) (safety_proof : lst <> nil) : vatts :=
+  (match lst as b return (lst = b -> vatts) with
+    | nil => (fun foo : lst = nil =>
+                   match (safety_proof foo) return vatts with
+                   end
+                )
+    | (ae a e) :: _ => (fun foo : lst = (ae a e) :: _ =>
+                   removeAtt a lst
+                )
+  end) eq_refl. *)
+
+(* stops search when the first occurence is hit *)
+(*Fixpoint extract_e (x : att) (v : vatts) : option fexp := 
+   match v with 
+   | nil          => None
+   | ae a e :: vs => 
+          match (string_beq x a) with
+          | true  => Some e
+          | false => extract_e x vs
+          end
+   end.*)
+
+
+(*Fixpoint nodupatt (v: vatts) : vatts := 
+   match v with 
+   | nil          => nil
+   | ae a e :: vs =>  match existsbAtt a vs with
+                      | false => ae a e :: nodupatt vs
+                      | true  => let e' := extract_e a v in
+                         (ae a e') :: nodupatt (removeAtt a vs)
+                      end
+   end.*)
+
+
+(* Fixpoint nodupatt (v: vatts) : vatts := 
+   match v with 
+   | nil          => nil
+   | ae a e :: vs => 
+          match (find (string_beq a) found) with
+          | Some _  => nodupatt found vs
+          | None => let e' := (extract_e a v) in
+                         (ae a e') :: nodupatt (found ++ [a]) vs
+          end
+   end.
+
+
+
+Fixpoint removeAtt (a : att) (A: vatts) : vatts := 
+    match A with 
+   | nil => nil
+   | ae a' e' :: A' => match (string_beq a a') with
+                     | true => removeAtt a A'
+                     | false => ae a' e' :: removeAtt a A'
+                     end
+   end.
+
+Fixpoint nodupatt (A: vatts) : vatts := 
+   match A with 
+   | nil => nil
+   | ae a e :: A => match (extract_e a A) with
+                   | (litB false) => (ae a e) :: nodupatt A
+                   | (e'        ) => (ae a (e \/(F) e')) :: nodupatt (removeAtt a A)
+                   end
+   end.
+*)
+ 
