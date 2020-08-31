@@ -2,6 +2,7 @@
 module VDBMS.VDB.GenName (
 
        rename 
+       , rerename
        , renameNothing
        , relQual
        , subqQual
@@ -19,6 +20,11 @@ import VDBMS.VDB.Name
 -- | creates a rename for a given thing.
 rename :: Name -> a -> Rename a 
 rename n a = Rename (Just n) a
+
+-- | re-renames a given rename thing.
+rerename :: Name -> Rename a -> Rename a
+rerename n (Rename (Just a) t) = Rename (Just n) t
+rerename n (Rename Nothing t)  = Rename (Just n) t
 
 -- | creates a rename with no name for a thing.
 renameNothing :: a -> Rename a 

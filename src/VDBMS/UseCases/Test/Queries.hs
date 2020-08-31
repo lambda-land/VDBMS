@@ -11,6 +11,8 @@ import Prelude hiding (Ordering(..))
 import Database.HDBC 
 import VDBMS.VDB.Name hiding (name)
 -- import VDBMS.VDB.GenName
+import VDBMS.QueryLang.RelAlg.Relational.Algebra
+import VDBMS.DBMS.Value.Type
 
 -- import Data.Time.LocalTime
 import Data.Time.Calendar
@@ -81,3 +83,63 @@ qthirteen = choice
 qrfive = tRef rfive
 
 qrsix = tRef rsix
+
+-- 
+-- test for
+-- ra → sql 
+-- 
+
+remp = REmpty
+
+rqone = RRenameAlg "rone" (RTRef rone)
+
+rqrone = RTRef rone 
+rqrtwo = RTRef rtwo
+rqrthree = RTRef rthree
+
+rqtwo = RProj [att2attr aone_, att2attr atwo_] rqrone
+
+rqthree = RProj [att2attr aone_] rqtwo
+
+ctru = SqlCond (RLit False)
+cond = SqlCond (RComp EQ (Att (Attr aone_ Nothing)) (Val (SqlInt32 10004)))
+cnot = SqlCond (RNot (RComp EQ (Att (Attr aone_ Nothing)) (Val (SqlInt32 10004))))
+cnot' = SqlNot cond
+
+rqfour = RSel ctru rqtwo
+
+rqfive = RSel cnot rqtwo
+rqfive' = RSel cnot' rqtwo
+
+rqsix = RProj [att2attr aone_] rqfour
+
+rqseven = RSel ctru rqsix
+
+rqeight = RJoin rqrone 
+                rqrtwo 
+                (RComp EQ (Att (Attr aone_ (Just (RelQualifier rone))))
+                          (Att (Attr aone_ (Just (RelQualifier rtwo)))))
+rqeight' = RProj [att2attr atwo_] rqeight
+
+rqnine = RProd rqrone rqrtwo
+rqnine' = RProj [att2attr atwo_] rqnine
+
+rqten = RProd rqtwo rqfour
+rqten' = RProj [att2attr atwo_] rqten
+
+rqelleven = RProd rqtwo (RRenameAlg "rtwo" rqfour)
+
+rqtwelve = RJoin (RRenameAlg "one" rqrone) 
+                 (RRenameAlg "two" rqrone)
+                 (RComp EQ (Att (Attr aone_ (Just (RelQualifier rone))))
+                          (Att (Attr aone_ (Just (RelQualifier rtwo)))))
+rqtwelve' = RProj [att2attr atwo_] rqtwelve
+
+rqthirteen = RProj [att2attr aone_] rqtwelve
+
+rqfourteen = RSel cond rqthirteen
+
+rqfifteen = RProj [att2attr aone_] rqfourteen
+
+
+
