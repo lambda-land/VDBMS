@@ -18,7 +18,7 @@ import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
-import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
+-- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
@@ -66,7 +66,7 @@ runQ3 conn vq =
          -- the following line are for optimizing the generated RA queries
          ras_opt = map (second opts_) ra_qs
          -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
-         sql = ppSqlString $ optRAQs2Sql type_as pc ras_opt
+         sql = show $ optRAQs2Sql type_as pc ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
      sqlTab <- timeItName "running query" Monotonic $ fetchQRows conn sql

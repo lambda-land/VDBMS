@@ -70,7 +70,7 @@ transAlgebra2Sql (RProd l r)
       -- latts = (attributes . thing) lsql
       -- ratts = (attributes . thing) rsql
 transAlgebra2Sql (RTRef r)    
-  = SqlSelect [] [renameNothing (SqlTRef r)] []
+  = SqlTRef r
 transAlgebra2Sql (RRenameAlg n q) 
   = SqlSelect (attributes sql) 
               (rerename n (head (tables sql))

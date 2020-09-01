@@ -16,13 +16,14 @@ import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
-import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
+-- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
+-- import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 
 import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
@@ -64,7 +65,7 @@ runQ1 conn vq =
          -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
          ras_opt = map (first opts_) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
-         sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ras_opt
+         sql_qs = fmap (bimapDefault (show . genSql . transAlgebra2Sql) id) ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
          -- try removing gensql

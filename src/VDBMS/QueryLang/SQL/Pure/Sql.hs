@@ -13,6 +13,9 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , getThing
        , aExprAtt
        , isrel
+       , ppSql
+       , ppTemp
+       , ppSqlString
        , module VDBMS.QueryLang.SQL.Condition
 
 ) where
@@ -36,7 +39,7 @@ data SqlSelect =
       -- sqlName :: Maybe Name
     }
   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
-  -- | SqlTRef Relation -- ^ return a table
+  | SqlTRef Relation -- ^ return a table
   | SqlEmpty -- ^ empty query
   -- deriving Show
 
@@ -69,14 +72,14 @@ aExprAtt (SqlConcatAtt (Rename (Just n) _) _) = Attribute n
 --   Also note that if you want to cross product you'll have:
 --   [Rename SqlTRef R, Rename SqlTRef T]
 data SqlRelation = 
-    SqlTRef Relation
-  | SqlSubQuery SqlSelect
+    -- SqlTRef Relation
+    SqlSubQuery SqlSelect
   | SqlInnerJoin (Rename SqlRelation) (Rename SqlRelation) RCondition
   -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
 
--- |
+-- | returns true if a subquery is just a relation.
 isrel :: SqlRelation -> Bool
-isrel (SqlTRef _) = True 
+isrel (SqlSubQuery (SqlTRef _)) = True 
 isrel _ = False
 
 -- | Sql set operations.
@@ -143,6 +146,7 @@ ppSql (SqlBin o l r)
       prettyOp SqlUnion    = "UNION"
       prettyOp SqlUnionAll = "UNION ALL"
       prettyOp SqlDiff     = "EXCEPT"
+ppSql (SqlTRef r) = text (relationName r)
 ppSql SqlEmpty = text "SELECT NULL"
 
 -- | prints sql attribute expressions.
@@ -190,7 +194,9 @@ ppAtts (SqlConcatAtt ra ss)
 
 -- | prints sql relations.
 ppRel :: SqlRelation -> Doc
-ppRel (SqlTRef r) 
+-- ppRel (SqlTRef r) 
+--   = text (relationName r)
+ppRel (SqlSubQuery (SqlTRef r)) 
   = text (relationName r)
 ppRel (SqlSubQuery q) 
   | null (attributes q) = ppSql q
@@ -207,7 +213,7 @@ ppRenameRel :: Rename SqlRelation -> Doc
 ppRenameRel rq 
   | isNothing n = q
   | isrel tq = q <+> text "AS" <+> text (fromJust n)
-  | otherwise = parens q <+> text "AS" <+> text (fromJust n)
+  | otherwise =  q <+> text "AS" <+> text (fromJust n)
     where
       n = name rq
       q = (ppRel . thing) rq

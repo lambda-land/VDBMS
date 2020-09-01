@@ -17,7 +17,7 @@ import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
-import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
+-- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (sqlVtables2VTable)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
@@ -63,7 +63,7 @@ runQ2 conn vq =
          -- the following line are for optimizing the generated RA queries
          ras_opt = map (second opts_) ra_qs
          -- sql_qs = fmap (bimapDefault id (ppSqlString . genSql . transAlgebra2Sql)) ra_qs
-         sql_qs = fmap (bimapDefault id (ppSqlString . genSql . transAlgebra2Sql)) ras_opt
+         sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
          -- try removing gensql
