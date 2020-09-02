@@ -34,16 +34,23 @@ transAlgebra2Sql (RProj as q)
     where 
       sql = transAlgebra2Sql q
       gentables sq 
+        | isrel sq = [renameNothing (SqlSubQuery sq)]
         | null (attributes sq) = tables sq
+        -- | issqlop sq = error "transl rel alg to sql..unexpected prj op pattern"
         | otherwise = [renameNothing (SqlSubQuery sq)] 
       genconds sq 
+        | isrel sq = []
         | null (attributes sq) = condition sq 
+        -- | issqlop sq = error "transl rel alg to sql..unexpected prj op pattern"
         | otherwise = []
       -- sql = thing rsql
       -- atts = attributes sql 
       -- \\ [SqlAllAtt]
 transAlgebra2Sql (RSel c q) 
-  = SqlSelect (attributes sql) (tables sql) (algCond2SqlCond c : condition sql) 
+  | issqlop sql = error "transl rel alg to sql..unexpected sel op pattern"
+  | otherwise = SqlSelect (attributes sql) 
+                          (tables sql) 
+                          (algCond2SqlCond c : condition sql) 
     where 
       sql = transAlgebra2Sql q
       -- rsql = alg2SqlWithName q 
@@ -72,10 +79,14 @@ transAlgebra2Sql (RProd l r)
 transAlgebra2Sql (RTRef r)    
   = SqlTRef r
 transAlgebra2Sql (RRenameAlg n q) 
-  = SqlSelect (attributes sql) 
-              (rerename n (head (tables sql))
-                : tail (tables sql)) 
-              (condition sql) 
+  = case q of
+     (RTRef r) -> SqlSelect [] 
+                            [Rename (Just n) (SqlSubQuery (SqlTRef r))] 
+                            []
+     _         -> SqlSelect (attributes sql) 
+                            (rerename n (head (tables sql))
+                              : tail (tables sql)) 
+                            (condition sql) 
     where
       sql = transAlgebra2Sql q
 transAlgebra2Sql REmpty         = SqlEmpty

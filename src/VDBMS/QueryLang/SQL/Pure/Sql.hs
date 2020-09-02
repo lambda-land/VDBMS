@@ -13,6 +13,8 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , getThing
        , aExprAtt
        , isrel
+       , issqlslct
+       , issqlop
        , ppSql
        , ppTemp
        , ppSqlString
@@ -76,14 +78,26 @@ data SqlRelation =
     SqlSubQuery SqlSelect
   | SqlInnerJoin (Rename SqlRelation) (Rename SqlRelation) RCondition
   -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
+  -- deriving Show
 
 -- | returns true if a subquery is just a relation.
-isrel :: SqlRelation -> Bool
-isrel (SqlSubQuery (SqlTRef _)) = True 
+isrel :: SqlSelect -> Bool
+isrel (SqlTRef _) = True 
 isrel _ = False
+
+-- |
+issqlslct :: SqlSelect -> Bool
+issqlslct (SqlSelect _ _ _) = True
+issqlslct _ = False
+
+-- | 
+issqlop :: SqlSelect -> Bool
+issqlop (SqlBin _ _ _) = True
+issqlop _ = False
 
 -- | Sql set operations.
 data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
+  -- deriving Show
 
 -- | Sql temparory storing intermediate results.
 --   Note: you can only use WITH statements in a single sql query.
@@ -139,9 +153,9 @@ ppSql (SqlSelect as ts cs)
     $$ text "WHERE"
     <+> vcomma ppCond cs
 ppSql (SqlBin o l r) 
-  = ppSql l
+  = parens (ppSql l)
     <+> text (prettyOp o)
-    <+> ppSql r
+    <+> parens (ppSql r)
     where
       prettyOp SqlUnion    = "UNION"
       prettyOp SqlUnionAll = "UNION ALL"
@@ -156,11 +170,11 @@ ppAtts :: SqlAttrExpr -> Doc
 ppAtts (SqlAttr ra) 
   | isNothing n && isNothing q = a
   | isNothing n && isJust q    
-    = text ((qualName . fromJust) q) <+> char '.' <> a
+    = text ((qualName . fromJust) q) <> char '.' <> a
   | isJust n    && isNothing q = a <+> text "AS" <+> text (fromJust n)
   | isJust n    && isJust q    
     = text ((qualName . fromJust) q) 
-      <+> char '.' 
+      <> char '.' 
       <> a 
       <+> text "AS" 
       <+> text (fromJust n)
@@ -212,7 +226,7 @@ ppRel (SqlInnerJoin l r c)
 ppRenameRel :: Rename SqlRelation -> Doc 
 ppRenameRel rq 
   | isNothing n = q
-  | isrel tq = q <+> text "AS" <+> text (fromJust n)
+  -- | isrel tq = q <+> text "AS" <+> text (fromJust n)
   | otherwise =  q <+> text "AS" <+> text (fromJust n)
     where
       n = name rq

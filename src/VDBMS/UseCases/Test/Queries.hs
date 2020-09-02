@@ -112,6 +112,8 @@ rqfive = RSel cnot rqtwo
 rqfive' = RSel cnot' rqtwo
 
 rqsix = RProj [att2attr aone_] rqfour
+rqsix' = RSel cond rqsix
+
 
 rqseven = RSel ctru rqsix
 
@@ -125,21 +127,22 @@ rqnine = RProd rqrone rqrtwo
 rqnine' = RProj [att2attr atwo_] rqnine
 
 rqten = RProd rqtwo rqfour
-rqten' = RProj [att2attr atwo_] rqten
+rqten' = RProj [att2attrQualRel atwo_ rone] rqten
 
 rqelleven = RProd rqtwo (RRenameAlg "rtwo" rqfour)
+rqelleven' = RProj [att2attr aone_] rqelleven
 
 rqtwelve = RJoin (RRenameAlg "one" rqrone) 
                  (RRenameAlg "two" rqrone)
-                 (RComp EQ (Att (Attr aone_ (Just (RelQualifier rone))))
-                          (Att (Attr aone_ (Just (RelQualifier rtwo)))))
-rqtwelve' = RProj [att2attr atwo_] rqtwelve
+                 (RComp EQ (Att (Attr aone_ (Just (SubqueryQualifier  "one"))))
+                          (Att (Attr aone_ (Just (SubqueryQualifier  "two")))))
+rqtwelve' = RProj [att2attrQual atwo_ "one", att2attrQual aone_ "two"] rqtwelve
 
-rqthirteen = RProj [att2attr aone_] rqtwelve
+rqthirteen = RProj [att2attr aone_] rqtwelve'
 
 rqfourteen = RSel cond rqthirteen
 
 rqfifteen = RProj [att2attr aone_] rqfourteen
 
-
+rqsixteen = RSetOp Union rqthree rqsix
 

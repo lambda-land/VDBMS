@@ -64,21 +64,24 @@ nameRel :: Rename SqlRelation -> QState (Rename SqlRelation)
 --          return rq'
 --   | otherwise = return rq
 nameRel rq@(Rename a q@(SqlSubQuery subq)) 
-  | isNothing a 
+  | isNothing a && isrel subq
     = do subq' <- nameSubSql subq
          s <- get
-         -- modify succ
-         -- put s
-         -- s <- get
          let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
          modify succ
-         -- put s
          return rq'
+  | isNothing a && issqlslct subq 
+    = do if null (attributes subq)
+            then return rq
+            else do subq' <- nameSubSql subq
+                    s <- get
+                    let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
+                    modify succ
+                    return rq'
   | otherwise = return rq
 -- TODO: we may need to updates condition for attributes qualifiers.
 nameRel rq@(Rename a (SqlInnerJoin l r c)) 
   | isNothing a 
-  -- && isNothing la && isNothing ra
     = do l' <- nameRel l
          r' <- nameRel r 
          return $ Rename Nothing (SqlInnerJoin l' r' c)
@@ -87,4 +90,17 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
       la = name l 
       ra = name r
 
+-- |
+updateAttQual :: SqlSelect -> SqlSelect
+updateAttQual (SqlSelect as ts cs) = undefined
+updateAttQual (SqlBin o l r) 
+  = SqlBin o (updateAttQual l) (updateAttQual r)
+updateAttQual q = q
+
+-- |
+updateQualsInCond :: SqlSelect -> SqlSelect
+updateQualsInCond (SqlSelect as ts cs) = undefined
+updateQualsInCond (SqlBin o l r) 
+  = SqlBin o (updateQualsInCond l) (updateQualsInCond r)
+updateQualsInCond q = q
 
