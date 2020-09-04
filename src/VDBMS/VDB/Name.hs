@@ -10,6 +10,7 @@ module VDBMS.VDB.Name (
         , Alias
         , Qualifier(..)
         , Attr(..)
+        , updateAttrQual
         , Attributes
         , renameMap
         , attsSet
@@ -53,6 +54,12 @@ data Attr = Attr {
   qualifier :: Maybe Qualifier
 }
   deriving (Data,Eq,Ord,Read,Show,Typeable)
+
+-- | updates an attr qualifier.
+updateAttrQual :: Attr -> Qualifier -> Attr
+updateAttrQual a q = Attr at (Just q)
+  where
+    at = attribute a 
 
 -- | Attributes that can be projected in queries.
 -- type Attributes = [Rename Attr]

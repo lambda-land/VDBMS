@@ -146,3 +146,9 @@ rqfifteen = RProj [att2attr aone_] rqfourteen
 
 rqsixteen = RSetOp Union rqthree rqsix
 
+fetrue = F.Lit True 
+fefalse = F.Lit False
+
+pctst = Attribute "presCond"
+atts = [aone_, atwo_, athree_, afour_, afive_]
+

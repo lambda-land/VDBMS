@@ -165,22 +165,6 @@ updateJoinRel = undefined
 -- updateSqlRel _ _ _ = error "only accept sqlselct constructor"
 
 
-
-data Condd = Blah
-
-data Stmt = While Condd Stmt (Maybe Stmt)
-          | If Condd Stmt [(Condd,Stmt)] (Maybe Stmt)
-
-c1, c2 :: Condd
-c1 = undefined
-c2 = undefined
-s1,s2 :: Stmt
-s1 = undefined
-s2 = undefined
-ex = While c1 s1 (Just (If c2 s2 [] Nothing))
-
-
-
 -- genCTEs :: SqlSelect -> CteClosure -> CteState SqlTempRes
 -- genCTEs :: MonadState s m => SqlSelect -> CteClosure -> m SqlTempRes
 -- genCTEs q@(SqlSelect as ts cs) cls = undefined

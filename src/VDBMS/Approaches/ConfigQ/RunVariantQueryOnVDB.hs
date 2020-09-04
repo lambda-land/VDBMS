@@ -75,3 +75,31 @@ runQ1 conn vq =
      timeItName "gathering results" Monotonic $ return 
        $ variantSqlTables2Table features pc type_sch sqlTables
 
+-- |
+runQ1test :: Database conn => conn -> Algebra -> IO [(String, Config Bool)]
+runQ1test conn vq =
+  do let vsch = schema conn
+         vsch_pc = featureModel vsch
+         features = dbFeatures conn
+         configs = getAllConfig conn
+         pc = presCond conn
+     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     start_constQ <- getTime Monotonic
+     let 
+         -- type_pc = typePC vq_type
+         type_sch = typeEnv2tableSch vq_type
+         vq_constrained = pushSchToQ vsch vq
+         vq_constrained_opt = chcSimpleReduceRec vq_constrained
+         -- try removing opt
+         ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
+         -- the following two lines are for optimizing the generated RA queries
+         -- ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
+         -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
+         ras_opt = map (first opts_) ra_qs
+         -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
+         sql_qs = fmap (bimapDefault (show . genSql . transAlgebra2Sql) id) ras_opt
+     end_constQ <- getTime Monotonic
+     fprint (timeSpecs % "\n") start_constQ end_constQ
+     return sql_qs
+
+

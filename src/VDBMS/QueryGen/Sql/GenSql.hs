@@ -10,7 +10,7 @@ module VDBMS.QueryGen.Sql.GenSql (
 -- import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
 -- import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
-import VDBMS.VDB.Name (Rename(..))
+import VDBMS.VDB.Name 
 -- import VDBMS.QueryLang.SQL.Condition 
 -- import VDBMS.QueryLang.RelAlg.Basics.SetOp
 -- import VDBMS.VDB.Schema.Variational.Schema
@@ -19,7 +19,7 @@ import VDBMS.VDB.Name (Rename(..))
 
 import Control.Monad.State 
 
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, fromJust)
 
 -- | number for generating names.
 type AliasNum = Int 
@@ -44,7 +44,7 @@ genSql = evalQState . nameSubSql
 -- | names subqueries within a sql query.
 nameSubSql :: SqlSelect -> QState SqlSelect
 nameSubSql (SqlSelect as ts cs) 
-  = do ts' <- mapM nameRel ts 
+  = do ts' <- mapM nameRel ts
        return $ SqlSelect as ts' cs
   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
 nameSubSql (SqlBin o lq rq) 
@@ -54,6 +54,8 @@ nameSubSql (SqlBin o lq rq)
 nameSubSql q = return q
 
 -- | names a sql relation without a name.
+-- nameRel :: [SqlAttrExpr] -> [SqlCond SqlSelect] -> Rename SqlRelation 
+--         -> QState (Rename SqlRelation)
 nameRel :: Rename SqlRelation -> QState (Rename SqlRelation)
 -- nameRel rq@(Rename a q@(SqlTRef _)) 
 --   | isNothing a 
@@ -68,6 +70,7 @@ nameRel rq@(Rename a q@(SqlSubQuery subq))
     = do subq' <- nameSubSql subq
          s <- get
          let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
+
          modify succ
          return rq'
   | isNothing a && issqlslct subq 
@@ -83,7 +86,7 @@ nameRel rq@(Rename a q@(SqlSubQuery subq))
 nameRel rq@(Rename a (SqlInnerJoin l r c)) 
   | isNothing a 
     = do l' <- nameRel l
-         r' <- nameRel r 
+         r' <- nameRel r
          return $ Rename Nothing (SqlInnerJoin l' r' c)
   | otherwise = error "an inner join shouldn't have a name"
     where
@@ -91,16 +94,26 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
       ra = name r
 
 -- |
-updateAttQual :: SqlSelect -> SqlSelect
-updateAttQual (SqlSelect as ts cs) = undefined
-updateAttQual (SqlBin o l r) 
-  = SqlBin o (updateAttQual l) (updateAttQual r)
-updateAttQual q = q
+-- updateAttsQual :: SqlSelect -> SqlSelect
+-- updateAttsQual (SqlSelect as ts cs) = undefined
+--   -- = SqlSelect (map () as)
+--   --             ts 
+--   --             cs
+-- updateAttsQual (SqlBin o l r) 
+--   = SqlBin o (updateAttsQual l) (updateAttsQual r)
+-- updateAttsQual q = q
 
--- |
-updateQualsInCond :: SqlSelect -> SqlSelect
-updateQualsInCond (SqlSelect as ts cs) = undefined
-updateQualsInCond (SqlBin o l r) 
-  = SqlBin o (updateQualsInCond l) (updateQualsInCond r)
-updateQualsInCond q = q
+-- -- | updates attribute's qualifer.
+-- updateAttQual :: Attr -> Alias -> Attr
+-- updateAttQual a n 
+--   | isNothing (qualifier a) = a 
+--   | not (isNothing n) = updateAttrQual a (SubqueryQualifier (fromJust n))
+--   | otherwise = error "alias shouldn't be nothing"
+
+-- -- |
+-- updateQualsInCond :: SqlSelect -> SqlSelect
+-- updateQualsInCond (SqlSelect as ts cs) = undefined
+-- updateQualsInCond (SqlBin o l r) 
+--   = SqlBin o (updateQualsInCond l) (updateQualsInCond r)
+-- updateQualsInCond q = q
 
