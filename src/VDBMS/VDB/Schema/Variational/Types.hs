@@ -15,18 +15,9 @@ module VDBMS.VDB.Schema.Variational.Types (
         , schConfs
         , schemaRels
         , updateFM
+        , ppTableSchema
 
 ) where
-
-import Prelude hiding (map)
-
-import Data.Data (Data, Typeable)
-import GHC.Generics (Generic)
-
--- import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe, map, empty)
-import Data.Map.Strict (Map, mapMaybe, empty, keys)
-
-import Control.Monad.Catch 
 
 import VDBMS.VDB.Name
 import VDBMS.Variational.Opt
@@ -38,11 +29,34 @@ import VDBMS.Features.Config (Config)
 -- import VDBMS.Features.SAT (satisfiable)
 -- import VDBMS.Features.ConfFexp (validConfsOfFexp)
 
+import Prelude hiding (map, (<>))
+
+import Data.Data (Data, Typeable)
+import GHC.Generics (Generic)
+
+-- import Data.Map.Strict (Map, delete, fromList, toList, union, mapMaybe, map, empty)
+import Data.Map.Strict (Map, mapMaybe, empty, keys, toList)
+
+import Control.Monad.Catch 
+
+import Text.PrettyPrint hiding (empty)
+
 -- | Type of a relation in the database.
 type RowType = Map Attribute (Opt SqlType)
 
 -- | Schema of a table in a variational database.
 type TableSchema = Opt RowType
+
+-- | pretty prints a table schema.
+ppTableSchema :: TableSchema -> String
+ppTableSchema = render . ppTabSch
+  where
+    ppTabSch t = text "Table's PC: "
+              <> text (show (getFexp t))
+              $$ ppRowType (getObj t)
+    ppRowType = vcat . punctuate comma . fmap ppOneAtt . toList
+    ppOneAtt (a, (af, at)) = brackets $
+      text (attributeName a) <+> quotes (text (show at))
 
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to

@@ -52,6 +52,7 @@ dependencies:
 - clock
 - formatting >= 6.3.7
 - uniplate >= 1.6.12
+- boxes >= 0.1.5
 # - boolsimplifier >= 0.1.8
 # - logic-classes 
 # - PropLogic

@@ -12,10 +12,24 @@ module VDBMS.VDB.Table.Core (
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.Table 
 
+import Text.PrettyPrint
+
 -- | the result of a vq is a variational table.
 --   variational table data type.
 data Table = Table TableSchema SqlTable
-  deriving (Eq, Show)
+  deriving (Eq)
+
+-- | pretty prints a table.
+ppTable :: Table -> String
+ppTable t = render tabPrinted
+  where
+    tabPrinted = text (ppTableSchema tsch)
+              $$ text (ppSqlTable (tableSchAtts tsch) (getSqlTable t))
+    tsch = getTableSchema t
+
+instance Show Table where
+  show = ppTable
+
 
 -- | returns the schema of the vtable.
 getTableSchema :: Table -> TableSchema

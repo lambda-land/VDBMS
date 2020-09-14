@@ -10,8 +10,8 @@ import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 import VDBMS.Variational.Variational 
 import VDBMS.VDB.Table.Table (Table)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
-import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnv2tableSch)
+import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, ppSqlVarTab)
+import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnv2tableSch, typeAtts)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
@@ -24,6 +24,9 @@ import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
 -- import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
+-- for testing
+import VDBMS.DBsetup.Postgres.Test
+-- for testing
 
 import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
@@ -56,6 +59,7 @@ runQ1 conn vq =
      let 
          -- type_pc = typePC vq_type
          type_sch = typeEnv2tableSch vq_type
+         atts = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
          -- try removing opt
@@ -68,12 +72,27 @@ runQ1 conn vq =
          sql_qs = fmap (bimapDefault (show . genSql . transAlgebra2Sql) id) ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
+     putStrLn (show $ fmap fst ra_qs)
+     putStrLn (show $ fmap fst ras_opt)
+     putStrLn (show $ fmap fst sql_qs)
          -- try removing gensql
      let runq :: (String, Config Bool) -> IO SqlVariantTable
          runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
      sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
+     -- putStrLn (show (length sqlTables))
+     -- putStrLn (ppSqlVarTab features atts (sqlTables !! 4))
+     -- putStrLn (show (map (ppSqlVarTab features atts) sqlTables))
      timeItName "gathering results" Monotonic $ return 
        $ variantSqlTables2Table features pc type_sch sqlTables
+
+testfetch q = 
+  do db <- tstVDBone
+     fetchQRows db q
+
+-- runtest :: Algebra -> IO Table
+runtest q =
+  do db <- tstVDBone
+     runQ1 db q
 
 -- |
 runQ1test :: Database conn => conn -> Algebra -> IO [(String, Config Bool)]
@@ -83,7 +102,7 @@ runQ1test conn vq =
          features = dbFeatures conn
          configs = getAllConfig conn
          pc = presCond conn
-     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     vq_type <- timeItNamed "type system" $ typeOfQuery vq vsch_pc vsch
      start_constQ <- getTime Monotonic
      let 
          -- type_pc = typePC vq_type
@@ -102,4 +121,8 @@ runQ1test conn vq =
      fprint (timeSpecs % "\n") start_constQ end_constQ
      return sql_qs
 
-
+runtestqs :: Algebra -> IO String
+runtestqs q =
+  do tstvdb <- tstVDBone
+     qs <- runQ1test tstvdb q
+     return $ head $ mapM fst qs

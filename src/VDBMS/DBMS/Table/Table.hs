@@ -16,7 +16,8 @@ module VDBMS.DBMS.Table.Table (
         combineSqlTables,
         updatePCInSqlTable,
         conformSqlTableToSchema,
-        lookupAttValInSqlRow
+        lookupAttValInSqlRow, 
+        ppSqlTable
 
 ) where
 
@@ -25,7 +26,7 @@ import qualified Data.Map.Strict as M
 import Data.Set (Set)
 import qualified Data.Set as S
 
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isNothing)
 
 import VDBMS.Features.SAT (satisfiable)
 import VDBMS.VDB.Name
@@ -39,6 +40,8 @@ import Database.HDBC (SqlValue(..))
 import Control.Monad.Catch
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
+
+import Text.PrettyPrint.Boxes
 
 -- type Row = [SqlValue]
 -- type Table = [Row]
@@ -62,6 +65,24 @@ data SqlTableErr
   deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception SqlTableErr
+
+-- |prints a sql table.
+ppSqlTable :: [Attribute] -> SqlTable -> String
+ppSqlTable as t = render (aBox // tBox)
+  where 
+    aBox = hsep 2 left (fmap (text . attributeName) as)
+    tBox = vcat left (fmap (ppSqlRow as) t)
+
+-- | boxes a sqlrow.
+ppSqlRow :: [Attribute] -> SqlRow -> Box
+ppSqlRow as r = hsep 2 left (fmap boxit as)
+  where
+   boxit a 
+     | isNothing (M.lookup (attributeName a) r) 
+       = emptyBox 1 1
+     | otherwise 
+       = text (show $ fromJust (M.lookup (attributeName a) r))
+
 
 -- | looks up an attribute value in a tuple.
 lookupAttValInSqlRow :: MonadThrow m => Attribute -> Relation -> SqlRow 

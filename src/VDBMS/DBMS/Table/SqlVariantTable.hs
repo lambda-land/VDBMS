@@ -12,15 +12,10 @@ module VDBMS.DBMS.Table.SqlVariantTable (
         dropUnsatTuples,
         -- sqlVariantTable2SqlVTable,
         -- combineSqlVariantTables
-        updateTuplesPC
+        updateTuplesPC,
+        ppSqlVarTab
 
 ) where
-
-import Data.Set (Set)
--- import qualified Data.Set as S
-
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
 
 import VDBMS.Features.Variant 
 import VDBMS.VDB.Name
@@ -30,8 +25,26 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.Table
 import VDBMS.DBMS.Table.SqlVtable
 import VDBMS.Variational.Opt
+import VDBMS.Features.Config (ppConfig)
+
+import Data.Set (Set)
+-- import qualified Data.Set as S
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
+
+import Text.PrettyPrint.Boxes
 
 type SqlVariantTable = Variant SqlTable Bool
+
+
+-- | prints q sqlvariant table.
+ppSqlVarTab :: [Feature] -> [Attribute] -> SqlVariantTable -> String
+ppSqlVarTab fs as t = ppConfig fs (getConfig t)
+  ++ "\n" 
+  ++ ppSqlTable as (getVariant t)
+
+
 
 ------------------- apply config ----------------------
 

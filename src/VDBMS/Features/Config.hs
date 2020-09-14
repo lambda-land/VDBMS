@@ -9,6 +9,7 @@ module VDBMS.Features.Config (
         enableMany,
         disableMany,
         equivConfig,
+        ppConfig
 
 ) where
 
@@ -17,6 +18,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 -- import Data.Map.Strict (Map)
 -- import qualified Data.Map.Strict as M
+import Data.List (intercalate)
 
 import VDBMS.Features.Feature (Feature)
 
@@ -25,6 +27,10 @@ import VDBMS.Features.Feature (Feature)
 --   enabled ('true') or disabled ('false'). The boolean return value is
 --   parameterized to admit alternative logics or symbolic values.
 type Config b = Feature -> b
+
+-- | prints enables featres.
+ppConfig :: [Feature] -> Config Bool -> String
+ppConfig fs c = intercalate ", " $ map show $ filter c fs
 
 -- | A configuration that enables all features.
 enableAll :: Boolean b => Config b

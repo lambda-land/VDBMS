@@ -38,17 +38,6 @@ updateVariant v (_,c) = (v,c)
 updateConfig :: Config b -> Variant a b -> Variant a b
 updateConfig c (v,_) = (v,c)
 
--- | A variant table. All fexp must be true or false!
---   TODO: write func to check this!!
--- type VariantTable = Variant Table Bool
-
--- | A variant schema. All fexp must be true or false!
---   TODO: write func to check this!!
--- type VariantSchema = Variant Schema Bool
-
--- | A variant database. All fexp must be true or false!
---   TODO: write func to check this!!
--- type VariantDatabase = Variant Database Bool
-
--- | A variant HDBC database. Doesn't have fexp.
--- type VariantHDBC = Variant Bool (IConnection conn)
+-- print_table :: [[String]] -> IO ()
+-- print_table rows = printBox 
+-- $ hsep 2 left (map (vcat left . map text) (transpose rows))
