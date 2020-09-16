@@ -37,7 +37,9 @@ variantSqlTables2Table fs pc t_sch ts
       t_pc = tschFexp t_sch
       rowtype = tschRowType t_sch
       ts_valid = applyConfVariantTables pc t_pc ts
-      ts_sameSch_updatedPC = map ((flip conformSqlTableToSchema rowtype) . (updateTuplesPC fs pc)) ts_valid
+      ts_sameSch_updatedPC = map 
+        ((flip conformSqlTableToSchema rowtype) . (updateTuplesPC fs pc)) 
+        ts_valid
 
 -- | takes everything neede to combine a list of opt sqltable
 --   to a table.

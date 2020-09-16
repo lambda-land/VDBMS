@@ -9,9 +9,12 @@ module VDBMS.Features.Config (
         enableMany,
         disableMany,
         equivConfig,
-        ppConfig
+        ppConfig, 
+        prettyConfig
 
 ) where
+
+import VDBMS.Features.Feature (Feature, featureName)
 
 import Data.SBV (Boolean(..))
 import Data.Set (Set)
@@ -20,17 +23,20 @@ import qualified Data.Set as S
 -- import qualified Data.Map.Strict as M
 import Data.List (intercalate)
 
-import VDBMS.Features.Feature (Feature)
-
+import Text.PrettyPrint
 
 -- | A configuration is a function that indicates whether each feature is
 --   enabled ('true') or disabled ('false'). The boolean return value is
 --   parameterized to admit alternative logics or symbolic values.
 type Config b = Feature -> b
 
+-- | pretty prints enabled features.
+prettyConfig :: [Feature] -> Config Bool -> String
+prettyConfig fs = render . ppConfig fs
+
 -- | prints enables featres.
-ppConfig :: [Feature] -> Config Bool -> String
-ppConfig fs c = intercalate ", " $ map show $ filter c fs
+ppConfig :: [Feature] -> Config Bool -> Doc
+ppConfig fs c = (hcat . punctuate comma . map (text . featureName)) (filter c fs)
 
 -- | A configuration that enables all features.
 enableAll :: Boolean b => Config b

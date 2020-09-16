@@ -1,8 +1,8 @@
 -- | HDBC library fetching result as Table.
 module VDBMS.VDB.Database.HDBC.Fetch where
 
-import VDBMS.VDB.Schema.Variational.Schema
-import VDBMS.VDB.Name
+-- import VDBMS.VDB.Schema.Variational.Schema
+-- import VDBMS.VDB.Name
 import VDBMS.VDB.Database.Database
 -- import VDBMS.VDB.Table.Table
 import VDBMS.DBMS.Table.Table (SqlTable)

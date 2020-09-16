@@ -10,7 +10,7 @@ import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 import VDBMS.Variational.Variational 
 import VDBMS.VDB.Table.Table (Table)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
-import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, ppSqlVarTab)
+import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, prettySqlVarTab)
 import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnv2tableSch, typeAtts)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
@@ -23,9 +23,12 @@ import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
+import VDBMS.QueryGen.RA.AddPC (addPC)
 -- import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 -- for testing
 import VDBMS.DBsetup.Postgres.Test
+import VDBMS.DBMS.Table.Table (prettySqlTable)
+import VDBMS.UseCases.Test.Schema
 -- for testing
 
 import Control.Arrow (first, second, (***))
@@ -67,12 +70,12 @@ runQ1 conn vq =
          -- the following two lines are for optimizing the generated RA queries
          -- ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
          -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
-         ras_opt = map (first opts_) ra_qs
+         ras_opt = map (first ((addPC pc) . opts_)) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
          sql_qs = fmap (bimapDefault (show . genSql . transAlgebra2Sql) id) ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
-     putStrLn (show $ fmap fst ra_qs)
+     -- putStrLn (show $ fmap fst ra_qs)
      putStrLn (show $ fmap fst ras_opt)
      putStrLn (show $ fmap fst sql_qs)
          -- try removing gensql
@@ -80,7 +83,11 @@ runQ1 conn vq =
          runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
      sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
      -- putStrLn (show (length sqlTables))
-     -- putStrLn (ppSqlVarTab features atts (sqlTables !! 4))
+     -- tabtest <- fetchQRows conn ((map fst sql_qs) !! 1)
+     -- tabtest <- fetchQRows conn "select * from r1;"
+     -- putStrLn (show tabtest)
+     -- putStrLn (prettySqlTable [aone_, atwo_, pc] tabtest)
+     putStrLn (prettySqlVarTab features atts (sqlTables !! 1))
      -- putStrLn (show (map (ppSqlVarTab features atts) sqlTables))
      timeItName "gathering results" Monotonic $ return 
        $ variantSqlTables2Table features pc type_sch sqlTables

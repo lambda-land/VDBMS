@@ -13,7 +13,8 @@ module VDBMS.DBMS.Table.SqlVariantTable (
         -- sqlVariantTable2SqlVTable,
         -- combineSqlVariantTables
         updateTuplesPC,
-        ppSqlVarTab
+        ppSqlVarTab, 
+        prettySqlVarTab
 
 ) where
 
@@ -33,18 +34,18 @@ import Data.Set (Set)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
-import Text.PrettyPrint.Boxes
+import Text.PrettyPrint
 
 type SqlVariantTable = Variant SqlTable Bool
 
+-- | pretty prints a sql variant table.
+prettySqlVarTab :: [Feature] -> [Attribute] -> SqlVariantTable -> String
+prettySqlVarTab fs as = render . ppSqlVarTab fs as
 
 -- | prints q sqlvariant table.
-ppSqlVarTab :: [Feature] -> [Attribute] -> SqlVariantTable -> String
+ppSqlVarTab :: [Feature] -> [Attribute] -> SqlVariantTable -> Doc
 ppSqlVarTab fs as t = ppConfig fs (getConfig t)
-  ++ "\n" 
-  ++ ppSqlTable as (getVariant t)
-
-
+  $$ ppSqlTable as (getVariant t)
 
 ------------------- apply config ----------------------
 

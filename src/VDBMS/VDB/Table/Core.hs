@@ -20,15 +20,15 @@ data Table = Table TableSchema SqlTable
   deriving (Eq)
 
 -- | pretty prints a table.
-ppTable :: Table -> String
-ppTable t = render tabPrinted
+prettyTable :: Table -> String
+prettyTable t = render tabPrinted
   where
     tabPrinted = text (ppTableSchema tsch)
-              $$ text (ppSqlTable (tableSchAtts tsch) (getSqlTable t))
+              $$ text (prettySqlTable (tableSchAtts tsch) (getSqlTable t))
     tsch = getTableSchema t
 
 instance Show Table where
-  show = ppTable
+  show = prettyTable
 
 
 -- | returns the schema of the vtable.

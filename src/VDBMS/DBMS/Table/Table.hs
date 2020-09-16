@@ -17,7 +17,10 @@ module VDBMS.DBMS.Table.Table (
         updatePCInSqlTable,
         conformSqlTableToSchema,
         lookupAttValInSqlRow, 
+        prettySqlTable,
         ppSqlTable
+        -- , ppSqlRowRend
+        -- , testrow
 
 ) where
 
@@ -41,7 +44,10 @@ import Control.Monad.Catch
 import Data.Data (Data, Typeable)
 import GHC.Generics (Generic)
 
-import Text.PrettyPrint.Boxes
+-- import Text.PrettyPrint.Boxes
+import Text.PrettyPrint
+
+-- import VDBMS.UseCases.Test.Schema
 
 -- type Row = [SqlValue]
 -- type Table = [Row]
@@ -66,22 +72,43 @@ data SqlTableErr
 
 instance Exception SqlTableErr
 
--- |prints a sql table.
-ppSqlTable :: [Attribute] -> SqlTable -> String
-ppSqlTable as t = render (aBox // tBox)
-  where 
-    aBox = hsep 2 left (fmap (text . attributeName) as)
-    tBox = vcat left (fmap (ppSqlRow as) t)
+-- | pretty prints a sql table
+prettySqlTable :: [Attribute] -> SqlTable -> String
+prettySqlTable as = render . (ppSqlTable as)
 
+-- |prints a sql table.
+ppSqlTable :: [Attribute] -> SqlTable -> Doc
+ppSqlTable as t 
+  =  (hcat . punctuate (text "\t|\t") . map (text . attributeName)) as 
+  $+$ vcat (map (ppSqlRow as) t)
+
+-- ppSqlTable as t = render (aBox // tBox)
+--   where 
+--     aBox = hsep 2 left (fmap (text . attributeName) as)
+--     tBox = vcat left (fmap (ppSqlRow as) t)
+
+-- testrow = [M.fromList [("a1",SqlNull), ("a2", SqlNull)]
+--   , M.fromList [("a1",SqlNull), ("a2", SqlNull)]
+--   , M.fromList [("a1",SqlNull), ("a2", SqlNull)]
+--   ]
+
+ppSqlRowRend a = render . (ppSqlRow a)
 -- | boxes a sqlrow.
-ppSqlRow :: [Attribute] -> SqlRow -> Box
-ppSqlRow as r = hsep 2 left (fmap boxit as)
+ppSqlRow :: [Attribute] -> SqlRow -> Doc
+ppSqlRow as r = (hcat . punctuate (text "\t|\t") . fmap ppVal) as
   where
-   boxit a 
-     | isNothing (M.lookup (attributeName a) r) 
-       = emptyBox 1 1
-     | otherwise 
-       = text (show $ fromJust (M.lookup (attributeName a) r))
+    ppVal a 
+      | isNothing (M.lookup (attributeName a) r) 
+        = empty
+      | otherwise
+        = text (show $ fromJust (M.lookup (attributeName a) r))
+-- ppSqlRow as r = hsep 2 left (fmap boxit as)
+--   where
+--    boxit a 
+--      | isNothing (M.lookup (attributeName a) r) 
+--        = emptyBox 1 1
+--      | otherwise 
+--        = text (show $ fromJust (M.lookup (attributeName a) r))
 
 
 -- | looks up an attribute value in a tuple.
