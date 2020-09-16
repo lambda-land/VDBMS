@@ -22,9 +22,11 @@ import VDBMS.Variational.Variational (Variational(..))
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.VDB.Name
 import VDBMS.VDB.GenName
-import VDBMS.Variational.Opt (Opt(..), mapFst, getFexp, getObj, applyFuncFexp)
+import VDBMS.Variational.Opt (Opt(..), mapFst, getFexp, getObj, 
+  applyFuncFexp)
 import qualified VDBMS.Features.FeatureExpr.FeatureExpr as F
-import VDBMS.TypeSystem.Variational.TypeSystem (simplType, typeOfQuery, typeEnve2OptAtts, runTypeQuery)
+import VDBMS.TypeSystem.Variational.TypeSystem (simplType, typeOfQuery, 
+  typeEnve2OptAtts, runTypeQuery)
 
 -- import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M

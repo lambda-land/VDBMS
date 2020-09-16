@@ -96,10 +96,12 @@ typeEnve2OptAtts env = concatMap attrTrans (M.toList (getObj env))
   where
     envPC = typePC env
     attrTrans :: (Attribute, AttrInformation) -> OptAttributes
-    attrTrans (a, ais) = map (\ai -> mkOpt 
+    attrTrans (a, ais) 
+      | length ais > 1 = map (\ai -> mkOpt 
       -- (F.shrinkFExpWRTfm $ F.And envPC (attrFexp ai)) 
-      (attrFexp ai)
-      (Attr a (Just $ attrQual ai))) ais 
+        (attrFexp ai)
+        (Attr a (Just $ attrQual ai))) ais 
+      | otherwise = map (\ai -> mkOpt (attrFexp ai) (Attr a Nothing)) ais
 
 -- | returns the attributes of type env. 
 --   assumption: attributes are unique.
