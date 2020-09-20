@@ -2,6 +2,7 @@
 module VDBMS.Features.FeatureExpr.Parser (
 
         fexpParser
+        , parstst
 
 ) where
 
@@ -24,6 +25,8 @@ import VDBMS.Features.FeatureExpr.Types
 type Parser = Parsec Void B.ByteString
 
 
+parstst s = runParser fexpParser "" s
+
 spaceConsumer :: Parser ()
 spaceConsumer = L.space space1 empty empty
 -- -- (L.skipLineComment "line comment") 
@@ -39,7 +42,7 @@ parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
 rservedWord :: B.ByteString -> Parser ()
-rservedWord w = (lexeme . try) (string w *> notFollowedBy alphaNumChar)
+rservedWord w = (lexeme . try) (string' w *> notFollowedBy alphaNumChar)
 
 reservedWords :: [B.ByteString]
 reservedWords = ["not", "true", "false", "and", "or"]
@@ -49,7 +52,6 @@ identifier = BC.unpack <$> (lexeme . try) (p >>= check)
   where
     p = B.cons <$> letterChar <*> (B.pack <$> many alphaNumChar)
     -- p = (:) <$> letterChar <*> many alphaNumChar
-
     check x
       | x `elem` reservedWords = fail $ "keyword " ++ show x ++ " is reserved"
       | otherwise = return x

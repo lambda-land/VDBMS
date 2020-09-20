@@ -82,12 +82,12 @@ runQ1 conn vq =
      let runq :: (String, Config Bool) -> IO SqlVariantTable
          runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
      sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
-     -- putStrLn (show (length sqlTables))
+     putStrLn (show (length sqlTables))
      -- tabtest <- fetchQRows conn ((map fst sql_qs) !! 1)
      -- tabtest <- fetchQRows conn "select * from r1;"
      -- putStrLn (show tabtest)
      -- putStrLn (prettySqlTable [aone_, atwo_, pc] tabtest)
-     putStrLn (prettySqlVarTab features atts (sqlTables !! 1))
+     putStrLn (prettySqlVarTab features (atts ++ [pc]) (sqlTables !! 4))
      -- putStrLn (show (map (ppSqlVarTab features atts) sqlTables))
      timeItName "gathering results" Monotonic $ return 
        $ variantSqlTables2Table features pc type_sch sqlTables
