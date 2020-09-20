@@ -44,12 +44,16 @@ variantSqlTables2Table fs pc t_sch ts
 -- | takes everything neede to combine a list of opt sqltable
 --   to a table.
 sqlVtables2VTable :: PCatt -> TableSchema -> [SqlVtable] -> Table
-sqlVtables2VTable pc t_sch ts = mkVTable t_sch (combineSqlTables pc ts_sameSch_updatedPC)
-  where
-    t_pc = tschFexp t_sch
-    rowtype = tschRowType t_sch
-    ts_valid = map (applyFexpToSqlVtable t_pc pc) ts 
-    ts_sameSch_updatedPC = map ((flip conformSqlTableToSchema rowtype) . (updateTuplesPCInSqlVtable pc)) ts_valid
+sqlVtables2VTable pc t_sch ts 
+  = mkVTable t_sch (combineSqlTables pc ts_sameSch_updatedPC)
+    where
+      t_pc = tschFexp t_sch
+      rowtype = tschRowType t_sch
+      ts_valid = map (applyFexpToSqlVtable t_pc pc) ts 
+      ts_sameSch_updatedPC 
+        = map ((flip conformSqlTableToSchema rowtype) 
+               . (updateTuplesPCInSqlVtable pc)) 
+              ts_valid
 
 {--
 ------------------- construct vtable for approach1 -------------------
