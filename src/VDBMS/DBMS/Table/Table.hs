@@ -24,19 +24,19 @@ module VDBMS.DBMS.Table.Table (
 
 ) where
 
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
-import Data.Set (Set)
-import qualified Data.Set as S
-
-import Data.Maybe (fromJust, isNothing)
-
 import VDBMS.Features.SAT (satisfiable)
 import VDBMS.VDB.Name
 import VDBMS.Features.Config
 import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Value.Value
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
+import Data.Set (Set)
+import qualified Data.Set as S
+
+import Data.Maybe (fromJust, isNothing)
 
 import Database.HDBC (SqlValue(..))
 
@@ -46,6 +46,8 @@ import GHC.Generics (Generic)
 
 -- import Text.PrettyPrint.Boxes
 import Text.PrettyPrint
+
+-- import Debug.Trace
 
 -- import VDBMS.UseCases.Test.Schema
 
@@ -92,7 +94,7 @@ ppSqlTable as t
 --   , M.fromList [("a1",SqlNull), ("a2", SqlNull)]
 --   ]
 
-ppSqlRowRend a = render . (ppSqlRow a)
+-- ppSqlRowRend a = render . (ppSqlRow a)
 -- | boxes a sqlrow.
 ppSqlRow :: [Attribute] -> SqlRow -> Doc
 ppSqlRow as r = (hcat . punctuate (text "\t|\t") . fmap ppVal) as

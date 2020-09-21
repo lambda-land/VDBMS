@@ -87,7 +87,7 @@ runQ1 conn vq =
      -- tabtest <- fetchQRows conn "select * from r1;"
      -- putStrLn (show tabtest)
      -- putStrLn (prettySqlTable [aone_, atwo_, pc] tabtest)
-     putStrLn (prettySqlVarTab features (atts ++ [pc]) (sqlTables !! 4))
+     putStrLn (prettySqlVarTab features (atts ++ [pc]) (sqlTables !! 0))
      -- putStrLn (show (map (ppSqlVarTab features atts) sqlTables))
      timeItName "gathering results" Monotonic $ return 
        $ variantSqlTables2Table features pc type_sch sqlTables

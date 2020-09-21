@@ -11,6 +11,7 @@ module VDBMS.VDB.Table.Core (
 
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.Table 
+import VDBMS.VDB.Name (PCatt)
 
 import Text.PrettyPrint
 
@@ -20,15 +21,16 @@ data Table = Table TableSchema SqlTable
   deriving (Eq)
 
 -- | pretty prints a table.
-prettyTable :: Table -> String
-prettyTable t = render tabPrinted
+prettyTable :: PCatt -> Table -> String
+prettyTable pc t = render tabPrinted
   where
     tabPrinted = text (ppTableSchema tsch)
-              $$ text (prettySqlTable (tableSchAtts tsch) (getSqlTable t))
+              $$ text (prettySqlTable (tableSchAtts tsch ++ [pc]) 
+                                      (getSqlTable t))
     tsch = getTableSchema t
 
 instance Show Table where
-  show = prettyTable
+  show = prettyTable "prescond"
 
 
 -- | returns the schema of the vtable.
