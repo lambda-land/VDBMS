@@ -16,27 +16,27 @@ import VDBMS.Features.Config (Config)
 -- import VDB.Name
 
 -- | A variant of a variational thing tagged by its configuration.
-type Variant a b = (a, Config b)
+type Variant a b = (Config b, a)
 
 -- | returns the obj of a variant.
 getVariant :: Variant a b -> a
-getVariant = fst
+getVariant = snd
 
 -- | returns the config of a variant.
 getConfig :: Variant a b -> Config b 
-getConfig = snd
+getConfig = fst
 
 -- | constructs a variant.
 mkVariant :: a -> Config b -> Variant a b
-mkVariant = (,)
+mkVariant a c = (c,a)
 
 -- | update variant. keeps the config the same.
 updateVariant :: a -> Variant a b -> Variant a b
-updateVariant v (_,c) = (v,c)
+updateVariant v (c,_) = (c,v)
 
 -- | update config. keeps the variant the same.
 updateConfig :: Config b -> Variant a b -> Variant a b
-updateConfig c (v,_) = (v,c)
+updateConfig c (_,v) = (c,v)
 
 -- print_table :: [[String]] -> IO ()
 -- print_table rows = printBox 

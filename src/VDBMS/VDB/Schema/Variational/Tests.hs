@@ -41,10 +41,10 @@ isVschValid s = satFM s >> satRsPC s >> satAsPC s
 --   given relational schema provided by the user for a 
 --   list of configs.
 -- ∀ c ∈ C: [[S]]\_c =?= S\_c 
-areConfsCorrect :: MonadThrow m => Schema -> [Variant Schema] -> m Bool 
+areConfsCorrect :: MonadThrow m => Schema -> [VariationalVariant Schema] -> m Bool 
 areConfsCorrect s rss = foldM (\b r -> isConfCorr s r >>= return . ((&&) b)) True rss
   where
-    isConfCorr :: MonadThrow m => Schema -> Variant Schema -> m Bool
+    isConfCorr :: MonadThrow m => Schema -> VariationalVariant Schema -> m Bool
     isConfCorr s rs 
       | configure (fst rs) s == (snd rs) = return True
       | otherwise = throwM $ ConfedIsWrong (snd rs)

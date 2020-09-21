@@ -66,21 +66,21 @@ runQ1 conn vq =
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
          -- try removing opt
-         ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
+         ra_qs = map (\c -> (c, configure c vq_constrained_opt)) configs
          -- the following two lines are for optimizing the generated RA queries
          -- ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
          -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
-         ras_opt = map (first ((addPC pc) . opts_)) ra_qs
+         ras_opt = map (second ((addPC pc) . opts_)) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
-         sql_qs = fmap (bimapDefault (show . genSql . transAlgebra2Sql) id) ras_opt
+         sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
-     -- putStrLn (show $ fmap fst ra_qs)
-     putStrLn (show $ fmap fst ras_opt)
-     putStrLn (show $ fmap fst sql_qs)
+     -- putStrLn (show $ fmap snd ra_qs)
+     putStrLn (show $ fmap snd ras_opt)
+     putStrLn (show $ fmap snd sql_qs)
          -- try removing gensql
-     let runq :: (String, Config Bool) -> IO SqlVariantTable
-         runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
+     let runq :: (Config Bool, String) -> IO SqlVariantTable
+         runq = bitraverse (return . id) (fetchQRows conn) 
      sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
      putStrLn (show (length sqlTables))
      -- tabtest <- fetchQRows conn ((map fst sql_qs) !! 1)

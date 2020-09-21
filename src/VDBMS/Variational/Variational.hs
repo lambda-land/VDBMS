@@ -2,7 +2,7 @@
 module VDBMS.Variational.Variational (
         
         Variational(..)
-        , Variant
+        , VariationalVariant
         , VariantGroup
 
 ) where
@@ -11,13 +11,15 @@ import VDBMS.Features.Config
 import VDBMS.Variational.Opt
 import VDBMS.Features.ConfFexp (confs2fexp)
 import VDBMS.Features.Feature (Feature)
+import VDBMS.Features.Variant
 
 import Control.Arrow (first)
 import Data.List (groupBy)
 
 -- | The pair of a configuration attached to its
 --   configured thing of a variational thing.
-type Variant a = ((Config Bool), (NonVariational a))
+-- type Variant a = ((Config Bool), (NonVariational a))
+type VariationalVariant a = Variant (NonVariational a) Bool
 
 -- | A group of variant things where their configurations
 --   have been joined and constructed a feature expression.
@@ -36,7 +38,7 @@ class Variational a where
   -- | configures a variaitonal thing for all valid configurations
   --   possible and generates a map of configurations and their 
   --   nonvariational thing.
-  vsem :: [Config Bool] -> a -> [Variant a]
+  vsem :: [Config Bool] -> a -> [VariationalVariant a]
   vsem cs a = map (\c -> (c, configure c a)) cs 
 
   -- | A more efficient vsem.
