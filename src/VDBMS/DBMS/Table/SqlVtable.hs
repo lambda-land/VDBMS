@@ -12,6 +12,7 @@ module VDBMS.DBMS.Table.SqlVtable (
         destVTuples,
         applyFexpToSqlVtable,
         updateTuplesPCInSqlVtable
+        , prettySqlVTable
 
 ) where
 
@@ -29,6 +30,13 @@ import VDBMS.DBMS.Table.Table
 type SqlVtable = Opt SqlTable -- this is not correct!
 -- type SqlVtable = Opt VTuples
 
+-- | pretty prints a sql vtable
+prettySqlVTable :: [Attribute] -> SqlVtable -> String
+prettySqlVTable as t
+  = show (getFexp t)
+  ++ "\n"
+  ++ prettySqlTable as (getObj t)
+
 type VTuple = Opt SqlRow
 type VTuples = [VTuple]
 
@@ -36,12 +44,15 @@ type VTuples = [VTuple]
 --   drops the ones that are not valid, i.e., their pc is not
 --   satisfiable.
 applyFexpToSqlVtable :: FeatureExpr -> PCatt -> SqlVtable -> SqlVtable
-applyFexpToSqlVtable f pc t = applyFuncObj (filter (satisfiable . tuple_pc)) t
+applyFexpToSqlVtable f pc t 
+  | isTableNull (getObj t) = updateOptObj [] t
+  | otherwise = applyFuncObj (filter (satisfiable . tuple_pc)) t
   where 
     pcName = attributeName pc
     t_pc = getFexp t
     -- tab = getObj t
-    tuple_pc tuple = And (And f t_pc) ((sqlval2fexp . fromJust) $ M.lookup pcName tuple)
+    tuple_pc tuple 
+      = And (And f t_pc) ((sqlval2fexp . fromJust) $ M.lookup pcName tuple)
 
 -- | updates tuples pc in a sqlvarianttable to the fexp of the conf.
 updateTuplesPCInSqlVtable :: PCatt -> SqlVtable -> SqlTable

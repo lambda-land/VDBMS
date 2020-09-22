@@ -268,7 +268,7 @@ numVariantQ q cs = length $ filter (\rq -> rq /= REmpty) $
 -- optAlgebra (RenameAlg n q) = mapSnd (RRenameAlg n) (optAlgebra q)
 -- optAlgebra Empty           = pure $ mkOpt (F.Lit True) REmpty
 
--- |
+-- | optionalizes a query given the corresponding vschema.
 optAlgebra :: Schema -> Algebra -> [VariantGroup Algebra]
 optAlgebra s q = groupedQs
   where

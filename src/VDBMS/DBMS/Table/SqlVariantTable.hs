@@ -51,9 +51,11 @@ ppSqlVarTab fs as t = ppConfig fs (getConfig t)
 
 -- | applies the variant config to the variant table and drops 
 --   the rows that applying conf to their pc resulted in false.
-applyConfVariantTable :: PCatt -> FeatureExpr -> SqlVariantTable -> SqlVariantTable
-applyConfVariantTable p f t = updateVariant (applyConfTable c p f $ getVariant t) t
-  where c = getConfig t
+applyConfVariantTable :: PCatt -> FeatureExpr -> SqlVariantTable 
+                      -> SqlVariantTable
+applyConfVariantTable p f t 
+  = updateVariant (applyConfTable c p f $ getVariant t) t
+    where c = getConfig t
 
 -- -- | drops rows with false pres cond in a variant table.
 -- dropRowsInVariantTable :: PCatt -> Set Attribute -> SqlVariantTable -> SqlVariantTable

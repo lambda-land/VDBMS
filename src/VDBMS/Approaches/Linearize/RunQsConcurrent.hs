@@ -6,7 +6,7 @@ module VDBMS.Approaches.Linearize.RunQsConcurrent where
 
 
 import VDBMS.VDB.Database.Database (Database(..))
-import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
+import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra, optAlgebra)
 import VDBMS.Variational.Variational (Variational(..))
 import VDBMS.Variational.Opt (Opt)
 import VDBMS.VDB.Table.Table (Table)
@@ -24,6 +24,12 @@ import VDBMS.VDB.Table.GenTable (sqlVtables2VTable)
 -- import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
+import VDBMS.QueryGen.RA.AddPC (addPC)
+-- for testing
+import VDBMS.DBsetup.Postgres.Test
+import VDBMS.DBMS.Table.Table (prettySqlTable)
+import VDBMS.UseCases.Test.Schema
+-- for testing
 
 import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
@@ -61,17 +67,21 @@ runQ5 conn vq =
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained 
          -- try removing opt
-         ra_qs = optionalize_ vq_constrained_opt
+         ra_qs = optAlgebra vsch vq_constrained_opt
           -- the following line are for optimizing the generated RA queries
-         ras_opt = map (second opts_) ra_qs
+         ras_opt = map (second ((addPC pc) . opts_)) ra_qs
          -- sql_qs = fmap (bimapDefault id (ppSqlString . genSql . transAlgebra2Sql)) ra_qs
          sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
          -- try removing gensql
      let runq :: Opt String -> IO SqlVtable
-         runq (f, q) = bitraverse (return . id) (fetchQRows conn) (f, q)
+         runq = bitraverse (return . id) (fetchQRows conn) 
      sqlTables <- timeItName "running queries" Monotonic $ mapConcurrently runq sql_qs
      timeItName "gathering results" Monotonic $ return 
        $ sqlVtables2VTable pc type_sch sqlTables
 
+run5test :: Algebra -> IO Table
+run5test q =
+  do db <- tstVDBone
+     runQ5 db q

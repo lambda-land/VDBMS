@@ -88,12 +88,12 @@ typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (SM.toLi
   where 
     attrinfo :: (Attribute, AttrInformation) -> [(Attribute, Opt SqlType)]
     attrinfo (a,ais) 
-      | length ais > 1 
-        = map (\ai -> (Attribute $ (qualName . attrQual) ai 
-                                 ++ "." 
-                                 ++ attributeName a
-                      , mkOpt (attrFexp ai) (attrType ai))) ais
-      | otherwise 
+      -- | length ais > 1 
+      --   = map (\ai -> (Attribute $ (qualName . attrQual) ai 
+      --                            ++ "." 
+      --                            ++ attributeName a
+      --                 , mkOpt (attrFexp ai) (attrType ai))) ais
+      -- | otherwise 
         = map (\ai -> (a, mkOpt (attrFexp ai) (attrType ai))) ais
 
 -- | transforms a type env to a list of opt attributes.

@@ -11,7 +11,8 @@ import VDBMS.Variational.Variational
 import VDBMS.VDB.Table.Table (Table)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
 import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, prettySqlVarTab)
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnv2tableSch, typeAtts)
+import VDBMS.TypeSystem.Variational.TypeSystem 
+  (typeOfQuery, typeEnv2tableSch, typeAtts)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
@@ -87,49 +88,49 @@ runQ1 conn vq =
      -- tabtest <- fetchQRows conn "select * from r1;"
      -- putStrLn (show tabtest)
      -- putStrLn (prettySqlTable [aone_, atwo_, pc] tabtest)
-     putStrLn (prettySqlVarTab features (atts ++ [pc]) (sqlTables !! 0))
+     -- putStrLn (prettySqlVarTab features (atts ++ [pc]) (sqlTables !! 2))
      -- putStrLn (show (map (ppSqlVarTab features atts) sqlTables))
      timeItName "gathering results" Monotonic $ return 
        $ variantSqlTables2Table features pc type_sch sqlTables
 
-testfetch q = 
-  do db <- tstVDBone
-     fetchQRows db q
+-- testfetch q = 
+--   do db <- tstVDBone
+--      fetchQRows db q
 
--- runtest :: Algebra -> IO Table
-runtest q =
+run1test :: Algebra -> IO Table
+run1test q =
   do db <- tstVDBone
      runQ1 db q
 
--- |
-runQ1test :: Database conn => conn -> Algebra -> IO [(String, Config Bool)]
-runQ1test conn vq =
-  do let vsch = schema conn
-         vsch_pc = featureModel vsch
-         features = dbFeatures conn
-         configs = getAllConfig conn
-         pc = presCond conn
-     vq_type <- timeItNamed "type system" $ typeOfQuery vq vsch_pc vsch
-     start_constQ <- getTime Monotonic
-     let 
-         -- type_pc = typePC vq_type
-         type_sch = typeEnv2tableSch vq_type
-         vq_constrained = pushSchToQ vsch vq
-         vq_constrained_opt = chcSimpleReduceRec vq_constrained
-         -- try removing opt
-         ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
-         -- the following two lines are for optimizing the generated RA queries
-         -- ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
-         -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
-         ras_opt = map (first opts_) ra_qs
-         -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
-         sql_qs = fmap (bimapDefault (show . genSql . transAlgebra2Sql) id) ras_opt
-     end_constQ <- getTime Monotonic
-     fprint (timeSpecs % "\n") start_constQ end_constQ
-     return sql_qs
+-- -- |
+-- runQ1test :: Database conn => conn -> Algebra -> IO [(String, Config Bool)]
+-- runQ1test conn vq =
+--   do let vsch = schema conn
+--          vsch_pc = featureModel vsch
+--          features = dbFeatures conn
+--          configs = getAllConfig conn
+--          pc = presCond conn
+--      vq_type <- timeItNamed "type system" $ typeOfQuery vq vsch_pc vsch
+--      start_constQ <- getTime Monotonic
+--      let 
+--          -- type_pc = typePC vq_type
+--          type_sch = typeEnv2tableSch vq_type
+--          vq_constrained = pushSchToQ vsch vq
+--          vq_constrained_opt = chcSimpleReduceRec vq_constrained
+--          -- try removing opt
+--          ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
+--          -- the following two lines are for optimizing the generated RA queries
+--          -- ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
+--          -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
+--          ras_opt = map (first opts_) ra_qs
+--          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
+--          sql_qs = fmap (bimapDefault (show . genSql . transAlgebra2Sql) id) ras_opt
+--      end_constQ <- getTime Monotonic
+--      fprint (timeSpecs % "\n") start_constQ end_constQ
+--      return sql_qs
 
-runtestqs :: Algebra -> IO String
-runtestqs q =
-  do tstvdb <- tstVDBone
-     qs <- runQ1test tstvdb q
-     return $ head $ mapM fst qs
+-- runtestqs :: Algebra -> IO String
+-- runtestqs q =
+--   do tstvdb <- tstVDBone
+--      qs <- runQ1test tstvdb q
+--      return $ head $ mapM fst qs

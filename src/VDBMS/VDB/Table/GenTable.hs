@@ -12,18 +12,28 @@ module VDBMS.VDB.Table.GenTable (
 import VDBMS.VDB.Table.Core (Table, mkVTable)
 import VDBMS.VDB.Name (PCatt)
 -- import VDBMS.Variational.Opt
-import VDBMS.VDB.Schema.Variational.Schema (TableSchema, tschFexp, tschRowType)
+import VDBMS.VDB.Schema.Variational.Schema (
+  TableSchema
+  , tschFexp
+  , tschRowType
+  , tableSchAtts
+  )
 import VDBMS.Features.Variant (Variant)
 import VDBMS.DBMS.Table.SqlVtable (SqlVtable, applyFexpToSqlVtable,
   updateTuplesPCInSqlVtable)
-import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, 
-  applyConfVariantTables,
-  updateTuplesPC)
+import VDBMS.DBMS.Table.SqlVariantTable (
+  SqlVariantTable
+  , applyConfVariantTables
+  , updateTuplesPC
+  , prettySqlVarTab
+  )
 -- import VDBMS.DBMS.Table.SqlVtableApplyFexpOps
 import VDBMS.Features.FeatureExpr.FeatureExpr (Feature, FeatureExpr)
 import VDBMS.DBMS.Table.Table (SqlTable, combineSqlTables, 
   conformSqlTableToSchema)
 import VDBMS.TypeSystem.Variational.TypeSystem (TypeEnv)
+
+import Debug.Trace
 
 -- | takes everything needed to combine a list of variant sqltables
 --   to a table.
@@ -32,7 +42,9 @@ variantSqlTables2Table :: [Feature] -> PCatt
                        -> [SqlVariantTable]
                        -> Table
 variantSqlTables2Table fs pc t_sch ts 
+  -- = trace ("ts are:" ++ prettySqlVarTab fs (tableSchAtts t_sch) (head ts)) (
   = mkVTable t_sch (combineSqlTables pc ts_sameSch_updatedPC)
+    -- )
     where 
       t_pc = tschFexp t_sch
       rowtype = tschRowType t_sch

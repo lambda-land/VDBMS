@@ -6,13 +6,14 @@ module VDBMS.Approaches.Linearize.RunOneQueryAtATime where
 
 
 import VDBMS.VDB.Database.Database (Database(..))
-import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
+import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra, optAlgebra)
 import VDBMS.Variational.Variational (Variational(..))
 import VDBMS.Variational.Opt (Opt)
 import VDBMS.VDB.Table.Table (Table)
-import VDBMS.DBMS.Table.SqlVtable (SqlVtable)
+import VDBMS.DBMS.Table.SqlVtable (SqlVtable, prettySqlVTable)
 -- import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnv2tableSch)
+import VDBMS.TypeSystem.Variational.TypeSystem 
+  (typeOfQuery, typeEnv2tableSch, typeAtts)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
@@ -24,6 +25,12 @@ import VDBMS.VDB.Table.GenTable (sqlVtables2VTable)
 -- import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
+import VDBMS.QueryGen.RA.AddPC (addPC)
+-- for testing
+import VDBMS.DBsetup.Postgres.Test
+import VDBMS.DBMS.Table.Table (prettySqlTable)
+import VDBMS.UseCases.Test.Schema
+-- for testing
 
 import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
@@ -56,20 +63,31 @@ runQ2 conn vq =
      let 
          -- type_pc = typePC vq_type
          type_sch = typeEnv2tableSch vq_type
+         atts = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
          -- try removing opt
-         ra_qs = optionalize_ vq_constrained_opt
+         ra_qs = optAlgebra vsch vq_constrained_opt
          -- the following line are for optimizing the generated RA queries
-         ras_opt = map (second opts_) ra_qs
+         ras_opt = map (second ((addPC pc) . opts_)) ra_qs
          -- sql_qs = fmap (bimapDefault id (ppSqlString . genSql . transAlgebra2Sql)) ra_qs
          sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
+     -- putStrLn (show $ fmap snd ra_qs)
+     putStrLn (show $ fmap snd ras_opt)
+     putStrLn (show $ fmap snd sql_qs)
          -- try removing gensql
      let runq :: Opt String -> IO SqlVtable
-         runq (f, q) = bitraverse (return . id) (fetchQRows conn) (f, q)
+         runq = bitraverse (return . id) (fetchQRows conn) 
      sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
+     -- putStrLn (show (length sqlTables))
+     -- putStrLn (prettySqlVTable (atts ++ [pc]) (sqlTables !! 0))
      timeItName "gathering results" Monotonic $ return 
        $ sqlVtables2VTable pc type_sch sqlTables
+
+run2test :: Algebra -> IO Table
+run2test q =
+  do db <- tstVDBone
+     runQ2 db q
 

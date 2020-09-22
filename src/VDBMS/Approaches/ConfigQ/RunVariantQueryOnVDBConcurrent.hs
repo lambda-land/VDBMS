@@ -11,7 +11,8 @@ import VDBMS.Variational.Variational
 import VDBMS.VDB.Table.Table (Table)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
 import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeEnv2tableSch)
+import VDBMS.TypeSystem.Variational.TypeSystem 
+  (typeOfQuery, typeEnv2tableSch, typeAtts)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
@@ -23,6 +24,12 @@ import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
+import VDBMS.QueryGen.RA.AddPC (addPC)
+-- for testing
+import VDBMS.DBsetup.Postgres.Test
+import VDBMS.DBMS.Table.Table (prettySqlTable)
+import VDBMS.UseCases.Test.Schema
+-- for testing
 
 import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
@@ -41,38 +48,43 @@ import Formatting.Clock
 -- ThreadCPUTime: CPU time taken by the thread.
 
 -- |
--- runQ4_ :: Database conn => conn -> Algebra -> IO ()
--- runQ4_ conn vq = runQ4 conn vq >> return ()
+runQ4_ :: Database conn => conn -> Algebra -> IO ()
+runQ4_ conn vq = runQ4 conn vq >> return ()
 
--- -- |
--- runQ4 :: Database conn => conn -> Algebra -> IO Table
--- runQ4 conn vq = 
---   do let vsch = schema conn
---          vsch_pc = featureModel vsch
---          features = dbFeatures conn
---          configs = getAllConfig conn
---          pc = presCond conn
---      vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
---      start_constQ <- getTime Monotonic
---      let 
---          -- type_pc = typePC vq_type
---          type_sch = typeEnv2tableSch vq_type
---          vq_constrained = pushSchToQ vsch vq
---          vq_constrained_opt = chcSimpleReduceRec vq_constrained 
---          -- try removing opt
---          ra_qs = map (\c -> (configure c vq_constrained_opt, c)) configs
---          -- the following two lines are for optimizing the generated RA queries
---          ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
---          -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
---          ras_opt = map (first opts_) ra_qs
---          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
---          sql_qs = fmap (bimapDefault (show . genSql . transAlgebra2Sql) id) ras_opt
---      end_constQ <- getTime Monotonic
---      fprint (timeSpecs % "\n") start_constQ end_constQ
---          -- try removing gensql
---      let runq :: (String, Config Bool) -> IO SqlVariantTable
---          runq (q, c) = bitraverse (fetchQRows conn) (return . id) (q, c)
---      sqlTables <- timeItName "running queries" Monotonic $ mapConcurrently runq sql_qs
---      timeItName "gathering results" Monotonic $ return 
---        $ variantSqlTables2Table features pc type_sch sqlTables
+-- |
+runQ4 :: Database conn => conn -> Algebra -> IO Table
+runQ4 conn vq = 
+  do let vsch = schema conn
+         vsch_pc = featureModel vsch
+         features = dbFeatures conn
+         configs = getAllConfig conn
+         pc = presCond conn
+     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     start_constQ <- getTime Monotonic
+     let 
+         -- type_pc = typePC vq_type
+         type_sch = typeEnv2tableSch vq_type
+         atts = typeAtts vq_type
+         vq_constrained = pushSchToQ vsch vq
+         vq_constrained_opt = chcSimpleReduceRec vq_constrained 
+         -- try removing opt
+         ra_qs = map (\c -> (c, configure c vq_constrained_opt)) configs
+         -- the following two lines are for optimizing the generated RA queries
+         ra_qs_schemas = map (\c -> (c, (configure c vq_constrained_opt, configure c vsch))) configs
+         -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
+         ras_opt = map (second ((addPC pc) . opts_)) ra_qs
+         -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
+         sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt
+     end_constQ <- getTime Monotonic
+     fprint (timeSpecs % "\n") start_constQ end_constQ
+         -- try removing gensql
+     let runq :: (Config Bool, String) -> IO SqlVariantTable
+         runq = bitraverse (return . id) (fetchQRows conn) 
+     sqlTables <- timeItName "running queries" Monotonic $ mapConcurrently runq sql_qs
+     timeItName "gathering results" Monotonic $ return 
+       $ variantSqlTables2Table features pc type_sch sqlTables
 
+run4test :: Algebra -> IO Table
+run4test q =
+  do db <- tstVDBone
+     runQ4 db q

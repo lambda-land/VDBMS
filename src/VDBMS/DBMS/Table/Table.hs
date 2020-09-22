@@ -19,6 +19,7 @@ module VDBMS.DBMS.Table.Table (
         lookupAttValInSqlRow, 
         prettySqlTable,
         ppSqlTable
+        , isTableNull
         -- , ppSqlRowRend
         -- , testrow
 
@@ -233,10 +234,18 @@ dropPresInTable p = fmap $ dropPres p
 
 -- | applies a config to a table.
 applyConfTable :: Config Bool -> PCatt -> FeatureExpr -> SqlTable -> SqlTable
-applyConfTable c p f t = filter (evalFeatureExpr c . tuple_pc) t
+applyConfTable c p f t 
+  | isTableNull t = []
+  | otherwise     = filter (evalFeatureExpr c . tuple_pc) t
   where
     tuple_pc tuple = And f ((sqlval2fexp . fromJust) $ M.lookup (attributeName p) tuple)
 
+-- | determines if a table is the result of query "select null".
+isTableNull :: SqlTable -> Bool
+isTableNull t 
+-- case of postgresql
+  | t == pure (M.fromList [("?column?",SqlNull)]) = True
+  | otherwise = False
 
 -- | applies a config to tables.
 applyConfTables :: Config Bool -> PCatt -> FeatureExpr -> [SqlTable] -> [SqlTable]
