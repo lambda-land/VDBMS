@@ -204,7 +204,7 @@ ppAtts (SqlConcatAtt ra ss)
       q = (qualifier . thing) ra
       a = (text . attributeName . attribute . thing) ra
       concat rest = text "CONCAT" <+> parens (rest <+> comma <+> ts)
-      ts = hcomma doubleQuotes (fmap text ss)
+      ts = hcomma quotes (fmap text ss)
 
 -- | prints sql relations.
 ppRel :: SqlRelation -> Doc

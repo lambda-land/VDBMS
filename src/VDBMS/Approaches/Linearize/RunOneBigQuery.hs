@@ -7,13 +7,13 @@ module VDBMS.Approaches.Linearize.RunOneBigQuery where
 
 
 import VDBMS.VDB.Database.Database (Database(..))
-import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
+import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra, optAlgebra)
 import VDBMS.Variational.Variational 
 import VDBMS.VDB.Table.Table (Table, mkVTable)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
 -- import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
-import VDBMS.TypeSystem.Variational.TypeSystem (typeOfQuery, typeAtts, 
-  typeEnv2tableSch)
+import VDBMS.TypeSystem.Variational.TypeSystem 
+  (typeOfQuery, typeAtts, typeEnv2tableSch)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
@@ -26,6 +26,12 @@ import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.QueryGen.Sql.GenSqlSameSch (optRAQs2Sql)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
+import VDBMS.QueryGen.RA.AddPC (addPC)
+-- for testing
+import VDBMS.DBsetup.Postgres.Test
+import VDBMS.DBMS.Table.Table (prettySqlTable)
+import VDBMS.UseCases.Test.Schema
+-- for testing
 
 import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
@@ -62,14 +68,23 @@ runQ3 conn vq =
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
          -- try removing opt
-         ra_qs = optionalize_ vq_constrained_opt
+         ra_qs = optAlgebra vsch vq_constrained_opt
          -- the following line are for optimizing the generated RA queries
          ras_opt = map (second opts_) ra_qs
          -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
          sql = show $ optRAQs2Sql type_as pc ras_opt
+     -- putStrLn (show $ fmap snd ra_qs)
+     -- putStrLn (show $ fmap snd ras_opt)
+     putStrLn sql
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
      sqlTab <- timeItName "running query" Monotonic $ fetchQRows conn sql
+     putStrLn (prettySqlTable (type_as ++ pure pc) sqlTab)
+     putStrLn (show sqlTab)
      timeItName "make vtable" Monotonic $ return 
        $ mkVTable type_sch sqlTab
 
+runtest :: Algebra -> IO Table
+runtest q =
+  do db <- tstVDBone
+     runQ3 db q

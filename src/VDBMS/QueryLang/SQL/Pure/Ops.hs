@@ -30,7 +30,8 @@ adjustQSch resAtts qsAtts (SqlSelect as ts cs)
   = SqlSelect (updatesAs resAtts qsAtts as) ts cs
 adjustQSch resAtts qsAtts (SqlBin o l r) 
   = SqlBin o (adjustQSch resAtts qsAtts l) (adjustQSch resAtts qsAtts r)
--- adjustQSch resAtts qsAtts q@(SqlTRef _)  -- should never even get here!
+adjustQSch resAtts qsAtts q@(SqlTRef _)  -- should never even get here!
+  = undefined
 --   = error "SHOULD NEVER GET SQLTREF RELATION!! IN ADJUSTING THE SCHEMA OF QUERIES!!"
 --   = SqlSelect (updatesAs resAtts qsAtts [SqlAllAtt]) [SqlSubQuery (Rename Nothing q)] []
 adjustQSch resAtts qsAtts SqlEmpty = undefined
