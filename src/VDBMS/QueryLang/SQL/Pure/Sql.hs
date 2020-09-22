@@ -19,6 +19,7 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , ppTemp
        , ppSqlString
        , module VDBMS.QueryLang.SQL.Condition
+       , isSqlEmpty
 
 ) where
 
@@ -83,17 +84,22 @@ data SqlRelation =
 -- | returns true if a subquery is just a relation.
 isrel :: SqlSelect -> Bool
 isrel (SqlTRef _) = True 
-isrel _ = False
+isrel _           = False
 
--- |
+-- | returns true if sqlselect is select ...
 issqlslct :: SqlSelect -> Bool
 issqlslct (SqlSelect _ _ _) = True
-issqlslct _ = False
+issqlslct _                 = False
 
--- | 
+-- | returns tru if sqlselect is set op.
 issqlop :: SqlSelect -> Bool
 issqlop (SqlBin _ _ _) = True
-issqlop _ = False
+issqlop _              = False
+
+-- | returns true if sqlselect is empty.
+isSqlEmpty :: SqlSelect -> Bool
+isSqlEmpty SqlEmpty = True
+isSqlEmpty _        = False
 
 -- | Sql set operations.
 data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff

@@ -21,8 +21,10 @@ import Data.Maybe (fromJust)
 --   queries are type correct.
 sqlQAtts :: SqlSelect -> [Attribute]
 sqlQAtts (SqlSelect as _ _) = map aExprAtt as
-sqlQAtts (SqlBin _ l _) = sqlQAtts l
-sqlQAtts SqlEmpty = []
+sqlQAtts (SqlBin _ l _)     = sqlQAtts l
+sqlQAtts _                  = []
+-- sqlQAtts (SqlTRef _) = []
+-- sqlQAtts SqlEmpty = []
 
 -- | adjusts the schema  of a sql query wrt a given list of attribute.
 adjustQSch :: [Attribute] -> [Attribute] -> SqlSelect -> SqlSelect
@@ -31,11 +33,14 @@ adjustQSch resAtts qsAtts (SqlSelect as ts cs)
 adjustQSch resAtts qsAtts (SqlBin o l r) 
   = SqlBin o (adjustQSch resAtts qsAtts l) (adjustQSch resAtts qsAtts r)
 adjustQSch resAtts qsAtts q@(SqlTRef _)  -- should never even get here!
-  = undefined
---   = error "SHOULD NEVER GET SQLTREF RELATION!! IN ADJUSTING THE SCHEMA OF QUERIES!!"
+  -- = q
+  = error "SHOULD NEVER GET SQLTREF RELATION!! IN ADJUSTING THE SCHEMA OF QUERIES!!"
 --   = SqlSelect (updatesAs resAtts qsAtts [SqlAllAtt]) [SqlSubQuery (Rename Nothing q)] []
-adjustQSch resAtts qsAtts SqlEmpty = undefined
-  -- = SqlSelect (updatesAs resAtts qsAtts []) [SqlSubQuery (Rename Nothing SqlEmpty)] []
+adjustQSch resAtts qsAtts SqlEmpty 
+  -- = SqlEmpty
+  = SqlSelect (updatesAs resAtts qsAtts []) 
+              [Rename Nothing (SqlSubQuery SqlEmpty)] 
+              []
 
 -- | adjusts a list of sql attr expr. 
 --   i.e. adds atts in res as null to aes.
@@ -66,7 +71,7 @@ updatesAs res already aes
 updatePC :: PCatt -> SqlSelect -> FeatureExpr -> SqlSelect
 updatePC p (SqlSelect as ts cs) f
   = SqlSelect 
-    (as ++ [SqlConcatAtt (Rename Nothing (Attr p Nothing)) 
+    (as ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
                          [" AND " ++ show f]]) 
     ts 
     cs 

@@ -79,8 +79,8 @@ runQ3 conn vq =
      end_constQ <- getTime Monotonic
      fprint (timeSpecs % "\n") start_constQ end_constQ
      sqlTab <- timeItName "running query" Monotonic $ fetchQRows conn sql
-     putStrLn (prettySqlTable (type_as ++ pure pc) sqlTab)
-     putStrLn (show sqlTab)
+     -- putStrLn (prettySqlTable (type_as ++ pure pc) sqlTab)
+     -- putStrLn (show sqlTab)
      timeItName "make vtable" Monotonic $ return 
        $ mkVTable type_sch sqlTab
 
