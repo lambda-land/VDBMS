@@ -1,25 +1,26 @@
 -- | Tables returned by HDBC.
 module VDBMS.DBMS.Table.Table (
 
-        SqlRow,
-        SqlTable,
-        rowAttSet,
-        tableAttSet,
-        constRowTypeOfSqlTable,
-        insertAttValToSqlTable,
-        conformSqlRowToRowType,
-        dropPresInTable,
-        applyConfTable,
-        applyConfTables,
-        dropRows,
-        dropUnsatTuples,
-        combineSqlTables,
-        updatePCInSqlTable,
-        conformSqlTableToSchema,
-        lookupAttValInSqlRow, 
-        prettySqlTable,
-        ppSqlTable
+        SqlRow
+        , SqlTable
+        , rowAttSet
+        , tableAttSet
+        , constRowTypeOfSqlTable
+        , insertAttValToSqlTable
+        , conformSqlRowToRowType
+        , dropPresInTable
+        , applyConfTable
+        , applyConfTables
+        , dropRows
+        , dropUnsatTuples
+        , combineSqlTables
+        , updatePCInSqlTable
+        , conformSqlTableToSchema
+        , lookupAttValInSqlRow
+        , prettySqlTable
+        , ppSqlTable
         , isTableNull
+        , equivSqlTables
         -- , ppSqlRowRend
         -- , testrow
 
@@ -74,6 +75,19 @@ data SqlTableErr
   deriving (Data,Eq,Generic,Ord,Show,Typeable)
 
 instance Exception SqlTableErr
+
+-- | returns true if two sqltables are equivalent.
+equivSqlTables :: SqlTable -> SqlTable -> Bool
+equivSqlTables l r = undefined
+  where
+    -- lset = S.fromAscList l
+    -- rset = S.fromAscList r
+    lnopc = fmap t2t' l
+    rnopc = fmap t2t' r
+    t2t' :: SqlRow -> (SqlRow, FeatureExpr)
+    t2t' r =  (M.delete "prescond" r
+            , (sqlval2fexp . fromJust) $ M.lookup "prescond" r)
+    -- compare = [ |  lr <- lnopc, rr <- rnopc]
 
 -- | pretty prints a sql table
 prettySqlTable :: [Attribute] -> SqlTable -> String

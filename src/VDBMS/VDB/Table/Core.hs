@@ -1,11 +1,11 @@
 -- | VTable data type and core operations.
 module VDBMS.VDB.Table.Core (
 
-        Table,
-        getTableSchema,
-        getSqlTable,
-        updateSqlTable,
-        mkVTable
+        Table
+        , getTableSchema
+        , getSqlTable
+        , updateSqlTable
+        , mkVTable
 
 ) where 
 
@@ -18,7 +18,14 @@ import Text.PrettyPrint
 -- | the result of a vq is a variational table.
 --   variational table data type.
 data Table = Table TableSchema SqlTable
-  deriving (Eq)
+  -- deriving (Eq)
+
+equivTabs :: Table -> Table -> Bool
+equivTabs l r = (getTableSchema l == getTableSchema r)
+  && equivSqlTables (getSqlTable l) (getSqlTable r)
+
+instance Eq Table where
+  (==) = equivTabs
 
 -- | pretty prints a table.
 prettyTable :: PCatt -> Table -> String
