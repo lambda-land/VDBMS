@@ -53,6 +53,7 @@ dependencies:
 - formatting >= 6.3.7
 - uniplate >= 1.6.12
 - boxes >= 0.1.5
+- extra >= 1.7.8
 # - boolsimplifier >= 0.1.8
 # - logic-classes 
 # - PropLogic

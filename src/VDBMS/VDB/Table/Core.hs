@@ -12,16 +12,26 @@ module VDBMS.VDB.Table.Core (
 import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.Table 
 import VDBMS.VDB.Name (PCatt)
+import VDBMS.Features.Config (Config)
 
 import Text.PrettyPrint
+
+import Debug.Trace
 
 -- | the result of a vq is a variational table.
 --   variational table data type.
 data Table = Table TableSchema SqlTable
   -- deriving (Eq)
 
+-- | configures a table for a given conf.
+confTable :: PCatt -> Config Bool -> Table -> SqlTable
+confTable = undefined
+
+-- | determines if two tables are equivalent.
 equivTabs :: Table -> Table -> Bool
-equivTabs l r = (getTableSchema l == getTableSchema r)
+equivTabs l r = trace ("schema : " ++ show (getTableSchema l == getTableSchema r)
+  ++ "\n" ++ "tables : " ++ show (equivSqlTables (getSqlTable l) (getSqlTable r)))
+  (getTableSchema l == getTableSchema r)
   && equivSqlTables (getSqlTable l) (getSqlTable r)
 
 instance Eq Table where

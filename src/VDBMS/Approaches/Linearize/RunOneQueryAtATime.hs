@@ -73,18 +73,26 @@ runQ2 conn vq =
          -- sql_qs = fmap (bimapDefault id (ppSqlString . genSql . transAlgebra2Sql)) ra_qs
          sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt
      end_constQ <- getTime Monotonic
+     putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
      -- putStrLn (show $ fmap snd ra_qs)
-     putStrLn (show $ fmap snd ras_opt)
-     putStrLn (show $ fmap snd sql_qs)
+     -- putStrLn (show $ fmap snd ras_opt)
+     -- putStrLn (show $ fmap snd sql_qs)
          -- try removing gensql
      let runq :: Opt String -> IO SqlVtable
          runq = bitraverse (return . id) (fetchQRows conn) 
      sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
      -- putStrLn (show (length sqlTables))
      -- putStrLn (prettySqlVTable (atts ++ [pc]) (sqlTables !! 0))
-     timeItName "gathering results" Monotonic $ return 
-       $ sqlVtables2VTable pc type_sch sqlTables
+     putStrLn "gathering results: "
+     strt_res <- getTime Monotonic
+     let res = sqlVtables2VTable pc type_sch sqlTables
+     end_res <- getTime Monotonic
+     fprint (timeSpecs % "\n") strt_res end_res
+     -- timeItName "gathering results" Monotonic $ return 
+     --   $ sqlVtables2VTable pc type_sch sqlTables
+     putStrLn (show res)
+     return res
 
 run2test :: Algebra -> IO Table
 run2test q =

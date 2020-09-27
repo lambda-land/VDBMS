@@ -77,12 +77,20 @@ runQ3 conn vq =
      -- putStrLn (show $ fmap snd ras_opt)
      putStrLn sql
      end_constQ <- getTime Monotonic
+     putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
      sqlTab <- timeItName "running query" Monotonic $ fetchQRows conn sql
      -- putStrLn (prettySqlTable (type_as ++ pure pc) sqlTab)
      -- putStrLn (show sqlTab)
-     timeItName "make vtable" Monotonic $ return 
-       $ mkVTable type_sch sqlTab
+     putStrLn "gathering results: "
+     strt_res <- getTime Monotonic
+     let res = mkVTable type_sch sqlTab
+     end_res <- getTime Monotonic
+     fprint (timeSpecs % "\n") strt_res end_res
+     -- timeItName "make vtable" Monotonic $ return 
+     --   $ mkVTable type_sch sqlTab
+     putStrLn (show res)
+     return res
 
 runtest :: Algebra -> IO Table
 runtest q =
