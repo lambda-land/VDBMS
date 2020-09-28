@@ -27,13 +27,14 @@ data Table = Table TableSchema SqlTable
 
 -- | configures a table for a given conf.
 confTable :: PCatt -> Config Bool -> Table -> SqlTable
-confTable p c t = validTuples
+confTable p c t = satTuplesNoPc
   where
     nonvalidAtt = tableSchAtts tsch \\ rtableSchAtts confedTsch
     confedTsch = configTableSchema_ c tsch
     tsch = getTableSchema t
-    satTuplesNoPc = dropPresInTable p $ dropUnsatTuples (tschFexp tsch) p (getSqlTable t)
-    validTuples = dropAttsFromSqlTable nonvalidAtt satTuplesNoPc
+    satTuplesNoPc = dropUnsatTuples (tschFexp tsch) p (getSqlTable t)
+    -- satTuplesNoPc = dropPresInTable p $ dropUnsatTuples (tschFexp tsch) p (getSqlTable t)
+    -- validTuples = dropAttsFromSqlTable nonvalidAtt satTuplesNoPc
 
 -- | determines if two tables are equivalent.
 equivTabs :: Table -> Table -> Bool

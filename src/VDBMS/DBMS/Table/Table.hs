@@ -5,6 +5,7 @@ module VDBMS.DBMS.Table.Table (
         , SqlTable
         , rowAttSet
         , tableAttSet
+        , sqltableAtts
         , constRowTypeOfSqlTable
         , insertAttValToSqlTable
         , conformSqlRowToRowType
@@ -163,8 +164,12 @@ rowAttSet = S.map Attribute . M.keysSet
 
 -- | returns a set of attributes from a table.
 tableAttSet :: SqlTable -> Set Attribute
-tableAttSet [] = error "an empty table doesn't have any attributes"
+tableAttSet [] = error "an empty table doesn't have any attributes --> VDBMS.DBMS.Table.Table"
 tableAttSet t  = rowAttSet (head t)
+
+-- | returns the attributes of a sqltable.
+sqltableAtts :: SqlTable -> [Attribute]
+sqltableAtts = S.toList . tableAttSet
 
 -- | drops tuples that given config in the variant
 --   their pres cond is unsat. the passed fexp is the

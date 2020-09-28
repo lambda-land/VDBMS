@@ -6,6 +6,7 @@ import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
 import VDBMS.VDB.Table.Table (Table, confTable)
 import VDBMS.Features.Config (prettyConfig, Config)
+import VDBMS.DBMS.Table.Table (prettySqlTable, sqltableAtts)
 
 import VDBMS.Approaches.ConfigQ.RunVariantQueryOnVDB 
 import VDBMS.Approaches.ConfigQ.RunVariantQueryOnVDBConcurrent
@@ -50,13 +51,34 @@ soundnessCheck2 c q app
            comp _ _ = error "impossible case. VDBMS.VDB.Checks.Soundness"
            compRes :: [(Config Bool, Bool)]
            compRes = comp confedQRess confedTsApp
+           combine ::  [(a,b)] -> [(a,b)] -> [(a,b,b)]
+           combine (x:xs) (y:ys) = (fst x, snd x, snd y) : combine xs ys
+           combine [] [] = []
+           combine _ _ = error "impossible case. VDBMS.VDB.Checks.Soundness"
+           combRes = combine confedQRess confedTsApp
            res = and $ fmap snd compRes
+       putStrLn (show
+         $ map (\(cf,t1,t2) -> prettyConfig features cf
+                            ++ " : " 
+                            ++ "configured query result : "
+                            ++ show t1
+                            -- ++ prettySqlTable (sqltableAtts t1) t1
+                            ++ "configured table from approach : "
+                            ++ show t2 ) 
+               (pure $ head combRes)
+               )
        putStrLn (show 
          $ map (\(cf,b) -> prettyConfig features cf 
-                       ++ " : " ++ show b ++ "\n") 
+                       ++ " : " ++ show b) 
                compRes)
        putStrLn ("soundnessCheck2 : " ++ show res)
        return res
+
+-- | soundness check2 for test vdb.
+soundnessCheck2Test :: Algebra -> IO Bool
+soundnessCheck2Test q 
+  = do db <- tstVDBone
+       soundnessCheck2 db q runQ1
 
 -- | second soundness check for all approaches.
 soundnessCheck2all :: Database conn => conn -> Algebra -> IO Bool

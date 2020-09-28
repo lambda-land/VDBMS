@@ -45,8 +45,12 @@ runRelQ conn c vq =
              (configure c 
                (chcSimpleReduceRec (pushSchToQ vsch vq)))
      tab <- fetchQRows conn q
+     -- let tab' = dropPresInTable pc 
+     --   $ dropUnsatTuples (tschFexp tsch) pc tab
      return tab
 
+-- | runs all configured queries of a variational query
+--   on a VDB.
 runRelQs :: Database conn => conn -> Algebra -> IO [(Config Bool, SqlTable)]
 runRelQs conn q =
   do let configs = getAllConfig conn
