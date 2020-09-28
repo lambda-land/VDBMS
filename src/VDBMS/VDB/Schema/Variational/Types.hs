@@ -16,6 +16,7 @@ module VDBMS.VDB.Schema.Variational.Types (
         , schemaRels
         , updateFM
         , ppTableSchema
+        , configTableSchema_
 
 ) where
 
@@ -40,6 +41,8 @@ import Data.Map.Strict (Map, mapMaybe, empty, keys, toList)
 import Control.Monad.Catch 
 
 import Text.PrettyPrint hiding (empty)
+
+import Data.Maybe (isJust, fromJust)
 
 -- | Type of a relation in the database.
 type RowType = Map Attribute (Opt SqlType)
@@ -86,6 +89,25 @@ configSchema c s
   | otherwise = throwM $ InvalidConfig fm
     where
       fm = featureModel s
+
+-- | configures a variational table schema to the
+--   the relational one and returns an empty map
+--   if the config is not valid. 
+configTableSchema_ :: Config Bool -> TableSchema -> RTableSchema
+configTableSchema_ c t 
+  | isJust t' = fromJust t'
+  | otherwise = empty
+    where
+      t' = configTableSchema c t
+  -- | evalFeatureExpr c tablePresCond 
+  --   = mapMaybe (configAttribute c) table
+  -- | otherwise = empty
+  --   where 
+  --     tablePresCond = getFexp t
+  --     table = getObj t
+  --     configAttribute conf ot 
+  --       | evalFeatureExpr conf (getFexp ot) = Just $ getObj ot
+  --       | otherwise = Nothing
 
 -- | Configures a variational table schema to the relational one.
 configTableSchema :: MonadThrow m => Config Bool -> TableSchema -> m RTableSchema

@@ -6,6 +6,7 @@ module VDBMS.VDB.Table.Core (
         , getSqlTable
         , updateSqlTable
         , mkVTable
+        , confTable
 
 ) where 
 
@@ -13,9 +14,10 @@ import VDBMS.VDB.Schema.Variational.Schema
 import VDBMS.DBMS.Table.Table 
 import VDBMS.VDB.Name (PCatt)
 import VDBMS.Features.Config (Config)
+import VDBMS.VDB.Schema.Relational.Types (rtableSchAtts)
 
 import Text.PrettyPrint
-
+import Data.List ((\\))
 import Debug.Trace
 
 -- | the result of a vq is a variational table.
@@ -25,7 +27,13 @@ data Table = Table TableSchema SqlTable
 
 -- | configures a table for a given conf.
 confTable :: PCatt -> Config Bool -> Table -> SqlTable
-confTable = undefined
+confTable p c t = validTuples
+  where
+    nonvalidAtt = tableSchAtts tsch \\ rtableSchAtts confedTsch
+    confedTsch = configTableSchema_ c tsch
+    tsch = getTableSchema t
+    satTuplesNoPc = dropPresInTable p $ dropUnsatTuples (tschFexp tsch) p (getSqlTable t)
+    validTuples = dropAttsFromSqlTable nonvalidAtt satTuplesNoPc
 
 -- | determines if two tables are equivalent.
 equivTabs :: Table -> Table -> Bool

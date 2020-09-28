@@ -2,6 +2,7 @@
 module VDBMS.VDB.Schema.Relational.Types (
 
         RTableSchema
+        , rtableSchAtts
         , RSchema
         , RSchemaError(..)
 
@@ -19,6 +20,10 @@ import VDBMS.DBMS.Value.Value
 
 -- | Type of a relation in a relational database.
 type RTableSchema = Map Attribute SqlType
+
+-- | returns the attributes of a relationa table schema.
+rtableSchAtts :: RTableSchema -> [Attribute]
+rtableSchAtts = keys
 
 -- | A relational schema is a mapping from relations to table schemas.
 type RSchema = Map Relation (RTableSchema)

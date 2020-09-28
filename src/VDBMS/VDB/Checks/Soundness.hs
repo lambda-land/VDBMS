@@ -4,7 +4,8 @@ module VDBMS.VDB.Checks.Soundness where
 -- import VDBMS.VDB.Schema.Variational.Types 
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
-import VDBMS.VDB.Table.Table (Table)
+import VDBMS.VDB.Table.Table (Table, confTable)
+import VDBMS.Features.Config (prettyConfig, Config)
 
 import VDBMS.Approaches.ConfigQ.RunVariantQueryOnVDB 
 import VDBMS.Approaches.ConfigQ.RunVariantQueryOnVDBConcurrent
@@ -36,9 +37,49 @@ soundnessCheck1 c q app1 app2
 soundnessCheck2 :: Database conn => conn -> Algebra
                 -> (conn -> Algebra -> IO Table)
                 -> IO Bool
-soundnessCheck2 c q app = undefined
-  -- = do t <- app c q
-  --      let confs = getAllConfig c
+soundnessCheck2 c q app 
+  = do let pc = presCond c
+           confs = getAllConfig c
+           features = dbFeatures c
+       t <- app c q
+       confedQRess <- runRelQs c q
+       let confedTsApp = fmap (\cf -> (cf, confTable pc cf t)) confs
+           comp :: Eq b => [(a,b)] -> [(a,b)] -> [(a,Bool)]
+           comp (x:xs) (y:ys) = (fst x, (snd x == snd y)) : comp xs ys
+           comp [] [] = []
+           comp _ _ = error "impossible case. VDBMS.VDB.Checks.Soundness"
+           compRes :: [(Config Bool, Bool)]
+           compRes = comp confedQRess confedTsApp
+           res = and $ fmap snd compRes
+       putStrLn (show 
+         $ map (\(cf,b) -> prettyConfig features cf 
+                       ++ " : " ++ show b ++ "\n") 
+               compRes)
+       putStrLn ("soundnessCheck2 : " ++ show res)
+       return res
+
+-- | second soundness check for all approaches.
+soundnessCheck2all :: Database conn => conn -> Algebra -> IO Bool
+soundnessCheck2all c q 
+  = do putStrLn "app 1:"
+       b1 <- soundnessCheck2 c q runQ1
+       putStrLn "app 2:"
+       b2 <- soundnessCheck2 c q runQ2
+       putStrLn "app 3:"
+       b3 <- soundnessCheck2 c q runQ3
+       putStrLn "app 4:"
+       b4 <- soundnessCheck2 c q runQ4
+       putStrLn "app 5:"
+       b5 <- soundnessCheck2 c q runQ5
+       putStrLn "soundness check 2 for all approaches:"
+       return $ b1 && b2 && b3 && b3 && b4 && b5
+
+-- | soundness check 2 for the test vdb.
+soundnessCheck2allTest :: Algebra -> IO Bool
+soundnessCheck2allTest q 
+  = do db <- tstVDBone
+       soundnessCheck2all db q
+
 
 -- | running variant queries VS running optionalized queries.
 varVSoptApps1 :: Database conn => conn -> Algebra -> IO Bool

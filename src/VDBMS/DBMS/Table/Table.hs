@@ -21,6 +21,7 @@ module VDBMS.DBMS.Table.Table (
         , ppSqlTable
         , isTableNull
         , equivSqlTables
+        , dropAttsFromSqlTable
         -- , ppSqlRowRend
         -- , testrow
 
@@ -255,6 +256,14 @@ dropRows p t = filter (/= M.empty) $ fmap (dropRow p) t
 
 -- filterWithKey :: (k -> a -> Bool) -> Map k a -> Map k a
 
+dropAttsFromSqlTable :: [Attribute] -> SqlTable -> SqlTable
+dropAttsFromSqlTable as = fmap (dropAttsFromSqlRow as) 
+
+-- | drop attribute from a sqltable.
+dropAttsFromSqlRow :: [Attribute] -> SqlRow -> SqlRow
+dropAttsFromSqlRow as = M.filterWithKey (\k _ -> not (elem (Attribute k) as))
+
+-- filterWithKey :: (k -> a -> Bool) -> Map k a -> Map k a
 -- | drops the pres cond key value in a row.
 dropPres :: PCatt -> SqlRow -> SqlRow
 dropPres p = M.delete (presCondAttName p)

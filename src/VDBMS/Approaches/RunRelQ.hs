@@ -1,4 +1,4 @@
--- | 
+-- | runs relaitonal sql queries on the vdb. 
 module VDBMS.Approaches.RunRelQ where 
 
 
@@ -33,18 +33,7 @@ import VDBMS.UseCases.Test.Schema
 import Control.Arrow (first, second, (***))
 import Data.Bitraversable (bitraverse, bimapDefault)
 
-import System.TimeIt
-import System.Clock
-import Formatting
-import Formatting.Clock
-
--- Clock data type
--- Monotonic: a monotonic but not-absolute time which never changes after start-up.
--- Realtime: an absolute Epoch-based time (which is the system clock and can change).
--- ProcessCPUTime: CPU time taken by the process.
--- ThreadCPUTime: CPU time taken by the thread.
-
--- |
+-- | runs relaitonal sql queries on the vdb. 
 runRelQ :: Database conn => conn -> Config Bool -> Algebra -> IO SqlTable
 runRelQ conn c vq = 
   do let vsch = schema conn
@@ -58,3 +47,10 @@ runRelQ conn c vq =
      tab <- fetchQRows conn q
      return tab
 
+runRelQs :: Database conn => conn -> Algebra -> IO [(Config Bool, SqlTable)]
+runRelQs conn q =
+  do let configs = getAllConfig conn
+         runq :: (Config Bool, Algebra) -> IO (Config Bool, SqlTable)
+         runq (c, vq) = bitraverse (return . id) (runRelQ conn c) (c, vq)
+     ts <- mapM runq $ fmap (\cf -> (cf, q)) configs
+     return ts
