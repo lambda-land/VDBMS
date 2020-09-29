@@ -9,7 +9,7 @@ import VDBMS.VDB.Table.Table (Table)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
 import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, prettySqlVarTab)
 import VDBMS.TypeSystem.Variational.TypeSystem 
-  (typeOfQuery, typeEnv2tableSch, typeAtts)
+  (typeOfQuery, typeEnv2tableSch, typeAtts, typePC)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
 import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
@@ -22,7 +22,7 @@ import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
 import VDBMS.QueryGen.RA.AddPC (addPC)
-import VDBMS.DBMS.Table.Table (SqlTable)
+import VDBMS.DBMS.Table.Table (SqlTable, configSqlTable)
 -- import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 -- for testing
 import VDBMS.DBsetup.Postgres.Test
@@ -45,9 +45,9 @@ runRelQ conn c vq =
              (configure c 
                (chcSimpleReduceRec (pushSchToQ vsch vq)))
      tab <- fetchQRows conn q
-     -- let tab' = dropPresInTable pc 
-     --   $ dropUnsatTuples (tschFexp tsch) pc tab
-     return tab
+     vq_type <- typeOfQuery vq vsch_pc vsch
+     let tab' = configSqlTable c (typePC vq_type) pc tab
+     return tab'
 
 -- | runs all configured queries of a variational query
 --   on a VDB.

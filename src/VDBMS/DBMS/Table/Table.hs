@@ -23,6 +23,7 @@ module VDBMS.DBMS.Table.Table (
         , isTableNull
         , equivSqlTables
         , dropAttsFromSqlTable
+        , configSqlTable
         -- , ppSqlRowRend
         -- , testrow
 
@@ -213,7 +214,7 @@ insertAttValToSqlTable a v = map $ insertAttValToSqlRow a v
 -- | updates the pc of a tuple. 
 --   assumption: the tuple has pc.
 updatePCInSqlRow :: PCatt -> FeatureExpr -> SqlRow -> SqlRow
-updatePCInSqlRow pc f = M.adjust (\_ -> fexp2sqlval f) (attributeName pc)
+updatePCInSqlRow pc f = M.adjust (\tf -> fexp2sqlval (And f (sqlval2fexp tf))) (attributeName pc)
 
 -- | updates the pc of a tuples in a table.
 --   assumption: the tuple has pc.
@@ -276,6 +277,11 @@ dropPres p = M.delete (presCondAttName p)
 -- | drops the pres cond key value in a table.
 dropPresInTable :: PCatt -> SqlTable -> SqlTable
 dropPresInTable p = fmap $ dropPres p
+
+-- | configures a sql table that has presence conditions.
+configSqlTable :: Config Bool -> FeatureExpr -> PCatt -> SqlTable -> SqlTable
+configSqlTable c f p t 
+  = dropPresInTable p $ applyConfTable c p f t
 
 -- | applies a config to a table.
 applyConfTable :: Config Bool -> PCatt -> FeatureExpr -> SqlTable -> SqlTable

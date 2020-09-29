@@ -78,7 +78,7 @@ soundnessCheck2 c q app
 soundnessCheck2Test :: Algebra -> IO Bool
 soundnessCheck2Test q 
   = do db <- tstVDBone
-       soundnessCheck2 db q runQ1
+       soundnessCheck2 db q runQ3
 
 -- | second soundness check for all approaches.
 soundnessCheck2all :: Database conn => conn -> Algebra -> IO Bool
