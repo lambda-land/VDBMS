@@ -79,7 +79,7 @@ runQ1 conn vq =
      fprint (timeSpecs % "\n") start_constQ end_constQ
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
-     -- putStrLn (show $ fmap snd sql_qs)
+     putStrLn (show $ fmap snd sql_qs)
          -- try removing gensql
      let runq :: (Config Bool, String) -> IO SqlVariantTable
          runq = bitraverse (return . id) (fetchQRows conn) 
@@ -98,7 +98,7 @@ runQ1 conn vq =
      fprint (timeSpecs % "\n") strt_res end_res
      -- timeItName "gathering results" Monotonic $ return 
      --   $ variantSqlTables2Table features pc type_sch sqlTables
-     putStrLn (show res)
+     -- putStrLn (show res)
      return res
 
 -- testfetch q = 

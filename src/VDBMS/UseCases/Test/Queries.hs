@@ -84,6 +84,15 @@ qrfive = tRef rfive
 
 qrsix = tRef rsix
 
+-- join
+qfourteen = undefined
+
+-- prod
+qfifteen = undefined
+
+-- union
+qsixteen = undefined
+
 -- 
 -- test for
 -- ra → sql 

@@ -72,7 +72,7 @@ updatePC :: PCatt -> SqlSelect -> FeatureExpr -> SqlSelect
 updatePC p (SqlSelect as ts cs) f
   = SqlSelect 
     (as ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
-                         [" AND " ++ show f]]) 
+                         [" AND (" ++ show f ++ ")"]]) 
     ts 
     cs 
 updatePC p (SqlBin o l r) f

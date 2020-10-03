@@ -7,7 +7,8 @@ module VDBMS.Features.FeatureExpr.Core (
         disjFexp,
         conjFexp,
         imply,
-        evalFeatureExpr
+        evalFeatureExpr, 
+        featuresList
 
 ) where
 
@@ -27,6 +28,10 @@ features (Ref f)   = Set.singleton f
 features (Not e)   = features e
 features (And l r) = features l `Set.union` features r
 features (Or  l r) = features l `Set.union` features r
+
+-- |
+featuresList :: FeatureExpr -> [Feature]
+featuresList = Set.toList . features
 
 -- | initializes the features of a feature expr to false in a map.
 --   used to initialize all features of a database, i.e. initializing

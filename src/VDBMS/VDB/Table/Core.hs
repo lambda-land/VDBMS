@@ -33,7 +33,8 @@ confTable p c t = validTuples
     confedTsch = configTableSchema_ c tsch
     tsch = getTableSchema t
     -- satTuplesNoPc = dropUnsatTuples (tschFexp tsch) p (getSqlTable t)
-    satTuplesNoPc = dropPresInTable p $ applyConfTable c p (tschFexp tsch) (getSqlTable t)
+    satTuplesNoPc = dropPresInTable p 
+      $ applyConfTable c p (tschFexp tsch) (getSqlTable t)
     validTuples = dropAttsFromSqlTable nonvalidAtt satTuplesNoPc
 
 -- | determines if two tables are equivalent.

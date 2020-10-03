@@ -32,6 +32,11 @@ fethree = Ref fthree
 fefour = Ref ffour
 fefive = Ref ffive
 
+
+-- fexptest = And feone
+--   (Or (Or (fetwo `And` fethree)
+--       (fefour `And` fefive))
+--     (fethree `And` fetwo))
 -- 
 -- * configurations of variants
 -- 

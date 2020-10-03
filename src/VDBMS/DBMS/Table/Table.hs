@@ -52,7 +52,7 @@ import GHC.Generics (Generic)
 -- import Text.PrettyPrint.Boxes
 import Text.PrettyPrint
 
-import Data.List.Extra (groupSort)
+import Data.List.Extra (groupSort, (\\))
 
 import Debug.Trace
 
@@ -287,9 +287,12 @@ configSqlTable c f p t
 applyConfTable :: Config Bool -> PCatt -> FeatureExpr -> SqlTable -> SqlTable
 applyConfTable c p f t 
   | isTableNull t = []
-  | otherwise     = filter (evalFeatureExpr c . tuple_pc) t
+  | otherwise     = 
+    -- trace ("dropped tuples:" ++ show (t \\ t'))
+    t'
   where
     tuple_pc tuple = And f ((sqlval2fexp . fromJust) $ M.lookup (attributeName p) tuple)
+    t' = filter (evalFeatureExpr c . tuple_pc) t
 
 -- | determines if a table is the result of query "select null".
 isTableNull :: SqlTable -> Bool
