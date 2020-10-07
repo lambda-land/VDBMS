@@ -1,9 +1,10 @@
 (** Equivalence lemmas *)
 Set Warnings "-notation-overridden,-parsing".
 
-
 Load VRA_RA_encoding.
 Import VRA_RA_encoding.
+
+
 
 Lemma eq_equiv_atts: forall A A', A = A' -> A =a= A'.
 Proof. intros. rewrite H. reflexivity. Qed.
@@ -74,7 +75,7 @@ specialize H0 with x; try (rewrite <- H0; apply H1);
 try (rewrite H0; apply H1). Qed.
 
 
-Lemma removeAtt_equiv a A A':
+(*Lemma removeAtt_equiv a A A':
 A =va= A' -> removeAtt a A =va= removeAtt a A'.
 Proof. 
 unfold equiv_vatts.
@@ -96,11 +97,11 @@ split.
   split; try (apply In_removeAtt; eauto); try(eauto)).
   
 + destruct (string_eq_dec a a0) as [eq | neq].
-  rewrite eq. repeat (rewrite count_occ_config_removeAtt_eq).
+  rewrite eq. rewrite count_occ_config_removeAtt_eq.
   reflexivity.
   repeat (rewrite (count_occ_config_removeAtt_neq _ _ neq)).
   assumption.
-Qed.
+Qed.*)
 
 Lemma equiv_sublist: forall A B B' , 
      B =a= B' -> sublist A B <-> sublist A B'.

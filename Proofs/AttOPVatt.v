@@ -76,6 +76,34 @@ induction A as [|a' A IHA].
     ++ simpl. rewrite He'. exact IHA.
 Qed.
 
+Lemma removeAtt_equiv a A A':
+A =va= A' -> removeAtt a A =va= removeAtt a A'.
+Proof. 
+unfold equiv_vatts.
+simpl. unfold equiv_atts. intros.
+specialize H with c a0. destruct H as [H H0].
+split. 
++ split; intro H1; 
+  rewrite <- In_config_exists_true in H1;
+  destruct H1 as [e0 H1]; destruct H1 as [H1 H2];
+  destruct (string_eq_dec a0 a) as [Heqdec | Heqdec];
+  (* a0 = a *)
+  try (rewrite Heqdec in H1; apply notIn_removeAtt in H1; destruct H1);
+  (* a0 <> a *)
+  try (apply In_removeAtt in H1; apply In_config_true with (c:=c) in H1;
+  auto; apply H in H1; 
+  rewrite <- In_config_exists_true in H1;
+  destruct H1 as [e1 H1]; destruct H1 as [H1 H1e1];
+  rewrite <- In_config_exists_true; exists e1;
+  split; try (apply In_removeAtt; eauto); try(eauto)).
+  
++ destruct (string_eq_dec a a0) as [eq | neq].
+  rewrite eq. repeat (rewrite count_occ_config_removeAtt_eq).
+  reflexivity.
+  repeat (rewrite (count_occ_config_removeAtt_neq _ _ neq)).
+  assumption.
+Qed.
+
 (*----------------------------------------------------------------------*)
 
 (* -- NoDupAtt NoDup -- *)
