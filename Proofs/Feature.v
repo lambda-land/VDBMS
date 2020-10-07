@@ -6,7 +6,7 @@ Require Import Coq.Strings.String.
 Require Import Relations.Relation_Definitions.
 Require Import Classes.Morphisms.
 Require Import Setoids.Setoid.
-From Coq Require Import Logic.Classical_Pred_Type.
+Require Import Logic.Classical_Pred_Type.
 
 Module Feature.
 

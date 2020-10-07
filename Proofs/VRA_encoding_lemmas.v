@@ -2,7 +2,6 @@
 Set Warnings "-notation-overridden,-parsing".
 Import Init.Datatypes.
 Import Coq.Init.Nat.
-Require Import Maps.
 Require Export List.
 Require Export Logic.
 Import Coq.Lists.List.ListNotations.
@@ -18,6 +17,20 @@ Module VRA_encoding_lemmas.
 
 (*----------------------sublist_bool_correct--------------------------------*)
 
+
+
+(*-----------------------sublist_bool_correct--------------------------------*)
+
+
+
+
+(*---------------------------Equivalence relation--------------*)
+  
+(*-----------------------------------equiv----------------------------------*)
+End VRA_encoding_lemmas.
+
+(*
+
 Lemma set_mem_In: forall a x, set_mem string_dec a x = true <-> set_In a x.
 Proof. split. apply set_mem_correct1. apply set_mem_correct2. Qed.
 
@@ -25,6 +38,8 @@ Lemma In_not_In: forall {X:Type} (x y:X) (A:list X), (In x A) -> (~ In y A) -> x
 Proof. intros. induction A. simpl in H. destruct H. simpl in H. simpl in H0.
        apply Classical_Prop.not_or_and in H0. destruct H0. destruct H. 
        rewrite <- H. assumption. apply  IHA in H. auto. auto. Qed.
+
+
 
 Lemma sublist_bool_correct: forall A A' {Ha: NoDup A} {Ha': NoDup A'}, sublist_bool A A' = true
                         <-> sublist A A'.
@@ -57,13 +72,4 @@ Proof. intros. split.
            +++ unfold sublist in H.  rewrite <- Hmem. rewrite set_mem_In.
                unfold set_In. apply H. apply in_eq.
 Qed.
-
-(*-----------------------sublist_bool_correct--------------------------------*)
-
-
-
-
-(*---------------------------Equivalence relation--------------*)
-  
-(*-----------------------------------equiv----------------------------------*)
-End VRA_encoding_lemmas.
+*)

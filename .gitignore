@@ -8,8 +8,10 @@ dist
 .sql
 .csv
 .DS_Store
-.vo
-.glob
-.aux
+*.vo
+*.glob
+*.aux
 *.cabal
+*.vos
+*.vok
 
