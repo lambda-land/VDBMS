@@ -178,7 +178,8 @@ Proof. intros e vq. generalize dependent e. induction vq. (* subst. *)
          destruct (E[[ e1]] c) eqn:E1. 
          + rewrite not_sat_not_prop in H5. rewrite <- sat_taut_comp in H5.
          specialize H5 with c. auto. 
-         + rewrite not_sat_not_prop in H6. 
+         + (*rewrite andb_false_l in H0. discriminate H0.*)
+         rewrite not_sat_not_prop in H6. 
          rewrite <- sat_taut_comp in H6.
          specialize H6 with c. auto.
        - intros. inversion H; subst. apply IHvq1 in H5. assumption.
@@ -187,13 +188,19 @@ Qed.
 
 (* -----------------------------------------------------------
   | Variation Preservation : 
-  |  e |- vq : A  ->
+  |  e |= vq : A  ->
   |    forall c, Q[[vq]]c :: T[[A]]c 
   | where :  = vtype (type derivation of variational query) 
   |       :: = type' (type derivation of plain query)
   |       Q  = configVQuery (configuration of variational query)
   |       T  = configVQtype (configuration of variational type)
    ------------------------------------------------------------
+*)
+
+(*
+Comment: we are proving variation preservation theorem 
+for Variational database and 
+
 *)
 
 Theorem variation_preservation : forall e vq A, 
@@ -209,6 +216,13 @@ Proof.
     + reflexivity.
     + reflexivity. 
   (* Relation - E *)
+  (* S |= r : A^e -> type' (Q[[ r(A)^e]]c) =a= Qt[[ A^e]]c  
+    |             -> type' (R[[ r(A)^e]]c) =a= if E[[ e]]c = true then A[[ A]]c else []
+    |             -> type' (r (if E[[ e]]c = true then A[[ A]]c else []))
+    |                             =a= if E[[ e]]c = true then A[[ A]]c else []
+    | destruct E[[ e]]c 
+    | True =>     -> type' (r(A[[ A]]c) = A[[A]]c 
+  *)
   - unfold configVQuery. unfold configVRelS. unfold configVQtype. simpl. 
     rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
     rewrite H0. apply H in H0. rewrite H0. reflexivity.
@@ -271,7 +285,7 @@ Proof.
     apply IHvtype2 in H0 as H02.
     apply IHvtype1 in H0 as H01.
     rewrite configVQType_dist_vatts_union.
-    repeat (rewrite configVQType_push_annot). 
+    repeat (rewrite configVQType_push_annot). Check absorption_andb.
     unfold configVQtype. simpl. rewrite absorption_andb. rewrite orb_comm. 
     rewrite absorption_andb. 
     pose (NoDupAtt_NoDup_configVQ (A1, e1) c) as HA1VQ.

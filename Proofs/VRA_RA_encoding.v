@@ -721,6 +721,9 @@ Definition subsump_qtype_bool (A A': qtype) := sublist_bool A A'.
 Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c, 
     sublist (configVQtype X c) (configVQtype X' c).
 
+Definition subsumpImp_vatts (A A':vatts) :Prop := forall x A A',
+exists e, In (ae x e) A -> (exists e', (In (ae x e') A') /\ sat(e /\(F) e')).
+
 (*----------------------subsump--------------------------------*)
 
 
@@ -975,8 +978,6 @@ Proof. intros. induction A.
           + rewrite andb_false_r. reflexivity.
 Qed.
 
-
-
 (*------------------------push_annot---------------------------*)
 
 (** ------------------------------------------------------------
@@ -1034,23 +1035,23 @@ Definition is_disjoint_bool (A A': atts) : bool :=
 
 
 (* ---------------------------------------------------------------
-  | Type of variational query
+  | Type of (Explicit |= ) variational query
    ---------------------------------------------------------------
 *)
 
 Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
   (*  -- intro LESS specific context --
-    empty |- rn : A^e'  ~sat(e' /\ (~m))
+    empty |= rn : A^e'  ~sat(e' /\ (~m))
     ------------------------------------ intro less specific context
-               m  |- rn : A^e'
+               m  |= rn : A^e'
    *)
   | Relation_vE_fm : forall e rn A {HA: NoDupAtt A} e',
         ~ sat (  e'    /\(F)   (~(F) (e)) ) ->
        vtype e (rel_v (rn, (A, e'))) (A, e') (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
   (*   -- intro MORE specific context --
-    empty |- rn : A^e'  ~sat(e /\ (~e'))
+    empty |= rn : A^e'  ~sat(e /\ (~e'))
     ------------------------------------  RELATION-E 
-               e  |- rn : A^e
+               e  |= rn : A^e
    *)
   | Relation_vE : forall e rn A {HA: NoDupAtt A} e',
        ~ sat (  e    /\(F)   (~(F) (e')) ) ->
@@ -1084,7 +1085,57 @@ Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
    | Select_vE: forall e S vq A e',
        vtype e S vq (A, e') ->
        vtype e S (sel_v c vq) (A, e'). *) 
+
+
  
+(*-----------------------Explicit vqtype--------------------------------*)
+
+
+(* ---------------------------------------------------------------
+  | Type of (Implicit |- ) variational query
+   ---------------------------------------------------------------
+*)
+
+Inductive vtypeImp :fexp -> vquery -> vqtype -> Prop :=
+  (*   -- intro MORE specific context --
+    empty |- rn : A^e'  ~sat(e /\ (~e'))
+    ------------------------------------  RELATION-E 
+               e  |- rn : A^e
+  *)
+  | Relation_vE_imp : forall e rn A {HA: NoDupAtt A} e',
+        sat (e /\(F) e') ->
+       vtypeImp e (rel_v (rn, (A, e'))) (A, (e /\(F) e')) (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
+ 
+  (*   -- PROJECT-E --  *)
+  | Project_vE_imp: forall e vq e' A' {HA': NoDupAtt A'} A {HA: NoDupAtt A},
+       vtypeImp e vq (A', e') -> 
+       subsumpImp_vatts A  (push_annot A' e') ->
+       vtypeImp e (proj_v A vq) (vatts_inter A A', e') 
+  (*  -- CHOICE-E --  *)
+  | Choice_vE_imp: forall e e' vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2,
+       vtypeImp (e /\(F) e') vq1 (A1, e1) ->
+       vtypeImp (e /\(F) (~(F) e')) vq2 (A2, e2) ->
+       vtypeImp e (chcQ e' vq1 vq2)
+        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
+            (*e1 and e2 can't be simultaneously true.*)
+  (*  -- PRODUCT-E --  *)
+  | Product_vE_imp: forall e vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 ,
+       vtypeImp e  vq1 (A1, e1) ->
+       vtypeImp e  vq2 (A2, e2) ->
+       vqtype_inter (A1, e1) (A2, e2) = nil ->
+       vtypeImp e  (prod_v vq1 vq2)
+        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
+  (*  -- SETOP-E --  *)
+  | SetOp_vE_imp: forall e vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 op,
+       vtypeImp e vq1 (A1, e1) ->
+       vtypeImp e vq2 (A2, e2) ->
+       equiv_vqtype (A1, e1) (A2, e2) ->
+       vtypeImp e (setU_v op vq1 vq2) (A1, e1).
+(* (*  -- SELECT-E --  *)
+   | Select_vE: forall e S vq A e',
+       vtype e S vq (A, e') ->
+       vtype e S (sel_v c vq) (A, e'). *) 
+
 (*-----------------------vqtype--------------------------------*)
 
 (* ------------------------------------------------------------
@@ -1101,8 +1152,18 @@ Fixpoint type' (q:query) : qtype :=
                           atts_union (type' q1) (type' q2) else nil
  | _ => nil
  end.
- 
+
 (*------------------------------type'-------------------------*)
+
+
+(* ------------------------------------------------------------
+  | Explicitly Annotating Quaries
+   ------------------------------------------------------------
+*)
+
+Definition vschema 
+
+Fixpoint ExplAnnotQwS (q: vqtype) ()
 
 
 
