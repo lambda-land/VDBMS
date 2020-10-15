@@ -145,10 +145,10 @@ Qed.
   | Type annotation e' is more specific than context e.
    -----------------------------------------------------
 *)
-Theorem context_type_rel : forall e vq A' e',
-       vtype e vq (A', e') -> 
+Theorem context_type_rel : forall e S vq A' e',
+       vtype e S vq (A', e') -> 
            ~ sat (  e' /\(F) (~(F) (e)) ).
-Proof. intros e vq. generalize dependent e. induction vq. (* subst. *)
+Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
        - intros. inversion H; subst. assumption. rewrite not_sat_not_prop. 
           rewrite <- sat_taut_comp.
           intros. assumption.
@@ -161,28 +161,28 @@ Proof. intros e vq. generalize dependent e. induction vq. (* subst. *)
          destruct (E[[ e1]] c) eqn:E1.
          + rewrite <- sat_taut_comp_inv_c. intros. simpl. 
          rewrite E1. simpl. 
-         apply IHvq1 in H3.  rewrite not_sat_not_prop in H3. 
-         rewrite <- sat_taut_comp in H3. specialize H3 with c.
-         apply H3 in E1. simpl in E1. apply andb_prop in E1. 
+         apply IHvq1 in H4.  rewrite not_sat_not_prop in H4. 
+         rewrite <- sat_taut_comp in H4. specialize H4 with c.
+         apply H4 in E1. simpl in E1. apply andb_prop in E1. 
          destruct E1. rewrite <- H1, H0. reflexivity.
          + rewrite <- sat_taut_comp_inv_c. intros. simpl.
          rewrite E1. simpl.
-         apply IHvq2 in H7.  rewrite not_sat_not_prop in H7. 
-         rewrite <- sat_taut_comp_inv in H7. specialize H7 with c.
-         apply H7. simpl. rewrite H0. simpl. reflexivity.
+         apply IHvq2 in H8.  rewrite not_sat_not_prop in H8. 
+         rewrite <- sat_taut_comp_inv in H8. specialize H8 with c.
+         apply H8. simpl. rewrite H0. simpl. reflexivity.
        - intros. inversion H; subst.
        - intros. inversion H; subst.
-         apply IHvq1 in H5. apply IHvq2 in H6. 
+         apply IHvq1 in H6. apply IHvq2 in H7. 
          rewrite not_sat_not_prop. rewrite <- sat_taut_comp.
          intros. simpl in H0.
          destruct (E[[ e1]] c) eqn:E1. 
-         + rewrite not_sat_not_prop in H5. rewrite <- sat_taut_comp in H5.
-         specialize H5 with c. auto. 
+         + rewrite not_sat_not_prop in H6. rewrite <- sat_taut_comp in H6.
+         specialize H6 with c. auto. 
          + (*rewrite andb_false_l in H0. discriminate H0.*)
-         rewrite not_sat_not_prop in H6. 
-         rewrite <- sat_taut_comp in H6.
-         specialize H6 with c. auto.
-       - intros. inversion H; subst. apply IHvq1 in H5. assumption.
+         rewrite not_sat_not_prop in H7. 
+         rewrite <- sat_taut_comp in H7.
+         specialize H7 with c. auto.
+       - intros. inversion H; subst. apply IHvq1 in H6. assumption.
 Qed. 
 
 
@@ -203,15 +203,15 @@ for Variational database and
 
 *)
 
-Theorem variation_preservation : forall e vq A, 
-       vtype e vq A ->
+Theorem variation_preservation : forall e S vq A, 
+       vtype e S vq A ->
        forall c, (E[[e]] c) = true ->
-           (type' (configVQuery vq c)) =a= (configVQtype A c).
+           (type_ (configVQuery vq c)) =a= (configVQtype A c).
 Proof.
   intros. induction H.
   (* Relation - E *) (*get rid of this*)
   - unfold configVQuery. unfold configVRelS. simpl. 
-    rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
+    rewrite not_sat_not_prop in H1. rewrite <- sat_taut_comp in H1. 
     unfold configVQtype. simpl. destruct (E[[e']] c) eqn: HsemE.
     + reflexivity.
     + reflexivity. 
@@ -224,8 +224,8 @@ Proof.
     | True =>     -> type' (r(A[[ A]]c) = A[[A]]c 
   *)
   - unfold configVQuery. unfold configVRelS. unfold configVQtype. simpl. 
-    rewrite not_sat_not_prop in H. rewrite <- sat_taut_comp in H. 
-    rewrite H0. apply H in H0. rewrite H0. reflexivity.
+    rewrite not_sat_not_prop in H1. rewrite <- sat_taut_comp in H1. 
+    rewrite H0. apply H1 in H0. rewrite H0. reflexivity.
  (* Project - E *)
  - unfold subsump_vqtype, configVQtype in H1. simpl in H1.
    unfold configVQtype in IHvtype. simpl in IHvtype. 

@@ -54,7 +54,7 @@ Inductive comp : Type :=
   | EQc | LTc | GTc.
 
 (* Variational Attribute *)
-(*Definition vatt : Type := (att * fexp)%type.*) (*assuming always annotated; could've used option*)
+(*Definition vatt : Type := (att * fexp)%type.*) (*  assuming always annotated; could've used option*)
 
 Inductive vatt : Type :=
    | ae : att -> fexp -> vatt. 
@@ -572,20 +572,59 @@ Qed. *)
 (*relName*)
 Definition r : Type := string.
 
-(* Plain Relation *)
+(* Plain Relation Schema - set of plain attributes with a name *)
 Definition relS : Type := (r * atts) % type.
 
-(* Variational Relation *)
+(* Variational Relation Schema - annotated set of variational attributes with a name *)
 Definition vrelS : Type := (r * (vatts * fexp) ) %type. (*assuming always annotated; could've used option*)
+
+(* Variational Schema *)
+Definition vschema : Type := ((set vrelS) * fexp) %type.
 
 Definition getr  (vr:vrelS) : r     := fst vr. 
 Definition getvs (vr:vrelS) : vatts := fst (snd vr).
 Definition getf  (vr:vrelS) : fexp  := snd (snd vr).
 
+
+Definition getSvrelS (vs:vschema) : (set vrelS) := fst vs.
+Definition getSf  (vs:vschema) : fexp  := snd vs.
+
+Definition InVR (vr:vrelS) (vs:vschema) : Prop := 
+let rn := getr vr in 
+ let vas := getvs vr in 
+  let e':= getf vr in
+   exists e, In (rn, (vas, e)) (fst vs) /\ (e /\(F) (snd vs)) = e'.
+
+Function InRn (rn:string) (l:list vrelS) {struct l}: Prop :=
+    match l with
+    | []           => False
+    | (rn_, (_, _)) :: ls => rn_ = rn \/ InRn rn ls
+    end.
+
+Inductive NoDupRn : list vrelS -> Prop :=
+  | NoDupRn_nil : NoDupRn nil
+  | NoDupRn_cons : forall rn A e l, ~ InRn rn l -> NoDupRn l 
+                            -> NoDupRn ((rn, (A, e))::l).
+
+
+Fixpoint getVRAe (vr:vrelS) (vrs:set vrelS) : vrelS := 
+  match vrs with 
+ | nil                 => (fst vr, (nil, litB false))
+ |(rn, (A, e)) :: vrs' => if stringDecF.eqb rn (fst vr) 
+                           then (rn, (A, e))
+                            else getVRAe vr vrs'
+ end.
+
+Definition findVR (vr:vrelS) (vs:vschema) : vrelS := 
+   let vr' := getVRAe vr (fst vs) in  (getr vr', (getvs vr', getf vr' /\(F) snd vs)).
+
+
 (* Configuration Variational Relation R[]c *)
 Definition configVRelS (vr : vrelS) (c : config) : relS := if semE (snd (snd vr)) c
                                                          then  (fst vr, (configVAttSet (fst (snd vr)) c)) 
                                                            else  (fst vr, nil).
+
+
 (** ---------------------------relS-------------------------- **)
 
 (** ------------------------------------------------------------
@@ -1034,60 +1073,61 @@ Definition is_disjoint_bool (A A': atts) : bool :=
 (*--------------------Set Operation End ---------------------------*)
 
 
+
 (* ---------------------------------------------------------------
   | Type of (Explicit |= ) variational query
    ---------------------------------------------------------------
 *)
 
-Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
+Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
   (*  -- intro LESS specific context --
-    empty |= rn : A^e'  ~sat(e' /\ (~m))
+    S |= rn : A^e'  ~sat(e' /\ (~m))
     ------------------------------------ intro less specific context
                m  |= rn : A^e'
    *)
-  | Relation_vE_fm : forall e rn A {HA: NoDupAtt A} e',
+  | Relation_vE_fm : forall e S rn A {HA: NoDupAtt A} e',
+        InVR (rn, (A, e')) S ->
         ~ sat (  e'    /\(F)   (~(F) (e)) ) ->
-       vtype e (rel_v (rn, (A, e'))) (A, e') (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
+       vtype e S (rel_v (rn, (A, e'))) (A, e') (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
   (*   -- intro MORE specific context --
-    empty |= rn : A^e'  ~sat(e /\ (~e'))
+    S`` |= rn : A^e'  ~sat(e /\ (~e'))
     ------------------------------------  RELATION-E 
                e  |= rn : A^e
    *)
-  | Relation_vE : forall e rn A {HA: NoDupAtt A} e',
+  | Relation_vE : forall e S rn A {HA: NoDupAtt A} e',
+        InVR (rn, (A, e')) S ->
        ~ sat (  e    /\(F)   (~(F) (e')) ) ->
-       vtype e (rel_v (rn, (A, e'))) (A, e)
+       vtype e S (rel_v (rn, (A, e' ))) (A, e)
   (*   -- PROJECT-E --  *)
-  | Project_vE: forall e vq e' A' {HA': NoDupAtt A'} A {HA: NoDupAtt A},
-       vtype e vq (A', e') -> 
+  | Project_vE: forall e S vq e' A' {HA': NoDupAtt A'} A {HA: NoDupAtt A},
+       vtype e S vq (A', e') -> 
        subsump_vqtype (A, e) (A', e') ->
-       vtype e (proj_v A vq) (A, e)
+       vtype e S (proj_v A vq) (A, e)
   (*  -- CHOICE-E --  *)
-  | Choice_vE: forall e e' vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2,
-       vtype (e /\(F) e') vq1 (A1, e1) ->
-       vtype (e /\(F) (~(F) e')) vq2 (A2, e2) ->
-       vtype e (chcQ e' vq1 vq2)
+  | Choice_vE: forall e S e' vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2,
+       vtype (e /\(F) e') S vq1 (A1, e1) ->
+       vtype (e /\(F) (~(F) e')) S vq2 (A2, e2) ->
+       vtype e S (chcQ e' vq1 vq2)
         (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
             (*e1 and e2 can't be simultaneously true.*)
   (*  -- PRODUCT-E --  *)
-  | Product_vE: forall e vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 ,
-       vtype e  vq1 (A1, e1) ->
-       vtype e  vq2 (A2, e2) ->
+  | Product_vE: forall e S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 ,
+       vtype e  S vq1 (A1, e1) ->
+       vtype e  S vq2 (A2, e2) ->
        vqtype_inter (A1, e1) (A2, e2) = nil ->
-       vtype e  (prod_v vq1 vq2)
+       vtype e S (prod_v vq1 vq2)
         (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
   (*  -- SETOP-E --  *)
-  | SetOp_vE: forall e vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 op,
-       vtype e vq1 (A1, e1) ->
-       vtype e vq2 (A2, e2) ->
+  | SetOp_vE: forall e S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 op,
+       vtype e S vq1 (A1, e1) ->
+       vtype e S vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
-       vtype e (setU_v op vq1 vq2) (A1, e1).
+       vtype e S (setU_v op vq1 vq2) (A1, e1).
 (* (*  -- SELECT-E --  *)
    | Select_vE: forall e S vq A e',
        vtype e S vq (A, e') ->
        vtype e S (sel_v c vq) (A, e'). *) 
 
-
- 
 (*-----------------------Explicit vqtype--------------------------------*)
 
 
@@ -1096,45 +1136,137 @@ Inductive vtype :fexp -> vquery -> vqtype -> Prop :=
    ---------------------------------------------------------------
 *)
 
-Inductive vtypeImp :fexp -> vquery -> vqtype -> Prop :=
+Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
   (*   -- intro MORE specific context --
     empty |- rn : A^e'  ~sat(e /\ (~e'))
     ------------------------------------  RELATION-E 
                e  |- rn : A^e
   *)
-  | Relation_vE_imp : forall e rn A {HA: NoDupAtt A} e',
-        sat (e /\(F) e') ->
-       vtypeImp e (rel_v (rn, (A, e'))) (A, (e /\(F) e')) (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
- 
+  | Relation_vE_imp : forall e S rn A A_ {HA: NoDupAtt A} e' e_',
+       InVR (rn, (A, e')) S ->
+       sat (e /\(F) e') ->
+       vtypeImp e S (rel_v (rn, (A_, e_'))) (A, (e /\(F) e')) (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
   (*   -- PROJECT-E --  *)
-  | Project_vE_imp: forall e vq e' A' {HA': NoDupAtt A'} A {HA: NoDupAtt A},
-       vtypeImp e vq (A', e') -> 
+  | Project_vE_imp: forall e S vq e' A' {HA': NoDupAtt A'} A {HA: NoDupAtt A},
+       vtypeImp e S vq (A', e') -> 
        subsumpImp_vatts A  (push_annot A' e') ->
-       vtypeImp e (proj_v A vq) (vatts_inter A A', e') 
+       vtypeImp e S (proj_v A vq) (vatts_inter A A', e') 
   (*  -- CHOICE-E --  *)
-  | Choice_vE_imp: forall e e' vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2,
-       vtypeImp (e /\(F) e') vq1 (A1, e1) ->
-       vtypeImp (e /\(F) (~(F) e')) vq2 (A2, e2) ->
-       vtypeImp e (chcQ e' vq1 vq2)
+  | Choice_vE_imp: forall e e' S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2,
+       vtypeImp (e /\(F) e') S vq1 (A1, e1) ->
+       vtypeImp (e /\(F) (~(F) e')) S vq2 (A2, e2) ->
+       vtypeImp e S (chcQ e' vq1 vq2)
         (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
             (*e1 and e2 can't be simultaneously true.*)
   (*  -- PRODUCT-E --  *)
-  | Product_vE_imp: forall e vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 ,
-       vtypeImp e  vq1 (A1, e1) ->
-       vtypeImp e  vq2 (A2, e2) ->
+  | Product_vE_imp: forall e S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 ,
+       vtypeImp e  S vq1 (A1, e1) ->
+       vtypeImp e  S vq2 (A2, e2) ->
        vqtype_inter (A1, e1) (A2, e2) = nil ->
-       vtypeImp e  (prod_v vq1 vq2)
+       vtypeImp e  S (prod_v vq1 vq2)
         (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
   (*  -- SETOP-E --  *)
-  | SetOp_vE_imp: forall e vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 op,
-       vtypeImp e vq1 (A1, e1) ->
-       vtypeImp e vq2 (A2, e2) ->
+  | SetOp_vE_imp: forall e S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 op,
+       vtypeImp e S vq1 (A1, e1) ->
+       vtypeImp e S vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
-       vtypeImp e (setU_v op vq1 vq2) (A1, e1).
+       vtypeImp e S (setU_v op vq1 vq2) (A1, e1).
 (* (*  -- SELECT-E --  *)
    | Select_vE: forall e S vq A e',
        vtype e S vq (A, e') ->
        vtype e S (sel_v c vq) (A, e'). *) 
+
+Fixpoint vtypeImp_ (e:fexp) (vs: vschema) (vq:vquery) : vqtype :=
+ match vq with 
+ | (rel_v (rn, (A_, e_'))) =>  let vr := (findVR (rn, (A_, e_')) vs) in
+           (getvs vr, (e /\(F) getf vr))
+ | (proj_v A vq)     => 
+      let (A', e') := vtypeImp_ e vs vq in 
+        (vatts_inter A A', e') 
+ | (chcQ e' vq1 vq2) => 
+      let  (A1, e1) := vtypeImp_ (e /\(F) e') vs vq1  in
+       let (A2, e2) := vtypeImp_ (e /\(F) (~(F) e')) vs vq2 in
+        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
+ | (prod_v vq1 vq2) =>
+      let (A1, e1) := vtypeImp_ e  vs vq1 in
+       let (A2, e2) := vtypeImp_ e  vs vq2 in
+        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
+ | (setU_v op vq1 vq2) =>
+       let (A1, e1) := vtypeImp_ e vs vq1 in
+        let (A2, e2) := vtypeImp_ e vs vq2 in 
+         (A1, e1)
+ | _ => (nil, litB false)
+ end. 
+
+Lemma InRn_In:
+forall rn vrs, InRn rn vrs <-> exists A e, In (rn, (A, e)) vrs.
+Proof. intros. split. 
+- intro H. induction vrs. 
++ simpl in H. destruct H.
++ destruct a as (rn', (A', e')). 
+simpl in H. destruct H.
+++ rewrite H. exists A'. exists e'.
+simpl. eauto.
+++ apply IHvrs in H. destruct H as [A H].
+destruct H as [e H]. exists A. exists e.
+simpl. eauto.
+- intro H. destruct H as [A H].
+destruct H as [e H]. induction vrs. 
++ simpl in H. destruct H.
++ destruct a as (rn', (A', e')). 
+simpl in H. destruct H; try(inversion H; subst);
+simpl; eauto.
+Qed.
+
+Lemma In_getVRAe rn A A_ e e_ vrs {HRn: NoDupRn vrs}: 
+       In (rn, (A, e)) vrs -> getVRAe (rn, (A_, e_)) vrs = (rn, (A, e)).
+Proof. intro H. induction vrs.
+- simpl in H. destruct H.
+- destruct a as (rn', (A', e')). 
+simpl in H. destruct H.
++ simpl. inversion H; subst. 
+rewrite stringBEF.eqb_refl. reflexivity.
++ simpl. inversion HRn; subst.
+destruct (stringDecF.eqb rn' rn) eqn: Hrnrn'.
+++ rewrite stringDecF.eqb_eq in Hrnrn'.
+rewrite InRn_In in H2.
+rewrite <- dist_not_exists in H2.
+specialize H2 with A.
+rewrite <- dist_not_exists in H2.
+specialize H2 with e. 
+rewrite Hrnrn' in H2. contradiction.
+++ eauto.
+Qed.
+
+Lemma InVR_findVR rn A A_ e e_ S {HRn: NoDupRn (fst S)}: 
+       InVR (rn, (A, e)) S -> findVR (rn, (A_, e_)) S = (rn, (A, e)).
+Proof. intro H. inversion H; subst.
+unfold findVR. simpl. destruct H0.
+apply In_getVRAe with (A_:=A_) (e_:=e_) in H0 .
+unfold getr in H0.
+simpl in H0. rewrite H0.
+unfold getf in H1. 
+simpl in H1. unfold getr.
+unfold getvs. unfold getf.
+simpl. rewrite H1. reflexivity.
+assumption. Qed.
+ 
+
+(* Correctness of vtypeImp_ function *)
+
+Lemma vtypeImp_correctness: forall e vs vq vt {HRn: NoDupRn (fst vs)}, 
+  vtypeImp e vs vq vt -> (vtypeImp_ e vs vq) = vt.
+Proof. 
+intros. induction H;
+  try(simpl vtypeImp_);
+  try(rewrite IHvtypeImp); 
+  try(rewrite (IHvtypeImp1 HRn); rewrite (IHvtypeImp2 HRn)); 
+  try(reflexivity); try(assumption);try(assumption). 
+- apply InVR_findVR with (A_:=A_) (e_:=e_') in H.
+rewrite H. unfold getvs. unfold getf.
+simpl. reflexivity. assumption.
+Qed.
+
 
 (*-----------------------vqtype--------------------------------*)
 
@@ -1142,18 +1274,18 @@ Inductive vtypeImp :fexp -> vquery -> vqtype -> Prop :=
   | Type of plain query
    ------------------------------------------------------------
 *)
-Fixpoint type' (q:query) : qtype :=
+Fixpoint type_ (q:query) : qtype :=
  match q with
  | (rel (rn, A)) => A
- | (proj A q)    => let A' := type' q in 
+ | (proj A q)    => let A' := type_ q in 
                       if subsump_qtype_bool A A' then A else nil 
- | (setU op q1 q2) => if equiv_qtype_bool (type' q1) (type' q2) then type' q1 else nil
- | (prod  q1 q2) => if (is_disjoint_bool (type' q1) (type' q2)) then 
-                          atts_union (type' q1) (type' q2) else nil
+ | (setU op q1 q2) => if equiv_qtype_bool (type_ q1) (type_ q2) then type_ q1 else nil
+ | (prod  q1 q2) => if (is_disjoint_bool (type_ q1) (type_ q2)) then 
+                          atts_union (type_ q1) (type_ q2) else nil
  | _ => nil
  end.
 
-(*------------------------------type'-------------------------*)
+(*------------------------------type'-----------------------------*)
 
 
 (* ------------------------------------------------------------
@@ -1161,10 +1293,10 @@ Fixpoint type' (q:query) : qtype :=
    ------------------------------------------------------------
 *)
 
-Definition vschema 
-
-Fixpoint ExplAnnotQwS (q: vqtype) ()
-
+Fixpoint ImptoExp (vq: vquery) (vs:vschema) : (vquery) :=
+ match vq with 
+ | _ => vq
+ end.
 
 
 End VRA_RA_encoding.
