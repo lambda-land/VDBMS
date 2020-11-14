@@ -322,7 +322,8 @@ Lemma configVQType_dist_vatts_union : forall A A' e c (HA: NoDupAtt A)
 (HA': NoDupAtt A'), configVQtype (vatts_union A A', e) c
 =a= atts_union (configVQtype (A, e) c) (configVQtype (A', e) c).
 Proof. 
-intros A A' e c. unfold configVQtype. destruct (E[[ e]] c) eqn: He.
+intros A A' e c. unfold configVQtype, configaVatts.
+destruct (E[[ e]] c) eqn: He.
 apply configVAttSet_dist_vatts_union.
 intros. simpl. reflexivity.
 Qed.
@@ -379,3 +380,55 @@ try(repeat(rewrite configVAttSet_push_annot));
 simpl; simpl configVQtype; try(rewrite He, He');
 try(eauto).  
 Qed. 
+
+Lemma vatts_inter_equiv A A' B B' (HA: NoDupAtt A) (HA': NoDupAtt A')
+(HB: NoDupAtt B) (HB': NoDupAtt B'): A =va= A' ->
+B =va= B' ->
+vatts_inter A B =va= vatts_inter A' B'. 
+Proof. intros H1 H2.
+unfold equiv_vatts in H1.
+unfold equiv_vatts in H2.
+unfold equiv_vatts. intro c.
+repeat(rewrite configVAttSet_dist_vatts_inter).
+apply set_inter_equiv. all: try(assumption);
+try (apply (NoDupAtt_NoDup_config); assumption).
+apply H1. apply H2. Qed.
+
+Lemma vqtype_inter_vq_equiv A A' B B' (HA: NoDupAtt (fst A)) 
+(HA': NoDupAtt (fst A'))
+(HB: NoDupAtt (fst B)) (HB': NoDupAtt (fst B')): A =T= A' ->
+B =T= B' ->
+vqtype_inter_vq A B =T= vqtype_inter_vq A' B'. 
+Proof. intros HAt HBt. unfold equiv_vqtype in HAt. destruct HAt.
+unfold equiv_vqtype in HBt. destruct HBt. 
+unfold equiv_vqtype, vqtype_union_vq.
+simpl. split. apply vatts_inter_equiv. all :(try assumption).
+unfold equivE. intro. simpl. rewrite H0, H2. reflexivity. Qed.
+
+Lemma vatts_union_equiv A A' B B' (HA: NoDupAtt A) (HA': NoDupAtt A')
+(HB: NoDupAtt B) (HB': NoDupAtt B'): A =va= A' ->
+B =va= B' ->
+vatts_union A B =va= vatts_union A' B'. 
+Proof. intros H1 H2.
+unfold equiv_vatts in H1.
+unfold equiv_vatts in H2.
+unfold equiv_vatts. intro c.
+repeat(rewrite configVAttSet_dist_vatts_union).
+apply set_union_equiv. all: try(assumption);
+try (apply (NoDupAtt_NoDup_config); assumption).
+apply H1. apply H2. Qed.
+
+Lemma vqtype_union_vq_equiv A A' B B' (HA: NoDupAtt (fst A)) 
+(HA': NoDupAtt (fst A'))
+(HB: NoDupAtt (fst B)) (HB': NoDupAtt (fst B')): A =T= A' ->
+B =T= B' ->
+vqtype_union_vq A B =T= vqtype_union_vq A' B'. 
+Proof. intros HAt HBt. unfold equiv_vqtype in HAt. destruct HAt.
+unfold equiv_vqtype in HBt. destruct HBt. 
+unfold equiv_vqtype, vqtype_union_vq.
+simpl. split. apply vatts_union_equiv. all :(try assumption).
+unfold equivE. intro. simpl. rewrite H0, H2. reflexivity. Qed.
+ 
+
+
+

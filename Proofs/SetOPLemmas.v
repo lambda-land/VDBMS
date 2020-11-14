@@ -4,6 +4,13 @@ Set Warnings "-notation-overridden,-parsing".
 
 Load AttOPVatt.
 
+(* Push_annot vatts_inter *)
+
+(*Lemma dist_push_annot_vatts_inter A B e:
+vatts_inter (push_annot A e) (push_annot B e)
+= push_annot (vatts_inter A B) e.
+Proof. Admitted.*)
+
 (* -- In set_remove  -- *)
 (*Lemma notIn_set_remove_eq a l :
    ~ In a l -> set_remove string_eq_dec a l = l.
@@ -23,7 +30,7 @@ Lemma set_remove_config: forall a A c (H: NoDupAtt A),
       = configVAttSet (removeAtt a A) c.
 Proof. intros a A c.
 induction A; intro H.
-- simpl. reflexivity.
+ simpl. reflexivity.
 - inversion H; subst. simpl.
   destruct (E[[ e]] c) eqn:He.
   + simpl. destruct (string_eq_dec a a1).
@@ -365,6 +372,18 @@ rewrite not_or_and_not in H.
 exact H.
 Qed.
 
+
+Lemma notInAtt_vatts_inter a A B: 
+~ InAtt a A -> ~ InAtt a (vatts_inter A B).
+Proof. apply vatts_inter_ind. 
+- intros. auto.
+-  intros. apply H. simpl in H0.
+rewrite not_or_and_not in H0. destruct H0. auto.
+- intros. simpl. simpl in H0.
+rewrite not_or_and_not in H0. 
+rewrite not_or_and_not. destruct H0. split.
+all: auto. Qed.
+
 Lemma set_add_equiv: forall a A A',
 A=a=A' -> set_add string_eq_dec a A =a= set_add string_eq_dec a A'.
 Proof. intros a A A'.
@@ -449,6 +468,7 @@ try(apply (count_occ_set_inter_In string_eq_dec _ HB HB') in i);
 try(apply (count_occ_set_inter_not_In string_eq_dec _ HB HB') in i);
 rewrite i, j; reflexivity.
 Qed.
+
 
 Lemma is_disjoint_bool_equiv A A' B B' (HA: NoDup A) (HA': NoDup A')
 (HB: NoDup B) (HB': NoDup B'):
@@ -735,7 +755,48 @@ Qed.
 Lemma vatts_inter_nil_r : forall A, vatts_inter A [] = [].
 Proof. intro A. induction A as [|(a, e)]. reflexivity.
        rewrite vatts_inter_equation. simpl.  
-       assumption. Qed.
+       assumption. Qed. 
 
 Lemma vatts_inter_nil_l : forall A, vatts_inter [] A = [].
 Proof. intros. rewrite vatts_inter_equation. simpl. reflexivity. Qed.
+
+Lemma vatts_inter_notIn A B x ex: ~InAtt x A -> 
+ vatts_inter A (ae x ex::B) = vatts_inter A B.
+Proof. induction A as [|(a, e)].
+- intros. rewrite vatts_inter_nil_l. reflexivity.
+- intros. simpl. 
+rewrite vatts_inter_equation. symmetry.
+rewrite vatts_inter_equation. symmetry. simpl. 
+unfold eqbAtt. simpl. simpl in H.
+rewrite not_or_and_not in H.
+destruct H.
+simpl. destruct (string_beq a x) eqn:Hxa.
+ rewrite stringDecF.eqb_eq in Hxa.
+contradiction. simpl. destruct (existsbAtt a B).
+rewrite IHA. Search extract_e.
+rewrite simpl_extract_neq. reflexivity.
+all: (try eauto). Qed. 
+
+Lemma vatts_inter_pres : forall A (H: NoDupAtt A), vatts_inter A A =va= A.
+Proof. intro A. induction A as [|(a, e)]. reflexivity.
+intro H.
+inversion H; subst. 
+rewrite vatts_inter_equation. 
+ simpl. unfold eqbAtt. simpl.
+rewrite stringBEF.eqb_refl. simpl.
+rewrite simpl_extract_eq. apply notInAtt_extract in H2 as H2e.
+rewrite H2e.  eapply vatts_inter_notIn in H2.
+rewrite H2. unfold equiv_vatts. intro c.
+unfold configVAttSet; fold configVAttSet.
+simpl. 
+rewrite orb_false_r.
+destruct (E[[ e]]c); simpl. 
+apply cons_equiv_atts. unfold equiv_vatts in IHA.
+all: apply (IHA H4).
+Qed.
+
+
+
+
+
+

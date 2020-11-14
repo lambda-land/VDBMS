@@ -199,7 +199,6 @@ Proof.
     assumption.
   Qed.
 
-
 Lemma or_any_true : forall e1 e2 c, 
          ((E[[ e1]] c) || (E[[ e2]] c)) = true
             -> (E[[ e1 \/(F) e2]] c) = true.

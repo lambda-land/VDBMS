@@ -140,13 +140,13 @@ Qed.
 
 (* -----------------------------------------------------
   | Relation-E inverse
-  | e |- vq : A'^e' ->
+  | e |= vq : A'^e' ->
   |   ~sat (e' /\ (~e)) (= e' -> e)
   | Type annotation e' is more specific than context e.
    -----------------------------------------------------
 *)
 Theorem context_type_rel : forall e S vq A' e',
-       vtype e S vq (A', e') -> 
+       { e , S |= vq | (A', e') } -> 
            ~ sat (  e' /\(F) (~(F) (e)) ).
 Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
        - intros. inversion H; subst. assumption. rewrite not_sat_not_prop. 
@@ -155,7 +155,8 @@ Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
        - intros. inversion H; subst.
        - intros. inversion H; subst.
          rewrite not_sat_not_prop. rewrite <- sat_taut_comp.
-         intros. assumption.
+         intros. simpl in H0. 
+         apply andb_prop in H0. destruct H0. assumption.
        - intros. inversion H; subst. rewrite not_sat_not_prop. 
          unfold not_sat. intros.
          destruct (E[[ e1]] c) eqn:E1.
@@ -183,6 +184,7 @@ Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
          rewrite <- sat_taut_comp in H7.
          specialize H7 with c. auto.
        - intros. inversion H; subst. apply IHvq1 in H6. assumption.
+       - intros. inversion H; subst.
 Qed. 
 
 
@@ -203,10 +205,11 @@ for Variational database and
 
 *)
 
+
 Theorem variation_preservation : forall e S vq A, 
-       vtype e S vq A ->
+       { e , S |= vq | A } ->
        forall c, (E[[e]] c) = true ->
-           (type_ (configVQuery vq c)) =a= (configVQtype A c).
+           ||= (Q[[ vq]] c) =a= (AE[[ A]] c).
 Proof.
   intros. induction H.
   (* Relation - E *) (*get rid of this*)
@@ -227,25 +230,32 @@ Proof.
     rewrite not_sat_not_prop in H1. rewrite <- sat_taut_comp in H1. 
     rewrite H0. apply H1 in H0. rewrite H0. reflexivity.
  (* Project - E *)
- - unfold subsump_vqtype, configVQtype in H1. simpl in H1.
-   unfold configVQtype in IHvtype. simpl in IHvtype. 
-   unfold configVQtype. simpl.  
+ - unfold subsump_vqtype, configVQtype, configaVatts in H1. simpl in H1.
+   unfold configVQtype, configaVatts in IHvtype. simpl in IHvtype. 
+   unfold configVQtype, configaVatts. simpl.  
    destruct (E[[ e']] c) eqn: He'.
      ++ simpl. unfold subsump_qtype_bool. rewrite H0.
         specialize H1 with c. rewrite H0, He' in H1. 
-        destruct (sublist_bool (configVAttSet A c) (type' (configVQuery vq c))) eqn:Hsubl.
-        reflexivity. 
+        destruct (sublist_bool (configaVatts Q c) (type_ (configVQuery vq c))) eqn:Hsubl.
+        destruct Q as(Q', eq).
+        unfold configaVatts. rewrite andb_true_r. reflexivity. 
         apply IHvtype in H0. apply not_true_iff_false in Hsubl.
         rewrite <- (contrapositive_iff _ _ (sublist_bool_correct _ _)) 
         in Hsubl.
         rewrite equiv_sublist with (B':=configVAttSet A' c) in Hsubl.
-        contradiction. auto. 
+        rewrite andb_true_r in H1. destruct Q as(Q', eq).
+        unfold configaVatts in Hsubl. simpl in H1. contradiction. auto. 
      ++ (*rewrite IHvtype1. ->*)
         simpl. unfold subsump_qtype_bool. 
-        specialize H1 with c. rewrite H0, He' in H1. 
-        destruct (configVAttSet A c). rewrite H0. simpl. reflexivity.
+        
+        specialize H1 with c. rewrite H0, He', andb_true_r in H1. 
+        rewrite equiv_sublist with (B':=(||= (Q[[ vq]] c))) in H1.
+        rewrite <- sublist_bool_correct in H1. destruct Q as(Q', eq). 
+        unfold configaVatts. simpl in H1. rewrite H1, H0. simpl.
+        rewrite andb_true_r. reflexivity. symmetry. apply (IHvtype H0).
+        (*destruct (configaVatts Q c). rewrite H0. simpl. reflexivity.
         rewrite <- sublist_bool_correct in H1. simpl in H1.
-        discriminate H1.
+        discriminate H1.*)
  (* Choice - E *)
  - unfold vqtype_union. simpl fst. simpl snd.
    simpl in IHvtype1. simpl in IHvtype2. rewrite H0 in IHvtype1, IHvtype2.
@@ -267,16 +277,16 @@ Proof.
      rewrite <- sat_taut_comp_inv in H.
      specialize H with c. 
      simpl in H. rewrite H0, E' in H. simpl in H. 
-     unfold configVQtype at 1. 
+     unfold configVQtype, configaVatts at 1. 
      assert(Ihack2: forall e1 e2, (E[[  e1 /\(F) (e1 \/(F) e2)]] c) = (E[[ e1]] c)).
      { simpl. intros. apply absorption_andb. }
      rewrite Ihack2. rewrite H. rewrite atts_union_nil_l.  
      unfold configVQuery. rewrite E'. fold configVQuery. 
      destruct (configVQtype (A2, e2 /\(F) (e1 \/(F) e2)) c) eqn: D;
-     unfold configVQtype in D; try (unfold configVQtype);
+     unfold configVQtype, configaVatts in D; try (unfold configVQtype, configaVatts);
      simpl in D; rewrite H in D; try (simpl); try (rewrite H);
      try (simpl in D); try (simpl); try (rewrite andb_diag in D);try (rewrite andb_diag);
-     try (unfold configVQtype in IHvtype2); try (simpl in  IHvtype2).
+     try (unfold configVQtype, configaVatts in IHvtype2); try (simpl in  IHvtype2).
      try (rewrite D in IHvtype2); try (rewrite D);
      try (apply IHvtype2); try (reflexivity). all: try (reflexivity); eauto.
      apply NoDupAtt_NoDup_configVQ. eauto.
@@ -285,8 +295,8 @@ Proof.
     apply IHvtype2 in H0 as H02.
     apply IHvtype1 in H0 as H01.
     rewrite configVQType_dist_vatts_union.
-    repeat (rewrite configVQType_push_annot). Check absorption_andb.
-    unfold configVQtype. simpl. rewrite absorption_andb. rewrite orb_comm. 
+    repeat (rewrite configVQType_push_annot). 
+    unfold configVQtype, configaVatts. simpl. rewrite absorption_andb. rewrite orb_comm. 
     rewrite absorption_andb. 
     pose (NoDupAtt_NoDup_configVQ (A1, e1) c) as HA1VQ.
     simpl fst in HA1VQ. pose (NoDupAtt_NoDup_configVQ (A2, e2) c) as HA2VQ.
@@ -332,7 +342,7 @@ Proof.
      try (apply (NoDup_equiv_atts IHvtype2'); destruct (E[[ e2]] c); 
          [apply (NoDupAtt_NoDup_config c HA2) | apply NoDup_nil]).
      (*<-*)
-     unfold configVQtype. simpl. 
+     unfold configVQtype, configaVatts. simpl. 
      destruct H2. simpl in H2. simpl in H3. unfold equiv_vatts in H2.
      unfold equivE in H3. (*rewrite <- H2.*) rewrite <- H3. 
     

@@ -489,6 +489,8 @@ Fixpoint configVAttSet (vA : vatts) (c : config) : atts :=
                              else (           configVAttSet vas c )
   end.
 
+Notation "A[[ vA ]] c" := (configVAttSet vA c) (at level 70).
+
 Lemma In_config_true: forall a e A c, In (ae a e) A ->
            (E[[ e]]c) = true -> In a (configVAttSet A c).
 Proof. intros. induction A. 
@@ -578,7 +580,7 @@ Definition relS : Type := (r * atts) % type.
 (* Variational Relation Schema - annotated set of variational attributes with a name *)
 Definition vrelS : Type := (r * (vatts * fexp) ) %type. (*assuming always annotated; could've used option*)
 
-(* Variational Schema *)
+(* Variational Schema (Implicit encoding) *)
 Definition vschema : Type := ((set vrelS) * fexp) %type.
 
 Definition getr  (vr:vrelS) : r     := fst vr. 
@@ -589,6 +591,20 @@ Definition getf  (vr:vrelS) : fexp  := snd (snd vr).
 Definition getSvrelS (vs:vschema) : (set vrelS) := fst vs.
 Definition getSf  (vs:vschema) : fexp  := snd vs.
 
+
+(* Configuration Variational Relation R[]c *)
+Definition configVRelS (vr : vrelS) (c : config) : relS := if semE (snd (snd vr)) c
+                                                         then  (fst vr, (configVAttSet (fst (snd vr)) c)) 
+                                                           else  (fst vr, nil).
+Notation "R[[ vr ]] c" := (configVRelS vr c) (at level 70).
+
+(** ---------------------------relS-------------------------- **)
+
+(** ------------------------------------------------------------
+  Properties/ Function defined on vrelS vschema (Implicit encoding)
+---------------------------------------------------------------*)
+
+(* InVR InRn NoDupRn findVR*)
 Definition InVR (vr:vrelS) (vs:vschema) : Prop := 
 let rn := getr vr in 
  let vas := getvs vr in 
@@ -607,25 +623,18 @@ Inductive NoDupRn : list vrelS -> Prop :=
                             -> NoDupRn ((rn, (A, e))::l).
 
 
-Fixpoint getVRAe (vr:vrelS) (vrs:set vrelS) : vrelS := 
+Fixpoint getVRAe (rn : string) (vrs:set vrelS) : vrelS := 
   match vrs with 
- | nil                 => (fst vr, (nil, litB false))
- |(rn, (A, e)) :: vrs' => if stringDecF.eqb rn (fst vr) 
-                           then (rn, (A, e))
-                            else getVRAe vr vrs'
+ | nil                 => (rn, (nil, litB false))
+ |(rn_, (A, e)) :: vrs' => if stringDecF.eqb rn_ rn
+                           then (rn_, (A, e))
+                            else getVRAe rn vrs'
  end.
 
-Definition findVR (vr:vrelS) (vs:vschema) : vrelS := 
-   let vr' := getVRAe vr (fst vs) in  (getr vr', (getvs vr', getf vr' /\(F) snd vs)).
+Definition findVR (rn : string) (vs:vschema) : vrelS := 
+   let vr' := getVRAe rn (fst vs) in  (getr vr', (getvs vr', getf vr' /\(F) snd vs)).
 
 
-(* Configuration Variational Relation R[]c *)
-Definition configVRelS (vr : vrelS) (c : config) : relS := if semE (snd (snd vr)) c
-                                                         then  (fst vr, (configVAttSet (fst (snd vr)) c)) 
-                                                           else  (fst vr, nil).
-
-
-(** ---------------------------relS-------------------------- **)
 
 (** ------------------------------------------------------------
   Condition(theta) 
@@ -667,6 +676,15 @@ Fixpoint configVCond (vc : vcond) (c : config) : cond :=
 
 (** -----------------------cond vcond------------------------ **)
 
+(* Variaitonal Query Type *)
+Definition avatts : Type := (vatts * fexp) %type. (*assuming always annotated; could've used option*)
+
+(* Configuration Variational Query Type T[]c *)
+Definition configaVatts (vqt : avatts) (c : config) : atts := 
+      match vqt with 
+      |(V, e) => if semE e c then  configVAttSet V c else  nil
+      end.
+
 (** -------------------------------------------------------
   Query 
 -----------------------------------------------------------*)
@@ -676,33 +694,38 @@ Inductive setop : Type := union | inter.
 (* Plain Query*)
 Inductive query : Type :=
   | rel   : relS    -> query
-  | sel   : cond    -> query -> query 
+  (*| sel   : cond    -> query -> query *)
   | proj  : atts    -> query -> query 
-  | join  : cond    -> query -> query -> query 
+  (*| join  : cond    -> query -> query -> query *)
   | prod  : query   -> query -> query 
-  | setU  : setop   -> query -> query -> query.
+  | setU  : setop   -> query -> query -> query
+  (*| empty : query*).
 
 (* Variaitonal Query *)
 Inductive vquery : Type :=
   | rel_v   : vrelS    -> vquery
-  | sel_v   : vcond    -> vquery -> vquery 
-  | proj_v  : vatts    -> vquery -> vquery 
+  (*| sel_v   : vcond    -> vquery -> vquery *)
+  | proj_v  : avatts   -> vquery -> vquery 
   | chcQ    : fexp     -> vquery -> vquery -> vquery
-  | join_v  : vcond    -> vquery -> vquery -> vquery 
+  (*| join_v  : vcond    -> vquery -> vquery -> vquery *)
   | prod_v  : vquery   -> vquery -> vquery 
-  | setU_v  : setop    -> vquery -> vquery -> vquery.
+  | setU_v  : setop    -> vquery -> vquery -> vquery
+  (*| empty_v : vquery*).
 
 (* Configuration Variational Query Q[]c *)
 Fixpoint configVQuery (vq : vquery) (c : config) : query :=
   match vq with
-  | rel_v  vr          => rel (configVRelS vr c)
-  | sel_v  vc  vq      => sel (configVCond vc c) (configVQuery vq c)
-  | proj_v vatts vq    => proj (configVAttSet vatts c) (configVQuery vq c)
-  | chcQ e vq1 vq2     => if semE e c then configVQuery vq1 c else configVQuery vq2 c
-  | join_v vc  vq1 vq2 => join (configVCond vc c) (configVQuery vq1 c) (configVQuery vq2 c)
-  | prod_v vq1 vq2     => prod (configVQuery vq1 c) (configVQuery vq2 c) 
+  | rel_v  vr            => rel (configVRelS vr c)
+  (*| sel_v  vc  vq        => sel (configVCond vc c) (configVQuery vq c)*)
+  | proj_v avatts vq     => proj (configaVatts avatts c) (configVQuery vq c)
+  | chcQ e vq1 vq2       => if semE e c then configVQuery vq1 c else configVQuery vq2 c
+  (*| join_v vc  vq1 vq2   => join (configVCond vc c) (configVQuery vq1 c) (configVQuery vq2 c)*)
+  | prod_v vq1 vq2       => prod (configVQuery vq1 c) (configVQuery vq2 c) 
   | setU_v setop vq1 vq2 => setU setop (configVQuery vq1 c) (configVQuery vq2 c) 
+  (*| empty_v              => empty*)
   end.
+
+Notation "Q[[ vq ]] c" := (configVQuery vq c) (at level 70).
 
 (** -----------------------query vquery------------------------ **)
 
@@ -714,13 +737,15 @@ Fixpoint configVQuery (vq : vquery) (c : config) : query :=
 Definition qtype  : Type := (atts) %type.
 
 (* Variaitonal Query Type *)
-Definition vqtype : Type := (vatts * fexp) %type. (*assuming always annotated; could've used option*)
+Definition vqtype : Type := avatts. (*(vatts * fexp) %type.*) (*assuming always annotated; could've used option*)
 
 (* Configuration Variational Query Type T[]c *)
-Definition configVQtype (vqt : vqtype) (c : config) : qtype := 
-      match vqt with 
+Definition configVQtype (vqt : vqtype) (c : config) : qtype := configaVatts vqt c.
+      (*match vqt with 
       |(V, e) => if semE e c then  configVAttSet V c else  nil
-      end.
+      end.*)
+
+Notation "AE[[ vqt ]] c" := (configVQtype vqt c) (at level 70).
 
 Lemma configVQtype_nil: forall e c, (configVQtype ([], e) c) = [].
 Proof. intros e c. simpl. destruct (E[[ e]] c); reflexivity. Qed.
@@ -752,7 +777,6 @@ Fixpoint sublist_bool (A A': list string): bool :=
 Definition sublist (A A': list string):= forall x, (In x A -> In x A') /\ 
            (count_occ string_eq_dec A x <= count_occ string_eq_dec A' x).
 
-
 (* Subsumption of Plain Set (Query Type) *)
 Definition subsump_qtype_bool (A A': qtype) := sublist_bool A A'.
 
@@ -760,8 +784,8 @@ Definition subsump_qtype_bool (A A': qtype) := sublist_bool A A'.
 Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c, 
     sublist (configVQtype X c) (configVQtype X' c).
 
-Definition subsumpImp_vatts (A A':vatts) :Prop := forall x A A',
-exists e, In (ae x e) A -> (exists e', (In (ae x e') A') /\ sat(e /\(F) e')).
+Definition subsumpImp_vatts (A A': vatts) :Prop := forall x e A A',
+In (ae x e) A -> (exists e', (In (ae x e') A') /\ sat(e /\(F) e')).
 
 (*----------------------subsump--------------------------------*)
 
@@ -993,6 +1017,8 @@ Fixpoint push_annot (A: vatts) (m: fexp) : (vatts):=
   | ae x e :: xs => (ae x (e /\(F) m)) :: push_annot xs m
   end.
 
+Definition avatts_vatts (X:avatts) : vatts := push_annot (fst X) (snd X).
+
 Lemma fold_push_annot: forall x e xs m, 
 (ae x (e /\(F) m)) :: push_annot xs m = push_annot ((ae x e) :: xs) m.
 Proof. auto. Qed. 
@@ -1017,6 +1043,9 @@ Proof. intros. induction A.
           + rewrite andb_false_r. reflexivity.
 Qed.
 
+Definition subsumpImp_vqtype ( X X': vqtype) :Prop := 
+subsumpImp_vatts (avatts_vatts X) (avatts_vatts X').
+
 (*------------------------push_annot---------------------------*)
 
 (** ------------------------------------------------------------
@@ -1035,13 +1064,16 @@ Definition vatts_union (A A': vatts) : vatts :=
 Definition vqtype_union (Q Q': vqtype) : vatts := 
      vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). 
 
+Definition vqtype_union_vq (Q Q': vqtype) : vqtype := 
+     (vatts_union (fst Q) (fst Q'), (snd Q) \/(F) (snd Q')).
+
 (*------------------------------------------------------------------------------*)
 (* Plain Attr List *)
 Definition atts_inter (A A': atts) : atts := 
    set_inter string_eq_dec A A'.
 
 (* Variational Attr List *)
-(* v w must be NoDupAtt*)
+(* NoDupAtt A -> NoDupAtt (vatts_inter A A') *)
 Function vatts_inter (A A' : list vatt) {measure List.length A} : list vatt :=
    match A with 
    | nil          => nil
@@ -1058,9 +1090,11 @@ Defined.
     set_inter vatt_eq_dec A A'.*)
 
 (* Variational Query Type*)
-(* Variational Query Type*)
 Definition vqtype_inter (Q Q': vqtype) : vatts := 
      vatts_inter (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')).
+
+Definition vqtype_inter_vq (Q Q': vqtype) : vqtype := 
+     (vatts_inter (fst Q) (fst Q'), (snd Q) /\(F) (snd Q')).
 
 (* Check whether sets are disjoint - A intersect A' = {}*)
 Definition is_disjoint_bool (A A': atts) : bool :=
@@ -1073,11 +1107,36 @@ Definition is_disjoint_bool (A A': atts) : bool :=
 (*--------------------Set Operation End ---------------------------*)
 
 
+(* ---------------------------------------------------------------
+  | Schema property NODupAttRs NoDupAttvQ
+   ---------------------------------------------------------------
+*)
+
+Definition NODupAttRs (vs:vschema) : Prop:=
+forall vr, InVR vr vs -> NoDupAtt (getvs vr).
+
+Inductive NoDupAttvQ: vquery -> Prop :=
+  | NoDupAttvQ_proj_v : forall Q vq, NoDupAtt (fst Q) -> NoDupAttvQ vq -> 
+                                                NoDupAttvQ (proj_v Q vq)
+  | NoDupAttvQ_rel_v : forall rn A e, NoDupAttvQ (rel_v (rn, (A, e)))
+  | NoDupAttvQ_chcQ : forall e' vq1 vq2, NoDupAttvQ vq1 ->
+                             NoDupAttvQ vq2 -> NoDupAttvQ (chcQ e' vq1 vq2)
+  | NoDupAttvQ_prod_v : forall vq1 vq2, NoDupAttvQ vq1 ->
+                             NoDupAttvQ vq2 -> NoDupAttvQ (prod_v vq1 vq2)
+  | NoDupAttvQ_setU_v : forall op vq1 vq2, NoDupAttvQ vq1 ->
+                             NoDupAttvQ vq2 -> NoDupAttvQ (setU_v op vq1 vq2).
+
+(*--------------------Schema Property End ---------------------------*)
+
 
 (* ---------------------------------------------------------------
   | Type of (Explicit |= ) variational query
    ---------------------------------------------------------------
 *)
+
+Definition addannot (Q:vqtype) (e:fexp): vqtype := (fst Q, (snd Q) /\(F) e).
+Notation " Q ^^ e " := (addannot Q e) (at level 70). 
+
 
 Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
   (*  -- intro LESS specific context --
@@ -1099,10 +1158,10 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
        ~ sat (  e    /\(F)   (~(F) (e')) ) ->
        vtype e S (rel_v (rn, (A, e' ))) (A, e)
   (*   -- PROJECT-E --  *)
-  | Project_vE: forall e S vq e' A' {HA': NoDupAtt A'} A {HA: NoDupAtt A},
+  | Project_vE: forall e S vq e' A' {HA': NoDupAtt A'} Q {HA: NoDupAtt (fst Q)},
        vtype e S vq (A', e') -> 
-       subsump_vqtype (A, e) (A', e') ->
-       vtype e S (proj_v A vq) (A, e)
+       subsump_vqtype (Q^^e) (A', e') ->
+       vtype e S (proj_v Q vq) (Q^^e)
   (*  -- CHOICE-E --  *)
   | Choice_vE: forall e S e' vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2,
        vtype (e /\(F) e') S vq1 (A1, e1) ->
@@ -1128,6 +1187,17 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtype e S vq (A, e') ->
        vtype e S (sel_v c vq) (A, e'). *) 
 
+Notation "{ e , S |= vq | vt }" := (vtype e S vq vt) (e at level 200).
+
+(*Definition vs : vschema := (nil, litB false).
+Definition vt : vqtype := (nil, litB false).
+
+
+
+Check ({(litB false) , vs |= empty_v | vt }).*)
+
+
+
 (*-----------------------Explicit vqtype--------------------------------*)
 
 
@@ -1137,36 +1207,47 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
 *)
 
 Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
+  (*| Relation_vE_imp_empty : forall S (HS:NoDupRn (fst S)) rn A_ A' {HA: NoDupAtt A'} e_ e',
+       InVR (rn, (A', e')) S ->
+       vtypeImp (litB true) S (rel_v (rn, (A_, e_))) (A', e')*)
   (*   -- intro MORE specific context --
     empty |- rn : A^e'  ~sat(e /\ (~e'))
     ------------------------------------  RELATION-E 
                e  |- rn : A^e
   *)
-  | Relation_vE_imp : forall e S rn A A_ {HA: NoDupAtt A} e' e_',
-       InVR (rn, (A, e')) S ->
+  | Relation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} rn A_ A' 
+                                 {HndpA': NoDupAtt A'} e_ e',
+       InVR (rn, (A', e')) S ->
        sat (e /\(F) e') ->
-       vtypeImp e S (rel_v (rn, (A_, e_'))) (A, (e /\(F) e')) (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
+       vtypeImp e S (rel_v (rn, (A_, e_))) (A', (e /\(F) e')) (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
   (*   -- PROJECT-E --  *)
-  | Project_vE_imp: forall e S vq e' A' {HA': NoDupAtt A'} A {HA: NoDupAtt A},
+  | Project_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} vq {HndpvQ: NoDupAttvQ vq} e' A' 
+                               {HndpAA': NoDupAtt A'} Q {HndpQ: NoDupAtt (fst Q)},
        vtypeImp e S vq (A', e') -> 
-       subsumpImp_vatts A  (push_annot A' e') ->
-       vtypeImp e S (proj_v A vq) (vatts_inter A A', e') 
+       subsumpImp_vqtype Q (A', e') ->
+       vtypeImp e S (proj_v Q vq) (vqtype_inter_vq Q (A', e'))
   (*  -- CHOICE-E --  *)
-  | Choice_vE_imp: forall e e' S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2,
+  | Choice_vE_imp: forall e e' S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                             vq1 {HndpvQ1: NoDupAttvQ vq1} vq2 {HndpvQ2: NoDupAttvQ vq2}
+                              A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2,
        vtypeImp (e /\(F) e') S vq1 (A1, e1) ->
        vtypeImp (e /\(F) (~(F) e')) S vq2 (A2, e2) ->
        vtypeImp e S (chcQ e' vq1 vq2)
-        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
+        (vqtype_union_vq (A1, e1) (A2, e2))
             (*e1 and e2 can't be simultaneously true.*)
   (*  -- PRODUCT-E --  *)
-  | Product_vE_imp: forall e S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 ,
+  | Product_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                           vq1 {HndpvQ1: NoDupAttvQ vq1} vq2 {HndpvQ2: NoDupAttvQ vq2}
+                            A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2 ,
        vtypeImp e  S vq1 (A1, e1) ->
        vtypeImp e  S vq2 (A2, e2) ->
        vqtype_inter (A1, e1) (A2, e2) = nil ->
        vtypeImp e  S (prod_v vq1 vq2)
-        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
+        (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
-  | SetOp_vE_imp: forall e S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 op,
+  | SetOp_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                         vq1 {HndpvQ1: NoDupAttvQ vq1} vq2 {HndpvQ2: NoDupAttvQ vq2}
+                          A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2 op,
        vtypeImp e S vq1 (A1, e1) ->
        vtypeImp e S vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
@@ -1176,97 +1257,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtype e S vq (A, e') ->
        vtype e S (sel_v c vq) (A, e'). *) 
 
-Fixpoint vtypeImp_ (e:fexp) (vs: vschema) (vq:vquery) : vqtype :=
- match vq with 
- | (rel_v (rn, (A_, e_'))) =>  let vr := (findVR (rn, (A_, e_')) vs) in
-           (getvs vr, (e /\(F) getf vr))
- | (proj_v A vq)     => 
-      let (A', e') := vtypeImp_ e vs vq in 
-        (vatts_inter A A', e') 
- | (chcQ e' vq1 vq2) => 
-      let  (A1, e1) := vtypeImp_ (e /\(F) e') vs vq1  in
-       let (A2, e2) := vtypeImp_ (e /\(F) (~(F) e')) vs vq2 in
-        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
- | (prod_v vq1 vq2) =>
-      let (A1, e1) := vtypeImp_ e  vs vq1 in
-       let (A2, e2) := vtypeImp_ e  vs vq2 in
-        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
- | (setU_v op vq1 vq2) =>
-       let (A1, e1) := vtypeImp_ e vs vq1 in
-        let (A2, e2) := vtypeImp_ e vs vq2 in 
-         (A1, e1)
- | _ => (nil, litB false)
- end. 
-
-Lemma InRn_In:
-forall rn vrs, InRn rn vrs <-> exists A e, In (rn, (A, e)) vrs.
-Proof. intros. split. 
-- intro H. induction vrs. 
-+ simpl in H. destruct H.
-+ destruct a as (rn', (A', e')). 
-simpl in H. destruct H.
-++ rewrite H. exists A'. exists e'.
-simpl. eauto.
-++ apply IHvrs in H. destruct H as [A H].
-destruct H as [e H]. exists A. exists e.
-simpl. eauto.
-- intro H. destruct H as [A H].
-destruct H as [e H]. induction vrs. 
-+ simpl in H. destruct H.
-+ destruct a as (rn', (A', e')). 
-simpl in H. destruct H; try(inversion H; subst);
-simpl; eauto.
-Qed.
-
-Lemma In_getVRAe rn A A_ e e_ vrs {HRn: NoDupRn vrs}: 
-       In (rn, (A, e)) vrs -> getVRAe (rn, (A_, e_)) vrs = (rn, (A, e)).
-Proof. intro H. induction vrs.
-- simpl in H. destruct H.
-- destruct a as (rn', (A', e')). 
-simpl in H. destruct H.
-+ simpl. inversion H; subst. 
-rewrite stringBEF.eqb_refl. reflexivity.
-+ simpl. inversion HRn; subst.
-destruct (stringDecF.eqb rn' rn) eqn: Hrnrn'.
-++ rewrite stringDecF.eqb_eq in Hrnrn'.
-rewrite InRn_In in H2.
-rewrite <- dist_not_exists in H2.
-specialize H2 with A.
-rewrite <- dist_not_exists in H2.
-specialize H2 with e. 
-rewrite Hrnrn' in H2. contradiction.
-++ eauto.
-Qed.
-
-Lemma InVR_findVR rn A A_ e e_ S {HRn: NoDupRn (fst S)}: 
-       InVR (rn, (A, e)) S -> findVR (rn, (A_, e_)) S = (rn, (A, e)).
-Proof. intro H. inversion H; subst.
-unfold findVR. simpl. destruct H0.
-apply In_getVRAe with (A_:=A_) (e_:=e_) in H0 .
-unfold getr in H0.
-simpl in H0. rewrite H0.
-unfold getf in H1. 
-simpl in H1. unfold getr.
-unfold getvs. unfold getf.
-simpl. rewrite H1. reflexivity.
-assumption. Qed.
- 
-
-(* Correctness of vtypeImp_ function *)
-
-Lemma vtypeImp_correctness: forall e vs vq vt {HRn: NoDupRn (fst vs)}, 
-  vtypeImp e vs vq vt -> (vtypeImp_ e vs vq) = vt.
-Proof. 
-intros. induction H;
-  try(simpl vtypeImp_);
-  try(rewrite IHvtypeImp); 
-  try(rewrite (IHvtypeImp1 HRn); rewrite (IHvtypeImp2 HRn)); 
-  try(reflexivity); try(assumption);try(assumption). 
-- apply InVR_findVR with (A_:=A_) (e_:=e_') in H.
-rewrite H. unfold getvs. unfold getf.
-simpl. reflexivity. assumption.
-Qed.
-
+Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
 
 (*-----------------------vqtype--------------------------------*)
 
@@ -1282,21 +1273,14 @@ Fixpoint type_ (q:query) : qtype :=
  | (setU op q1 q2) => if equiv_qtype_bool (type_ q1) (type_ q2) then type_ q1 else nil
  | (prod  q1 q2) => if (is_disjoint_bool (type_ q1) (type_ q2)) then 
                           atts_union (type_ q1) (type_ q2) else nil
- | _ => nil
  end.
+
+Notation "||= q " := (type_ q) (at level 49).
 
 (*------------------------------type'-----------------------------*)
 
 
-(* ------------------------------------------------------------
-  | Explicitly Annotating Quaries
-   ------------------------------------------------------------
-*)
 
-Fixpoint ImptoExp (vq: vquery) (vs:vschema) : (vquery) :=
- match vq with 
- | _ => vq
- end.
 
 
 End VRA_RA_encoding.

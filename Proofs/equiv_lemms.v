@@ -12,6 +12,9 @@ Proof. intros. rewrite H. reflexivity. Qed.
 Lemma eq_equiv_vatts: forall A A', A = A' -> A =va= A'.
 Proof. intros. rewrite H. reflexivity. Qed.
 
+Lemma eq_equiv_vqtype: forall A A', A = A' -> A =T= A'.
+Proof. intros. rewrite H. reflexivity. Qed.
+
 Lemma cons_equiv_atts: forall a l1 l2, l1 =a= l2 -> (a::l1) =a= (a::l2).
 Proof. 
 intros. 
@@ -64,6 +67,7 @@ destruct (string_eq_dec y a); reflexivity.
 Qed.
 
 
+
 Lemma NoDup_equiv_atts l l': l =a= l' -> 
     (NoDup l <-> NoDup l').
 Proof. intro H. split;
@@ -73,6 +77,7 @@ rewrite (NoDup_count_occ string_eq_dec) in H1;
 rewrite (NoDup_count_occ string_eq_dec); intro x;
 specialize H0 with x; try (rewrite <- H0; apply H1); 
 try (rewrite H0; apply H1). Qed.
+
 
 
 (*Lemma removeAtt_equiv a A A':
@@ -137,6 +142,43 @@ destruct (string_eq_dec x x) as [Heq|Heq]; subst.
   in H. destruct H. simpl in H0. rewrite H0.
   reflexivity. 
 Qed.
+
+(*Lemma equiv_push_annot: forall A A' e e' , 
+     A =va= A' -> e =e= e' -> 
+     push_annot A e =va= push_annot A' e'.
+Proof. 
+intros. unfold equiv_vatts in H. 
+unfold equiv_vatts. 
+intro c; specialize H with c.
+induction A; destruct A'.
+- intro a.
+split. simpl. reflexivity.
+simpl. reflexivity.
+- unfold equiv_atts in H.
+intro a; specialize H with a.
+destruct H. simpl in H1.
+destruct v as (a_,e_).
+simpl in H. destruct (E[[ e_]] c) eqn:He_.
++ simpl in H1.
+destruct (string_eq_dec a_ a); subst.
+Search (0 = S _). apply O_S in H1.
+destruct H1.
+symmetry in H1. rewrite <- count_occ_not_In in H1.
+split. split; intro HIn.
+simpl in HIn. destruct HIn.
+simpl. rewrite H.
+simpl. right.
+simpl in HIn. rewrite He_ in HIn.
+destruct (E[[ e']] c) eqn:He'.
+simpl in HIn. destruct HIn. contradiction.
+ 
+
+
+destruct H;  
+[rewrite <- H  | rewrite H]; 
+[rewrite <- H0 | rewrite H0];
+apply H1.
+Qed.*)
 
 
 (*---------------------------equiv-----------------------------*)
