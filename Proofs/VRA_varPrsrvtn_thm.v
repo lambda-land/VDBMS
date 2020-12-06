@@ -128,11 +128,8 @@ intros A A'. generalize dependent A'. induction A.
          destruct H. apply set_mem_complete1 in Hsetmem.
          rewrite (count_occ_not_In string_eq_dec) in Hsetmem. 
          rewrite Hsetmem in H0. simpl in H0. destruct (string_eq_dec a a).
-         Lia.lia. contradiction.
+         Lia.lia. contradiction. 
 Qed.
-
-
-
 (** ------------equiv_bool correct ------------------------*)
 
 
@@ -149,10 +146,9 @@ Theorem context_type_rel : forall e S vq A' e',
        { e , S |= vq | (A', e') } -> 
            ~ sat (  e' /\(F) (~(F) (e)) ).
 Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
-       - intros. inversion H; subst. assumption. rewrite not_sat_not_prop. 
-          rewrite <- sat_taut_comp.
-          intros. assumption.
-       - intros. inversion H; subst.
+       - intros. inversion H; subst. (*assumption.*) rewrite not_sat_not_prop. 
+         rewrite <- sat_taut_comp.
+         intros. assumption.
        - intros. inversion H; subst.
          rewrite not_sat_not_prop. rewrite <- sat_taut_comp.
          intros. simpl in H0. 
@@ -172,7 +168,6 @@ Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
          rewrite <- sat_taut_comp_inv in H8. specialize H8 with c.
          apply H8. simpl. rewrite H0. simpl. reflexivity.
        - intros. inversion H; subst.
-       - intros. inversion H; subst.
          apply IHvq1 in H6. apply IHvq2 in H7. 
          rewrite not_sat_not_prop. rewrite <- sat_taut_comp.
          intros. simpl in H0.
@@ -184,7 +179,6 @@ Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
          rewrite <- sat_taut_comp in H7.
          specialize H7 with c. auto.
        - intros. inversion H; subst. apply IHvq1 in H6. assumption.
-       - intros. inversion H; subst.
 Qed. 
 
 
@@ -213,11 +207,11 @@ Theorem variation_preservation : forall e S vq A,
 Proof.
   intros. induction H.
   (* Relation - E *) (*get rid of this*)
-  - unfold configVQuery. unfold configVRelS. simpl. 
+  (*- unfold configVQuery. unfold configVRelS. simpl. 
     rewrite not_sat_not_prop in H1. rewrite <- sat_taut_comp in H1. 
     unfold configVQtype. simpl. destruct (E[[e']] c) eqn: HsemE.
     + reflexivity.
-    + reflexivity. 
+    + reflexivity. *)
   (* Relation - E *)
   (* S |= r : A^e -> type' (Q[[ r(A)^e]]c) =a= Qt[[ A^e]]c  
     |             -> type' (R[[ r(A)^e]]c) =a= if E[[ e]]c = true then A[[ A]]c else []
@@ -329,8 +323,8 @@ Proof.
  (* SetOp - E *)
  - simpl in IHvtype1. simpl in IHvtype2. simpl. 
    + simpl. (*rewrite IHvtype1. rewrite IHvtype2.->*) 
-     pose (NoDupAtt_NoDup_configVQ (A1, e1) c HA1) as HA1VQ. 
-     pose (NoDupAtt_NoDup_configVQ (A2, e2) c HA2) as HA2VQ. 
+     pose (NoDupAtt_NoDup_configVQ (A1, e1) c HndpAA1) as HA1VQ. 
+     pose (NoDupAtt_NoDup_configVQ (A2, e2) c HndpAA2) as HA2VQ. 
      apply IHvtype1 in H0 as IHvtype1'. clear IHvtype1.
      apply IHvtype2 in H0 as IHvtype2'. clear IHvtype2.
      rewrite (equiv_qtype_bool_equiv) with 
@@ -338,9 +332,9 @@ Proof.
      (B':= (configVQtype (A2, e2) c)).
      all: eauto;
      try (apply (NoDup_equiv_atts IHvtype1'); destruct (E[[ e1]] c); 
-         [apply (NoDupAtt_NoDup_config c HA1) | apply NoDup_nil]);
+         [apply (NoDupAtt_NoDup_config c HndpAA1) | apply NoDup_nil]);
      try (apply (NoDup_equiv_atts IHvtype2'); destruct (E[[ e2]] c); 
-         [apply (NoDupAtt_NoDup_config c HA2) | apply NoDup_nil]).
+         [apply (NoDupAtt_NoDup_config c HndpAA2) | apply NoDup_nil]).
      (*<-*)
      unfold configVQtype, configaVatts. simpl. 
      destruct H2. simpl in H2. simpl in H3. unfold equiv_vatts in H2.
@@ -351,8 +345,8 @@ Proof.
         (B := (configVAttSet A1 c)) 
         (B':= (configVAttSet A1 c)).
         rewrite (equiv_qtype_bool_refl (configVAttSet A1 c)). apply IHvtype1'. 
-        all: try (apply (NoDupAtt_NoDup_config c HA1));
-             try (apply (NoDupAtt_NoDup_config c HA2));
+        all: try (apply (NoDupAtt_NoDup_config c HndpAA1));
+             try (apply (NoDupAtt_NoDup_config c HndpAA2));
              try (symmetry; apply (H2 c)); try(reflexivity).
      ++ simpl. apply IHvtype1'. 
 Qed.

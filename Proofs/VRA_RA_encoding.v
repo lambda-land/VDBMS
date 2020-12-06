@@ -605,6 +605,14 @@ Notation "R[[ vr ]] c" := (configVRelS vr c) (at level 70).
 ---------------------------------------------------------------*)
 
 (* InVR InRn NoDupRn findVR*)
+(* In [va:= (ae a ear)] [vr:= (Ar, er) := ({(a, ea)}, er)] *)
+Definition InVA (va:vatt) (vr:vrelS) : Prop := 
+ let a := fstVatt va in 
+  let ear := sndVatt va in 
+   let Ar := getvs vr in 
+     let er := getf vr in
+      exists ea, In (ae a ea) Ar /\ (ea /\(F) er) = ear.
+
 Definition InVR (vr:vrelS) (vs:vschema) : Prop := 
 let rn := getr vr in 
  let vas := getvs vr in 
@@ -749,6 +757,10 @@ Notation "AE[[ vqt ]] c" := (configVQtype vqt c) (at level 70).
 
 Lemma configVQtype_nil: forall e c, (configVQtype ([], e) c) = [].
 Proof. intros e c. simpl. destruct (E[[ e]] c); reflexivity. Qed.
+
+Definition getvs_vqt (X:vqtype) : vatts := fst X.
+Definition getf_vqt (X:vqtype) : fexp := snd X.
+
 (** ---------------------qtype vqtype---------------------- **)
 
 
@@ -774,7 +786,7 @@ Fixpoint sublist_bool (A A': list string): bool :=
 (* Also check count
    sublist [1; 1; 2] [1; 2] doesn't hold
 *)
-Definition sublist (A A': list string):= forall x, (In x A -> In x A') /\ 
+Definition sublist (A A': list string):= forall x, (In x A -> In x A') /\ (* In clause is redundant *)
            (count_occ string_eq_dec A x <= count_occ string_eq_dec A' x).
 
 (* Subsumption of Plain Set (Query Type) *)
@@ -784,8 +796,125 @@ Definition subsump_qtype_bool (A A': qtype) := sublist_bool A A'.
 Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c, 
     sublist (configVQtype X c) (configVQtype X' c).
 
-Definition subsumpImp_vatts (A A': vatts) :Prop := forall x e A A',
-In (ae x e) A -> (exists e', (In (ae x e') A') /\ sat(e /\(F) e')).
+(* current def (null is sublist): forall x e,
+(In (ae x e) A /\ (exists c, E[[e]]c = true) ) -> (exists e', (In (ae x e') A') /\  (~ sat (e /\(F) (~(F)(e')))) ).*)
+(* should be: forall x e,
+In (ae x e) A -> (exists e', (In (ae x e') A') /\  (~ sat (e /\(F) (~(F)(e')))) ). *)
+
+(*
+subsump_vatts_exp (<_e) : A <_e A' [need for proj_v A A']
+  If it entails forall c, [A]c to be sublist( <_a) of [A']c ... (1), where 
+sublist is defined as, forall x, count x [A]c <= count x [A']c [note: {} <_a {any}],
+it would be a reasonable choice as then, after configuration, proj [A]c [A']c, is a valid plain query in RA.
+  Therefore, forall (a,e), In (a, e) A we have two cases that would make [A]c valid configured sublist of [A']c.
+Case 1: ~ (sat e) 
+  [ a will never be in [A]c, any c. thus, we don't need a att-matching variational attribute in A'. 
+    i.e. It doesn't matter whether there exists e', In (a, e') A']
+Case 2: sat e -> exists e', In (a, e') A' /\ (e -> e'). (not true if A A' is not NoDupAtt)
+    Explanation: let A = {(a, e1) (a, e2) } and A' = {(a, e3, (a, e4)}
+                 For count a [A]c <= count a [A']c to hold,
+                 i.  e1 xor e2  -> ( e3 \/ e4 ) [ok if both]
+                 ii. e1 /\ e2 -> e3 /\ e4 [both has to be true]
+    For a single tuple, In (a, e1) A -> we don't need a single e' that is always true if e1 true i.e. e1 -> e'
+                          any one e' in A' being true when e1 is true is enough. 
+    Also, we need for all tuples with attribute a condition. if all of them is true, at least same number of e' needs to true in A'.
+    However, to make things easier we can assume A and A' is NoDupAtt which can be safely assumed in our VDBMS.
+    Then, e -> e' is sufficient. 
+*)
+(** ------------------------------
+Definition subsump_vatts_exp A A': forall (a, e), [In (a, e) A /\ (sat e)] -> exists e', [In (a, e') A' /\ (e -> e')].
+   where A A' is NoDupAtt. 
+================================= *)
+(**  Lemma subsump_vatts_correctness (NoDupAtt A)(NoDupAtt A'): 
+       subsump_vatts_exp A A' <-> sublist (configVAttSet A c) (configVAttSet A' c). *)
+
+(* [Note: forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ (e -> e'). is unreasonable/ not necessary/ over restriction, 
+      because if e is not sat, then, there is no reason to ask/check for attribute a in A' with some e'.] *)
+  
+(* Now if we restrict our A to only hold satisfiable tuples, then definition seems to get simplified into below [close to above]. 
+but it does NOT as definition then would hold for any not SatTuples A, potentially with few sat and few not_sat tuples. If none of 
+the tuples is sat, then it's alright. but if there are some sat, we need exists clause for those sat. i.e. we need to check each 
+tuple based on their satisfiability, if sat then need exists clause to be true otherwise not. An overall satiafiable clause doesn't
+attain that. *)
+
+(** ------------------------------
+Definition subsump_vatts_exp_Wrong A A' : Prop := SatTuples A -> forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ (e -> e').
+================================= *)
+
+(** why don't we need  SatTuples A' as well? ==> A' doesn't not need to be SatTuples (all sat) but to have sat e's (exists sat) i.e.
+exists e', [sat e' /\ In (a, e') A' /\ (e -> e')]. However, (e -> e' -> sat e') thus can remove sat e'*) 
+
+(** ------------------------------ 
+Definition subsump_vqtype_exp X X': forall (a, e), [In (a, e) (fst X) /\ sat (e/\snd X)]  -> exists e', In (a, e') X' /\ (e/\snd X -> e'/\snd X').
+   where (fst X) (fst X') is NoDupAtt.
+================================= *) 
+(**  Lemma subsump_vqtype_correctness (NoDupAtt (fst X))(NoDupAtt (fst X')): 
+                subsump_vqtype_exp X X' <-> sublist (configVQtype X c) (configVQtype X' c). *)
+
+(* SatATuples X := SatTuples (push_annot (fst X, snd X)).  [SatTuples (fst X) /\ Sat (snd X)] doesn't guarantee sat (e/\snd X). *)
+
+(* Similar reasoning gives us *)
+(** ------------------------------
+Definition subsump_vatts_imp A A' : forall (a, e), In (a, e) A /\ sat(e) -> exists e', In (a, e') A' /\ sat(e /\ e').
+       where A A' is NoDupAtt.
+==================================
+Definition subsump_vatts_imp_Wrong A A' [HA: SatTuples A] : forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ sat(e /\ e').
+---------------------------------- 
+Definition subsump_vqtype_imp X X' : forall (a, e), In (a, e) A /\ sat (e/\snd X)  -> exists e', In (a, e') A' /\ sat(e/\snd X /\ e'/\snd X').
+    where (fst X) (fst X') is NoDupAtt.
+================================= *)
+
+(* Lemma : sat (A /\ B) -> sat A /\ sat B. but not <- *)
+
+(*Definition subsump_vatts_exp (A A': vatts) :Prop := forall x e,
+In (ae x e) A /\ sat e  -> exists e', In (ae x e') A' /\  (~ sat (e /\(F) (~(F)(e')))).*)
+
+Definition subsump_vatts_exp (A A': vatts) :Prop := forall x e c,
+In (ae x e) A /\ ((E[[ e]]c) = true)  -> 
+       exists e', In (ae x e') A' /\  (E[[ e']]c) = true.
+
+
+(** A and A' has to be NoDupAtt *)
+Definition subsumpImp_vatts (A A': vatts) :Prop := 
+forall x e, In (ae x e) A (*/\ sat e*) -> exists e', In (ae x e') A'. (*/\ sat(e /\(F) e').*)
+(*In (ae x e) A -> (exists e', (In (ae x e') A') /\ sat(e /\(F) e')).*)
+
+(** (fst X) and (fst X') has to be NoDupAtt *)
+Definition subsumpImp_vqtype ( X X': vqtype) : Prop := 
+let (A, ea) := X in 
+  let (A', ea') := X' in 
+    forall x e, In (ae x e) A (*/\ sat (e /\(F) ea)*) -> 
+                       exists e', In (ae x e') A'. (* /\ sat (e /\(F) ea /\(F) e' /\(F) ea').*)
+(* subsumpImp_vatts (fst X) (fst X') /\ sat((snd X) /\(F) (snd X')). *)
+
+
+(*Lemma subsump_vatts_exp_ind A a ea A': subsump_vatts_exp A (ae a ea :: A') ->
+(forall x e, In (ae x e) A /\ sat e -> exists e', (ae x e') = (ae a ea) /\ sat(e /\(F) e'))
+    \/ subsump_vatts_exp A A'.
+Proof. intros H. 
+unfold subsump_vatts_exp in H. simpl in H. 
+rewrite and_distributes_over_or in H.*)
+
+
+Lemma subsumpImp_vatts_refl A: subsumpImp_vatts A A.
+Proof. unfold subsumpImp_vatts. intros x e H.
+exists e. auto. (*destruct H as [HIn Hsat]. split. 
+assumption. 
+unfold sat. simpl. unfold sat in Hsat. 
+destruct Hsat as [c Hsat]. exists c. 
+rewrite Hsat. auto.*)
+Qed.
+
+(* Wrong move: restrict Schema and query to have following assumption so that, if In (a, e) A then, sat e *)
+(* Definition SatTuples (A: vatts) : Prop := forall a e, In (ae a e) A -> sat e.
+
+Definition SatATuples (X: vqtype) : Prop := forall a e, In (ae a e) (fst X) -> sat (e /\(F) (snd X)).
+
+Lemma SatATuples_SatTuples: forall X, SatATuples X -> SatTuples (fst X).
+Proof. Admitted. *)
+
+(*  Relating subsumpExp with subsumpImp *)
+
 
 (*----------------------subsump--------------------------------*)
 
@@ -828,6 +957,7 @@ Infix "=t=" := equiv_qtype (at level 50) : type_scope.
 
 (* Variational Set (annotated-Var Query Type) Equivalence *)
 Definition equiv_vqtype : relation vqtype := 
+        (*fun X X' => forall c, configVQtype A c =a= configVAttSet A' c. *)
         fun X X' => (fst X) =va= (fst X') /\ (snd X) =e= (snd X').
 
 Infix "=T=" := equiv_vqtype (at level 50) : type_scope.
@@ -1043,8 +1173,8 @@ Proof. intros. induction A.
           + rewrite andb_false_r. reflexivity.
 Qed.
 
-Definition subsumpImp_vqtype ( X X': vqtype) :Prop := 
-subsumpImp_vatts (avatts_vatts X) (avatts_vatts X').
+(*Definition subsumpImp_vqtype ( X X': vqtype) :Prop := 
+subsumpImp_vatts (avatts_vatts X) (avatts_vatts X').*)
 
 (*------------------------push_annot---------------------------*)
 
@@ -1112,6 +1242,18 @@ Definition is_disjoint_bool (A A': atts) : bool :=
    ---------------------------------------------------------------
 *)
 
+Definition SatTuples (avs:avatts) : Prop:= 
+let A := fst avs in 
+  let e := snd avs in 
+    forall a ea, In (ae a ea) A -> sat (ea /\(F) e).
+
+Definition SatTuplesR (vr:vrelS) : Prop:= 
+let A := getvs vr in 
+  let e := getf vr in 
+    forall a ea, In (ae a ea) A -> sat (ea /\(F) e).
+
+Definition SatTuplesRs (vs:vschema) : Prop:= forall vr, InVR vr vs -> SatTuplesR vr. (* InVR vr vs -> vr includes (snd vs) *)
+
 Definition NODupAttRs (vs:vschema) : Prop:=
 forall vr, InVR vr vs -> NoDupAtt (getvs vr).
 
@@ -1144,40 +1286,49 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
     ------------------------------------ intro less specific context
                m  |= rn : A^e'
    *)
-  | Relation_vE_fm : forall e S rn A {HA: NoDupAtt A} e',
+  (*| Relation_vE_fm : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S}
+                           rn A {HA: NoDupAtt A} e',
         InVR (rn, (A, e')) S ->
         ~ sat (  e'    /\(F)   (~(F) (e)) ) ->
-       vtype e S (rel_v (rn, (A, e'))) (A, e') (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
+       vtype e S (rel_v (rn, (A, e'))) (A, e') *)(** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
   (*   -- intro MORE specific context --
     S`` |= rn : A^e'  ~sat(e /\ (~e'))
     ------------------------------------  RELATION-E 
                e  |= rn : A^e
    *)
-  | Relation_vE : forall e S rn A {HA: NoDupAtt A} e',
+  | Relation_vE : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                        rn A {HA: NoDupAtt A} e',
         InVR (rn, (A, e')) S ->
        ~ sat (  e    /\(F)   (~(F) (e')) ) ->
        vtype e S (rel_v (rn, (A, e' ))) (A, e)
   (*   -- PROJECT-E --  *)
-  | Project_vE: forall e S vq e' A' {HA': NoDupAtt A'} Q {HA: NoDupAtt (fst Q)},
+  | Project_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} vq {HndpvQ: NoDupAttvQ vq} e' A' 
+                           {HndpAA': NoDupAtt A'} Q {HndpQ: NoDupAtt (fst Q)},
        vtype e S vq (A', e') -> 
        subsump_vqtype (Q^^e) (A', e') ->
        vtype e S (proj_v Q vq) (Q^^e)
   (*  -- CHOICE-E --  *)
-  | Choice_vE: forall e S e' vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2,
+  | Choice_vE: forall e e' S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                              vq1 {HndpvQ1: NoDupAttvQ vq1} vq2 {HndpvQ2: NoDupAttvQ vq2} 
+                              A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2,
        vtype (e /\(F) e') S vq1 (A1, e1) ->
        vtype (e /\(F) (~(F) e')) S vq2 (A2, e2) ->
        vtype e S (chcQ e' vq1 vq2)
-        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
+        (vqtype_union_vq (A1, e1) (A2, e2))
             (*e1 and e2 can't be simultaneously true.*)
   (*  -- PRODUCT-E --  *)
-  | Product_vE: forall e S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 ,
+  | Product_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                           vq1 {HndpvQ1: NoDupAttvQ vq1} vq2 {HndpvQ2: NoDupAttvQ vq2}
+                            A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2 ,
        vtype e  S vq1 (A1, e1) ->
        vtype e  S vq2 (A2, e2) ->
        vqtype_inter (A1, e1) (A2, e2) = nil ->
        vtype e S (prod_v vq1 vq2)
-        (vqtype_union (A1, e1) (A2, e2) , e1 \/(F) e2)
+        (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
-  | SetOp_vE: forall e S vq1 vq2 A1 {HA1: NoDupAtt A1} e1 A2 {HA2: NoDupAtt A2} e2 op,
+  | SetOp_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                         vq1 {HndpvQ1: NoDupAttvQ vq1} vq2 {HndpvQ2: NoDupAttvQ vq2}
+                          A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2 op,
        vtype e S vq1 (A1, e1) ->
        vtype e S vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
@@ -1218,7 +1369,8 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
   | Relation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} rn A_ A' 
                                  {HndpA': NoDupAtt A'} e_ e',
        InVR (rn, (A', e')) S ->
-       sat (e /\(F) e') ->
+       (*sat (e /\(F) e') *)
+       (*SatTuples (A, (e /\(F) e')) ->*)
        vtypeImp e S (rel_v (rn, (A_, e_))) (A', (e /\(F) e')) (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
   (*   -- PROJECT-E --  *)
   | Project_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} vq {HndpvQ: NoDupAttvQ vq} e' A' 

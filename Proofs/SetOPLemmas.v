@@ -384,6 +384,29 @@ rewrite not_or_and_not in H0.
 rewrite not_or_and_not. destruct H0. split.
 all: auto. Qed.
 
+
+Lemma notInAttB_vatts_inter a A B: 
+~ InAtt a B -> ~ InAtt a (vatts_inter A B).
+Proof. apply vatts_inter_ind. 
+- intros. auto.
+-  intros. apply H. simpl in H0.
+auto.
+- intros. simpl. simpl in H0.
+rewrite not_or_and_not. split.
+rewrite <- existsbAtt_InAtt in H0.
+unfold not; intro. rewrite <- H1 in H0.
+rewrite e1 in H0. contradiction.
+apply H in H0. assumption. Qed.
+
+Lemma InAtt_vatts_inter a A B: 
+InAtt a (vatts_inter A B) -> InAtt a A /\ InAtt a B.
+Proof. intro H. split;
+[ pose (contrapositive _ _ (notInAtt_vatts_inter a A B))  as HInA 
+| pose (contrapositive _ _ (notInAttB_vatts_inter a A B)) as HInA ];
+apply Classical_Prop.NNPP; eauto. 
+Qed.
+
+
 Lemma set_add_equiv: forall a A A',
 A=a=A' -> set_add string_eq_dec a A =a= set_add string_eq_dec a A'.
 Proof. intros a A A'.
@@ -795,6 +818,25 @@ apply cons_equiv_atts. unfold equiv_vatts in IHA.
 all: apply (IHA H4).
 Qed.
 
+(* if not NoDupAtt B then replace In (ae a e') B with e' := extract_e a B *)
+Lemma vatts_inter_elemchc_more_specific: forall x e e' A B (HndpB: NoDupAtt B),
+In (ae x e) (vatts_inter A B) -> In (ae x e') B -> forall c,
+((E[[ e]]c) = true  -> (E[[ e']]c) = true).
+Proof. induction A as [|(a, ea) A].
+- simpl. intros. destruct H.
+- intros B HndpB HInAB HInB c He.
++ rewrite vatts_inter_equation in *.
+unfold eqbAtt in *. simpl in *.
+destruct (existsbAtt a B) eqn: HInAttaB.
+++ simpl in HInAB. destruct HInAB as [Heq | HInAB].
+{ inversion Heq; subst. apply (In_extract _ _ HndpB) in HInB.
+simpl in He. rewrite andb_true_iff in He.
+destruct He as [He1 He2].
+rewrite HInB in He2. simpl in He2. 
+rewrite orb_false_r in He2. assumption. }
+{ apply (IHA B HndpB HInAB HInB) with (c:= c) in He. assumption. } 
+++ apply (IHA B HndpB HInAB HInB) with (c:= c) in He. assumption.
+Qed.
 
 
 

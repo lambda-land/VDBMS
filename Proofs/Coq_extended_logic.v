@@ -20,6 +20,28 @@ apply Classical_Prop.not_or_and.
 apply Classical_Prop.and_not_or.
 Qed.
 
+Theorem and_distributes_over_or_1 : forall P Q R : Prop,
+  (P \/ Q) /\ R -> (P /\ R) \/ (Q /\ R).
+Proof.
+  intros P Q R. intros H. inversion H as [[HP | HQ] HR].
+  left. eauto.
+  right. eauto.
+Qed.
+
+Theorem and_distributes_over_or_2 : forall P Q R : Prop,
+   (P /\ R) \/ (Q /\ R) -> (P \/ Q) /\ R.
+Proof.
+  intros P Q R. intros H. inversion H as [[HP HR] | [HQ HR]];
+  split; eauto; auto.
+Qed.
+
+Theorem and_dist_or : forall P Q R : Prop,
+  (P \/ Q) /\ R <-> (P /\ R) \/ (Q /\ R).
+Proof.
+split. apply and_distributes_over_or_1.
+apply and_distributes_over_or_2. Qed.
+
+
 Theorem or_distributes_over_and_1 : forall P Q R : Prop,
   P \/ (Q /\ R) -> (P \/ Q) /\ (P \/ R).
 Proof.
@@ -74,6 +96,30 @@ Proof.
     (* SCase "H = HQ". *)
       inversion HQ as [x Hx]. exists x. right. apply Hx.  Qed.
 
+Theorem dist_exists_and : forall (X:Type) (P Q : X -> Prop),
+  (exists x, P x /\ Q x) -> (exists x, P x) /\ (exists x, Q x).
+Proof.
+  intros X P Q. 
+  
+    intros H. inversion H as [x Hx].
+    inversion Hx as [HP HQ].
+    (* SCase "Hx = P x". *)
+      split. exists x. apply HP.
+    (* SCase "Hx = Q x". *)
+      exists x. apply HQ.
+Qed.
+
+Theorem dist_forall_and : forall (X:Type) (P Q : X -> X -> Prop),
+  (forall x y, P x y /\ Q x y) <-> (forall x y, P x y) /\ (forall x y, Q x y).
+Proof.
+  intros X P Q. split;
+  (* Case "->". *)
+    intros H. 
+    split; intros x y; specialize H with x y; destruct H as [HP HQ]; auto.
+    destruct H as [HP HQ]; intros x y; specialize HP with x y;
+    specialize HQ with x y. eauto.
+Qed.
+ 
 
 (* Classical_Pred_Type not_ex_all_not *)
 (* ~ exists x, P -> forall x, ~ P x *)
@@ -81,8 +127,15 @@ Lemma dist_not_exists {X:Type} (P:X->Prop):
          ~(exists x, P x) -> forall x, ~ P x.
 Proof. intro H.
  pose proof (fun x Px => H (ex_intro _ x Px)) as H'; simpl in H'.
- auto.
+ auto. Search (~ exists _, _). 
 Qed.
+
+Lemma all_ex: forall (U : Type) (P : U -> Prop), (forall n : U, ~ P n) <-> ~ (exists n : U, P n).
+Proof. split. apply all_not_not_ex. apply not_ex_all_not. Qed.
+
+Theorem PNNP : forall P:Prop, 
+             P -> ~~ P.
+Proof. intros. unfold not. intro. apply H0 in H. destruct H. Qed.
 
 Lemma forall_dist_and (A:Type) (P Q:A-> Prop): (forall x, (P x) /\ (Q x))
 <-> (forall x, (P x)) /\ (forall x, (Q x)).
