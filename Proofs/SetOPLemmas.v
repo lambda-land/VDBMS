@@ -398,12 +398,54 @@ unfold not; intro. rewrite <- H1 in H0.
 rewrite e1 in H0. contradiction.
 apply H in H0. assumption. Qed.
 
+
 Lemma InAtt_vatts_inter a A B: 
 InAtt a (vatts_inter A B) -> InAtt a A /\ InAtt a B.
 Proof. intro H. split;
 [ pose (contrapositive _ _ (notInAtt_vatts_inter a A B))  as HInA 
 | pose (contrapositive _ _ (notInAttB_vatts_inter a A B)) as HInA ];
 apply Classical_Prop.NNPP; eauto. 
+Qed.
+
+Lemma InAtt_vatts_inter_2 a A B: 
+ (InAtt a A /\ InAtt a B) -> InAtt a (vatts_inter A B).
+Proof. apply vatts_inter_ind. 
+- intros. destruct H. auto.
+- intros. apply H. simpl in H0.
+ destruct H0. destruct H0. rewrite H0 in *. 
+rewrite <- existsbAtt_InAtt in H1. rewrite e1 in H1. discriminate H1. auto.
+- intros. simpl. simpl in H0.
+destruct H0. destruct H0. left. auto. right. apply H. auto.
+Qed.
+
+Lemma InAtt_vatts_inter_rewrite a A B: 
+InAtt a (vatts_inter A B) <-> InAtt a A /\ InAtt a B.
+Proof. split. apply InAtt_vatts_inter.
+apply InAtt_vatts_inter_2. Qed.
+
+Lemma In_vatts_inter a e c A B: 
+In (ae a e) (vatts_inter A B) /\ (E[[ e]]c) = true -> 
+exists e', In (ae a e') B /\ (E[[ e']]c) = true.
+Proof. apply vatts_inter_ind; intros.
+- destruct H. destruct H. 
+- apply H. eauto.
+- (* extract_e a A' -> In a A[[A]]c -> goal *) destruct H0.
+destruct H0 as [Heq | HIn]. inversion Heq; subst.
+simpl in H1. rewrite andb_true_iff in H1.
+destruct H1 as [He0 He']. apply extract_true_In in He' as HInAtt.
+rewrite <- In_config_exists_true in HInAtt. auto.
+apply H. eauto.
+
+(*induction A; intros. destruct H. simpl in H.
+destruct H.
+destruct H. rewrite vatts_inter_equation in H.
+destruct a0. destruct (existsbAtt a0 B) eqn:Hex.
+simpl in H. destruct H.  inversion H; subst.
+simpl in H0. rewrite andb_true_iff in H0.
+destruct H0. apply extract_true_In in H1 as HInAtt. 
+rewrite <- In_config_exists_true in HInAtt. auto.
+apply IHA. eauto. 
+apply IHA. eauto.*)
 Qed.
 
 

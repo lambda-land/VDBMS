@@ -5,7 +5,7 @@ Require Export List.
 Require Export Logic.
 Import Coq.Lists.List.ListNotations.
 
-Load AttOPVatt.
+Load configdistUnionInter.
 
 
 Module subsump_lemmas. 
@@ -54,17 +54,21 @@ unfold subsump_vatts_exp in H.
 destruct x as (x, e). specialize H with x e. simpl in H. Lia.lia.
 reflexivity. Qed. *)
 
-Lemma nil_sublist_nil: sublist [] [].
+(*Lemma nil_sublist_nil: sublist [] [].
 Proof. unfold sublist. intros x. split; 
-[ intro H | simpl ]; eauto. Qed.
+[ intro H | simpl ]; eauto. Qed.*)
 
-Lemma not_cons_sublist_nil: forall x l, ~ sublist (x::l) [].
+Lemma sublist_nil A : sublist [] A.
+Proof. unfold sublist. intros x. split;
+[ intro H; destruct H | simpl; Lia.lia ]. Qed.
+
+Lemma not_sublist_cons_nil: forall x l, ~ sublist (x::l) [].
 Proof. unfold not. intros x l H. unfold sublist in H.
 specialize H with x. destruct H as [H1 H2]. 
 rewrite count_occ_cons_eq in H2. simpl in H2. Lia.lia.
 reflexivity. Qed.
 
-Lemma subsump_vatts_correctness A A' {HndpA: NoDupAtt A} {HndpA': NoDupAtt A'}: 
+Lemma subsump_vatts_correctness A A' (HndpA: NoDupAtt A) (HndpA': NoDupAtt A'): 
        subsump_vatts_exp A A' <-> (forall c, sublist (configVAttSet A c) (configVAttSet A' c)). 
 Proof. split; 
 generalize dependent A'; generalize dependent A; 
@@ -172,7 +176,7 @@ destruct Hclassic as [Hall | Hexists].
   apply not_all_ex_not in Hexists. destruct Hexists as [c Hexists].
   specialize H with c.
   destruct ((A[[ A]] c)) eqn: HAc. contradiction. simpl in H. 
-  apply not_cons_sublist_nil in H. destruct H. }
+  apply not_sublist_cons_nil in H. destruct H. }
 
 (* case (ae a' ea': A'):  *)
 unfold subsump_vatts_exp. intros x e c HInxeA.
@@ -198,8 +202,23 @@ exists e'; split;
 [simpl; right; auto | auto].
 
 Qed.
- 
 
+
+Lemma subsump_vqtype_correctness X X' {HndpA: NoDupAtt (fst X)} {HndpA': NoDupAtt (fst X')}: 
+       subsump_vqtype_exp X X' <-> subsump_vqtype X X'. 
+Proof.  unfold subsump_vqtype_exp, avatts_vatts.
+rewrite subsump_vatts_correctness. Search push_annot. 
+split; intro. unfold subsump_vqtype. intro. 
+destruct X as (A, ea). destruct X' as (A', ea').
+repeat (rewrite <- configVAttSet_push_annot). apply H.
+intro. repeat (rewrite configVAttSet_push_annot).
+unfold subsump_vqtype in H. destruct X as (A, ea). destruct X' as (A', ea').
+simpl fst. simpl snd. apply H. 
+all: apply NoDupAtt_push_annot; assumption.
+Qed.
+
+ 
+End subsump_lemmas.  
 (*================================================*)
    
 (*

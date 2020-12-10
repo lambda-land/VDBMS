@@ -123,10 +123,11 @@ Definition taut (e:fexp): Prop :=
 Definition not_sat (e:fexp): Prop :=
   forall c, semE e c = false.
 
-(* @Fariba: not sure what you mean by implies and if you're defining it correctly. *)
-(* @Parisa: never used it anywhre; not sure why I wrote this in the first place!! *)
-Definition implies (e1 e2:fexp) (c:config): Prop :=
-  semE e1 c = true -> semE e2 c = true.
+
+Definition implies (e1 e2:fexp) (c:config) : Prop := 
+  (E[[ e1 ]] c) = true -> (E[[ e2 ]] c) = true.
+
+Notation "e1 ->> e2 | c" := (implies e1 e2 c) (at level 91, left associativity).
 
 Theorem ex_falso_quodlibet : forall (P:Prop),
   False -> P.

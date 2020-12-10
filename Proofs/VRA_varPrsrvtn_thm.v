@@ -251,7 +251,7 @@ Proof.
         rewrite <- sublist_bool_correct in H1. simpl in H1.
         discriminate H1.*)
  (* Choice - E *)
- - unfold vqtype_union. simpl fst. simpl snd.
+ - unfold vqtype_union_vq, vqtype_union. simpl fst. simpl snd.
    simpl in IHvtype1. simpl in IHvtype2. rewrite H0 in IHvtype1, IHvtype2.
    rewrite configVQType_dist_vatts_union.
    repeat (rewrite configVQType_push_annot).

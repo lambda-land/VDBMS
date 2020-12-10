@@ -401,7 +401,7 @@ B =T= B' ->
 vqtype_inter_vq A B =T= vqtype_inter_vq A' B'. 
 Proof. intros HAt HBt. unfold equiv_vqtype in HAt. destruct HAt.
 unfold equiv_vqtype in HBt. destruct HBt. 
-unfold equiv_vqtype, vqtype_union_vq.
+unfold equiv_vqtype.
 simpl. split. apply vatts_inter_equiv. all :(try assumption).
 unfold equivE. intro. simpl. rewrite H0, H2. reflexivity. Qed.
 

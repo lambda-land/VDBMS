@@ -796,6 +796,11 @@ Definition subsump_qtype_bool (A A': qtype) := sublist_bool A A'.
 Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c, 
     sublist (configVQtype X c) (configVQtype X' c).
 
+Definition subsump_vatts ( A A': vatts ) : Prop := forall c, 
+      sublist (configVAttSet A c) (configVAttSet A' c).
+
+
+
 (* current def (null is sublist): forall x e,
 (In (ae x e) A /\ (exists c, E[[e]]c = true) ) -> (exists e', (In (ae x e') A') /\  (~ sat (e /\(F) (~(F)(e')))) ).*)
 (* should be: forall x e,
@@ -872,6 +877,14 @@ In (ae x e) A /\ sat e  -> exists e', In (ae x e') A' /\  (~ sat (e /\(F) (~(F)(
 Definition subsump_vatts_exp (A A': vatts) :Prop := forall x e c,
 In (ae x e) A /\ ((E[[ e]]c) = true)  -> 
        exists e', In (ae x e') A' /\  (E[[ e']]c) = true.
+
+(* Definition subsump_vqtype_exp (X X': vqtype) :Prop := 
+let (A, ea) := X in 
+  let (A', ea') := X' in 
+    forall x e c,
+      In (ae x e) A /\ ((E[[ e /\(F) ea]]c) = true)  -> 
+       exists e', In (ae x e') A' /\  (E[[ e'/\(F) ea']]c) = true.*)
+
 
 
 (** A and A' has to be NoDupAtt *)
@@ -1165,7 +1178,7 @@ Proof. intros. induction A.
          destruct (E[[ e1]] c); simpl; repeat (reflexivity).
        - destruct a as (x, e). unfold push_annot; fold push_annot. 
          simpl. 
-         simpl in IHA.
+         simpl in IHA. 
          destruct (E[[ e2]] c) eqn: E2.
           + destruct (E[[ e1]] c) eqn: E1; 
             destruct (E[[ e]] c) eqn: E; simpl; simpl in IHA;
@@ -1175,6 +1188,9 @@ Qed.
 
 (*Definition subsumpImp_vqtype ( X X': vqtype) :Prop := 
 subsumpImp_vatts (avatts_vatts X) (avatts_vatts X').*)
+
+Definition subsump_vqtype_exp (X X': vqtype) :Prop := 
+subsump_vatts_exp (avatts_vatts X) (avatts_vatts X').
 
 (*------------------------push_annot---------------------------*)
 
@@ -1322,7 +1338,8 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
                             A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2 ,
        vtype e  S vq1 (A1, e1) ->
        vtype e  S vq2 (A2, e2) ->
-       vqtype_inter (A1, e1) (A2, e2) = nil ->
+       (*vqtype_inter (A1, e1) (A2, e2) = nil ->*)
+       vatts_inter A1 A2 =va= nil ->
        vtype e S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
@@ -1393,7 +1410,8 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
                             A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2 ,
        vtypeImp e  S vq1 (A1, e1) ->
        vtypeImp e  S vq2 (A2, e2) ->
-       vqtype_inter (A1, e1) (A2, e2) = nil ->
+       (*vqtype_inter (A1, e1) (A2, e2) = nil ->*)
+       vatts_inter A1 A2 =va= nil ->
        vtypeImp e  S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
