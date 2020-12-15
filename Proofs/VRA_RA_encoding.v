@@ -692,6 +692,7 @@ Definition configaVatts (vqt : avatts) (c : config) : atts :=
       match vqt with 
       |(V, e) => if semE e c then  configVAttSet V c else  nil
       end.
+Notation "AE[[ vqt ]] c" := (configaVatts vqt c) (at level 70).
 
 (** -------------------------------------------------------
   Query 
@@ -753,7 +754,7 @@ Definition configVQtype (vqt : vqtype) (c : config) : qtype := configaVatts vqt 
       |(V, e) => if semE e c then  configVAttSet V c else  nil
       end.*)
 
-Notation "AE[[ vqt ]] c" := (configVQtype vqt c) (at level 70).
+Notation "QT[[ vqt ]] c" := (configVQtype vqt c) (at level 70).
 
 Lemma configVQtype_nil: forall e c, (configVQtype ([], e) c) = [].
 Proof. intros e c. simpl. destruct (E[[ e]] c); reflexivity. Qed.
@@ -1211,7 +1212,8 @@ Definition vqtype_union (Q Q': vqtype) : vatts :=
      vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). 
 
 Definition vqtype_union_vq (Q Q': vqtype) : vqtype := 
-     (vatts_union (fst Q) (fst Q'), (snd Q) \/(F) (snd Q')).
+     (vatts_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')), (snd Q) \/(F) (snd Q')).
+     (* WRONG (vatts_union (fst Q) (fst Q'), (snd Q) \/(F) (snd Q')).*)
 
 (*------------------------------------------------------------------------------*)
 (* Plain Attr List *)
@@ -1274,10 +1276,10 @@ Definition NODupAttRs (vs:vschema) : Prop:=
 forall vr, InVR vr vs -> NoDupAtt (getvs vr).
 
 Inductive NoDupAttvQ: vquery -> Prop :=
+  | NoDupAttvQ_rel_v  : forall rn A e, NoDupAtt A -> NoDupAttvQ (rel_v (rn, (A, e)))
   | NoDupAttvQ_proj_v : forall Q vq, NoDupAtt (fst Q) -> NoDupAttvQ vq -> 
                                                 NoDupAttvQ (proj_v Q vq)
-  | NoDupAttvQ_rel_v : forall rn A e, NoDupAttvQ (rel_v (rn, (A, e)))
-  | NoDupAttvQ_chcQ : forall e' vq1 vq2, NoDupAttvQ vq1 ->
+  | NoDupAttvQ_chcQ   : forall e' vq1 vq2, NoDupAttvQ vq1 ->
                              NoDupAttvQ vq2 -> NoDupAttvQ (chcQ e' vq1 vq2)
   | NoDupAttvQ_prod_v : forall vq1 vq2, NoDupAttvQ vq1 ->
                              NoDupAttvQ vq2 -> NoDupAttvQ (prod_v vq1 vq2)
@@ -1315,8 +1317,8 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
   | Relation_vE : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
                         rn A {HA: NoDupAtt A} e',
         InVR (rn, (A, e')) S ->
-       ~ sat (  e    /\(F)   (~(F) (e')) ) ->
-       vtype e S (rel_v (rn, (A, e' ))) (A, e)
+       (*~ sat (  e    /\(F)   (~(F) (e')) ) ->*) (* why are we restricting ourselves to introduce only more specific context? It's not even maintained in the type system e.g. choice will have less specif context evemn if we start with more specific ones. *)
+       vtype e S (rel_v (rn, (A, e' ))) (A, (e /\(F) e'))
   (*   -- PROJECT-E --  *)
   | Project_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} vq {HndpvQ: NoDupAttvQ vq} e' A' 
                            {HndpAA': NoDupAtt A'} Q {HndpQ: NoDupAtt (fst Q)},
@@ -1383,12 +1385,13 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
     ------------------------------------  RELATION-E 
                e  |- rn : A^e
   *)
-  | Relation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} rn A_ A' 
-                                 {HndpA': NoDupAtt A'} e_ e',
+  | Relation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} rn A_ 
+                                 A' {HndpA': NoDupAtt A'} e_ e',
        InVR (rn, (A', e')) S ->
        (*sat (e /\(F) e') *)
        (*SatTuples (A, (e /\(F) e')) ->*)
-       vtypeImp e S (rel_v (rn, (A_, e_))) (A', (e /\(F) e')) (** variational context is initialized with feature_model which is more general than the overall pc of any relation in vdbms *)
+       vtypeImp e S (rel_v (rn, (A_, e_))) (A', (e /\(F) e')) (** variational context is initialized with feature_model 
+                                                              which is more general than the overall pc of any relation in vdbms *)
   (*   -- PROJECT-E --  *)
   | Project_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} vq {HndpvQ: NoDupAttvQ vq} e' A' 
                                {HndpAA': NoDupAtt A'} Q {HndpQ: NoDupAtt (fst Q)},

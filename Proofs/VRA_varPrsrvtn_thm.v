@@ -130,9 +130,29 @@ intros A A'. generalize dependent A'. induction A.
          rewrite Hsetmem in H0. simpl in H0. destruct (string_eq_dec a a).
          Lia.lia. contradiction. 
 Qed.
+
+Lemma sublist_bool_correct': forall A A' , (sublist_bool A A' = false)
+                        <-> (~ sublist A A').
+Proof. intros. rewrite <- not_true_iff_false. unfold not.
+apply contrapositive_iff. symmetry. apply sublist_bool_correct. Qed.
+
+Lemma equiv_sublist_bool: forall A B B' , 
+     B =a= B' -> sublist_bool A B = sublist_bool A B'.
+Proof. intros A B B' H. destruct (sublist_bool A B) eqn:Hsb;
+[ rewrite sublist_bool_correct  in Hsb |
+  rewrite sublist_bool_correct' in Hsb ];
+rewrite (equiv_sublist _ H) in Hsb;
+[ rewrite <- sublist_bool_correct  in Hsb |
+  rewrite <- sublist_bool_correct' in Hsb ];
+eauto.
+Qed.
+
 (** ------------equiv_bool correct ------------------------*)
 
-
+Lemma is_disjoint_bool_correct A B: is_disjoint_bool A B = true <-> atts_inter A B = [].
+unfold is_disjoint_bool. destruct (atts_inter A B). 
+split; intro; reflexivity. split; intro H; discriminate H.
+Qed.
 
 
 (* -----------------------------------------------------
@@ -148,7 +168,7 @@ Theorem context_type_rel : forall e S vq A' e',
 Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
        - intros. inversion H; subst. (*assumption.*) rewrite not_sat_not_prop. 
          rewrite <- sat_taut_comp.
-         intros. assumption.
+         intros. simpl in H0. apply andb_true_iff with (b2:=(E[[ e'0]] c)). assumption.
        - intros. inversion H; subst.
          rewrite not_sat_not_prop. rewrite <- sat_taut_comp.
          intros. simpl in H0. 
@@ -199,156 +219,260 @@ for Variational database and
 
 *)
 
+Lemma addannot_config_true Q e c: (E[[ e]] c) = true -> (QT[[ Q ^^ e]] c) = (QT[[ Q]] c).
+intro H0.  simpl. rewrite H0. rewrite andb_true_r. unfold configaVatts. destruct Q.
+  simpl. reflexivity. Qed.
+  
+Lemma type__configVRelS rn A' e' c: ||= rel (R[[ (rn, (A', e'))]] c) 
+                                  = (if E[[ e']] c then A[[ A']] c else []).
+unfold configVRelS. simpl. destruct (E[[ e']] c); reflexivity. Qed.
+
+Lemma AE_QT Q c: (AE[[ Q]] c) = (QT[[ Q]] c). eauto. Qed.
 
 Theorem variation_preservation : forall e S vq A, 
        { e , S |= vq | A } ->
        forall c, (E[[e]] c) = true ->
-           ||= (Q[[ vq]] c) =a= (AE[[ A]] c).
+           ||= (Q[[ vq]] c) =a= (QT[[ A]] c).
 Proof.
-  intros. induction H.
-  (* Relation - E *) (*get rid of this*)
-  (*- unfold configVQuery. unfold configVRelS. simpl. 
-    rewrite not_sat_not_prop in H1. rewrite <- sat_taut_comp in H1. 
-    unfold configVQtype. simpl. destruct (E[[e']] c) eqn: HsemE.
-    + reflexivity.
-    + reflexivity. *)
-  (* Relation - E *)
-  (* S |= r : A^e -> type' (Q[[ r(A)^e]]c) =a= Qt[[ A^e]]c  
-    |             -> type' (R[[ r(A)^e]]c) =a= if E[[ e]]c = true then A[[ A]]c else []
-    |             -> type' (r (if E[[ e]]c = true then A[[ A]]c else []))
-    |                             =a= if E[[ e]]c = true then A[[ A]]c else []
-    | destruct E[[ e]]c 
-    | True =>     -> type' (r(A[[ A]]c) = A[[A]]c 
+  intros. 
+   induction H as [e S HndpRS HndpAS 
+                   rn A' HndpA' e' 
+                   HInVR 
+                   |
+                   e S HndpRS HndpAS vq HndpvQ
+                   e' A' HndpAA' Q HndpQ
+                   Hq IHHq Hsbsmp
+                   |
+                   e e' S HndpRS HndpAS 
+                   vq1 HndpvQ1 vq2 HndpvQ2
+                   A1 HndpAA1 e1 A2 HndpAA2 e2 
+                   Hq1 IHHq1 Hq2 IHHq2
+                   | 
+                   e S HndpRS HndpAS 
+                   vq1 HndpvQ1 vq2 HndpvQ2
+                   A1 HndpAA1 e1 A2 HndpAA2 e2 
+                   Hq1 IHHq1 Hq2 IHHq2 HInter 
+                   | 
+                   e S HndpRS HndpAS 
+                   vq1 HndpvQ1 vq2 HndpvQ2
+                   A1 HndpAA1 e1 A2 HndpAA2 e2 op
+                   Hq1 IHHq1 Hq2 IHHq2 HEquiv ].
+
+ (** ----------------------------- Relation - E ----------------------------- *) 
+  - 
+  (* H0 : (E[[ e]] c) = true
+     -----------------------------------------------
+     ||= (Q[[ rel_v (rn, (A', e'))]] c) =a= (QT[[ (A', e /\(F) e')]] c)
   *)
-  - unfold configVQuery. unfold configVRelS. unfold configVQtype. simpl. 
-    rewrite not_sat_not_prop in H1. rewrite <- sat_taut_comp in H1. 
-    rewrite H0. apply H1 in H0. rewrite H0. reflexivity.
- (* Project - E *)
- - unfold subsump_vqtype, configVQtype, configaVatts in H1. simpl in H1.
-   unfold configVQtype, configaVatts in IHvtype. simpl in IHvtype. 
-   unfold configVQtype, configaVatts. simpl.  
-   destruct (E[[ e']] c) eqn: He'.
-     ++ simpl. unfold subsump_qtype_bool. rewrite H0.
-        specialize H1 with c. rewrite H0, He' in H1. 
-        destruct (sublist_bool (configaVatts Q c) (type_ (configVQuery vq c))) eqn:Hsubl.
-        destruct Q as(Q', eq).
-        unfold configaVatts. rewrite andb_true_r. reflexivity. 
-        apply IHvtype in H0. apply not_true_iff_false in Hsubl.
-        rewrite <- (contrapositive_iff _ _ (sublist_bool_correct _ _)) 
-        in Hsubl.
-        rewrite equiv_sublist with (B':=configVAttSet A' c) in Hsubl.
-        rewrite andb_true_r in H1. destruct Q as(Q', eq).
-        unfold configaVatts in Hsubl. simpl in H1. contradiction. auto. 
-     ++ (*rewrite IHvtype1. ->*)
-        simpl. unfold subsump_qtype_bool. 
-        
-        specialize H1 with c. rewrite H0, He', andb_true_r in H1. 
-        rewrite equiv_sublist with (B':=(||= (Q[[ vq]] c))) in H1.
-        rewrite <- sublist_bool_correct in H1. destruct Q as(Q', eq). 
-        unfold configaVatts. simpl in H1. rewrite H1, H0. simpl.
-        rewrite andb_true_r. reflexivity. symmetry. apply (IHvtype H0).
-        (*destruct (configaVatts Q c). rewrite H0. simpl. reflexivity.
-        rewrite <- sublist_bool_correct in H1. simpl in H1.
-        discriminate H1.*)
- (* Choice - E *)
- - unfold vqtype_union_vq, vqtype_union. simpl fst. simpl snd.
-   simpl in IHvtype1. simpl in IHvtype2. rewrite H0 in IHvtype1, IHvtype2.
-   rewrite configVQType_dist_vatts_union.
-   repeat (rewrite configVQType_push_annot).
-   all: try(apply (NoDupAtt_push_annot); eauto). 
-   destruct (E[[ e']] c) eqn: E'.
-   + simpl. rewrite E'. apply context_type_rel in H1.
-     rewrite not_sat_not_prop in H1. 
-     rewrite <- sat_taut_comp_inv in H1.
-     specialize H1 with c. 
-     simpl in H1. rewrite H0, E' in H1. simpl in H1. 
-     rewrite H1.
-     simpl. 
-     simpl. rewrite orb_false_r. rewrite andb_diag.
-     apply IHvtype1. reflexivity. reflexivity.
-   + apply context_type_rel in H.
-     rewrite not_sat_not_prop in H. 
-     rewrite <- sat_taut_comp_inv in H.
-     specialize H with c. 
-     simpl in H. rewrite H0, E' in H. simpl in H. 
-     unfold configVQtype, configaVatts at 1. 
-     assert(Ihack2: forall e1 e2, (E[[  e1 /\(F) (e1 \/(F) e2)]] c) = (E[[ e1]] c)).
-     { simpl. intros. apply absorption_andb. }
-     rewrite Ihack2. rewrite H. rewrite atts_union_nil_l.  
-     unfold configVQuery. rewrite E'. fold configVQuery. 
-     destruct (configVQtype (A2, e2 /\(F) (e1 \/(F) e2)) c) eqn: D;
-     unfold configVQtype, configaVatts in D; try (unfold configVQtype, configaVatts);
-     simpl in D; rewrite H in D; try (simpl); try (rewrite H);
-     try (simpl in D); try (simpl); try (rewrite andb_diag in D);try (rewrite andb_diag);
-     try (unfold configVQtype, configaVatts in IHvtype2); try (simpl in  IHvtype2).
-     try (rewrite D in IHvtype2); try (rewrite D);
-     try (apply IHvtype2); try (reflexivity). all: try (reflexivity); eauto.
-     apply NoDupAtt_NoDup_configVQ. eauto.
-  (* Product - E *)
-  - unfold vqtype_union. simpl fst. simpl snd.
-    apply IHvtype2 in H0 as H02.
-    apply IHvtype1 in H0 as H01.
-    rewrite configVQType_dist_vatts_union.
-    repeat (rewrite configVQType_push_annot). 
-    unfold configVQtype, configaVatts. simpl. rewrite absorption_andb. rewrite orb_comm. 
-    rewrite absorption_andb. 
-    pose (NoDupAtt_NoDup_configVQ (A1, e1) c) as HA1VQ.
-    simpl fst in HA1VQ. pose (NoDupAtt_NoDup_configVQ (A2, e2) c) as HA2VQ.
-    simpl fst in HA2VQ.
-   (*rewrite H01. rewrite H02.->*)
-    rewrite (is_disjoint_bool_equiv) with 
-    (B := (configVQtype (A1, e1) c)) 
-    (B':= (configVQtype (A2, e2) c)).
-    all: eauto; try(apply (NoDup_equiv_atts H01); eauto); 
-                try(apply (NoDup_equiv_atts H02); eauto);
-                try(apply (NoDupAtt_push_annot); eauto). 
-    destruct (is_disjoint_bool (configVQtype (A1, e1) c)
-    (configVQtype (A2, e2) c)) eqn: Hatts.
-    + rewrite (set_union_equiv) with 
-    (B := (configVQtype (A1, e1) c)) 
-    (B':= (configVQtype (A2, e2) c)).
-      simpl. reflexivity. 
-      all: eauto; try(apply (NoDup_equiv_atts H01); eauto); 
-           try(apply (NoDup_equiv_atts H02); eauto). 
-    + unfold is_disjoint_bool in Hatts.
-      (*rewrite (set_inter_equiv H01 H02) in Hatts.*)
-      simpl in H2. 
-      rewrite <- configVQType_dist_vatts_inter in Hatts.
-      unfold vqtype_inter in H2. simpl fst in H2. simpl snd in H2.
-      rewrite H2 in Hatts. simpl in Hatts. 
-      destruct ((E[[ e1]] c) || (E[[ e2]] c)). discriminate Hatts.
-      discriminate Hatts.
-      all:assumption.
- (* Select - E *)
- (* SetOp - E *)
- - simpl in IHvtype1. simpl in IHvtype2. simpl. 
-   + simpl. (*rewrite IHvtype1. rewrite IHvtype2.->*) 
-     pose (NoDupAtt_NoDup_configVQ (A1, e1) c HndpAA1) as HA1VQ. 
-     pose (NoDupAtt_NoDup_configVQ (A2, e2) c HndpAA2) as HA2VQ. 
-     apply IHvtype1 in H0 as IHvtype1'. clear IHvtype1.
-     apply IHvtype2 in H0 as IHvtype2'. clear IHvtype2.
-     rewrite (equiv_qtype_bool_equiv) with 
-     (B := (configVQtype (A1, e1) c)) 
-     (B':= (configVQtype (A2, e2) c)).
-     all: eauto;
-     try (apply (NoDup_equiv_atts IHvtype1'); destruct (E[[ e1]] c); 
-         [apply (NoDupAtt_NoDup_config c HndpAA1) | apply NoDup_nil]);
-     try (apply (NoDup_equiv_atts IHvtype2'); destruct (E[[ e2]] c); 
-         [apply (NoDupAtt_NoDup_config c HndpAA2) | apply NoDup_nil]).
-     (*<-*)
-     unfold configVQtype, configaVatts. simpl. 
-     destruct H2. simpl in H2. simpl in H3. unfold equiv_vatts in H2.
-     unfold equivE in H3. (*rewrite <- H2.*) rewrite <- H3. 
-    
-     destruct (E[[ e1]] c) eqn: E'.
-     ++ rewrite (equiv_qtype_bool_equiv) with 
-        (B := (configVAttSet A1 c)) 
-        (B':= (configVAttSet A1 c)).
-        rewrite (equiv_qtype_bool_refl (configVAttSet A1 c)). apply IHvtype1'. 
-        all: try (apply (NoDupAtt_NoDup_config c HndpAA1));
-             try (apply (NoDupAtt_NoDup_config c HndpAA2));
-             try (symmetry; apply (H2 c)); try(reflexivity).
-     ++ simpl. apply IHvtype1'. 
+  unfold configVQuery. unfold configVQtype, configaVatts. simpl semE. 
+  (* H0 : (E[[ e]] c) = true
+     -----------------------------------------------
+     ||= rel (R[[ (rn, (A', e'))]] c) =a=
+                      (if (E[[ e]] c) && (E[[ e']] c) then A[[ A']] c else [])
+  *)
+  (* (E[[ e]] c) = true *)
+  rewrite H0. rewrite andb_true_l. 
+  (* Proved by definitions configVRelS and ||= rel (rn, A) = A*)
+  rewrite type__configVRelS. reflexivity.
+
+ (** ----------------------------- Project - E ----------------------------- *)
+  - 
+  (* Hq: {e, S |= vq | (A', e')} 
+     Hsbsmp: subsump_vqtype (Q ^^ e) (A', e')
+     -----------------------------------------
+     ||= (Q[[ proj_v Q vq]] c) =a= (QT[[ Q ^^ e]] c)
+  *)
+  (*~ unfold ||=. AE = QT. Simplify IHHq with (E[[ e]] c) = true. ~*)
+  simpl type_. rewrite AE_QT. unfold subsump_qtype_bool. apply IHHq in H0 as IHHq'. clear IHHq.
+  (* Hq: {e, S |= vq | (A', e')} 
+     Hsbsmp: subsump_vqtype (Q ^^ e) (A', e')
+     IHHq' : ||= (Q[[ vq]] c) =a= (QT[[ (A', e')]] c)
+     -----------------------------------------
+     if sublist_bool (QT[[ Q]] c) (||= (Q[[ vq]] c)) then 
+          QT[[ Q]] c  =a= (QT[[ Q ^^ e]] c)
+  *)
+  (* rewrite IHHq' in goal *)
+  rewrite (equiv_sublist_bool _ IHHq'). 
+  (* Hq: {e, S |= vq | (A', e')} 
+     Hsbsmp: subsump_vqtype (Q ^^ e) (A', e')
+     -----------------------------------------
+     if sublist_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
+          QT[[ Q]] c  =a= (QT[[ Q ^^ e]] c)
+  *)
+  (*~ By defintion, subsump_vqtype A B = sublist QT[[A]] QT[[B]] ~*)
+  unfold subsump_vqtype in Hsbsmp. specialize Hsbsmp with c.
+  (* Hq: {e, S |= vq | (A', e')} 
+     Hsbsmp : sublist (QT[[ Q ^^ e]] c) (QT[[ (A', e')]] c)
+     -----------------------------------------
+     if sublist_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
+         QT[[ Q]] c  =a= (QT[[ Q ^^ e]] c)
+  *)
+  (*~ (E[[ e]] c) = true -> (QT[[ Q ^^ e]] c) = (QT[[ Q]] c)  ~*)
+  rewrite (addannot_config_true _ _ _ H0) in Hsbsmp. rewrite (addannot_config_true _ _ _ H0).
+  (* Hq: {e, S |= vq | (A', e')} 
+     Hsbsmp : sublist (QT[[ Q]] c) (QT[[ (A', e')]] c)
+     -----------------------------------------
+     if sublist_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
+         QT[[ Q]] c  =a= (QT[[ Q]] c)
+  *)
+  (*~ Proved by sublist A B <-> sublist_bool A B = true ~*)
+  rewrite <- sublist_bool_correct in Hsbsmp. rewrite Hsbsmp.
+  reflexivity.
+
+ (**  ------------------------------- Choice - E ------------------------------ *)
+ - 
+ (* Hq1 : {e /\(F) e', S |= vq1 | (A1, e1)}
+    Hq2 : {e /\(F) ~(F) e', S |= vq2 | (A2, e2)}
+    H0 : (E[[ e]] c) = true
+    IHHq1 : (E[[ e /\(F) e']] c) = true -> ||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+    IHHq2 : (E[[ e /\(F) ~(F) e']] c) = true -> ||= (Q[[ vq2]] c) =a= (QT[[ (A2, e2)]] c)
+    ----------------------------------------------------------
+    ||= (Q[[ chcQ e' vq1 vq2]] c) =a= (QT[[ vqtype_union_vq (A1, e1) (A2, e2)]] c)
+ *)
+ (*~ Hq1 Hq2: contex_typeannot_rel -> {e, _ |= _ | (_, e')} -> (~e -> ~e')  ~*)
+    apply context_type_rel in Hq1. rewrite not_sat_not_prop, <- sat_taut_comp_inv in Hq1.
+    apply context_type_rel in Hq2. rewrite not_sat_not_prop, <- sat_taut_comp_inv in Hq2. 
+    specialize Hq1 with c. specialize Hq2 with c. 
+ (*~ remove e from Hypotheses with (E[[ e]] c) = true ~*)
+    simpl semE in *. rewrite H0 in *. rewrite andb_true_l in *. Search negb.
+    rewrite negb_false_iff in Hq2. rewrite negb_true_iff in IHHq2. 
+ (* Hq1 :  (E[[ e']] c) = false -> (E[[ e1]] c) = false
+    Hq2 :  (E[[ e']] c) = true  -> (E[[ e2]] c) = false
+    IHHq1 :(E[[ e']] c) = true  -> ||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+    IHHq2 :(E[[ e']] c) = false -> ||= (Q[[ vq2]] c) =a= (QT[[ (A2, e2)]] c)
+    ----------------------------------------------------------
+    ||= (Q[[ chcQ e' vq1 vq2]] c) =a= (QT[[ vqtype_union_vq (A1, e1) (A2, e2)]] c)
+ *)
+ (*~ (Q[[ chcQ e' vq1 vq2]] c) -> (if E[[ e']] c then Q[[ vq1]] c else Q[[ vq2]] c) ~*)
+    simpl configVQuery.
+ (*~ (QT[[ vqtype_union_vq A B]] c) =a= atts_union (QT[[A]] c) (QT[[B]] c)~*)
+    rewrite configVQType_dist_vqtype_union_vq; try assumption.
+    repeat (rewrite configVQType_push_annot).
+ (*~(E[[ e']] c) = true -> 
+    (E[[ e2]] c) = false -> atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) = (QT[[ (A1, e1)]] c) ~*)
+    assert(Hq1': (E[[ e']] c) = true -> atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) = (QT[[ (A1, e1)]] c)).
+    intro. apply Hq2 in H. simpl. rewrite H. eauto.
+ (*~(E[[ e']] c) = false ->  
+    (E[[ e1]] c) = false -> atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) = (QT[[ (A2, e2)]] c) ~*)
+    assert(Hq2': (E[[ e']] c) = false -> atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) =a= (QT[[ (A2, e2)]] c)).
+    intro. apply Hq1 in H. simpl. rewrite H. rewrite atts_union_nil_l. reflexivity.
+    destruct ( E[[ e2]] c); [ apply NoDupAtt_NoDup_config | apply NoDup_nil]; auto.
+ (* IHHq1 :(E[[ e']] c) = true  -> ||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+    IHHq2 :(E[[ e']] c) = false -> ||= (Q[[ vq2]] c) =a= (QT[[ (A2, e2)]] c)
+    Hq1' : (E[[ e']] c) = true ->
+       atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) = (QT[[ (A1, e1)]] c)
+    Hq2' : (E[[ e']] c) = false ->
+       atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) =a= (QT[[ (A2, e2)]] c)
+    ----------------------------------------------------------
+    ||= (if E[[ e']] c then Q[[ vq1]] c else Q[[ vq2]] c) =a= atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c)
+ *)
+ 
+    destruct (E[[ e']] c) eqn: He'. 
+ 
+ (* He'   :(E[[ e']] c) = true
+    IHHq1 :||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+    Hq1'  :atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) = (QT[[ (A1, e1)]] c)
+    ----------------------------------------------------------
+    ||= (Q[[ vq1]] c) =a= atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c)
+ *)
+    rewrite Hq1'; try reflexivity. apply IHHq1; try reflexivity.
+ (* He'   :(E[[ e']] c) = false
+    IHHq2 : ||= (Q[[ vq2]] c) =a= (QT[[ (A2, e2)]] c)
+    Hq2'  : atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) =a= (QT[[ (A2, e2)]] c)
+    ----------------------------------------------------------
+    ||= (Q[[ vq1]] c) =a= atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c)
+ *)
+    rewrite Hq2'; try reflexivity. apply IHHq2; try reflexivity.
+  
+
+ (**  ------------------------------- Product - E ------------------------------ *)
+  - 
+ (* HInter : vatts_inter A1 A2 =va= []
+    H0 : (E[[ e]] c) = true
+    IHHq1 : (E[[ e]] c) = true -> ||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+    IHHq2 : (E[[ e]] c) = true -> ||= (Q[[ vq2]] c) =a= (QT[[ (A2, e2)]] c)
+    ----------------------------------------------------------
+    ||= (Q[[ prod_v vq1 vq2]] c) =a= (QT[[ vqtype_union_vq (A1, e1) (A2, e2)]] c)
+ *)
+ (*~ apply E[[ e]] c) = true in Inductive H ~*)
+    apply IHHq2 in H0 as IHHq2'. apply IHHq1 in H0 as IHHq1'. 
+    clear IHHq1. clear IHHq2.
+ (*~ (QT[[ vqtype_union_vq A B]] c) =a= atts_union (QT[[A]] c) (QT[[B]] c)~*)
+    rewrite configVQType_dist_vqtype_union_vq; try assumption.
+    repeat (rewrite configVQType_push_annot).
+ (*~ ||= (Q[[ prod_v vq1 vq2]] c) ||= prod (Q[[ vq1]] c) (Q[[ vq2]] c)~*)
+    simpl configVQuery.
+ (*
+   ----------------------------------------------------
+   ||= prod (Q[[ vq1]] c) (Q[[ vq2]] c) =a= atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c)
+ *)
+    simpl type_. 
+ (* HInter : vatts_inter A1 A2 =va= []
+    ----------------------------------------------------
+    if is_disjoint_bool (||= (Q[[ vq1]] c)) (||= (Q[[ vq2]] c))
+     atts_union (||= (Q[[ vq1]] c)) (||= (Q[[ vq2]] c)) =a= atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c)
+ *)
+
+ (*~ vatts_inter A1 A2 =va= [] -> atts_inter [[A1]]c [[A2]]c =a= [] ~*)
+    unfold equiv_vatts in HInter. specialize HInter with c. simpl in HInter.
+    rewrite configVAttSet_dist_vatts_inter in HInter; try assumption.
+    assert (HInter': atts_inter (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) =a= [] ).
+    simpl. destruct (E[[ e1]] c); [ destruct (E[[ e2]] c); [ assumption |
+    rewrite atts_inter_nil_r; reflexivity] | rewrite atts_inter_nil_l; reflexivity ].
+ (* HInter' : atts_inter (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) =a= []
+    ----------------------------------------------------
+    if is_disjoint_bool (||= (Q[[ vq1]] c)) (||= (Q[[ vq2]] c))
+     atts_union (||= (Q[[ vq1]] c)) (||= (Q[[ vq2]] c)) =a= atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c)
+ *)
+
+ (*~ is_disjoint_bool A B = true -> atts_inter A B = [] ~*)
+    rewrite (is_disjoint_bool_equiv) with (B := (QT[[(A1, e1)]]c)) (B':= (QT[[(A2, e2)]] c)); try assumption.
+    apply nil_equiv_eq in HInter'. rewrite <- is_disjoint_bool_correct in HInter'. rewrite HInter'.
+ (* IHHq1' : ||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+    IHHq2' : ||= (Q[[ vq2]] c) =a= (QT[[ (A2, e2)]] c)
+    ----------------------------------------------------
+    atts_union (||= (Q[[ vq1]] c)) (||= (Q[[ vq2]] c)) =a= atts_union (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c)
+ *)
+ (*~ Proved by set_union_quiv ~*)
+   rewrite (set_union_equiv) with (B := (QT[[(A1, e1)]]c)) (B':= (QT[[(A2, e2)]]c)); try (eauto; reflexivity).
+ (*~ NoDup assumptions ~*)
+    1, 2, 5, 6: try(apply (NoDup_equiv_atts IHHq1')); try(apply (NoDup_equiv_atts IHHq2')).
+
+    1, 3, 5, 7   : simpl; destruct ( E[[ e1]] c).
+    9, 10, 11, 12: simpl; destruct ( E[[ e2]] c).
+    all: try(apply NoDupAtt_NoDup_config; auto); try (apply NoDup_nil).
+
+ (**  ------------------------------- Select - E ------------------------------ *)
+ (**  ------------------------------- SetOp - E ------------------------------ *)
+ - 
+ (* HEquiv : (A1, e1) =T= (A2, e2)
+    H0 : (E[[ e]] c) = true
+    IHHq1 : (E[[ e]] c) = true -> ||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+    IHHq2 : (E[[ e]] c) = true -> ||= (Q[[ vq2]] c) =a= (QT[[ (A2, e2)]] c)
+    ----------------------------------------------------------
+    ||= (Q[[ setU_v op vq1 vq2]] c) =a= (QT[[ (A1, e1)]] c)
+ *)
+ (*~ apply E[[ e]] c) = true in Inductive H ~*)
+    apply IHHq2 in H0 as IHHq2'. apply IHHq1 in H0 as IHHq1'. 
+    clear IHHq1. clear IHHq2.
+ 
+ (*~ ||= (Q[[ setU_v vq1 vq2]] c) ||= prod (Q[[ vq1]] c) (Q[[ vq2]] c)~*)
+    simpl configVQuery.
+ (* IHHq1' : ||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+    IHHq2' : ||= (Q[[ vq2]] c) =a= (QT[[ (A2, e2)]] c)
+    ----------------------------------------------------
+    ||= setU op (Q[[ vq1]] c) (Q[[ vq2]] c) =a= (QT[[ (A1, e1)]] c)
+ *)
+    simpl type_. 
+ (* HEquiv : (A1, e1) =T= (A2, e2)
+    ----------------------------------------------------
+    if equiv_qtype_bool (||= (Q[[ vq1]] c)) (||= (Q[[ vq2]] c))
+               then ||= (Q[[ vq1]] c) =a= (QT[[ (A1, e1)]] c)
+ *)
+ (*~  (A1, e1) =T= (A2, e2) -> (QT[[ (A1, e1)]] c) =a= (QT[[ (A2, e2)]] c) ~*)
+  apply configVQtype_equiv with (c:=c) in HEquiv. rewrite <-IHHq1', <-IHHq2' in HEquiv.
+ (*~ Proved by A =a= B -> equiv_qtype_bool A B = true ~*)
+  rewrite <- equiv_qtype_bool_correct in HEquiv. rewrite HEquiv. assumption.
 Qed.
 
 
