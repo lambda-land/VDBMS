@@ -13,6 +13,6 @@ SetOPLemmas\
 |\
 configdistUnionInter ----------- \
 |______________________________|\
-VRA_varPrsrvtn_thm             subsump_lemmas\
-                               |\
-                               VRA_ImptoExp\
+VRA_varPrsrvtn_thm____________ subsump_lemmas\
+______________________________ |\
+______________________________ VRA_ImptoExp
