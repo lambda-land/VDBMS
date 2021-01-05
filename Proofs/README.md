@@ -12,7 +12,7 @@ AttOPVatt\
 SetOPLemmas\
 |\
 configdistUnionInter ----------- \
-|                              |\
+|______________________________|\
 VRA_varPrsrvtn_thm             subsump_lemmas\
                                |\
                                VRA_ImptoExp\
