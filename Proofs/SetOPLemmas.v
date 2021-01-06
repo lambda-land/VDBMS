@@ -825,6 +825,20 @@ Proof. intro A. induction A as [|(a, e)]. reflexivity.
 Lemma vatts_inter_nil_l : forall A, vatts_inter [] A = [].
 Proof. intros. rewrite vatts_inter_equation. simpl. reflexivity. Qed.
 
+Lemma atts_inter_nil_l_equiv A B (HA: NoDup A) (HB: NoDup B): A =a= [] ->
+atts_inter A B =a= []. 
+Proof. intro H. rewrite set_inter_equiv with (B:=[]) (B':=B).
+rewrite atts_inter_nil_l. try reflexivity.
+all: try (assumption); try (apply (NoDup_nil)). reflexivity.
+Qed.
+
+Lemma atts_inter_nil_r_equiv A B (HA: NoDup A) (HB: NoDup B): B =a= [] ->
+atts_inter A B =a= []. 
+Proof. intro H. rewrite set_inter_equiv with (B:=A) (B':=[]).
+rewrite atts_inter_nil_r. try reflexivity.
+all: try (assumption); try (apply (NoDup_nil)). reflexivity.
+Qed.
+
 Lemma vatts_inter_notIn A B x ex: ~InAtt x A -> 
  vatts_inter A (ae x ex::B) = vatts_inter A B.
 Proof. induction A as [|(a, e)].
@@ -878,6 +892,45 @@ rewrite HInB in He2. simpl in He2.
 rewrite orb_false_r in He2. assumption. }
 { apply (IHA B HndpB HInAB HInB) with (c:= c) in He. assumption. } 
 ++ apply (IHA B HndpB HInAB HInB) with (c:= c) in He. assumption.
+Qed.
+
+Lemma vatts_inter_simpl A B:
+vatts_inter (vatts_inter A B) B =va= vatts_inter A B. 
+Proof. induction A.
+- repeat (rewrite vatts_inter_nil_l).
+reflexivity.
+- destruct B.
+simpl. repeat (rewrite vatts_inter_nil_r).
+reflexivity. destruct a as (a', e').
+destruct (existsbAtt a' (v :: B)) eqn:Ha'.
+rewrite vatts_inter_equation. 
+destruct (vatts_inter (ae a' e' :: A) (v :: B)) eqn:Ha'AvB.
+reflexivity.
+destruct v0 as (a0, e0).
+rewrite vatts_inter_equation in Ha'AvB. 
+rewrite Ha' in Ha'AvB. 
+inversion Ha'AvB; subst.
+rewrite Ha'. simpl. unfold equiv_vatts.
+intro c. simpl. 
+destruct ((E[[ e']] c) && (E[[ extract_e a0 (v :: B)]] c) &&
+  (E[[ extract_e a0 (v :: B)]] c)) eqn:Hes;
+rewrite <- andb_assoc in Hes; rewrite andb_diag in Hes;
+rewrite Hes; try( apply cons_equiv_atts);
+unfold equiv_vatts in IHA; auto.
+
+assert (Hsimp: vatts_inter (ae a' e' :: A) (v :: B) = vatts_inter A (v :: B)).
+{ rewrite vatts_inter_equation. rewrite Ha'. reflexivity. }
+
+rewrite Hsimp. apply IHA.
+Qed.
+
+Lemma atts_inter_simpl A B:
+atts_inter (atts_inter A B) B =a= atts_inter A B. 
+Proof. induction A.
+- repeat (rewrite atts_inter_nil_l). reflexivity.
+- simpl. destruct (set_mem string_eq_dec a B) eqn:H. 
++ simpl. rewrite H. apply cons_equiv_atts. auto.
++ auto.
 Qed.
 
 

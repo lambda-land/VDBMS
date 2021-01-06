@@ -381,15 +381,15 @@ Qed.
   nodupatt_push_annot
 ---------------------------------------------------------------*)
 
-Lemma notInAtt_push_annot a A e: ~ InAtt a A ->
+Lemma notInAtt_push_annot a A e: ~ InAtt a A <->
 ~ InAtt a (push_annot A e). 
-induction A; intro H.
-simpl. simpl in H. auto. destruct a0.
-simpl. simpl in H. 
-apply Classical_Prop.not_or_and in H.
-destruct H.
-apply Classical_Prop.and_not_or.
-split. assumption. eauto.
+split; induction A; intro H.
+1, 3: simpl; simpl in H; auto. 
+1, 2: destruct a0; simpl; simpl in H; 
+apply Classical_Prop.not_or_and in H;
+destruct H;
+apply Classical_Prop.and_not_or;
+split; [assumption | eauto].
 Qed.
 
 Lemma NoDupAtt_push_annot: forall A e, NoDupAtt (A) -> NoDupAtt (push_annot A e).
@@ -398,9 +398,9 @@ intros A e. induction A; intro H.
 simpl. assumption.
 destruct a. simpl. simpl in H.
 inversion H; subst. apply NoDupAtt_cons.
-apply (notInAtt_push_annot _ _ _ H2).
+rewrite <- notInAtt_push_annot; try eauto.
 eauto. Qed.
 
-Hint Resolve NoDupAtt_push_annot.
+Hint Resolve NoDupAtt_push_annot:core.
 
 (*------------------------push_annot---------------------------*)

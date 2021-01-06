@@ -99,6 +99,14 @@ destruct (string_beq a a1) eqn:Haa1.
     apply IHA. auto. auto.
 Qed.
 
+Lemma InAtt_extract a A (HndpAttA: NoDupAtt A): InAtt a A -> 
+exists e, In (ae a e) A /\ extract_e a A = (e \/(F) litB false). 
+Proof. intros HInAttA.
+apply InAtt_In_exfexp in HInAttA.
+destruct HInAttA as [e HInA].
+(* NoDupAtt A /\ In (ae a' e) A -> extract_e a' A = e *)
+apply (In_extract _ _ HndpAttA) in HInA as Hexe.
+exists e. eauto. Qed.
 
 Lemma extract_equiv : forall l l' a,
 l =va= l' -> extract_e a l =e= extract_e a l'.

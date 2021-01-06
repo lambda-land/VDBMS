@@ -264,7 +264,7 @@ Proof.
      -----------------------------------------------
      ||= (Q[[ rel_v (rn, (A', e'))]] c) =a= (QT[[ (A', e /\(F) e')]] c)
   *)
-  unfold configVQuery. unfold configVQtype, configaVatts. simpl semE. 
+  unfold configVQuery, configVQtype, configaVatts. (*"Q[[_]]c", "QT[[_]]c", "AE[[_]]c".*) simpl semE. 
   (* H0 : (E[[ e]] c) = true
      -----------------------------------------------
      ||= rel (R[[ (rn, (A', e'))]] c) =a=

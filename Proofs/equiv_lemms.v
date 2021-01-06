@@ -143,6 +143,47 @@ destruct (string_eq_dec x x) as [Heq|Heq]; subst.
   reflexivity. 
 Qed.
 
+Lemma configVQtype_equiv: forall Q Q' c, Q =T= Q' ->
+(QT[[ Q]] c) =a= (QT[[ Q']] c).
+Proof. intros. unfold "=T=" in H. apply H.
+(* unfold configVQtype, configaVatts. unfold equiv_vqtype in H.
+destruct H. destruct Q as (A, e). destruct Q' as (A', e').
+simpl in *. rewrite H0. destruct (E[[ e']] c).
+apply H. reflexivity.*)
+Qed.
+
+Lemma configaVatts_equivE_configVQtype: forall Q Q', (fst Q) =va= (fst Q') ->
+(snd Q) =e= (snd Q') -> Q =T= Q'. 
+Proof. intros. 
+unfold "=va=" in H. 
+destruct Q as (A, e). destruct Q' as (A', e').
+simpl in *. unfold "=T=". intro c. simpl.
+rewrite H0. 
+destruct (E[[ e']] c).
+apply H. reflexivity.
+Qed.
+
+Lemma configVAttSet_push_annot A e c:
+configVAttSet (push_annot A e) c = configVQtype (A, e) c.
+Proof. induction A. 
+simpl. destruct ( E[[ e]] c); reflexivity.
+unfold push_annot; fold push_annot.
+destruct a. simpl configVQtype. 
+simpl configVQtype in IHA.
+simpl configVAttSet.
+destruct (E[[ e]] c); destruct (E[[ f]] c); simpl;
+try(eauto).
+rewrite IHA. reflexivity.
+Qed.
+
+Lemma push_annot_equiv A B e: A =va= B -> (A < e) =va= (B < e).
+Proof. intro H. unfold "=va=". intro c.
+repeat(rewrite configVAttSet_push_annot).
+simpl. destruct (E[[ e]] c). apply H. reflexivity.
+(*apply configVQtype_equiv. unfold "=T=". simpl. 
+split; [assumption | reflexivity].*) Qed.
+
+
 (*Lemma equiv_push_annot: forall A A' e e' , 
      A =va= A' -> e =e= e' -> 
      push_annot A e =va= push_annot A' e'.

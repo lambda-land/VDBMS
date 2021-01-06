@@ -890,15 +890,16 @@ let (A, ea) := X in
 
 (** A and A' has to be NoDupAtt *)
 Definition subsumpImp_vatts (A A': vatts) :Prop := 
-forall x e, In (ae x e) A (*/\ sat e*) -> exists e', In (ae x e') A'. (*/\ sat(e /\(F) e').*)
+forall x e, In (ae x e) A /\ sat e -> exists e', In (ae x e') A' /\ sat(e /\(F) e').
 (*In (ae x e) A -> (exists e', (In (ae x e') A') /\ sat(e /\(F) e')).*)
 
 (** (fst X) and (fst X') has to be NoDupAtt *)
 Definition subsumpImp_vqtype ( X X': vqtype) : Prop := 
+(*subsumpImp_vatts (fst X < snd X) (fst X' < snd X'). *)
 let (A, ea) := X in 
   let (A', ea') := X' in 
-    forall x e, In (ae x e) A (*/\ sat (e /\(F) ea)*) -> 
-                       exists e', In (ae x e') A'. (* /\ sat (e /\(F) ea /\(F) e' /\(F) ea').*)
+    forall x e, In (ae x e) A /\ sat (e /\(F) ea) -> 
+                       exists e', In (ae x e') A' /\ sat (e /\(F) ea /\(F) e' /\(F) ea').
 (* subsumpImp_vatts (fst X) (fst X') /\ sat((snd X) /\(F) (snd X')). *)
 
 
@@ -910,14 +911,14 @@ unfold subsump_vatts_exp in H. simpl in H.
 rewrite and_distributes_over_or in H.*)
 
 
-Lemma subsumpImp_vatts_refl A: subsumpImp_vatts A A.
+(*Lemma subsumpImp_vatts_refl A: subsumpImp_vatts A A.
 Proof. unfold subsumpImp_vatts. intros x e H.
 exists e. auto. (*destruct H as [HIn Hsat]. split. 
 assumption. 
 unfold sat. simpl. unfold sat in Hsat. 
 destruct Hsat as [c Hsat]. exists c. 
 rewrite Hsat. auto.*)
-Qed.
+Qed.*)
 
 (* Wrong move: restrict Schema and query to have following assumption so that, if In (a, e) A then, sat e *)
 (* Definition SatTuples (A: vatts) : Prop := forall a e, In (ae a e) A -> sat e.
@@ -971,8 +972,8 @@ Infix "=t=" := equiv_qtype (at level 50) : type_scope.
 
 (* Variational Set (annotated-Var Query Type) Equivalence *)
 Definition equiv_vqtype : relation vqtype := 
-        (*fun X X' => forall c, configVQtype A c =a= configVAttSet A' c. *)
-        fun X X' => (fst X) =va= (fst X') /\ (snd X) =e= (snd X').
+        fun X X' => forall c, configVQtype X c =a= configVQtype X' c. 
+        (*fun X X' => (fst X) =va= (fst X') /\ (snd X) =e= (snd X').*)
 
 Infix "=T=" := equiv_vqtype (at level 50) : type_scope.
 
@@ -1047,9 +1048,9 @@ Qed.
 Remark equiv_vqtype_sym : Symmetric equiv_vqtype.
 Proof.
   intros X Y. intros H. destruct X, Y. unfold equiv_vqtype. 
-  unfold equiv_vqtype in H. destruct H. split. symmetry. 
+  unfold equiv_vqtype in H. (*destruct H. split. symmetry. 
   apply H. symmetry. 
-  apply H0.
+  apply H0.*) symmetry. apply H.
 Qed.
 
 
@@ -1057,15 +1058,16 @@ Remark equiv_vqtype_trans : Transitive equiv_vqtype.
 Proof.
   intros X Y Z. intros H1 H2. 
   destruct X as (vx, fx), Y as (vy, fy), Z as (vz, fz). 
-  unfold equiv_vqtype in H1. destruct H1 as [H11 H12].
-  unfold equiv_vqtype in H2. destruct H2 as [H21 H22].
-  unfold equiv_vqtype. split.
+  unfold equiv_vqtype in H1. (* destruct H1 as [H11 H12]. *)
+  unfold equiv_vqtype in H2. (* destruct H2 as [H21 H22]. *)
+  unfold equiv_vqtype. (*split.
   transitivity (fst (vy, fy)).
     apply H11.
     apply H21.
   transitivity (snd (vy, fy)).
     apply H12.
-    apply H22.
+    apply H22.*)
+  intro c. transitivity (QT[[ (vy, fy)]] c); auto.
 Qed.
 
 (** vatts equivalence is an equivalence relation. *)
@@ -1160,6 +1162,7 @@ Fixpoint push_annot (A: vatts) (m: fexp) : (vatts):=
   | nil => nil
   | ae x e :: xs => (ae x (e /\(F) m)) :: push_annot xs m
   end.
+Notation " Q < e " := (push_annot Q e) (at level 70). 
 
 Definition avatts_vatts (X:avatts) : vatts := push_annot (fst X) (snd X).
 
@@ -1316,7 +1319,7 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
    *)
   | Relation_vE : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
                         rn A {HA: NoDupAtt A} e',
-        InVR (rn, (A, e')) S ->
+        InVR (rn, (A, e')) S -> 
        (*~ sat (  e    /\(F)   (~(F) (e')) ) ->*) (* why are we restricting ourselves to introduce only more specific context? It's not even maintained in the type system e.g. choice will have less specif context evemn if we start with more specific ones. *)
        vtype e S (rel_v (rn, (A, e' ))) (A, (e /\(F) e'))
   (*   -- PROJECT-E --  *)
@@ -1340,8 +1343,8 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
                             A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2 ,
        vtype e  S vq1 (A1, e1) ->
        vtype e  S vq2 (A2, e2) ->
-       (*vqtype_inter (A1, e1) (A2, e2) = nil ->*)
-       vatts_inter A1 A2 =va= nil ->
+       vqtype_inter_vq (A1, e1) (A2, e2) =T= (nil, litB false) ->
+       (*vatts_inter A1 A2 =va= nil ->*)
        vtype e S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
@@ -1380,8 +1383,9 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
   (*| Relation_vE_imp_empty : forall S (HS:NoDupRn (fst S)) rn A_ A' {HA: NoDupAtt A'} e_ e',
        InVR (rn, (A', e')) S ->
        vtypeImp (litB true) S (rel_v (rn, (A_, e_))) (A', e')*)
-  (*   -- intro MORE specific context --
-    empty |- rn : A^e'  ~sat(e /\ (~e'))
+  
+  (*   -- RELATION-E --
+    empty |- rn : A^e'  
     ------------------------------------  RELATION-E 
                e  |- rn : A^e
   *)
@@ -1390,8 +1394,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
        InVR (rn, (A', e')) S ->
        (*sat (e /\(F) e') *)
        (*SatTuples (A, (e /\(F) e')) ->*)
-       vtypeImp e S (rel_v (rn, (A_, e_))) (A', (e /\(F) e')) (** variational context is initialized with feature_model 
-                                                              which is more general than the overall pc of any relation in vdbms *)
+       vtypeImp e S (rel_v (rn, (A_, e_))) (A', (e /\(F) e')) 
   (*   -- PROJECT-E --  *)
   | Project_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} vq {HndpvQ: NoDupAttvQ vq} e' A' 
                                {HndpAA': NoDupAtt A'} Q {HndpQ: NoDupAtt (fst Q)},
@@ -1413,8 +1416,9 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
                             A1 {HndpAA1: NoDupAtt A1} e1 A2 {HndpAA2: NoDupAtt A2} e2 ,
        vtypeImp e  S vq1 (A1, e1) ->
        vtypeImp e  S vq2 (A2, e2) ->
+       vqtype_inter_vq (A1, e1) (A2, e2) =T= (nil, litB false) ->
        (*vqtype_inter (A1, e1) (A2, e2) = nil ->*)
-       vatts_inter A1 A2 =va= nil ->
+       (* vatts_inter A1 A2 =va= nil -> *)
        vtypeImp e  S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
