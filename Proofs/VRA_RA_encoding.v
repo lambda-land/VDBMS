@@ -1399,7 +1399,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
   | Project_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} vq {HndpvQ: NoDupAttvQ vq} e' A' 
                                {HndpAA': NoDupAtt A'} Q {HndpQ: NoDupAtt (fst Q)},
        vtypeImp e S vq (A', e') -> 
-       subsumpImp_vqtype Q (A', e') ->
+       (*subsumpImp_vqtype Q (A', e') ->*) (* see below why subsumpImp_vqtype is not needed? *)
        vtypeImp e S (proj_v Q vq) (vqtype_inter_vq Q (A', e'))
   (*  -- CHOICE-E --  *)
   | Choice_vE_imp: forall e e' S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
@@ -1437,6 +1437,39 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
 Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
 
 (*-----------------------vqtype--------------------------------*)
+
+(* WHY subsumpImp_vqtype IS NOT NEEDED in Implicit but in Explicit? *)
+(* 
+-  First let's look at why do we use subsump in Explicit?
+-  Explicit Project rule:
+-  Project_vE:
+       { e S |= vq | (A', e')} -> 
+       subsump_vqtype (Q^^e) (A', e') ->
+       { e S |= (proj_v Q vq) | (Q^^e)
+
+-  subsump_vqtype (Q^^e) (A', e') implies
+-  forall c, sublist (QT[[Q^^e]]c) (QT[[(A', e')]]c) 
+-  so that plain projection query: proj QT[[Q^^e]]c QT[[(A', e')]]c is valid
+
+-  So, what is different in Implicit that we don't need it?
+
+-  In Implicit settings, before getting processed, queries go through an additional 
+-  explicit annotation stage []S where annotation from not only schema but also 
+-  sub-queries gets propagated. For example, annotation for (proj_v Q vq) : 
+
+-  Given { S |- [vq]_S | (As, es)} 
+         [ proj_v Q vq ]_S => proj_v (Q /-\ (As, es)) [vq]_S 
+  
+
+-  From defn of /-\, forall c, sublist (QT[[(Q /-\ (As, es))]]c) (QT[[(As, es)]]c)  *)
+
+(** In context e, forall c, sublist (QT[[(Q /-\ (As, es))^^e]]c) (QT[[(As, es/\e)]]c) *) (*
+
+-  So even if, user provided a not subsumpImp Q that would make configured Q, before annotaion
+-  to not be sublist of configured vq's type for some c, after going though the explicit annotation 
+-  stage sublist forall c requirement for projection is bound to be fullfilled. Therefore
+-  THERE IS NO NEED TO CHECK SUBSUMP CONDITION IN INPLICIT TYPE SYSTEM. IT is guaranteed by the process.
+*)
 
 (* ------------------------------------------------------------
   | Type of plain query
