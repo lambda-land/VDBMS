@@ -4,6 +4,7 @@ Set Warnings "-notation-overridden,-parsing".
 
 Load extract_lemmas.
 
+
 (* configVAttSet InAtt *)
 
 Lemma In_InAtt_config: forall a A c, In a (configVAttSet A c) -> InAtt a A.

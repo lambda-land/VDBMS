@@ -994,14 +994,6 @@ try ( apply vqtype_union_vq_equiv with (A:=(A1Imp, e1Imp)) (A':=(A1Exp, e1Exp)) 
 assumption).
 Qed.
 
-Lemma subsumpImp_vqtype_equiv A A' B(HndpA: NoDupAtt (fst A)) 
-(HndpA': NoDupAtt (fst A')): A =T= A' -> 
-subsumpImp_vqtype B A -> subsumpImp_vqtype B A'.
-Proof. Admitted.
-
-Lemma subsumpImp_vqtype_inter A B C(HndpA: NoDupAtt (fst A)) :
-subsumpImp_vqtype B A -> subsumpImp_vqtype (vqtype_inter_vq B C) A.
-Proof. Admitted.
 
 Lemma ImpQ_ImpType_implies_ExpQ_ImpType e S q A: 
   { e , S |- q | A }  -> 
@@ -1094,12 +1086,28 @@ auto.
 { unfold vqtype_inter_vq. simpl. simpl in *.
      apply NoDupAtt_vatts_inter; assumption. }
 
-{ 
+(*{ 
+(* Easier Proof than subsumpImp_vqtype_inter *)
+apply subsumpImp_vqtype_equiv with (Aqs, eqs /\(F) e);
+try(simpl; assumption).
+
+pose (ImpQ_ImpType_Equiv_ExpQ_ImpType HqInv Hqs) as HqeqvqS.
+apply symmetry in HqeqvqS. apply transitivity with (x:= (Aqs, eqs /\(F) e)) 
+in HqeqvqS; try auto.
+
+apply subsumpImp_vqtype_equiv with (A':=(Aqs, eqs /\(F) e)) in HsbsmpInv;
+[ | auto | auto | symmetry; auto].
+apply subsumpImp_vqtype_inter_intro.
+(*  *)
+
+(** with subsumpImp_vqtype_inter
 apply subsumpImp_vqtype_inter with (C:=(Aqs, eqs)) in HsbsmpInv;
 try(simpl; assumption).
 pose (ImpQ_ImpType_Equiv_ExpQ_ImpType HqInv Hqs) as HqeqvqS.
 apply subsumpImp_vqtype_equiv with (A:=(A'Inv, e'Inv));
 try(simpl; assumption).
+*)
+
 (* unfold subsumpImp_vqtype. 
 unfold subsumpImp_vqtype, subsumpImp_vatts in HsbsmpInv.
 intros a ea HIn. simpl in HIn, HsbsmpInv. simpl. 
@@ -1125,7 +1133,7 @@ apply InAtt_vatts_inter in HInAtt. destruct HInAtt as [HInAttAp HInAttAqs].
 rewrite InAtt_In_exfexp in HInAttAp. 
 destruct HInAttAp as [ep' HInAttApep'].
 apply HsbsmpInv in HInAttApep'.
-assumption. *) }
+assumption. *) }*)
  
 (*2: { rewrite <- Htrue_efst. assumption. }
 { unfold vqtype_inter_vq. simpl. simpl in *.
@@ -1452,7 +1460,7 @@ rewrite In_config_exists_true. unfold avatts_vatts. simpl fst. simpl snd.
 
 rewrite configVAttSet_push_annot in *. Search vatts_inter.
 
- simpl in HIn. 
+simpl in HIn. 
 
 simpl.
 

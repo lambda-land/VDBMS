@@ -58,6 +58,11 @@ simpl; destruct (E[[ e]] c).
 + rewrite H0; auto.
 Qed.
 
+Lemma In_equiv_atts A A' x: A =a= A' ->
+In x A <-> In x A'. Proof. intro H. unfold "=a=" in H.
+specialize H with x. destruct H. auto. Qed.
+
+
 Lemma equiv_irres_order x y l: (x::y::l) =a= (y::x::l).
 Proof. unfold equiv_atts. intro. split. split;
 try (intro H; simpl in H; simpl;
