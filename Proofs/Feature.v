@@ -6,7 +6,7 @@ Require Import Coq.Strings.String.
 Require Import Relations.Relation_Definitions.
 Require Import Classes.Morphisms.
 Require Import Setoids.Setoid.
-From Coq Require Import Logic.Classical_Pred_Type.
+Require Import Logic.Classical_Pred_Type.
 
 Module Feature.
 
@@ -123,10 +123,11 @@ Definition taut (e:fexp): Prop :=
 Definition not_sat (e:fexp): Prop :=
   forall c, semE e c = false.
 
-(* @Fariba: not sure what you mean by implies and if you're defining it correctly. *)
-(* @Parisa: never used it anywhre; not sure why I wrote this in the first place!! *)
-Definition implies (e1 e2:fexp) (c:config): Prop :=
-  semE e1 c = true -> semE e2 c = true.
+
+Definition implies (e1 e2:fexp) (c:config) : Prop := 
+  (E[[ e1 ]] c) = true -> (E[[ e2 ]] c) = true.
+
+Notation "e1 ->> e2 | c" := (implies e1 e2 c) (at level 91, left associativity).
 
 Theorem ex_falso_quodlibet : forall (P:Prop),
   False -> P.
@@ -198,7 +199,6 @@ Proof.
     rewrite andb_true_r in H. 
     assumption.
   Qed.
-
 
 Lemma or_any_true : forall e1 e2 c, 
          ((E[[ e1]] c) || (E[[ e2]] c)) = true
