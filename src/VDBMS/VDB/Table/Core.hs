@@ -39,8 +39,9 @@ confTable p c t = validTuples
 
 -- | determines if two tables are equivalent.
 equivTabs :: Table -> Table -> Bool
-equivTabs l r = trace ("schema : " ++ show (getTableSchema l == getTableSchema r)
-  ++ "\n" ++ "tables : " ++ show (equivSqlTables (getSqlTable l) (getSqlTable r)))
+equivTabs l r = 
+	-- trace ("schema : " ++ show (getTableSchema l == getTableSchema r)
+ --  ++ "\n" ++ "tables : " ++ show (equivSqlTables (getSqlTable l) (getSqlTable r)))
   (getTableSchema l == getTableSchema r)
   && equivSqlTables (getSqlTable l) (getSqlTable r)
 

@@ -75,7 +75,7 @@ runQ3 conn vq =
          sql = show $ optRAQs2Sql type_as pc ras_opt
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
-     putStrLn sql
+     -- putStrLn sql
      end_constQ <- getTime Monotonic
      putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
@@ -89,7 +89,7 @@ runQ3 conn vq =
      fprint (timeSpecs % "\n") strt_res end_res
      -- timeItName "make vtable" Monotonic $ return 
      --   $ mkVTable type_sch sqlTab
-     putStrLn (show res)
+     -- putStrLn (show res)
      return res
 
 runtest :: Algebra -> IO Table

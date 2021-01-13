@@ -84,13 +84,13 @@ instance Exception SqlTableErr
 -- | returns true if two sqltables are equivalent.
 equivSqlTables :: SqlTable -> SqlTable -> Bool
 equivSqlTables l r = 
-  trace ("rows wo pc : " ++ show (lrows == rrows) -- the problem is with fexp comparison
-    ++ "\n" ++ "lset : " ++ show lset
-    ++ "\n" ++ "rset : " ++ show rset
-    ++ "\n" ++ "lnopc : " ++ show lnopc
-    ++ "\n" ++ "rnopc : " ++ show rnopc
-    ++ "\n" ++ "lrows : " ++ show lrows
-    ++ "\n" ++ "rrows : " ++ show rrows)
+  -- trace ("rows wo pc : " ++ show (lrows == rrows) -- the problem is with fexp comparison
+  --   ++ "\n" ++ "lset : " ++ show lset
+  --   ++ "\n" ++ "rset : " ++ show rset
+  --   ++ "\n" ++ "lnopc : " ++ show lnopc
+  --   ++ "\n" ++ "rnopc : " ++ show rnopc
+  --   ++ "\n" ++ "lrows : " ++ show lrows
+  --   ++ "\n" ++ "rrows : " ++ show rrows)
   comp
   where
     -- lset = S.fromAscList l

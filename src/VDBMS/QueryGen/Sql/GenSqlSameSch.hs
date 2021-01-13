@@ -17,9 +17,11 @@ import Debug.Trace
 
 -- | takes a list of opt RA queries and generate one sql query.
 optRAQs2Sql :: [Attribute] -> PCatt -> [Opt RAlgebra] -> SqlSelect
-optRAQs2Sql as pc qs = trace ("debugin: " ++ show sqls ++ "updated: " 
-  ++ show (tail (reverse sqls_updatedPC_sameSch)))
-  $ foldl (SqlBin SqlUnionAll) 
+optRAQs2Sql as pc qs = 
+	-- trace ("debugin: " ++ show sqls ++ "updated: " 
+ --  ++ show (tail (reverse sqls_updatedPC_sameSch)))
+  -- $ 
+  foldl (SqlBin SqlUnionAll) 
           (head sqls_updatedPC_sameSch) 
           (tail sqls_updatedPC_sameSch)
     where

@@ -91,7 +91,7 @@ runQ2 conn vq =
      fprint (timeSpecs % "\n") strt_res end_res
      -- timeItName "gathering results" Monotonic $ return 
      --   $ sqlVtables2VTable pc type_sch sqlTables
-     putStrLn (show res)
+     -- putStrLn (show res)
      return res
 
 run2test :: Algebra -> IO Table

@@ -76,25 +76,33 @@ typePC = getFexp
 applyFuncToAttFexp :: (F.FeatureExpr -> F.FeatureExpr)
                    -> AttrInformation 
                    -> AttrInformation
-applyFuncToAttFexp f = map (\i -> AttrInfo (f (attrFexp i)) (attrType i) (attrQual i))
+applyFuncToAttFexp f 
+  = map (\i -> AttrInfo (f (attrFexp i)) (attrType i) (attrQual i))
 
 -- | updates attributes fexp.
 updateAttFexp :: F.FeatureExpr -> AttrInformation -> AttrInformation
-updateAttFexp f = map (\i -> AttrInfo (F.And f (attrFexp i)) (attrType i) (attrQual i))
+updateAttFexp f 
+  = map (\i -> AttrInfo (F.And f (attrFexp i)) (attrType i) (attrQual i))
 
 -- | turns a type env to table schema.
 typeEnv2tableSch :: TypeEnv -> TableSchema
-typeEnv2tableSch t = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (SM.toList (getObj t)))
-  where 
-    attrinfo :: (Attribute, AttrInformation) -> [(Attribute, Opt SqlType)]
-    attrinfo (a,ais) 
-      -- | length ais > 1 
-      --   = map (\ai -> (Attribute $ (qualName . attrQual) ai 
-      --                            ++ "." 
-      --                            ++ attributeName a
-      --                 , mkOpt (attrFexp ai) (attrType ai))) ais
-      -- | otherwise 
-        = map (\ai -> (a, mkOpt (attrFexp ai) (attrType ai))) ais
+typeEnv2tableSch t 
+  = mkOpt (typePC t) $ SM.fromList (map attrinfo (SM.toList (getObj t)))
+  -- = mkOpt (typePC t) $ SM.fromList (concatMap attrinfo (SM.toList (getObj t)))
+    where 
+      attrinfo :: (Attribute, AttrInformation) -> (Attribute, Opt SqlType)
+      attrinfo (a,ais) 
+        | length ais > 1 
+          = (a, mkOpt (foldr (F.Or . attrFexp) (F.Lit True) ais) (attrType (ais !! 0)))
+          -- = map (\ai -> (Attribute $ (qualName . attrQual) ai 
+          --                        ++ "." 
+          --                        ++ attributeName a
+          --             , mkOpt (attrFexp ai) (attrType ai))) ais
+        | length ais == 1 = let ai = (ais !! 0) in 
+          (a, mkOpt (attrFexp ai) (attrType ai))
+          -- where ai = (ais !! 0)  
+          -- = map (\ai -> (a, mkOpt (attrFexp ai) (attrType ai))) ais
+        | otherwise = error "typeEnv2tableSch: shouldn't have got an empty type env!"
 
 -- | transforms a type env to a list of opt attributes.
 typeEnve2OptAtts :: TypeEnv -> OptAttributes

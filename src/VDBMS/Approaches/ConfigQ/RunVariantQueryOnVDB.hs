@@ -59,6 +59,7 @@ runQ1 conn vq =
          configs = getAllConfig conn
          pc = presCond conn
      vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     -- putStrLn (show vq_type)
      start_constQ <- getTime Monotonic
      let 
          -- type_pc = typePC vq_type
@@ -74,12 +75,13 @@ runQ1 conn vq =
          ras_opt = map (second ((addPC pc) . opts_)) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
          sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt
+     -- putStrLn (show type_sch)
      end_constQ <- getTime Monotonic
      putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
-     putStrLn (show $ fmap snd sql_qs)
+     -- putStrLn (show $ fmap snd sql_qs)
          -- try removing gensql
      let runq :: (Config Bool, String) -> IO SqlVariantTable
          runq = bitraverse (return . id) (fetchQRows conn) 
