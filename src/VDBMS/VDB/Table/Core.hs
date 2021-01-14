@@ -7,6 +7,7 @@ module VDBMS.VDB.Table.Core (
         , updateSqlTable
         , mkVTable
         , confTable
+        , equivTabs
 
 ) where 
 
@@ -27,7 +28,13 @@ data Table = Table TableSchema SqlTable
 
 -- | configures a table for a given conf.
 confTable :: PCatt -> Config Bool -> Table -> SqlTable
-confTable p c t = validTuples
+confTable p c t = 
+  -- trace (show nonvalidAtt ++ " \n "
+  --        ++ show confedTsch ++ " \n "
+  --        ++ show tsch ++ " \n "
+  --        ++ show satTuplesNoPc  ++ " \n "
+  --        ++ show validTuples  ++ " \n ")
+        validTuples
   where
     nonvalidAtt = tableSchAtts tsch \\ rtableSchAtts confedTsch
     confedTsch = configTableSchema_ c tsch
@@ -38,15 +45,28 @@ confTable p c t = validTuples
     validTuples = dropAttsFromSqlTable nonvalidAtt satTuplesNoPc
 
 -- | determines if two tables are equivalent.
-equivTabs :: Table -> Table -> Bool
-equivTabs l r = 
+equivTabs :: PCatt -> [Config Bool] -> Table -> Table -> Bool
+equivTabs pc cs l r = 
+  foldr ((&&) . comp) True cs
+    where
+      comp :: Config Bool -> Bool
+      comp c 
+        | confl == [] && confr == [] = True
+        | confl == [] && confr /= [] = False
+        | confl /= [] && confr == [] = False
+        | otherwise = equivSqlTables pc confr confl
+        where
+          confr = confTable pc c r
+          confl = confTable pc c l 
+  -- and [equivSqlTables confl confr 
+  --   | c <- cs, confl <- confTable pc c l, confr <- confTable pc c r]
 	-- trace ("schema : " ++ show (getTableSchema l == getTableSchema r)
  --  ++ "\n" ++ "tables : " ++ show (equivSqlTables (getSqlTable l) (getSqlTable r)))
-  (getTableSchema l == getTableSchema r)
-  && equivSqlTables (getSqlTable l) (getSqlTable r)
+  -- (getTableSchema l == getTableSchema r)
+  -- && equivSqlTables (getSqlTable l) (getSqlTable r)
 
-instance Eq Table where
-  (==) = equivTabs
+-- instance Eq Table where
+--   (==) = equivTabs
 
 -- | pretty prints a table.
 prettyTable :: PCatt -> Table -> String

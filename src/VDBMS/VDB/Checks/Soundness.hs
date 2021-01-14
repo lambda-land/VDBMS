@@ -4,7 +4,7 @@ module VDBMS.VDB.Checks.Soundness where
 -- import VDBMS.VDB.Schema.Variational.Types 
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
-import VDBMS.VDB.Table.Table (Table, confTable)
+import VDBMS.VDB.Table.Table (Table, confTable, equivTabs)
 import VDBMS.Features.Config (prettyConfig, Config)
 -- import VDBMS.DBMS.Table.Table (prettySqlTable, sqltableAtts)
 
@@ -25,11 +25,26 @@ soundnessCheck1 :: Database conn => conn -> Algebra
                 -> (conn -> Algebra -> IO Table)
                 -> IO Bool
 soundnessCheck1 c q app1 app2 
-  = do t1 <- app1 c q 
+  = do let pc = presCond c
+           cs = getAllConfig c
+       t1 <- app1 c q 
        t2 <- app2 c q
-       if t1 == t2 
-       then return True
-       else return False
+       -- putStrLn "first approach result:"
+       -- putStrLn (show t1)
+       -- putStrLn ""
+       -- putStrLn "second approach result:"
+       -- putStrLn (show t2)
+       -- putStrLn ""
+       -- if t1 == t2
+       return $ equivTabs pc cs t1 t2
+       -- then return True
+       -- else return False
+
+-- | soundness check1 for test vdb.
+soundnessCheck1Test :: Algebra -> IO Bool
+soundnessCheck1Test q 
+  = do db <- tstVDBone
+       soundnessCheck1 db q runQ1 runQ3
 
 -- | soundness check 1 for all approaches.
 soundnessCheck1All :: Database conn => conn -> Algebra 
