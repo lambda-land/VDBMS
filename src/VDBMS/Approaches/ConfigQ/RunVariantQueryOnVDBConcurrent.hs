@@ -43,17 +43,18 @@ import Formatting.Clock
 
 
 -- |
-runQ4_ :: Database conn => conn -> Algebra -> IO ()
+runQ4_ :: Database conn => IO conn -> Algebra -> IO ()
 runQ4_ conn vq = runQ4 conn vq >> return ()
 
 -- |
-runQ4 :: Database conn => conn -> Algebra -> IO Table
+runQ4 :: Database conn => IO conn -> Algebra -> IO Table
 runQ4 conn vq = 
-  do let vsch = schema conn
+  do db <- conn 
+     let vsch = schema db
          vsch_pc = featureModel vsch
-         features = dbFeatures conn
-         configs = getAllConfig conn
-         pc = presCond conn
+         features = dbFeatures db
+         configs = getAllConfig db
+         pc = presCond db
      vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
      start_constQ <- getTime Monotonic
      let 
@@ -75,7 +76,7 @@ runQ4 conn vq =
      fprint (timeSpecs % "\n") start_constQ end_constQ
          -- try removing gensql
      let runq :: (Config Bool, String) -> IO SqlVariantTable
-         runq = bitraverse (return . id) (fetchQRows conn) 
+         runq = bitraverse (return . id) (fetchQRows db) 
      sqlTables <- timeItName "running queries" Monotonic $ mapConcurrently runq sql_qs
      putStrLn "gathering results: "
      strt_res <- getTime Monotonic
@@ -88,6 +89,4 @@ runQ4 conn vq =
      return res
 
 run4test :: Algebra -> IO Table
-run4test q =
-  do db <- tstVDBone
-     runQ4 db q
+run4test q = runQ4 tstVDBone q

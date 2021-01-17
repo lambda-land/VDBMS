@@ -20,13 +20,14 @@ import VDBMS.DBsetup.Postgres.Test
 
 -- | takes a database, query, two approaches and
 --   compares if they return the same results.
-soundnessCheck1 :: Database conn => conn -> Algebra 
-                -> (conn -> Algebra -> IO Table)
-                -> (conn -> Algebra -> IO Table)
+soundnessCheck1 :: Database conn => IO conn -> Algebra 
+                -> (IO conn -> Algebra -> IO Table)
+                -> (IO conn -> Algebra -> IO Table)
                 -> IO Bool
 soundnessCheck1 c q app1 app2 
-  = do let pc = presCond c
-           cs = getAllConfig c
+  = do db <- c
+       let pc = presCond db
+           cs = getAllConfig db
        t1 <- app1 c q 
        t2 <- app2 c q
        -- putStrLn "first approach result:"
@@ -43,11 +44,10 @@ soundnessCheck1 c q app1 app2
 -- | soundness check1 for test vdb.
 soundnessCheck1Test :: Algebra -> IO Bool
 soundnessCheck1Test q 
-  = do db <- tstVDBone
-       soundnessCheck1 db q runQ1 runQ3
+  = soundnessCheck1 tstVDBone q runQ1 runQ3
 
 -- | soundness check 1 for all approaches.
-soundnessCheck1All :: Database conn => conn -> Algebra 
+soundnessCheck1All :: Database conn => IO conn -> Algebra 
                     -> IO Bool
 soundnessCheck1All c q 
   = do r1 <- soundnessCheck1 c q runQ1 runQ2
@@ -83,23 +83,23 @@ soundnessCheck1All c q
 -- | soundness check 1 for all approaches on the test vdb.
 soundnessCheck1AllTest :: Algebra -> IO Bool
 soundnessCheck1AllTest q 
-  = do db <- tstVDBone
-       soundnessCheck1All db q
+  = soundnessCheck1All tstVDBone q
 
-
+ 
 -- | takes a database and a query and an approach.
 --   runs configured queries and configures the
 --   result of the given approach and configures
 --   it and then compares the two.
-soundnessCheck2 :: Database conn => conn -> Algebra
-                -> (conn -> Algebra -> IO Table)
+soundnessCheck2 :: Database conn => IO conn -> Algebra
+                -> (IO conn -> Algebra -> IO Table)
                 -> IO Bool
 soundnessCheck2 c q app 
-  = do let pc = presCond c
-           confs = getAllConfig c
-           features = dbFeatures c
+  = do db <- c
+       let pc = presCond db
+           confs = getAllConfig db
+           features = dbFeatures db
        t <- app c q
-       confedQRess <- runRelQs c q
+       confedQRess <- runRelQs db q
        -- putStrLn "first print:"
        -- putStrLn ""
        -- putStrLn (show (map (\(cf,tb) -> prettyConfig features cf 
@@ -153,11 +153,10 @@ soundnessCheck2 c q app
 -- | soundness check2 for test vdb.
 soundnessCheck2Test :: Algebra -> IO Bool
 soundnessCheck2Test q 
-  = do db <- tstVDBone
-       soundnessCheck2 db q runQ2
+  = soundnessCheck2 tstVDBone q runQ2
 
 -- | second soundness check for all approaches.
-soundnessCheck2All :: Database conn => conn -> Algebra -> IO Bool
+soundnessCheck2All :: Database conn => IO conn -> Algebra -> IO Bool
 soundnessCheck2All c q 
   = do putStrLn "app 1:"
        b1 <- soundnessCheck2 c q runQ1
@@ -180,35 +179,34 @@ soundnessCheck2All c q
 -- | soundness check 2 for the test vdb.
 soundnessCheck2allTest :: Algebra -> IO Bool
 soundnessCheck2allTest q 
-  = do db <- tstVDBone
-       soundnessCheck2All db q
+  = soundnessCheck2All tstVDBone q
 
 
 -- | running variant queries VS running optionalized queries.
-varVSoptApps1 :: Database conn => conn -> Algebra -> IO Bool
+varVSoptApps1 :: Database conn => IO conn -> Algebra -> IO Bool
 varVSoptApps1 c q = soundnessCheck1 c q runQ1 runQ2
 
 -- | running variant queries VS running a big query.
-varVSbigApps1 :: Database conn => conn -> Algebra -> IO Bool
+varVSbigApps1 :: Database conn => IO conn -> Algebra -> IO Bool
 varVSbigApps1 c q = soundnessCheck1 c q runQ1 runQ3
 
 -- | running optionalized queries VS running a big query.
-optVSbigApps1 :: Database conn => conn -> Algebra -> IO Bool
+optVSbigApps1 :: Database conn => IO conn -> Algebra -> IO Bool
 optVSbigApps1 c q = soundnessCheck1 c q runQ2 runQ3
 
 -- | concurrently running variant queries 
 --   VS cuncurrently running optionalized queries.
-varVSoptConcurrentApps1 :: Database conn => conn -> Algebra -> IO Bool
+varVSoptConcurrentApps1 :: Database conn => IO conn -> Algebra -> IO Bool
 varVSoptConcurrentApps1 c q = soundnessCheck1 c q runQ4 runQ5
 
 -- | running variant queries 
 --   VS cuncurrently running optionalized queries.
-varVScunoptApps1 :: Database conn => conn -> Algebra -> IO Bool
+varVScunoptApps1 :: Database conn => IO conn -> Algebra -> IO Bool
 varVScunoptApps1 c q = soundnessCheck1 c q runQ1 runQ5
 
 -- | concurrently running variant queries 
 --   VS running optionalized queries.
-cunvarVSoptApps1 :: Database conn => conn -> Algebra -> IO Bool
+cunvarVSoptApps1 :: Database conn => IO conn -> Algebra -> IO Bool
 cunvarVSoptApps1 c q = soundnessCheck1 c q runQ4 runQ2
 
 -- -- | running variant queries VS running optionalized queries 
