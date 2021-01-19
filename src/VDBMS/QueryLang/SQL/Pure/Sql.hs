@@ -5,6 +5,7 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , SqlNullAtt(..)
        , SqlAttrExpr(..)
        , SqlRelation(..)
+       , SelectFromWhere(..)
        , SqlBinOp(..)
        , SqlTempRes(..)
        , CteClosure
@@ -20,6 +21,9 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , ppSqlString
        , module VDBMS.QueryLang.SQL.Condition
        , isSqlEmpty
+       , sqlconditions
+       , sqlattributes
+       , sqltables
 
 ) where
 
@@ -52,7 +56,7 @@ data SelectFromWhere =
   SelectFromWhere {
       attributes :: [SqlAttrExpr]
     , tables :: [Rename SqlRelation]
-    , condition :: [SqlCond SqlSelect]
+    , conditions :: [SqlCond SqlSelect]
   }
 
 -- | Sql null attribute.
@@ -99,6 +103,21 @@ isrel _           = False
 issqlslct :: SqlSelect -> Bool
 issqlslct (SqlSelect _) = True
 issqlslct _             = False
+
+-- | gets attributes from sqlselect: select from where
+sqlattributes :: SqlSelect -> [SqlAttrExpr]
+sqlattributes (SqlSelect q) = attributes q
+sqlattributes _             = error "sql: expected select from where!"
+
+-- | gets tables from sqlselect: select from where
+sqltables :: SqlSelect -> [Rename SqlRelation]
+sqltables (SqlSelect q) = tables q
+sqltables _             = error "sql: expected select from where!"
+
+-- | gets conditions from sqlselect: select from where
+sqlconditions :: SqlSelect -> [SqlCond SqlSelect]
+sqlconditions (SqlSelect q) = conditions q
+sqlconditions _             = error "sql: expected select from where!"
 
 -- | returns tru if sqlselect is set op.
 issqlop :: SqlSelect -> Bool
