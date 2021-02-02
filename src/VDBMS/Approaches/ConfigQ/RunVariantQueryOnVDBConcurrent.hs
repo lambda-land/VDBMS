@@ -41,24 +41,20 @@ import System.Clock
 import Formatting
 import Formatting.Clock
 
--- Clock data type
--- Monotonic: a monotonic but not-absolute time which never changes after start-up.
--- Realtime: an absolute Epoch-based time (which is the system clock and can change).
--- ProcessCPUTime: CPU time taken by the process.
--- ThreadCPUTime: CPU time taken by the thread.
 
 -- |
-runQ4_ :: Database conn => conn -> Algebra -> IO ()
+runQ4_ :: Database conn => IO conn -> Algebra -> IO ()
 runQ4_ conn vq = runQ4 conn vq >> return ()
 
 -- |
-runQ4 :: Database conn => conn -> Algebra -> IO Table
+runQ4 :: Database conn => IO conn -> Algebra -> IO Table
 runQ4 conn vq = 
-  do let vsch = schema conn
+  do db <- conn 
+     let vsch = schema db
          vsch_pc = featureModel vsch
-         features = dbFeatures conn
-         configs = getAllConfig conn
-         pc = presCond conn
+         features = dbFeatures db
+         configs = getAllConfig db
+         pc = presCond db
      vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
      start_constQ <- getTime Monotonic
      let 
@@ -80,7 +76,7 @@ runQ4 conn vq =
      fprint (timeSpecs % "\n") start_constQ end_constQ
          -- try removing gensql
      let runq :: (Config Bool, String) -> IO SqlVariantTable
-         runq = bitraverse (return . id) (fetchQRows conn) 
+         runq = bitraverse (return . id) (fetchQRows db) 
      sqlTables <- timeItName "running queries" Monotonic $ mapConcurrently runq sql_qs
      putStrLn "gathering results: "
      strt_res <- getTime Monotonic
@@ -89,10 +85,8 @@ runQ4 conn vq =
      fprint (timeSpecs % "\n") strt_res end_res
      -- timeItName "gathering results" Monotonic $ return 
      --   $ variantSqlTables2Table features pc type_sch sqlTables
-     putStrLn (show res)
+     -- putStrLn (show res)
      return res
 
 run4test :: Algebra -> IO Table
-run4test q =
-  do db <- tstVDBone
-     runQ4 db q
+run4test q = runQ4 tstVDBone q

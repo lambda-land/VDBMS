@@ -82,32 +82,43 @@ data SqlTableErr
 instance Exception SqlTableErr
 
 -- | returns true if two sqltables are equivalent.
-equivSqlTables :: SqlTable -> SqlTable -> Bool
-equivSqlTables l r = 
-  trace ("rows wo pc : " ++ show (lrows == rrows) -- the problem is with fexp comparison
-    ++ "\n" ++ "lset : " ++ show lset
-    ++ "\n" ++ "rset : " ++ show rset
-    ++ "\n" ++ "lnopc : " ++ show lnopc
-    ++ "\n" ++ "rnopc : " ++ show rnopc
-    ++ "\n" ++ "lrows : " ++ show lrows
-    ++ "\n" ++ "rrows : " ++ show rrows)
-  comp
-  where
-    -- lset = S.fromAscList l
-    -- rset = S.fromAscList r
-    lnopc = fmap t2t' l
-    rnopc = fmap t2t' r
-    t2t' :: SqlRow -> (SqlRow, FeatureExpr)
-    t2t' row =  (M.delete "prescond" row
-            , (sqlval2fexp . fromJust) $ M.lookup "prescond" row)
-    removeDuplicates :: [(SqlRow, FeatureExpr)] -> [(SqlRow, FeatureExpr)]
-    removeDuplicates t 
-      = fmap (\(row,fs) -> (row, foldr Or (Lit False) fs)) (groupSort t)
-    lset = S.fromAscList (removeDuplicates lnopc) 
-    lrows = S.fromAscList (fmap fst (removeDuplicates lnopc))
-    rrows = S.fromAscList (fmap fst (removeDuplicates rnopc))
-    rset = S.fromAscList (removeDuplicates rnopc)
-    comp = lset == rset
+equivSqlTables :: PCatt -> SqlTable -> SqlTable -> Bool
+equivSqlTables pc l r = 
+  (l \\ r == []) && (r \\ l == []) 
+  -- trace (
+  --   show l
+  --   -- "rows wo pc : " 
+  --   -- ++ show (lrows == rrows) -- the problem is with fexp comparison
+  --   ++ "\n" ++ "lset : " 
+  --   -- ++ show lset
+  --   -- ++ "\n" ++ "rset : " 
+  --   -- ++ show rset
+  --   -- ++ "\n" ++ "lnopc : " 
+  --   -- ++ show lnopc
+  --   -- ++ "\n" ++ "rnopc : " 
+  --   -- ++ show rnopc
+  --   -- ++ "\n" ++ "lrows : " 
+  --   -- ++ show lrows
+  --   -- ++ "\n" ++ "rrows : " 
+  --   -- ++ show rrows
+  --   )
+  -- comp
+  -- where
+  --   -- lset = S.fromAscList l
+  --   -- rset = S.fromAscList r
+  --   lnopc = fmap t2t' l
+  --   rnopc = fmap t2t' r
+  --   t2t' :: SqlRow -> (SqlRow, FeatureExpr)
+  --   t2t' row =  (M.delete (attributeName pc) row
+  --           , (sqlval2fexp . fromJust) $ M.lookup (attributeName pc) row)
+  --   removeDuplicates :: [(SqlRow, FeatureExpr)] -> [(SqlRow, FeatureExpr)]
+  --   removeDuplicates t 
+  --     = fmap (\(row,fs) -> (row, foldr Or (Lit False) fs)) (groupSort t)
+  --   lset = S.fromAscList (removeDuplicates lnopc) 
+  --   lrows = S.fromAscList (fmap fst (removeDuplicates lnopc))
+  --   rrows = S.fromAscList (fmap fst (removeDuplicates rnopc))
+  --   rset = S.fromAscList (removeDuplicates rnopc)
+  --   comp = lset == rset
 
 -- | pretty prints a sql table
 prettySqlTable :: [Attribute] -> SqlTable -> String

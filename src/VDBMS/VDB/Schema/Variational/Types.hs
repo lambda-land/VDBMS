@@ -58,8 +58,10 @@ ppTableSchema = render . ppTabSch
               <> text (show (getFexp t))
               $$ ppRowType (getObj t)
     ppRowType = vcat . punctuate comma . fmap ppOneAtt . toList
-    ppOneAtt (a, (af, at)) = brackets $
-      text (attributeName a) <+> quotes (text (show at))
+    ppOneAtt (a, (af, at)) = brackets 
+      $ text (attributeName a) 
+      <+> text (show af)
+      <+> quotes (text (show at))
 
 -- | A schema is a mapping from relations to row types. Both the map itself and
 --   each row type are optionally included. The top-level 'Opt' corresponds to

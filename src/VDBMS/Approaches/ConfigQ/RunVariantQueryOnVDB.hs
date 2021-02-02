@@ -40,25 +40,22 @@ import System.Clock
 import Formatting
 import Formatting.Clock
 
--- Clock data type
--- Monotonic: a monotonic but not-absolute time which never changes after start-up.
--- Realtime: an absolute Epoch-based time (which is the system clock and can change).
--- ProcessCPUTime: CPU time taken by the process.
--- ThreadCPUTime: CPU time taken by the thread.
 
 -- |
-runQ1_ :: Database conn => conn -> Algebra -> IO ()
+runQ1_ :: Database conn => IO conn -> Algebra -> IO ()
 runQ1_ conn vq = runQ1_ conn vq >> return ()
 
 -- |
-runQ1 :: Database conn => conn -> Algebra -> IO Table
+runQ1 :: Database conn => IO conn -> Algebra -> IO Table
 runQ1 conn vq = 
-  do let vsch = schema conn
+  do db <- conn
+     let vsch = schema db
          vsch_pc = featureModel vsch
-         features = dbFeatures conn
-         configs = getAllConfig conn
-         pc = presCond conn
+         features = dbFeatures db
+         configs = getAllConfig db
+         pc = presCond db
      vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     -- putStrLn (show vq_type)
      start_constQ <- getTime Monotonic
      let 
          -- type_pc = typePC vq_type
@@ -74,15 +71,16 @@ runQ1 conn vq =
          ras_opt = map (second ((addPC pc) . opts_)) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
          sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt
+     -- putStrLn (show type_sch)
      end_constQ <- getTime Monotonic
      putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
-     putStrLn (show $ fmap snd sql_qs)
+     -- putStrLn (show $ fmap snd sql_qs)
          -- try removing gensql
      let runq :: (Config Bool, String) -> IO SqlVariantTable
-         runq = bitraverse (return . id) (fetchQRows conn) 
+         runq = bitraverse (return . id) (fetchQRows db) 
      sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
      -- putStrLn (show (length sqlTables))
      -- tabtest <- fetchQRows conn ((map fst sql_qs) !! 1)
@@ -106,9 +104,7 @@ runQ1 conn vq =
 --      fetchQRows db q
 
 run1test :: Algebra -> IO Table
-run1test q =
-  do db <- tstVDBone
-     runQ1 db q
+run1test q = runQ1 tstVDBone q
 
 -- -- |
 -- runQ1test :: Database conn => conn -> Algebra -> IO [(String, Config Bool)]

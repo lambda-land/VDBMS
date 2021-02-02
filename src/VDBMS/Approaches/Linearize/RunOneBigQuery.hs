@@ -41,24 +41,19 @@ import System.Clock
 import Formatting
 import Formatting.Clock
 
--- Clock data type
--- Monotonic: a monotonic but not-absolute time which never changes after start-up.
--- Realtime: an absolute Epoch-based time (which is the system clock and can change).
--- ProcessCPUTime: CPU time taken by the process.
--- ThreadCPUTime: CPU time taken by the thread.
-
 -- |
-runQ3_ :: Database conn => conn -> Algebra -> IO ()
+runQ3_ :: Database conn => IO conn -> Algebra -> IO ()
 runQ3_ conn vq = runQ3 conn vq >> return ()
 
 -- |
-runQ3 :: Database conn => conn -> Algebra -> IO Table
+runQ3 :: Database conn => IO conn -> Algebra -> IO Table
 runQ3 conn vq = 
-  do let vsch = schema conn
+  do db <- conn
+     let vsch = schema db
          vsch_pc = featureModel vsch
-         features = dbFeatures conn
-         configs = getAllConfig conn
-         pc = presCond conn
+         features = dbFeatures db
+         configs = getAllConfig db
+         pc = presCond db
      vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
      start_constQ <- getTime Monotonic
      let 
@@ -75,11 +70,11 @@ runQ3 conn vq =
          sql = show $ optRAQs2Sql type_as pc ras_opt
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
-     putStrLn sql
+     -- putStrLn sql
      end_constQ <- getTime Monotonic
      putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
-     sqlTab <- timeItName "running query" Monotonic $ fetchQRows conn sql
+     sqlTab <- timeItName "running query" Monotonic $ fetchQRows db sql
      -- putStrLn (prettySqlTable (type_as ++ pure pc) sqlTab)
      -- putStrLn (show sqlTab)
      putStrLn "gathering results: "
@@ -89,10 +84,8 @@ runQ3 conn vq =
      fprint (timeSpecs % "\n") strt_res end_res
      -- timeItName "make vtable" Monotonic $ return 
      --   $ mkVTable type_sch sqlTab
-     putStrLn (show res)
+     -- putStrLn (show res)
      return res
 
 runtest :: Algebra -> IO Table
-runtest q =
-  do db <- tstVDBone
-     runQ3 db q
+runtest q = runQ3 tstVDBone q

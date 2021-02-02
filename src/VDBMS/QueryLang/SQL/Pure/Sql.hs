@@ -5,6 +5,7 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , SqlNullAtt(..)
        , SqlAttrExpr(..)
        , SqlRelation(..)
+       , SelectFromWhere(..)
        , SqlBinOp(..)
        , SqlTempRes(..)
        , CteClosure
@@ -20,6 +21,9 @@ module VDBMS.QueryLang.SQL.Pure.Sql (
        , ppSqlString
        , module VDBMS.QueryLang.SQL.Condition
        , isSqlEmpty
+       , sqlconditions
+       , sqlattributes
+       , sqltables
 
 ) where
 
@@ -35,16 +39,25 @@ import Data.Maybe (isNothing, isJust, fromJust)
 
 -- | Sql select statements.
 data SqlSelect =  
-    SqlSelect {
-      attributes :: [SqlAttrExpr],
-      tables :: [Rename SqlRelation],
-      condition :: [SqlCond SqlSelect]
-      -- sqlName :: Maybe Name
-    }
+  SqlSelect SelectFromWhere
+    -- SqlSelect {
+    --   attributes :: [SqlAttrExpr],
+    --   tables :: [Rename SqlRelation],
+    --   condition :: [SqlCond SqlSelect]
+    --   -- sqlName :: Maybe Name
+    -- }
   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
   | SqlTRef Relation -- ^ return a table
   | SqlEmpty -- ^ empty query
   -- deriving Show
+
+-- | select-from-where
+data SelectFromWhere = 
+  SelectFromWhere {
+      attributes :: [SqlAttrExpr]
+    , tables :: [Rename SqlRelation]
+    , conditions :: [SqlCond SqlSelect]
+  }
 
 -- | Sql null attribute.
 data SqlNullAtt = SqlNullAtt
@@ -52,8 +65,8 @@ data SqlNullAtt = SqlNullAtt
 
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
-    -- SqlAllAtt -- ^ *
-    SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
+    SqlAllAtt -- ^ *
+  | SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
   | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   deriving (Eq)
@@ -88,8 +101,23 @@ isrel _           = False
 
 -- | returns true if sqlselect is select ...
 issqlslct :: SqlSelect -> Bool
-issqlslct (SqlSelect _ _ _) = True
-issqlslct _                 = False
+issqlslct (SqlSelect _) = True
+issqlslct _             = False
+
+-- | gets attributes from sqlselect: select from where
+sqlattributes :: SqlSelect -> [SqlAttrExpr]
+sqlattributes (SqlSelect q) = attributes q
+sqlattributes _             = error "sql: expected select from where!"
+
+-- | gets tables from sqlselect: select from where
+sqltables :: SqlSelect -> [Rename SqlRelation]
+sqltables (SqlSelect q) = tables q
+sqltables _             = error "sql: expected select from where!"
+
+-- | gets conditions from sqlselect: select from where
+sqlconditions :: SqlSelect -> [SqlCond SqlSelect]
+sqlconditions (SqlSelect q) = conditions q
+sqlconditions _             = error "sql: expected select from where!"
 
 -- | returns tru if sqlselect is set op.
 issqlop :: SqlSelect -> Bool
@@ -145,7 +173,37 @@ ppSqlString = render . ppSql
 
 -- | prints sql select queries.
 ppSql :: SqlSelect -> Doc
-ppSql (SqlSelect as ts cs) 
+ppSql (SqlSelect sql) = ppSelectFromWhere sql
+  -- | null as && null cs = 
+  --    vcomma ppRenameRel ts
+  -- | null cs = text "SELECT"
+  --   <+> vcomma ppAtts as
+  --   $$ text "FROM"
+  --   <+> vcomma ppRenameRel ts
+  -- | otherwise = text "SELECT"
+  --   <+> vcomma ppAtts as
+  --   $$ text "FROM"
+  --   <+> vcomma ppRenameRel ts
+  --   $$ text "WHERE"
+  --   <+> vcomma ppCond cs
+  --   where
+  --     as = attributes sql
+  --     cs = condition sql
+  --     ts = tables sql
+ppSql (SqlBin o l r) 
+  = parens (ppSql l)
+    <+> text (prettyOp o)
+    <+> parens (ppSql r)
+    where
+      prettyOp SqlUnion    = "UNION"
+      prettyOp SqlUnionAll = "UNION ALL"
+      prettyOp SqlDiff     = "EXCEPT"
+ppSql (SqlTRef r) = text (relationName r)
+ppSql SqlEmpty = text "SELECT NULL"
+
+-- | prints select from where queries.
+ppSelectFromWhere :: SelectFromWhere -> Doc
+ppSelectFromWhere (SelectFromWhere as ts cs)
   | null as && null cs = 
      vcomma ppRenameRel ts
   | null cs = text "SELECT"
@@ -158,16 +216,6 @@ ppSql (SqlSelect as ts cs)
     <+> vcomma ppRenameRel ts
     $$ text "WHERE"
     <+> vcomma ppCond cs
-ppSql (SqlBin o l r) 
-  = parens (ppSql l)
-    <+> text (prettyOp o)
-    <+> parens (ppSql r)
-    where
-      prettyOp SqlUnion    = "UNION"
-      prettyOp SqlUnionAll = "UNION ALL"
-      prettyOp SqlDiff     = "EXCEPT"
-ppSql (SqlTRef r) = text (relationName r)
-ppSql SqlEmpty = text "SELECT NULL"
 
 -- | prints sql attribute expressions.
 -- TODO: this may have bugs!!!! NEED TO BE TESTED!
@@ -218,9 +266,11 @@ ppRel :: SqlRelation -> Doc
 --   = text (relationName r)
 ppRel (SqlSubQuery (SqlTRef r)) 
   = text (relationName r)
-ppRel (SqlSubQuery q) 
-  | null (attributes q) = ppSql q
-  | otherwise = parens (ppSql q)
+ppRel (SqlSubQuery (SqlSelect sql)) 
+  = parens (ppSelectFromWhere sql)
+  -- | null (attributes sql) = ppSql sql
+  -- | otherwise = parens (ppSql sql)
+ppRel (SqlSubQuery q) = parens (ppSql q)
 ppRel (SqlInnerJoin l r c) 
   = ppRenameRel l 
  <+> text "INNER JOIN" 

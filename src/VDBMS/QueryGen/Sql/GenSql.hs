@@ -43,55 +43,57 @@ genSql = evalQState . nameSubSql
 -- TODO: attributes qualifiers must also be updated.
 -- | names subqueries within a sql query.
 nameSubSql :: SqlSelect -> QState SqlSelect
-nameSubSql (SqlSelect as ts cs) 
-  = do ts' <- mapM nameRel ts
-       return $ SqlSelect as ts' cs
-  -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
-nameSubSql (SqlBin o lq rq) 
-  = do lq' <- nameSubSql lq
-       rq' <- nameSubSql rq 
-       return $ SqlBin o lq' rq'
-nameSubSql q = return q
+nameSubSql = undefined
+-- nameSubSql (SqlSelect as ts cs) 
+--   = do ts' <- mapM nameRel ts
+--        return $ SqlSelect as ts' cs
+--   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
+-- nameSubSql (SqlBin o lq rq) 
+--   = do lq' <- nameSubSql lq
+--        rq' <- nameSubSql rq 
+--        return $ SqlBin o lq' rq'
+-- nameSubSql q = return q
 
 -- | names a sql relation without a name.
 -- nameRel :: [SqlAttrExpr] -> [SqlCond SqlSelect] -> Rename SqlRelation 
 --         -> QState (Rename SqlRelation)
 nameRel :: Rename SqlRelation -> QState (Rename SqlRelation)
--- nameRel rq@(Rename a q@(SqlTRef _)) 
---   | isNothing a 
---     = do s <- get
---          let rq' = Rename (Just ("t" ++ show s)) q
---          modify succ
---          -- put s
---          return rq'
---   | otherwise = return rq
-nameRel rq@(Rename a q@(SqlSubQuery subq)) 
-  | isNothing a && isrel subq
-    = do subq' <- nameSubSql subq
-         s <- get
-         let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
+nameRel = undefined
+-- -- nameRel rq@(Rename a q@(SqlTRef _)) 
+-- --   | isNothing a 
+-- --     = do s <- get
+-- --          let rq' = Rename (Just ("t" ++ show s)) q
+-- --          modify succ
+-- --          -- put s
+-- --          return rq'
+-- --   | otherwise = return rq
+-- nameRel rq@(Rename a q@(SqlSubQuery subq)) 
+--   | isNothing a && isrel subq
+--     = do subq' <- nameSubSql subq
+--          s <- get
+--          let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
 
-         modify succ
-         return rq'
-  | isNothing a && issqlslct subq 
-    = do if null (attributes subq)
-            then return rq
-            else do subq' <- nameSubSql subq
-                    s <- get
-                    let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
-                    modify succ
-                    return rq'
-  | otherwise = return rq
--- TODO: we may need to updates condition for attributes qualifiers.
-nameRel rq@(Rename a (SqlInnerJoin l r c)) 
-  | isNothing a 
-    = do l' <- nameRel l
-         r' <- nameRel r
-         return $ Rename Nothing (SqlInnerJoin l' r' c)
-  | otherwise = error "an inner join shouldn't have a name"
-    where
-      la = name l 
-      ra = name r
+--          modify succ
+--          return rq'
+--   | isNothing a && issqlslct subq 
+--     = do if null (attributes subq)
+--             then return rq
+--             else do subq' <- nameSubSql subq
+--                     s <- get
+--                     let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
+--                     modify succ
+--                     return rq'
+--   | otherwise = return rq
+-- -- TODO: we may need to updates condition for attributes qualifiers.
+-- nameRel rq@(Rename a (SqlInnerJoin l r c)) 
+--   | isNothing a 
+--     = do l' <- nameRel l
+--          r' <- nameRel r
+--          return $ Rename Nothing (SqlInnerJoin l' r' c)
+--   | otherwise = error "an inner join shouldn't have a name"
+--     where
+--       la = name l 
+--       ra = name r
 
 -- |
 -- updateAttsQual :: SqlSelect -> SqlSelect

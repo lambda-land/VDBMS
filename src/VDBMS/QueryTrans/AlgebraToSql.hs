@@ -27,68 +27,91 @@ transAlgebra2Sql (RSetOp o l r)
       algBin2SqlBin Union = SqlUnion
       algBin2SqlBin Diff  = SqlDiff
 transAlgebra2Sql (RProj as q) 
-  = SqlSelect (map (\a -> SqlAttr (renameNothing a)) as) 
-              (gentables sql)
-              (genconds sql)
+  | issqlop sql = SqlSelect
+    $ SelectFromWhere (map (\a -> SqlAttr (renameNothing a)) as) 
+                      [renameNothing (SqlSubQuery sql)] -- TODO: it should be renamed!!
+                      []
+  | isrel sql = SqlSelect 
+    $ SelectFromWhere (map (\a -> SqlAttr (renameNothing a)) as) 
+                      [renameNothing (SqlSubQuery sql)]
+                      []
+  | issqlslct sql = SqlSelect
+    $ SelectFromWhere (sqlattributes sql 
+      ++ map (\a -> SqlAttr (renameNothing a)) as) 
+                      (sqltables sql)
+                      (sqlconditions sql)
+  | otherwise = error "transAlgebra2Sql: (prj) shouldn't have got SqlEmpty!!"
+    where 
+      sql = transAlgebra2Sql q
+    -- SqlSelect (map (\a -> SqlAttr (renameNothing a)) as) 
+    --           (gentables sql)
+    --           (genconds sql)
     -- SqlSelect (map SqlAttr as ++ atts) (tables sql) (condition sql) 
-    where 
-      sql = transAlgebra2Sql q
-      gentables sq 
-        | isrel sq = [renameNothing (SqlSubQuery sq)]
-        | null (attributes sq) = tables sq
-        -- | issqlop sq = error "transl rel alg to sql..unexpected prj op pattern"
-        | otherwise = [renameNothing (SqlSubQuery sq)] 
-      genconds sq 
-        | isrel sq = []
-        | null (attributes sq) = condition sq 
-        -- | issqlop sq = error "transl rel alg to sql..unexpected prj op pattern"
-        | otherwise = []
-      -- sql = thing rsql
-      -- atts = attributes sql 
-      -- \\ [SqlAllAtt]
+    -- where 
+    --   sql = transAlgebra2Sql q
+    --   gentables sq 
+    --     | isrel sq = [renameNothing (SqlSubQuery sq)]
+    --     | issqlslct sq = null (attributes sq) = tables sq
+    --     -- | issqlop sq = error "transl rel alg to sql..unexpected prj op pattern"
+    --     | otherwise = [renameNothing (SqlSubQuery sq)] 
+    --   genconds sq 
+    --     | isrel sq = []
+    --     | null (attributes sq) = condition sq 
+    --     -- | issqlop sq = error "transl rel alg to sql..unexpected prj op pattern"
+    --     | otherwise = []
+    --   -- sql = thing rsql
+    --   -- atts = attributes sql 
+    --   -- \\ [SqlAllAtt]
 transAlgebra2Sql (RSel c q) 
-  | issqlop sql = error "transl rel alg to sql..unexpected sel op pattern"
-  | otherwise = SqlSelect (attributes sql) 
-                          (tables sql) 
-                          (algCond2SqlCond c : condition sql) 
+  | issqlop sql   = SqlSelect
+    $ SelectFromWhere [SqlAllAtt]
+                      [renameNothing (SqlSubQuery sql)] -- TODO: it should be renamed!!
+                      [algCond2SqlCond c]
+  | issqlslct sql = SqlSelect 
+    $ SelectFromWhere (sqlattributes sql) 
+                      (sqltables sql) 
+                      (algCond2SqlCond c : sqlconditions sql) 
+  | isrel sql = SqlSelect 
+    $ SelectFromWhere []
+                      [renameNothing (SqlSubQuery sql)]
+                      [algCond2SqlCond c]
+  | otherwise = error "transAlgebra2Sql: (sel) shouldn't have got SqlEmpty!!"
     where 
       sql = transAlgebra2Sql q
-      -- rsql = alg2SqlWithName q 
-      -- sql = thing rsql
 transAlgebra2Sql (RJoin l r c) 
-  = SqlSelect []
-              [renameNothing (SqlInnerJoin (renameNothing (SqlSubQuery lsql))
-                                           (renameNothing (SqlSubQuery rsql)) 
-                                            c)] 
-              []
+  = SqlSelect 
+     $ SelectFromWhere 
+         []
+         [renameNothing (SqlInnerJoin (renameNothing (SqlSubQuery lsql))
+                                      (renameNothing (SqlSubQuery rsql)) 
+                                      c)] 
+         []
     where
       lsql = transAlgebra2Sql l
       rsql = transAlgebra2Sql r
-      -- latts = attributes lsql
-      -- ratts = (attributes . thing) rsql
 transAlgebra2Sql (RProd l r)   
-  = SqlSelect [] 
-              [ renameNothing (SqlSubQuery lsql) 
-              , renameNothing (SqlSubQuery rsql)]
-              []
+  = SqlSelect $ SelectFromWhere 
+                  [] 
+                  [ renameNothing (SqlSubQuery lsql) 
+                  , renameNothing (SqlSubQuery rsql)]
+                  []
     where
       lsql =  transAlgebra2Sql l 
       rsql =  transAlgebra2Sql r
-      -- latts = (attributes . thing) lsql
-      -- ratts = (attributes . thing) rsql
 transAlgebra2Sql (RTRef r)    
   = SqlTRef r
-transAlgebra2Sql (RRenameAlg n q) 
-  = case q of
-     (RTRef r) -> SqlSelect [] 
-                            [Rename (Just n) (SqlSubQuery (SqlTRef r))] 
-                            []
-     _         -> SqlSelect (attributes sql) 
-                            (rerename n (head (tables sql))
-                              : tail (tables sql)) 
-                            (condition sql) 
-    where
-      sql = transAlgebra2Sql q
+-- transAlgebra2Sql (RRenameAlg n q) 
+--   | issqlo
+--   = case q of
+--      (RTRef r) -> SqlSelect [] 
+--                             [Rename (Just n) (SqlSubQuery (SqlTRef r))] 
+--                             []
+--      _         -> SqlSelect (attributes sql) 
+--                             (rerename n (head (tables sql))
+--                               : tail (tables sql)) 
+--                             (condition sql) 
+--     where
+--       sql = transAlgebra2Sql q
 transAlgebra2Sql REmpty         = SqlEmpty
 
 -- | Translates algebra conditions to sql conditions.
