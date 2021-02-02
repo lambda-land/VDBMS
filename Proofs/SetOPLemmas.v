@@ -423,6 +423,7 @@ InAtt a (vatts_inter A B) <-> InAtt a A /\ InAtt a B.
 Proof. split. apply InAtt_vatts_inter.
 apply InAtt_vatts_inter_2. Qed.
 
+
 Lemma In_vatts_inter a e c A B: 
 In (ae a e) (vatts_inter A B) /\ (E[[ e]]c) = true -> 
 exists e', In (ae a e') B /\ (E[[ e']]c) = true.

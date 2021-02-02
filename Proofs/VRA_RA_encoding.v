@@ -175,6 +175,19 @@ Proof. intros. split.
   rewrite vattDecF.eqb_eq. auto.
 Qed.
 
+Lemma existsb_In_att : 
+    forall a l, 
+         existsb (string_beq a) l = true <-> In a l.
+Proof. intros. split.
+- intro H. rewrite existsb_exists in H.
+  destruct H. destruct H.
+  rewrite stringDecF.eqb_eq in H0.
+  rewrite H0. auto.
+- intro H. rewrite existsb_exists.
+  exists a. split. auto.
+  rewrite stringDecF.eqb_eq. auto.
+Qed.
+
 Lemma not_existsb_In : 
     forall a l, 
          existsb (vatt_beq a) l = false <-> ~ In a l.
@@ -182,6 +195,16 @@ Proof. intros.  split.
 - intro H. rewrite <- existsb_In.
 rewrite not_true_iff_false. auto.
 - intro H. rewrite <- existsb_In in H.
+rewrite not_true_iff_false in H. auto.
+Qed.
+
+Lemma not_existsb_In_att : 
+    forall a l, 
+         existsb (string_beq a) l = false <-> ~ In a l.
+Proof. intros.  split.
+- intro H. rewrite <- existsb_In_att.
+rewrite not_true_iff_false. auto.
+- intro H. rewrite <- existsb_In_att in H.
 rewrite not_true_iff_false in H. auto.
 Qed.
 
@@ -654,34 +677,34 @@ Inductive op : Type :=
 (* Plain Condition *)
 Inductive cond : Type :=
   | litCB  : bool -> cond
-  | relOPI : op -> att -> nat -> cond
-  | relOP  : op -> att -> att -> cond
-  | compT  : cond -> cond 
-  | meetT  : cond -> cond -> cond
-  | joinT  : cond -> cond -> cond.
+  | attOpV : op -> att -> nat -> cond
+  | attOpA : op -> att -> att -> cond
+  | negC    : cond -> cond 
+  | conjC   : cond -> cond -> cond
+  | disjC   : cond -> cond -> cond.
 
 (* Varitational condition*)
 Inductive vcond : Type :=
   | litCB_v  : bool -> vcond
-  | relOPI_v : op -> att -> nat -> vcond
-  | relOP_v  : op -> att -> att -> vcond
-  | compT_v  : vcond -> vcond
-  | meetT_v  : vcond -> vcond -> vcond
-  | joinT_v  : vcond -> vcond -> vcond
-  | chcT     : fexp -> vcond -> vcond -> vcond.
+  | attOpV_v : op -> att -> nat -> vcond
+  | attOpA_v : op -> att -> att -> vcond
+  | negC_v    : vcond -> vcond
+  | conjC_v   : vcond -> vcond -> vcond
+  | disjC_v   : vcond -> vcond -> vcond
+  | chcC     : fexp -> vcond -> vcond -> vcond.
 
 (* Configuration Variational Condition C[]c *)
 Fixpoint configVCond (vc : vcond) (c : config) : cond :=
   match vc with
   | litCB_v  b          => litCB b
-  | relOPI_v o   a   k  => relOPI o a k
-  | relOP_v  o   a1  a2 => relOP o a1 a2
-  | compT_v  vc         => compT (configVCond vc  c) 
-  | meetT_v  vc1 vc2    => meetT (configVCond vc1 c) (configVCond vc2 c)
-  | joinT_v  vc1 vc2    => joinT (configVCond vc1 c) (configVCond vc2 c)
-  | chcT e   vc1 vc2    => if semE e c then configVCond vc1 c else configVCond vc2 c
+  | attOpV_v o   a   k  => attOpV o a k
+  | attOpA_v  o  a1  a2 => attOpA o a1 a2
+  | negC_v  vc           => negC (configVCond vc  c) 
+  | conjC_v  vc1 vc2     => conjC (configVCond vc1 c) (configVCond vc2 c)
+  | disjC_v  vc1 vc2     => disjC (configVCond vc1 c) (configVCond vc2 c)
+  | chcC e   vc1 vc2    => if semE e c then configVCond vc1 c else configVCond vc2 c
   end.
-
+Notation "C[[ vc ]] c" := (configVCond vc c) (at level 70).
 (** -----------------------cond vcond------------------------ **)
 
 (* Variaitonal Query Type *)
@@ -703,7 +726,7 @@ Inductive setop : Type := union | inter.
 (* Plain Query*)
 Inductive query : Type :=
   | rel   : relS    -> query
-  (*| sel   : cond    -> query -> query *)
+  | sel   : cond    -> query -> query 
   | proj  : atts    -> query -> query 
   (*| join  : cond    -> query -> query -> query *)
   | prod  : query   -> query -> query 
@@ -713,7 +736,7 @@ Inductive query : Type :=
 (* Variaitonal Query *)
 Inductive vquery : Type :=
   | rel_v   : vrelS    -> vquery
-  (*| sel_v   : vcond    -> vquery -> vquery *)
+  | sel_v   : vcond    -> vquery -> vquery 
   | proj_v  : avatts   -> vquery -> vquery 
   | chcQ    : fexp     -> vquery -> vquery -> vquery
   (*| join_v  : vcond    -> vquery -> vquery -> vquery *)
@@ -725,7 +748,7 @@ Inductive vquery : Type :=
 Fixpoint configVQuery (vq : vquery) (c : config) : query :=
   match vq with
   | rel_v  vr            => rel (configVRelS vr c)
-  (*| sel_v  vc  vq        => sel (configVCond vc c) (configVQuery vq c)*)
+  | sel_v  vc  vq        => sel (configVCond vc c) (configVQuery vq c)
   | proj_v avatts vq     => proj (configaVatts avatts c) (configVQuery vq c)
   | chcQ e vq1 vq2       => if semE e c then configVQuery vq1 c else configVQuery vq2 c
   (*| join_v vc  vq1 vq2   => join (configVCond vc c) (configVQuery vq1 c) (configVQuery vq2 c)*)
@@ -1282,6 +1305,8 @@ Inductive NoDupAttvQ: vquery -> Prop :=
   | NoDupAttvQ_rel_v  : forall rn A e, NoDupAtt A -> NoDupAttvQ (rel_v (rn, (A, e)))
   | NoDupAttvQ_proj_v : forall Q vq, NoDupAtt (fst Q) -> NoDupAttvQ vq -> 
                                                 NoDupAttvQ (proj_v Q vq)
+  | NoDupAttvQ_sel_v : forall vc vq, NoDupAttvQ vq -> 
+                                         NoDupAttvQ (sel_v vc vq)
   | NoDupAttvQ_chcQ   : forall e' vq1 vq2, NoDupAttvQ vq1 ->
                              NoDupAttvQ vq2 -> NoDupAttvQ (chcQ e' vq1 vq2)
   | NoDupAttvQ_prod_v : forall vq1 vq2, NoDupAttvQ vq1 ->
@@ -1291,6 +1316,51 @@ Inductive NoDupAttvQ: vquery -> Prop :=
 
 (*--------------------Schema Property End ---------------------------*)
 
+(* ---------------------------------------------------------------
+  | Type of (|-c ) variational condition
+   ---------------------------------------------------------------
+*)
+
+Inductive vcondtype :fexp -> vqtype -> vcond -> Prop :=
+ | litCB_vC : forall e Q b,
+     vcondtype e Q (litCB_v b)
+
+  | attOpV_vC : forall e Q o a k,
+  
+     (*InAtt a ((fst Q) < (snd Q)) ->*)
+    (exists e : fexp, In (ae a e) ((fst Q) < (snd Q)) /\ sat(e)) ->
+     vcondtype e Q (attOpV_v o a k)
+     (*vcondtype e Q (chcC e' (attOpV_v o a k) (litCB_v false))*)
+
+  | attOpA_vC : forall e Q o a1 a2,
+    
+     (*InAtt a1 ((fst Q) < (snd Q)) -> 
+     InAtt a2 ((fst Q) < (snd Q)) ->*)
+    (exists e1 : fexp, In (ae a1 e1) ((fst Q) < (snd Q)) /\ sat(e1)) ->
+    (exists e2 : fexp, In (ae a2 e2) ((fst Q) < (snd Q)) /\ sat(e2)) ->
+     vcondtype e Q (attOpA_v o a1 a2) 
+     (*vcondtype e Q (chcC (e1 /\(F) e2) (attOpA_v o a1 a2) (litCB_v false))*)
+
+  | NegC_vC : forall e Q c,
+     vcondtype e Q c ->
+     vcondtype e Q (negC_v c)
+  
+  | ConjC_vC : forall e Q c1 c2,
+     vcondtype e Q c1 ->
+     vcondtype e Q c2 ->
+     vcondtype e Q (conjC_v c1 c2)
+
+  | DisjC_vC : forall e Q c1 c2,
+     vcondtype e Q c1 ->
+     vcondtype e Q c2 ->
+     vcondtype e Q (disjC_v c1 c2)
+
+  | ChcC_vC : forall e e' Q c1 c2,
+     vcondtype (e /\(F) e') Q c1 ->
+     vcondtype (e /\(F) (~(F) e')) Q c2 ->
+     vcondtype e Q (chcC e' c1 c2).
+
+Notation "{ e , Q |- vc }" := (vcondtype e Q vc) (e at level 200).
 
 (* ---------------------------------------------------------------
   | Type of (Explicit |= ) variational query
@@ -1354,11 +1424,14 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtype e S vq1 (A1, e1) ->
        vtype e S vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
-       vtype e S (setU_v op vq1 vq2) (A1, e1).
-(* (*  -- SELECT-E --  *)
-   | Select_vE: forall e S vq A e',
+       vtype e S (setU_v op vq1 vq2) (A1, e1)
+  (*  -- SELECT-E --  *)
+  | Select_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                           vq {HndpvQ: NoDupAttvQ vq}
+                            A {HndpAA: NoDupAtt A} e' vc,
        vtype e S vq (A, e') ->
-       vtype e S (sel_v c vq) (A, e'). *) 
+       { e, (A, e') |- vc } ->
+       vtype e S (sel_v vc vq) (A, e').
 
 Notation "{ e , S |= vq | vt }" := (vtype e S vq vt) (e at level 200).
 
@@ -1428,11 +1501,14 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtypeImp e S vq1 (A1, e1) ->
        vtypeImp e S vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
-       vtypeImp e S (setU_v op vq1 vq2) (A1, e1).
-(* (*  -- SELECT-E --  *)
-   | Select_vE: forall e S vq A e',
-       vtype e S vq (A, e') ->
-       vtype e S (sel_v c vq) (A, e'). *) 
+       vtypeImp e S (setU_v op vq1 vq2) (A1, e1)
+  (*  -- SELECT-E --  *)
+  | Select_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupAttRs S} 
+                           vq {HndpvQ: NoDupAttvQ vq}
+                            A {HndpAA: NoDupAtt A} e' vc,
+       vtypeImp e S vq (A, e') ->
+       { e, (A, e') |- vc } ->
+       vtypeImp e S (sel_v vc vq) (A, e').  
 
 Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
 
@@ -1470,7 +1546,22 @@ Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
 -  stage sublist forall c requirement for projection is bound to be fullfilled. Therefore
 -  THERE IS NO NEED TO CHECK SUBSUMP CONDITION IN INPLICIT TYPE SYSTEM. IT is guaranteed by the process.
 *)
+(* ------------------------------------------------------------
+  | Type check of plain cond
+   ------------------------------------------------------------
+*)
 
+Fixpoint condtype (c:cond) (A:atts) : bool :=
+  match c with
+  | litCB b        => true
+  | attOpV o a n   => true (* if (existsb (string_beq a) A)  then true else false *)
+  | attOpA o a1 a2 => true (* if (existsb (string_beq a1) A) 
+                                       && (existsb (string_beq a2) A) then true else false *)
+  | negC  c     => if (condtype c  A)                   then true else false
+  | conjC c1 c2 => if (condtype c1 A) && (condtype c2 A) then true else false
+  | disjC c1 c2 => if (condtype c1 A) && (condtype c2 A) then true else false
+  end.
+Notation "A ||- c " := (condtype c A) (at level 49).
 (* ------------------------------------------------------------
   | Type of plain query
    ------------------------------------------------------------
@@ -1483,6 +1574,8 @@ Fixpoint type_ (q:query) : qtype :=
  | (setU op q1 q2) => if equiv_qtype_bool (type_ q1) (type_ q2) then type_ q1 else nil
  | (prod  q1 q2) => if (is_disjoint_bool (type_ q1) (type_ q2)) then 
                           atts_union (type_ q1) (type_ q2) else nil
+ | (sel c q) => let A := type_ q in 
+                     if (condtype c A) then A else nil
  end.
 
 Notation "||= q " := (type_ q) (at level 49).

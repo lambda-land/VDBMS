@@ -284,8 +284,15 @@ destruct (E[[ ea']] c) eqn:Hea'.
 }
 Qed.
 
+(*Lemma In_vatts_inter_A a e c A B: 
+In (ae a e) (vatts_inter A B) /\ (E[[ e]]c) = true -> 
+exists e', In (ae a e') A /\ (E[[ e']]c) = true.
+Proof. 
+Admitted.
+
+
 Lemma subsumpImp_vqtype_inter_ B C:
-subsumpImp_vqtype (vqtype_inter_vq B C) C.
+subsumpImp_vqtype (vqtype_inter_vq B C) B.
 Proof. 
 destruct B as (B, eb).
 destruct C as (C, ec).
@@ -306,8 +313,8 @@ destruct Hebc as [Heb Hec].
 
 (* sat (ex /\ eb /\ ec) ->  (E[[ ex ]]c) = true *)
 
-pose (conj HIn Hex) as HInCex. 
-apply In_vatts_inter in HInCex.
+pose (conj HIn Hex) as HInBex. 
+apply In_vatts_inter_A in HInBex.
 
 (* HInex:             In (x, ex) B /-\ C /\ (E[[ ex ]]c) = true
    HInCex: exists e', In (ae x e') C     /\ (E[[ e']] c) = true
@@ -315,7 +322,7 @@ apply In_vatts_inter in HInCex.
    Goal: exists e', In (x, e') C /\ sat (ex /\ eb /\ ec /\ e')
 *) 
 
-destruct HInCex as [exc [HInC HCex] ]. 
+destruct HInBex as [exc [HInB HBex] ]. 
 
 (*
    HInCex: In (ae x exc) C   
@@ -327,12 +334,12 @@ exists exc.
 split. assumption.
 
 unfold sat. exists c.
-simpl. rewrite Hex, Heb, Hec, HCex.
+simpl. rewrite Hex, Heb, Hec, HBex.
 eauto.
 
 Qed.
 
-(*Lemma subsumpImp_vqtype_inter_intro B C e:
+Lemma subsumpImp_vqtype_inter_intro B C e:
 subsumpImp_vqtype B (fst C, (snd C /\(F) e)) ->
 subsumpImp_vqtype (vqtype_inter_vq B C) (fst C, (snd C /\(F) e)).
 Proof. 
@@ -355,10 +362,10 @@ exists exc.
 split. assumption.
 
 
-Admitted.
+Admitted.*)
 
 
-Lemma subsumpImp_vqtype_inter A B C(HndpA: NoDupAtt (fst A)) :
+(*Lemma subsumpImp_vqtype_inter A B C(HndpA: NoDupAtt (fst A)) :
 subsumpImp_vqtype B A -> subsumpImp_vqtype (vqtype_inter_vq B C) A.
 Proof. 
 intros HSImp. 

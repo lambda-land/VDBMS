@@ -169,6 +169,7 @@ Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
        - intros. inversion H; subst. (*assumption.*) rewrite not_sat_not_prop. 
          rewrite <- sat_taut_comp.
          intros. simpl in H0. apply andb_true_iff with (b2:=(E[[ e'0]] c)). assumption.
+       - intros. inversion H; subst. apply IHvq in H5. assumption.
        - intros. inversion H; subst.
          rewrite not_sat_not_prop. rewrite <- sat_taut_comp.
          intros. simpl in H0. 
@@ -229,12 +230,35 @@ unfold configVRelS. simpl. destruct (E[[ e']] c); reflexivity. Qed.
 
 Lemma AE_QT Q c: (AE[[ Q]] c) = (QT[[ Q]] c). eauto. Qed.
 
+Theorem variation_preservation_cond : forall e Q vc, 
+       { e , Q |- vc } ->
+       forall c, (E[[e]] c) = true ->
+          ( (QT[[ Q]] c) ||- (C[[ vc]] c)) = true.
+Proof. intros e Q vc H c He. 
+induction H; destruct Q as (Aq, eq).
+{ simpl "||-". reflexivity. }
+(*all: destruct (E[[ eq]] c) eqn: Heq.*)
+{ simpl. reflexivity. }
+{ simpl. reflexivity. }
+{ simpl "||-". apply IHvcondtype in He.
+simpl in He. rewrite He. reflexivity. }
+1, 2: simpl "||-"; apply IHvcondtype1 in He as He1;
+apply IHvcondtype2 in He as He2;
+simpl in He1, He2; rewrite He1, He2; reflexivity.
+- simpl "||-". simpl in IHvcondtype1, IHvcondtype2.
+destruct (E[[ e']] c) eqn: He'.
+rewrite andb_true_r in IHvcondtype1. 
+apply IHvcondtype1 in He as He1. eauto.
+simpl in *. rewrite andb_true_r in IHvcondtype2.
+apply IHvcondtype2 in He as He2. eauto.
+Qed.
+
 Theorem variation_preservation : forall e S vq A, 
        { e , S |= vq | A } ->
        forall c, (E[[e]] c) = true ->
            ||= (Q[[ vq]] c) =a= (QT[[ A]] c).
 Proof.
-  intros. 
+  intros e S vq A H c H0. 
    induction H as [e S HndpRS HndpAS 
                    rn A' HndpA' e' 
                    HInVR 
@@ -256,7 +280,12 @@ Proof.
                    e S HndpRS HndpAS 
                    vq1 HndpvQ1 vq2 HndpvQ2
                    A1 HndpAA1 e1 A2 HndpAA2 e2 op
-                   Hq1 IHHq1 Hq2 IHHq2 HEquiv ].
+                   Hq1 IHHq1 Hq2 IHHq2 HEquiv 
+                   |
+                   e S HndpRS HndpAS
+                   vq HndpvQ A HndpAA e' vc 
+                   Hq IHHq HCond
+                   ].
 
  (** ----------------------------- Relation - E ----------------------------- *) 
   - 
@@ -414,7 +443,8 @@ Proof.
  *)
 
  (*~ vatts_inter A1 A2 =va= [] -> atts_inter [[A1]]c [[A2]]c =a= [] ~*)
-    unfold equiv_vatts in HInter. specialize HInter with c. simpl in HInter.
+    unfold equiv_vatts in HInter. unfold vqtype_inter_vq, equiv_vqtype in HInter. 
+    specialize HInter with c. simpl in HInter.
     rewrite configVAttSet_dist_vatts_inter in HInter; try assumption.
     assert (HInter': atts_inter (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) =a= [] ).
     simpl. destruct (E[[ e1]] c); [ destruct (E[[ e2]] c); [ assumption |
@@ -473,10 +503,86 @@ Proof.
   apply configVQtype_equiv with (c:=c) in HEquiv. rewrite <-IHHq1', <-IHHq2' in HEquiv.
  (*~ Proved by A =a= B -> equiv_qtype_bool A B = true ~*)
   rewrite <- equiv_qtype_bool_correct in HEquiv. rewrite HEquiv. assumption.
+
+  - apply IHHq in H0 as Htype_. 
+    simpl configVQuery.
+    simpl type_. 
+    
+ (* HCond : {e, (A, e') |- vc}
+    Htype_ : ||= (Q[[ vq]] c) =a= (QT[[ (A, e')]] c)
+    ----------------------------------------------------
+    (if (QT[[ (A, e')]] c) ||- (C[[ vc]] c) 
+                then ||= (Q[[ vq]] c) else []) =a= (QT[[ (A, e')]] c)
+  *)
+  
+  (* {e, (A, e') |- vc} -> (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true *)
+  
+  apply variation_preservation_cond with (c:=c) in HCond.
+  
+ (* HCond : (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true
+    Htype_ : ||= (Q[[ vq]] c) =a= (QT[[ (A, e')]] c)
+    ----------------------------------------------------
+    (if (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) 
+                   then ||= (Q[[ vq]] c) else []) =a= (QT[[ (A, e')]] c)
+  *) 
+  
+ (*~ v-condition (C[[ vc]] c) is well formed in all equivalent contexts:
+      Htype_:      ||= (Q[[ vq]] c) =a= (QT[[ (A, e')]] c) -> 
+      HCond_:  ||= (Q[[ vq]] c) ||- (C[[ vc]] c) = (QT[[ (A, e')]] c) ||- (C[[ vc]] c) ~*)
+  
+  apply condtype_equiv with (c:=(C[[ vc]] c)) in Htype_ as HCond_.   
+  
+ (* HCond : (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true
+    Htype_ : ||= (Q[[ vq]] c) =a= (QT[[ (A, e')]] c)
+    HCond_ : (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) = (QT[[ (A, e')]] c) ||- (C[[ vc]] c)
+    ----------------------------------------------------
+    (if (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) 
+                          then ||= (Q[[ vq]] c) else []) =a= (QT[[ (A, e')]] c)
+  *) 
+  
+  rewrite HCond_, HCond. assumption. auto.
 Qed.
 
 
 End VRA_varPrsrvtn_thm.
+
+
+(** vcond supposed to be*)
+(*Theorem variation_preservation_cond : forall e Q vc, 
+       { e , Q |- vc } ->
+       forall c, (E[[e]] c) = true ->
+          ( (QT[[ Q]] c) ||- (C[[ vc]] c)) = true.
+Proof. intros e Q vc H c He. 
+induction H; destruct Q as (Aq, eq).
+{ simpl "||-". reflexivity. }
+(*all: destruct (E[[ eq]] c) eqn: Heq.*)
+{ simpl. destruct (E[[ e']] c) eqn:He'. 
+apply In_config_true with (c:=c) in H; try auto. 
+rewrite configVAttSet_push_annot in H. simpl in H.
+destruct (E[[ eq]] c) eqn: Heq.
+simpl "||-". rewrite <- existsb_In_att in H. 
+rewrite H. reflexivity. eauto. eauto. }
+{ simpl. destruct ((E[[ e1]] c) && (E[[ e2]] c)) eqn:He12. 
+apply andb_prop in He12. destruct He12 as [He1 He2].
+apply In_config_true with (c:=c) in H; try auto.
+apply In_config_true with (c:=c) in H0; try auto.
+rewrite configVAttSet_push_annot in H, H0. simpl in H, H0.
+destruct (E[[ eq]] c) eqn: Heq.
+
+simpl "||-". rewrite <- existsb_In_att in H, H0. 
+rewrite H, H0. reflexivity. eauto. eauto. }
+{ simpl "||-". apply IHvcondtype in He.
+simpl in He. rewrite He. reflexivity. }
+1, 2: simpl "||-"; apply IHvcondtype1 in He as He1;
+apply IHvcondtype2 in He as He2;
+simpl in He1, He2; rewrite He1, He2; reflexivity.
+- simpl "||-". simpl in IHvcondtype1, IHvcondtype2.
+destruct (E[[ e']] c) eqn: He'.
+rewrite andb_true_r in IHvcondtype1. 
+apply IHvcondtype1 in He as He1. eauto.
+simpl in *. rewrite andb_true_r in IHvcondtype2.
+apply IHvcondtype2 in He as He2. eauto.
+Qed.*)
 
 (*Lemma subsump_listELEq: forall (A B A' B': atts), listElEq String.eqb A A' = true ->
               listElEq String.eqb B B' = true -> 

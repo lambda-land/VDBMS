@@ -188,6 +188,85 @@ simpl. destruct (E[[ e]] c). apply H. reflexivity.
 (*apply configVQtype_equiv. unfold "=T=". simpl. 
 split; [assumption | reflexivity].*) Qed.
 
+Lemma existsb_att_equiv: forall A A', A =a= A' ->
+(forall a, (existsb (string_beq a) A) = (existsb (string_beq a) A')).
+Proof. intros A A' H. intro a.
+unfold "=a=" in H.
+specialize H with a. destruct H as [HIn Hcount].
+destruct (existsb (string_beq a) A) eqn: HexA.
+rewrite existsb_In_att in HexA. rewrite HIn in HexA.
+rewrite <- existsb_In_att in HexA. symmetry. assumption.
+rewrite not_existsb_In_att in HexA. rewrite HIn in HexA.
+rewrite <- not_existsb_In_att in HexA. symmetry. assumption.
+Qed.
+
+Lemma condtype_equiv: forall A A' c, A =a= A' ->
+(A ||- c) = (A' ||- c).
+Proof. induction c; intros H; simpl condtype.
+- reflexivity.
+- reflexivity.
+- reflexivity.
+- apply IHc in H. rewrite H. reflexivity.
+- apply IHc1 in H as Hc1.
+  apply IHc2 in H as Hc2.
+rewrite Hc1, Hc2. reflexivity.
+- apply IHc1 in H as Hc1.
+  apply IHc2 in H as Hc2.
+rewrite Hc1, Hc2. reflexivity.
+Qed.
+
+
+Lemma equiv_vqtype_In Q Q' a : Q =T= Q' -> (exists e : fexp, In (ae a e) (fst Q < snd Q) /\ sat e)
+-> exists e0 : fexp, In (ae a e0) (fst Q' < snd Q') /\ sat e0.
+Proof. intros H H0. unfold sat in H0. destruct H0 as [e0 [HIne0 He0c] ].
+destruct He0c as [c He0]. 
+assert (Hex: exists e, In (ae a e) (fst Q < snd Q) /\ (E[[ e]] c) = true).
+exists e0. eauto. 
+rewrite In_config_exists_true in Hex. rewrite configVAttSet_push_annot in Hex.
+destruct Q as (Aq, eq). simpl fst in Hex. simpl snd in Hex.
+rewrite In_equiv_atts with (A':=(QT[[ Q']] c)) in Hex; try eauto.
+destruct Q' as (Aq', eq'). rewrite <- configVAttSet_push_annot in Hex.
+rewrite <- In_config_exists_true in Hex. 
+destruct Hex as [e1 [HIn He1] ]. exists e1. split. auto.
+unfold sat. exists c. auto. Qed.
+
+Lemma vcondtype_equiv: forall e Q Q' vc, Q =T= Q' ->
+{ e , Q |- vc } -> { e , Q' |- vc }.
+Proof. intros. intros.
+induction H0. 
+- apply litCB_vC.
+- apply attOpV_vC. apply equiv_vqtype_In with (a:=a)in H;
+auto.
+- apply attOpA_vC. apply equiv_vqtype_In with (a:=a1)in H;
+auto. apply equiv_vqtype_In with (a:=a2)in H;
+auto.
+- apply NegC_vC. eauto.
+- apply ConjC_vC; eauto.
+- apply DisjC_vC; eauto.
+- apply ChcC_vC; eauto.
+Qed.
+
+(*
+Lemma condtype_equiv: forall A A' c, A =a= A' ->
+(A ||- c) = (A' ||- c).
+Proof. induction c; intros H; simpl condtype.
+- reflexivity.
+- apply existsb_att_equiv with (a:=a) in H.
+rewrite H. reflexivity.
+- apply existsb_att_equiv with (a:=a) in H as Ha.
+apply existsb_att_equiv with (a:=a0) in H as Ha0.
+rewrite Ha, Ha0. reflexivity.
+- apply IHc in H. rewrite H. reflexivity.
+- apply IHc1 in H as Hc1.
+  apply IHc2 in H as Hc2.
+rewrite Hc1, Hc2. reflexivity.
+- apply IHc1 in H as Hc1.
+  apply IHc2 in H as Hc2.
+rewrite Hc1, Hc2. reflexivity.
+Qed.
+
+
+*)
 
 (*Lemma equiv_push_annot: forall A A' e e' , 
      A =va= A' -> e =e= e' -> 
