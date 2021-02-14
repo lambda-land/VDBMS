@@ -1,31 +1,32 @@
 -- | Relational algebra.
-module VDBMS.QueryLang.SQL.Pure.Sql (
+module VDBMS.QueryLang.SQL.Pure.Sql where
+-- (
 
-       SqlSelect(..)
-       , SqlNullAtt(..)
-       , SqlAttrExpr(..)
-       , SqlRelation(..)
-       , SelectFromWhere(..)
-       , SqlBinOp(..)
-       , SqlTempRes(..)
-       , CteClosure
-       , AddClosure
-       , getClosure
-       , getThing
-       , aExprAtt
-       , isrel
-       , issqlslct
-       , issqlop
-       , ppSql
-       , ppTemp
-       , ppSqlString
-       , module VDBMS.QueryLang.SQL.Condition
-       , isSqlEmpty
-       , sqlconditions
-       , sqlattributes
-       , sqltables
+--        SqlSelect(..)
+--        , SqlNullAtt(..)
+--        , SqlAttrExpr(..)
+--        , SqlRelation(..)
+--        , SelectFromWhere(..)
+--        , SqlBinOp(..)
+--        , SqlTempRes(..)
+--        , CteClosure
+--        , AddClosure
+--        , getClosure
+--        , getThing
+--        , aExprAtt
+--        , isrel
+--        , issqlslct
+--        , issqlop
+--        , ppSql
+--        , ppTemp
+--        , ppSqlString
+--        , module VDBMS.QueryLang.SQL.Condition
+--        , isSqlEmpty
+--        , sqlconditions
+--        , sqlattributes
+--        , sqltables
 
-) where
+-- ) where
 
 import VDBMS.VDB.Name 
 import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
@@ -37,26 +38,40 @@ import Prelude hiding ((<>), concat)
 import Text.PrettyPrint
 import Data.Maybe (isNothing, isJust, fromJust)
 
--- | Sql select statements.
-data SqlSelect =  
-  SqlSelect SelectFromWhere
-    -- SqlSelect {
-    --   attributes :: [SqlAttrExpr],
-    --   tables :: [Rename SqlRelation],
-    --   condition :: [SqlCond SqlSelect]
-    --   -- sqlName :: Maybe Name
-    -- }
-  | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
-  | SqlTRef Relation -- ^ return a table
-  | SqlEmpty -- ^ empty query
-  -- deriving Show
+
+-- | final sql data type that will be sent to the database engine.
+data OutSql = OutSql SelectFromWhere
+  | OutSqlBin SqlBinOp SelectFromWhere SelectFromWhere
+  | OutSqlEmpty
+
+
+-- | the intermediate sql data type that is used to translate queries
+--   written in variational relational algebra to final sql queries. 
+data Sql = Sql SelectFromWhere
+  | SqlBin SqlBinOp SelectFromWhere SelectFromWhere
+  | SqlTRef Relation
+  | SqlEmpty
+
+-- -- | Sql select statements.
+-- data SqlSelect =  
+--   SqlSelect SelectFromWhere
+--     -- SqlSelect {
+--     --   attributes :: [SqlAttrExpr],
+--     --   tables :: [Rename SqlRelation],
+--     --   condition :: [SqlCond SqlSelect]
+--     --   -- sqlName :: Maybe Name
+--     -- }
+--   | SqlBin SqlBinOp SqlSelect SqlSelect -- ^ binary operator including union, difference, union all
+--   | SqlTRef Relation -- ^ return a table
+--   | SqlEmpty -- ^ empty query
+--   -- deriving Show
 
 -- | select-from-where
 data SelectFromWhere = 
   SelectFromWhere {
       attributes :: [SqlAttrExpr]
     , tables :: [Rename SqlRelation]
-    , conditions :: [SqlCond SqlSelect]
+    , conditions :: [SqlCond Sql] -- TODO: debateable
   }
 
 -- | Sql null attribute.
@@ -65,8 +80,8 @@ data SqlNullAtt = SqlNullAtt
 
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
-    SqlAllAtt -- ^ *
-  | SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
+    -- SqlAllAtt -- ^ *
+    SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
   | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   deriving (Eq)
@@ -89,43 +104,43 @@ aExprAtt (SqlConcatAtt (Rename (Just n) _) _) = Attribute n
 --   [Rename SqlTRef R, Rename SqlTRef T]
 data SqlRelation = 
     -- SqlTRef Relation
-    SqlSubQuery SqlSelect
+    SqlSubQuery Sql
   | SqlInnerJoin (Rename SqlRelation) (Rename SqlRelation) RCondition
   -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
   -- deriving Show
 
 -- | returns true if a subquery is just a relation.
-isrel :: SqlSelect -> Bool
+isrel :: Sql -> Bool
 isrel (SqlTRef _) = True 
 isrel _           = False
 
 -- | returns true if sqlselect is select ...
-issqlslct :: SqlSelect -> Bool
-issqlslct (SqlSelect _) = True
-issqlslct _             = False
+issqlslct :: Sql -> Bool
+issqlslct (Sql _) = True
+issqlslct _       = False
 
 -- | gets attributes from sqlselect: select from where
-sqlattributes :: SqlSelect -> [SqlAttrExpr]
-sqlattributes (SqlSelect q) = attributes q
-sqlattributes _             = error "sql: expected select from where!"
+sqlattributes :: Sql -> [SqlAttrExpr]
+sqlattributes (Sql q) = attributes q
+sqlattributes _       = error "sql: expected select from where!"
 
 -- | gets tables from sqlselect: select from where
-sqltables :: SqlSelect -> [Rename SqlRelation]
-sqltables (SqlSelect q) = tables q
-sqltables _             = error "sql: expected select from where!"
+sqltables :: Sql -> [Rename SqlRelation]
+sqltables (Sql q) = tables q
+sqltables _       = error "sql: expected select from where!"
 
 -- | gets conditions from sqlselect: select from where
-sqlconditions :: SqlSelect -> [SqlCond SqlSelect]
-sqlconditions (SqlSelect q) = conditions q
+sqlconditions :: Sql -> [SqlCond Sql]
+sqlconditions (Sql q) = conditions q
 sqlconditions _             = error "sql: expected select from where!"
 
 -- | returns tru if sqlselect is set op.
-issqlop :: SqlSelect -> Bool
+issqlop :: Sql -> Bool
 issqlop (SqlBin _ _ _) = True
 issqlop _              = False
 
 -- | returns true if sqlselect is empty.
-isSqlEmpty :: SqlSelect -> Bool
+isSqlEmpty :: Sql -> Bool
 isSqlEmpty SqlEmpty = True
 isSqlEmpty _        = False
 
@@ -144,12 +159,12 @@ data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
 -- Question to search: does postgres automatically run subq as cte in parallel?
 -- if so it'd make our job much easier for the big union all query.
 data SqlTempRes = SqlCTE { closure :: CteClosure
-                         , query   :: SqlSelect
+                         , query   :: Sql
                          }
   -- | SqlView (String, SqlSelect)
 
 -- | CTE closure.
-type CteClosure = Map SqlSelect Name
+type CteClosure = Map Sql Name
 
 -- | couples up closure with something else.
 type AddClosure a = (a, CteClosure)
@@ -168,12 +183,12 @@ getThing = fst
 --   | SqlNoTemp SqlSelect
 
 -- | returns the string of sql select.
-ppSqlString :: SqlSelect -> String 
+ppSqlString :: Sql -> String 
 ppSqlString = render . ppSql
 
 -- | prints sql select queries.
-ppSql :: SqlSelect -> Doc
-ppSql (SqlSelect sql) = ppSelectFromWhere sql
+ppSql :: Sql -> Doc
+ppSql (Sql sql) = ppSelectFromWhere sql
   -- | null as && null cs = 
   --    vcomma ppRenameRel ts
   -- | null cs = text "SELECT"
@@ -190,14 +205,14 @@ ppSql (SqlSelect sql) = ppSelectFromWhere sql
   --     as = attributes sql
   --     cs = condition sql
   --     ts = tables sql
-ppSql (SqlBin o l r) 
-  = parens (ppSql l)
-    <+> text (prettyOp o)
-    <+> parens (ppSql r)
-    where
-      prettyOp SqlUnion    = "UNION"
-      prettyOp SqlUnionAll = "UNION ALL"
-      prettyOp SqlDiff     = "EXCEPT"
+ppSql (SqlBin o l r) = undefined
+  -- = parens (ppSql l)
+  --   <+> text (prettyOp o)
+  --   <+> parens (ppSql r)
+  --   where
+  --     prettyOp SqlUnion    = "UNION"
+  --     prettyOp SqlUnionAll = "UNION ALL"
+  --     prettyOp SqlDiff     = "EXCEPT"
 ppSql (SqlTRef r) = text (relationName r)
 ppSql SqlEmpty = text "SELECT NULL"
 
@@ -266,7 +281,7 @@ ppRel :: SqlRelation -> Doc
 --   = text (relationName r)
 ppRel (SqlSubQuery (SqlTRef r)) 
   = text (relationName r)
-ppRel (SqlSubQuery (SqlSelect sql)) 
+ppRel (SqlSubQuery (Sql sql)) 
   = parens (ppSelectFromWhere sql)
   -- | null (attributes sql) = ppSql sql
   -- | otherwise = parens (ppSql sql)
@@ -290,7 +305,7 @@ ppRenameRel rq
       tq = thing rq
 
 -- | prints sql conditions.
-ppCond :: SqlCond SqlSelect -> Doc
+ppCond :: SqlCond Sql -> Doc
 ppCond (SqlCond c)  = ppRCond c
 ppCond (SqlIn a q) 
   | isNothing aq = at <+> qt
@@ -338,7 +353,7 @@ hcomma f = hcat . punctuate comma . map f
 vcomma :: (a -> Doc) -> [a] -> Doc
 vcomma f = vcat . punctuate comma . map f
 
-instance Show SqlSelect where
+instance Show Sql where
   show = ppSqlString
 
 

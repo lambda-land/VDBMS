@@ -37,12 +37,12 @@ evalQState = flip evalState initState
 
 -- | gives names to a subqueries and relations of a given
 --   sql query.
-genSql :: SqlSelect -> SqlSelect
+genSql :: Sql -> Sql
 genSql = evalQState . nameSubSql 
 
 -- TODO: attributes qualifiers must also be updated.
 -- | names subqueries within a sql query.
-nameSubSql :: SqlSelect -> QState SqlSelect
+nameSubSql :: Sql -> QState Sql
 nameSubSql = undefined
 -- nameSubSql (SqlSelect as ts cs) 
 --   = do ts' <- mapM nameRel ts

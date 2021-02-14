@@ -19,7 +19,7 @@ import Data.Maybe (fromJust)
 
 -- | gets attributes projected in a sqlselect query.
 --   queries are type correct.
-sqlQAtts :: SqlSelect -> [Attribute]
+sqlQAtts :: Sql -> [Attribute]
 sqlQAtts = undefined
 -- sqlQAtts (SqlSelect sql) = map aExprAtt (attributes sql)
 -- sqlQAtts (SqlBin _ l _)     = sqlQAtts l
@@ -28,7 +28,7 @@ sqlQAtts = undefined
 -- -- sqlQAtts SqlEmpty = []
 
 -- | adjusts the schema  of a sql query wrt a given list of attribute.
-adjustQSch :: [Attribute] -> [Attribute] -> SqlSelect -> SqlSelect
+adjustQSch :: [Attribute] -> [Attribute] -> Sql -> Sql
 adjustQSch = undefined
 -- adjustQSch resAtts qsAtts (SqlSelect sql)
 --   = SqlSelect (updatesAs resAtts qsAtts (attributes sql)) 
@@ -72,7 +72,7 @@ updatesAs res already aes
 --   function are either of the format of sqlselect as ts cs
 --   or sqlbin o l r. this function is used for combining 
 --   sql queries with the same schema into one query in genOneQ.
-updatePC :: PCatt -> SqlSelect -> FeatureExpr -> SqlSelect
+updatePC :: PCatt -> Sql -> FeatureExpr -> Sql
 updatePC = undefined
 -- updatePC p (SqlSelect sql) f
 --   = SqlSelect ((attributes sql) 
