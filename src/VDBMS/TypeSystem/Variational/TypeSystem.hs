@@ -72,6 +72,10 @@ type TypeEnv = Opt TypeMap
 typePC :: TypeEnv -> F.FeatureExpr
 typePC = getFexp
 
+-- | type map of a type env.
+typeMap :: TypeEnv -> TypeMap
+typeMap = getObj
+
 -- | applies func to pcs of atts.
 applyFuncToAttFexp :: (F.FeatureExpr -> F.FeatureExpr)
                    -> AttrInformation 

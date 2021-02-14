@@ -19,6 +19,7 @@ module VDBMS.QueryLang.RelAlg.Variational.Algebra (
         , numUniqueVariantQ
         , numVariantQ
         , optAlgebra
+        , updateAttsQual
         
 
 ) where
@@ -177,6 +178,10 @@ attrOfOptAttr = attribute . getObj
 -- | Gets the attribute name out of optattr.
 attrName :: OptAttribute -> String
 attrName = attributeName . attrOfOptAttr
+
+-- | updates the qualifier of attributes.
+updateAttsQual :: (Attr -> Attr) -> OptAttributes -> OptAttributes
+updateAttsQual f as = map (applyFuncObj f) as
 
 -- | Alias of optattr.
 -- attrAlias :: OptAttribute -> Alias
