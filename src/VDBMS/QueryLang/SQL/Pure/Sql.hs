@@ -44,7 +44,6 @@ data OutSql = OutSql SelectFromWhere
   | OutSqlBin SqlBinOp SelectFromWhere SelectFromWhere
   | OutSqlEmpty
 
-
 -- | the intermediate sql data type that is used to translate queries
 --   written in variational relational algebra to final sql queries. 
 data Sql = Sql SelectFromWhere
@@ -182,6 +181,17 @@ getThing = fst
 --     SqlTemp SqlTempRes
 --   | SqlNoTemp SqlSelect
 
+-- |returns the string of output sql.
+ppOutSqlString :: OutSql -> String
+ppOutSqlString = render . ppOutSql
+
+-- | prints output sql queries.
+ppOutSql :: OutSql -> Doc
+ppOutSql (OutSql sql) = ppSelectFromWhere sql
+ppOutSql (OutSqlBin o l r) = ppSqlBin o l r
+ppOutSql OutSqlEmpty = ppEmpty
+
+
 -- | returns the string of sql select.
 ppSqlString :: Sql -> String 
 ppSqlString = render . ppSql
@@ -189,32 +199,23 @@ ppSqlString = render . ppSql
 -- | prints sql select queries.
 ppSql :: Sql -> Doc
 ppSql (Sql sql) = ppSelectFromWhere sql
-  -- | null as && null cs = 
-  --    vcomma ppRenameRel ts
-  -- | null cs = text "SELECT"
-  --   <+> vcomma ppAtts as
-  --   $$ text "FROM"
-  --   <+> vcomma ppRenameRel ts
-  -- | otherwise = text "SELECT"
-  --   <+> vcomma ppAtts as
-  --   $$ text "FROM"
-  --   <+> vcomma ppRenameRel ts
-  --   $$ text "WHERE"
-  --   <+> vcomma ppCond cs
-  --   where
-  --     as = attributes sql
-  --     cs = condition sql
-  --     ts = tables sql
-ppSql (SqlBin o l r) = undefined
-  -- = parens (ppSql l)
-  --   <+> text (prettyOp o)
-  --   <+> parens (ppSql r)
-  --   where
-  --     prettyOp SqlUnion    = "UNION"
-  --     prettyOp SqlUnionAll = "UNION ALL"
-  --     prettyOp SqlDiff     = "EXCEPT"
+ppSql (SqlBin o l r) = ppSqlBin o l r
 ppSql (SqlTRef r) = text (relationName r)
-ppSql SqlEmpty = text "SELECT NULL"
+ppSql SqlEmpty = ppEmpty
+
+-- | prints sql bin queries.
+ppSqlBin :: SqlBinOp -> SelectFromWhere -> SelectFromWhere -> Doc
+ppSqlBin o l r 
+  = parens (ppSelectFromWhere l)
+    <+> text (prettyOp o)
+    <+> parens (ppSelectFromWhere r)
+    where
+      prettyOp SqlUnion    = "UNION"
+      prettyOp SqlUnionAll = "UNION ALL"
+      prettyOp SqlDiff     = "EXCEPT"
+
+ppEmpty :: Doc
+ppEmpty = text "SELECT NULL"
 
 -- | prints select from where queries.
 ppSelectFromWhere :: SelectFromWhere -> Doc
@@ -353,7 +354,10 @@ hcomma f = hcat . punctuate comma . map f
 vcomma :: (a -> Doc) -> [a] -> Doc
 vcomma f = vcat . punctuate comma . map f
 
-instance Show Sql where
+instance Show OutSql where
+  show = ppOutSqlString
+
+instance Show Sql where 
   show = ppSqlString
 
 
