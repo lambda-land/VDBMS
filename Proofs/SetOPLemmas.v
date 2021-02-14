@@ -775,12 +775,10 @@ Qed.
 
 
 Lemma atts_inter_nil_r: forall A, atts_inter A [] = [].
-Proof. intro A. induction A. simpl. reflexivity. simpl.
-       assumption.
-Qed.
+Proof. intro A. induction A; eauto. Qed.
 
 Lemma atts_inter_nil_l: forall A, atts_inter [] A = [].
-Proof. intros. simpl. reflexivity. Qed.
+Proof. eauto. Qed.
 
 
 Lemma vatts_union_nil_r : forall A (H: NoDupAtt A), vatts_union A [] = A.

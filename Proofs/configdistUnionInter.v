@@ -376,96 +376,256 @@ rewrite (notInAtt_extract _ _ HnInAttA'). simpl.
 rewrite orb_false_r. reflexivity. Qed.
        
 
-Lemma configVAttSet_dist_vatts_union : forall A  A' c (HA: NoDupAtt A)
-(HA': NoDupAtt A'), configVAttSet (vatts_union A A') c =a=
-      atts_union (configVAttSet A c) (configVAttSet A' c) .
+Lemma vatts_union_is_variation_preserving : forall A  A' c (HA: NoDupAtt A)
+(HA': NoDupAtt A'), 
+    A[[ vatts_union A A']]c =a= atts_union (A[[ A]] c) (A[[ A']] c).
 Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
-- destruct A as [| a A]. 
-  + intros. simpl. reflexivity.
-  + intros. simpl configVAttSet at 3.
-    rewrite vatts_union_nil_r. rewrite atts_union_nil_r.
-    reflexivity. auto.
-- intros A c Ha Ha'. destruct a' as (a', e').
-  (*unfold vatts_union. unfold vatts_union in IHA'.*)
-  pose (NoDupAtt_NoDup Ha') as Hndp.
-  inversion Hndp as [|a'' e'' HnInA' HNDpA']; subst.
-  clear Hndp.
-
+- (* case A' = [] *)
+  (*
+     -----------------------------------------------
+     A[[ vatts_union A []]] c =a= atts_union (A[[ A]] c) []
+  *)
+  destruct A as [| a A]; intros. 
+  + (* case A = []       *) simpl. reflexivity.
+  + (* case A = (a :: A) *) simpl (A[[ _]] _) at 3.
+    (* forall X, vatts_union X [] =va= [] /\ forall x, atts_union x [] =a= [] *)
+    rewrite vatts_union_nil_r, atts_union_nil_r. 
+    reflexivity. assumption.
+    
+- (* case A' = (a :: A') *)
+  intros A c Ha Ha'. destruct a' as (a', e').
+  (* IHA' : A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ A']] c)
+     Ha'  : NoDupAtt (ae a' e' :: A')
+     .........
+     -----------------------------------------------
+     A[[ vatts_union A (ae a' e' :: A')]] c =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+  *)
+  
+  (* inversion NoDupAtt (ae a' e' :: A') -> ~ InAtt a' A' *)
   inversion Ha' as [| a'' e'' A'' HnInAttA' HNdpAttA']; subst.
   simpl set_union. 
-  (* modify context to get InAtt (set_union) *)
+  
+  (* introduce ~ In (ae a' e') A' from NoDupAtt_NoDup lemma *)
+  pose (NoDupAtt_NoDup Ha') as Hndp.
+  inversion Hndp as [|a'' e'' HnInA' HNDpA']; subst. clear Hndp.
+  
+  (* IHA' : A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ A']] c)
+     HnInA' : ~ In (ae a' e') A'
+     HnInAttA' : ~ InAtt a' A'
+     .......
+     -----------------------------------------------
+     A[[ vatts_union A (ae a' e' :: A')]] c =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+  *)
+  (** Prove by cases of In (ae a' e') A  *)
   destruct (in_dec vatt_eq_dec (ae a' e') A) as [HInA | HnInA].
-  + (* In (ae a' e') A *)
-    apply vatts_union_InA with (B:=A') in HInA as Hequiv.
+  + (* case In (ae a' e') A *)
+    
+    (* IHA' : A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ A']] c)
+       HnInA' : ~ In (ae a' e') A'
+       HnInAttA' : ~ InAtt a' A'
+       HInA : In (ae a' e') A  (* case analysis *)
+       ........
+       -----------------------------------------------
+       A[[ vatts_union A (ae a' e' :: A')]] c =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+    *)
+    
+    (* HInA : In (ae a' e') A -> vatts_union A (ae a' e' :: A') =va= vatts_union A A' *)
+    apply vatts_union_InA with (B:=A') in HInA as Hequiv. 
     unfold "=va=" in Hequiv. rewrite Hequiv.
-    simpl. destruct (E[[ e']] c) eqn:He'.
-    ++ simpl atts_union. unfold atts_union.
+    (* .......
+       -----------------------------------------------
+       A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+    *)
+    simpl. 
+    (* .......
+       -----------------------------------------------
+       A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) 
+                                  (if E[[ e']] c then a' :: A[[ A']] c else A[[ A']] c)
+    *)
+    destruct (E[[ e']] c) eqn:He'.
+    ++ (* case  (E[[ e']] c) = true *)
+       (* HInA : In (ae a' e') A
+          .......
+          -----------------------------------------------
+          A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (a' :: A[[ A']] c)
+       *)
+       simpl atts_union. unfold atts_union.
        unfold atts_union in IHA'.
-       (* In (ae a' e') A -> (* In a' A[[A]]c *)*)
-       pose (In_config_true a' e' A c HInA He') as HIc.
-       apply (set_union_intro1 string_eq_dec) with (y:= (A[[ A']]c)) in HIc.
-       apply (In_set_add string_eq_dec) in HIc. rewrite HIc. clear HIc.
-       apply IHA'; eauto. 
-    ++ apply IHA'; eauto.
-  + (* ~ In (ae a' e') A *)
+       (* HInA : In (ae a' e') A
+          .......
+          -----------------------------------------------
+          A[[ vatts_union A A']] c =a= set_add string_eq_dec a' (atts_union (A[[ A]] c) (A[[ A']] c))
+       *)
+       (* HInA  : In (ae a' e') A -> HInA_c: In a' (A[[A]]c) *)
+       pose (In_config_true a' e' A c HInA He') as HInA_c.
+       (* HInA_c: In a' (A[[A]]c) -> In a' (atts_union (A[[ A]] c) (A[[ A']] c) *)
+       apply (set_union_intro1 string_eq_dec) with (y:= (A[[ A']]c)) in HInA_c.
+       (* HInA_c -> set_add string_eq_dec a' (atts_union (A[[ A]] c) (A[[ A']] c)) =
+                                              atts_union (A[[ A]] c) (A[[ A']] c)  *)
+       apply (In_set_add string_eq_dec) in HInA_c. rewrite HInA_c. clear HInA_c.
+       
+       (* IHA' : A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ A']] c)
+          .......
+          -----------------------------------------------
+          A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ A']] c)
+       *)
+       apply IHA'; eauto.
+        
+    ++ (* case  (E[[ e']] c) = false *)
+       apply IHA'; eauto.
+       
+  + (* case ~ In (ae a' e') A *)
+  
+     (* IHA' : A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ A']] c)
+        HnInA' : ~ In (ae a' e') A'
+        HnInAttA' : ~ InAtt a' A'
+        .......
+        -----------------------------------------------
+        A[[ vatts_union A (ae a' e' :: A')]] c =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+     *)
+     (** Proof by cases of existsbAtt a' A *)
      destruct (existsbAtt a' A) eqn:HexstAttA.
-     ++ (* InAtt a' A *) 
+     ++ (* case existsbAtt a' A = true -> InAtt a' A *) 
          existsbAtt_InAtt in HexstAttA. rename HexstAttA into HInAttA.
+         (* HnInA : ~ In (ae a' e') A
+            HInAttA : InAtt a' A
+            ........
+            -----------------------------------------------
+            A[[ vatts_union A (ae a' e' :: A')]] c =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+         *)
+         (* From vatts_union Defn, HnInA /\ HInAttA -> 
+             vatts_union A (ae a' e' :: A') =va= ae a' (e' \/(F) extract_e a' (vatts_union A A')) 
+                                                   :: vatts_union (removeAtt a' A) A' *)
          apply (vatts_union_nInA_InAttA) with (A:=A) in Ha' as Hequiv;
          try( split; assumption); try assumption.
          unfold "=va=" in Hequiv. rewrite Hequiv.
-         simpl. destruct (E[[ e']] c) eqn:He'. 
-         +++ (* (E[[ e']] c) = true *) rewrite orb_true_l.
+         (* ........
+            -----------------------------------------------
+            A[[ ae a' (e' \/(F) extract_e a' (set_union vatt_eq_dec A A')) 
+                                   :: vatts_union (removeAtt a' A) A']] c 
+            =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+         *)
+         simpl. 
+         (* ........
+            -----------------------------------------------
+           (if (E[[ e']] c) || (E[[ extract_e a' (set_union vatt_eq_dec A A')]] c)
+             then a' :: A[[ vatts_union (removeAtt a' A) A']] c
+              else A[[ vatts_union (removeAtt a' A) A']] c) =a= atts_union 
+                 (A[[ A]] c)
+                    (if E[[ e']] c then a' :: A[[ A']] c else A[[ A']] c)
+         *)
+         (** Prove by cases (E[[ e']] c) *)
+         destruct (E[[ e']] c) eqn:He'. 
+         +++ (* (E[[ e']] c) = true *) 
+             
+             rewrite orb_true_l.
+             (* HnInAttA' : ~ InAtt a' A'
+                .........
+                -----------------------------------------------
+                a' :: A[[ vatts_union (removeAtt a' A) A']] c 
+                       =a= atts_union (A[[ A]] c) (a' :: A[[ A']] c)
+             *)
+             (* HnInAttA' : ~ InAtt a' A' -> atts_union (A[[ A]] c) (a' :: A[[ A']] c)
+                    =a= a' :: atts_union (A[[ removeAtt a' A]] c) (A[[ A']] c) *)
              rewrite (notInAttA'_set_union_cons_removeAtt _ c Ha HNdpAttA' HnInAttA').
-
-             apply cons_equiv_atts. apply IHA'; eauto.
+             apply cons_equiv_atts. 
+             
+             (* IHA': A[[ vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ A']] c)
+                ..........
+                -----------------------------------------------
+                a' :: A[[ vatts_union (removeAtt a' A) A']] c 
+                       =a= a' :: atts_union (A[[ removeAtt a' A]] c) (A[[ A']] c)
+             *)
+             apply IHA'; eauto.
          
-         +++ (* (E[[ e']] c) = false *) rewrite orb_false_l. 
+         +++ (* (E[[ e']] c) = false *) 
+             rewrite orb_false_l.
+             
+             (* HnInAttA' : ~ InAtt a' A'
+                .........
+                -----------------------------------------------
+                (if E[[ extract_e a' (set_union vatt_eq_dec A A')]] c
+                  then a' :: A[[ vatts_union (removeAtt a' A) A']] c
+                   else A[[ vatts_union (removeAtt a' A) A']] c) =a= atts_union (A[[ A]] c) (A[[ A']] c)
+             *) 
+             
              (* ~ InAtt a' A'-> E[[ extract_e a' (set_union vatt_eq_dec A A')]]c = 
                                 E[[ extract_e a' A]]c *)
              rewrite notInAttA'_extract_set_union; try assumption.
              apply InAtt_extract in HInAttA as HInAexe; try assumption.
              destruct HInAexe as [e [HInA Hexeqe] ].
-
+             
+             (* .........
+                -----------------------------------------------
+                (if E[[ extract_e a' A]] c
+                  then a' :: A[[ vatts_union (removeAtt a' A) A']] c
+                   else A[[ vatts_union (removeAtt a' A) A']] c) =a= atts_union (A[[ A]] c) (A[[ A']] c)
+             *) 
+             
+             (** Prove by cases (E[[ extract_e a' A]] c) *)
              destruct (E[[ extract_e a' A]] c) eqn: Hexta'.
 
-             { (* E[[ extract_e a' A]]c = true *)
+             ++++ (* E[[ extract_e a' A]]c = true *)
 
-              (* E[[ extract_e a' A]]c = true -> E[[e]]c = true *)
-              rewrite Hexeqe in Hexta'. simpl in Hexta'.
-              rewrite orb_false_r in Hexta'.
+                  (* E[[ extract_e a' A]]c = true -> E[[e]]c = true *)
+                  rewrite Hexeqe in Hexta'. simpl in Hexta'.
+                  rewrite orb_false_r in Hexta'.
 
-              (* E[[e]]c = true /\ In (ae a e) A -> In a A[[A]]c *)
-              apply In_config_true with (c:=c) in HInA; try assumption.
+                  (* E[[e]]c = true /\ In (ae a e) A -> In a A[[A]]c *)
+                   apply In_config_true with (c:=c) in HInA; try assumption.
               
-              (* atts_union (A[[ A]] c) (A[[ A']] c) -> 
-                    (a' :: atts_union (A[[ removeAtt a' A]] c) (A[[ A']] c)) *)
-              rewrite (In_set_union_removeAtt _ c Ha HNdpAttA' HInA HnInAttA').
+                  (* In a A[[A]]c -> atts_union (A[[ A]] c) (A[[ A']] c) =a= 
+                                    (a' :: atts_union (A[[ removeAtt a' A]] c) (A[[ A']] c)) *)
+                   rewrite (In_set_union_removeAtt _ c Ha HNdpAttA' HInA HnInAttA').
+                   apply cons_equiv_atts. 
+                   
+                   apply IHA'; eauto.
 
-              apply cons_equiv_atts. apply IHA'; eauto.
-             }
-
-             { (* E[[ extract_e a' A]]c = false *)
+             ++++ (* E[[ extract_e a' A]]c = false *)
           
-              (* E[[ extract_e a' A]]c = false -> E[[e]]c = false *)
-              rewrite Hexeqe in Hexta'. simpl in Hexta'.
-              rewrite orb_false_r in Hexta'.
-
-              (*  E[[e]]c = false /\ In (ae a e) A -> ~ In a A[[[A]]c*)
-              apply In_config_false with (c:=c) in HInA; try assumption.
-              rewrite (notInAtt_set_union_removeAtt _ c Ha HNdpAttA' HInA HnInAttA').
+                  (* E[[ extract_e a' A]]c = false -> E[[e]]c = false *)
+                  rewrite Hexeqe in Hexta'. simpl in Hexta'.
+                  rewrite orb_false_r in Hexta'.
+                  
+                  (*  E[[e]]c = false /\ In (ae a e) A -> ~ In a A[[[A]]c *)
+                  apply In_config_false with (c:=c) in HInA; try assumption.
+                  
+                  (* ~ In a A[[A]]c -> atts_union (A[[ A]] c) (A[[ A']] c) =a= 
+                                       atts_union (A[[ removeAtt a' A]] c) (A[[ A']] c) *)
+                  rewrite (notInAtt_set_union_removeAtt _ c Ha HNdpAttA' HInA HnInAttA').
               
-              apply IHA'; eauto.
-             }
+                  apply IHA'; eauto.
 
-     ++ (* ~ InAtt a' A *)  not_existsbAtt_InAtt in HexstAttA. 
+     ++ (* case existsbAtt a' A = false -> ~ InAtt a' A *)  
+        not_existsbAtt_InAtt in HexstAttA. 
         rename HexstAttA into HnInAttA.
+        
+        (*  HnInA    : ~ In (ae a' e') A
+            HnInAttA : ~ InAtt a' A
+            ........
+            -----------------------------------------------
+            A[[ vatts_union A (ae a' e' :: A')]] c =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+        *)
+        (* HnInA /\ HnInAttA ->
+              vatts_union A (ae a' e' :: A') =va= ae a' e' :: vatts_union A A' *)
         apply (vatts_union_nInA_nInAttA) with (A:=A) in Ha' as Hequiv;
         try(split; assumption).
         unfold "=va=" in Hequiv. rewrite Hequiv.
+        (*  HnInAttA' : ~ InAtt a' A'
+            HnInAttA  : ~ InAtt a' A
+            ..............
+            -----------------------------------------------
+            A[[ ae a' e' :: vatts_union A A']] c =a= atts_union (A[[ A]] c) (A[[ ae a' e' :: A']] c)
+        *)
+        (* Goal -> HnInAttA' /\ HnInAttA /\ IHA'  *)
         apply vatts_union_nInAttA_nInAttB; eauto.
 
 Qed.
+
+Lemma configVAttSet_dist_vatts_union : forall A  A' c (HA: NoDupAtt A)
+(HA': NoDupAtt A'), configVAttSet (vatts_union A A') c =a=
+      atts_union (configVAttSet A c) (configVAttSet A' c) .
+Proof. apply vatts_union_is_variation_preserving. Qed.
 
 
 Lemma configVQType_dist_vqtype_union_vq : forall Q Q' c (HA: NoDupAtt (fst Q))

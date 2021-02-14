@@ -154,7 +154,6 @@ unfold is_disjoint_bool. destruct (atts_inter A B).
 split; intro; reflexivity. split; intro H; discriminate H.
 Qed.
 
-
 (* -----------------------------------------------------
   | Relation-E inverse
   | e |= vq : A'^e' ->
@@ -255,8 +254,8 @@ Qed.
 
 Theorem variation_preservation : forall e S vq A, 
        { e , S |= vq | A } ->
-       forall c, (E[[e]] c) = true ->
-           ||= (Q[[ vq]] c) =a= (QT[[ A]] c).
+       forall c, E[[e]]c = true ->
+           ||= (Q[[ vq]]c) =a= QT[[ A]]c.
 Proof.
   intros e S vq A H c H0. 
    induction H as [e S HndpRS HndpAS 

@@ -47,15 +47,13 @@ Module VRA_RA_encoding.
 (** -------------------------------------------------------------
   Attribute: Type and Comparison Function, Lemmas
 -----------------------------------------------------------------*)
-(* Plain Attribute *)
+(* Plain Element (Attribute/Value) *)
 Definition att : Type := string.
 
 Inductive comp : Type := 
   | EQc | LTc | GTc.
 
-(* Variational Attribute *)
-(*Definition vatt : Type := (att * fexp)%type.*) (*  assuming always annotated; could've used option*)
-
+(* Variational Element (Attribute/Value) *)
 Inductive vatt : Type :=
    | ae : att -> fexp -> vatt. 
 
@@ -209,7 +207,7 @@ rewrite not_true_iff_false in H. auto.
 Qed.
 
 
-(* count occurances of attribite a in given list vatt *)
+(* count occurances of attribite a in given vatts *)
 Fixpoint count_occ_Att (a : att) (v:vatts) : nat := 
    match v with
    | []           => O
@@ -261,8 +259,8 @@ Qed.
 
 (* -- existsbAtt -- *)
 
-(* check whether att a exists in list vatt l - existsb from lib *)
-Definition existsbAtt (a : att) (l : list vatt) := existsb (eqbAtt a) l.
+(* check whether att a exists in vatts l - existsb from lib *)
+Definition existsbAtt (a : att) (l : vatts) := existsb (eqbAtt a) l.
 
 
 Lemma existsbAtt_filter: forall a A, existsbAtt a A = false -> 
@@ -277,8 +275,8 @@ rewrite filter_In. apply Hab.
 Qed.
 
 (*  -- InAtt  -- *)
-
-Function InAtt (a:att) (l:list vatt) {struct l}: Prop :=
+(* In-Elem: Plain Element in V-set *)
+Function InAtt (a:att) (l:vatts) {struct l}: Prop :=
     match l with
     | []           => False
     | ae x e :: xs => x = a \/ InAtt a xs
@@ -380,7 +378,7 @@ Qed.
 
 (* -- removeAtt  --*)
 
-(* remove all occurances of att a from list vatt A *)
+(* remove all occurances of att a from vatts A *)
 Function removeAtt (a : att) (A: vatts) {struct A} : vatts := 
     match A with 
    | nil => nil
@@ -503,7 +501,7 @@ Hint Resolve remove_reduce.
 (*-------------------------------------------------------------------------------*)
 
 
-(* Configuration Variational Attribute List(Set) A[]c (see A3)*)
+(* Configuration Variational Set A[]c (see A3)*)
 Fixpoint configVAttSet (vA : vatts) (c : config) : atts :=
   match vA with
   | nil                  => nil
@@ -512,7 +510,7 @@ Fixpoint configVAttSet (vA : vatts) (c : config) : atts :=
                              else (           configVAttSet vas c )
   end.
 
-Notation "A[[ vA ]] c" := (configVAttSet vA c) (at level 70).
+Notation "A[[ vA ]] c" := (configVAttSet vA c) (at level 50).
 
 Lemma In_config_true: forall a e A c, In (ae a e) A ->
            (E[[ e]]c) = true -> In a (configVAttSet A c).
@@ -679,18 +677,18 @@ Inductive cond : Type :=
   | litCB  : bool -> cond
   | attOpV : op -> att -> nat -> cond
   | attOpA : op -> att -> att -> cond
-  | negC    : cond -> cond 
-  | conjC   : cond -> cond -> cond
-  | disjC   : cond -> cond -> cond.
+  | negC   : cond -> cond 
+  | conjC  : cond -> cond -> cond
+  | disjC  : cond -> cond -> cond.
 
 (* Varitational condition*)
 Inductive vcond : Type :=
   | litCB_v  : bool -> vcond
   | attOpV_v : op -> att -> nat -> vcond
   | attOpA_v : op -> att -> att -> vcond
-  | negC_v    : vcond -> vcond
-  | conjC_v   : vcond -> vcond -> vcond
-  | disjC_v   : vcond -> vcond -> vcond
+  | negC_v   : vcond -> vcond
+  | conjC_v  : vcond -> vcond -> vcond
+  | disjC_v  : vcond -> vcond -> vcond
   | chcC     : fexp -> vcond -> vcond -> vcond.
 
 (* Configuration Variational Condition C[]c *)
@@ -707,15 +705,15 @@ Fixpoint configVCond (vc : vcond) (c : config) : cond :=
 Notation "C[[ vc ]] c" := (configVCond vc c) (at level 70).
 (** -----------------------cond vcond------------------------ **)
 
-(* Variaitonal Query Type *)
+(* Annotated Variaitonal Set (Variaitonal Query Type) *)
 Definition avatts : Type := (vatts * fexp) %type. (*assuming always annotated; could've used option*)
 
-(* Configuration Variational Query Type T[]c *)
+(* Configuration Annotated Variaitonal Set (Variational Query Type) T[]c *)
 Definition configaVatts (vqt : avatts) (c : config) : atts := 
       match vqt with 
       |(V, e) => if semE e c then  configVAttSet V c else  nil
       end.
-Notation "AE[[ vqt ]] c" := (configaVatts vqt c) (at level 70).
+Notation "AE[[ vqt ]] c" := (configaVatts vqt c) (at level 50).
 
 (** -------------------------------------------------------
   Query 
@@ -757,7 +755,7 @@ Fixpoint configVQuery (vq : vquery) (c : config) : query :=
   (*| empty_v              => empty*)
   end.
 
-Notation "Q[[ vq ]] c" := (configVQuery vq c) (at level 70).
+Notation "Q[[ vq ]] c" := (configVQuery vq c) (at level 50).
 
 (** -----------------------query vquery------------------------ **)
 
@@ -777,7 +775,7 @@ Definition configVQtype (vqt : vqtype) (c : config) : qtype := configaVatts vqt 
       |(V, e) => if semE e c then  configVAttSet V c else  nil
       end.*)
 
-Notation "QT[[ vqt ]] c" := (configVQtype vqt c) (at level 70).
+Notation "QT[[ vqt ]] c" := (configVQtype vqt c) (at level 50).
 
 Lemma configVQtype_nil: forall e c, (configVQtype ([], e) c) = [].
 Proof. intros e c. simpl. destruct (E[[ e]] c); reflexivity. Qed.
@@ -793,11 +791,12 @@ Definition getf_vqt (X:vqtype) : fexp := snd X.
 
 
 (** ------------------------------------------------------------
-  Subsumption (of Variational Set) defintion
+  Plain and Variational Set Subsumption
 ---------------------------------------------------------------*)
 (* Checks count
    Ex: sublist_bool [1;1;2] [1;2] = false 
 *)
+(* Subset of Plain Set  *)
 Fixpoint sublist_bool (A A': list string): bool :=
     match A with
     | nil => true
@@ -977,30 +976,29 @@ Definition equiv_atts : relation atts:=
        fun A A' => forall a, (In a A <-> In a A') /\ 
                       ( count_occ string_eq_dec A a = count_occ string_eq_dec A' a).
 
-Infix "=a=" := equiv_atts (at level 50) : type_scope.
+Infix "=a=" := equiv_atts (at level 70) : type_scope.
 
 (* Variational Set (non-annnot-Var Attr) Equivalence (Only needed for next one)*)
 Definition equiv_vatts : relation vatts := 
         fun A A' => forall c, configVAttSet A c =a= configVAttSet A' c.
 
-Infix "=va=" := equiv_vatts (at level 50) : type_scope.
-
+Infix "=va=" := equiv_vatts (at level 70) : type_scope.
 
 Definition equiv_qtype_bool (A A': qtype) := equiv_atts_bool A A'.
 
 Definition equiv_qtype : relation qtype := 
         fun A A' => A =a= A'.
 
-Infix "=t=" := equiv_qtype (at level 50) : type_scope.
+Infix "=t=" := equiv_qtype (at level 70) : type_scope.
 
 (* Variational Set (annotated-Var Query Type) Equivalence *)
 Definition equiv_vqtype : relation vqtype := 
         fun X X' => forall c, configVQtype X c =a= configVQtype X' c. 
         (*fun X X' => (fst X) =va= (fst X') /\ (snd X) =e= (snd X').*)
 
-Infix "=T=" := equiv_vqtype (at level 50) : type_scope.
+Infix "=T=" := equiv_vqtype (at level 70) : type_scope.
 
-(* equiv_qtype is Equivalence relation *)
+(* equiv_qtype is an Equivalence relation *)
 Remark equiv_atts_refl: Reflexive equiv_atts.
 Proof.
   intros A a. split; reflexivity.
@@ -1114,7 +1112,7 @@ Qed.*)
 
 (*stronger condition than mere NoDup vatts*)
 
-Inductive NoDupAtt : list vatt -> Prop :=
+Inductive NoDupAtt : vatts -> Prop :=
   | NoDupAtt_nil : NoDupAtt nil
   | NoDupAtt_cons : forall a e l, ~ InAtt a l -> NoDupAtt l 
                             -> NoDupAtt ((ae a e)::l).
@@ -1130,7 +1128,7 @@ Definition extract_e (a : att) (A: vatts) : fexp :=
 (* -- nodupatt -- *)
 
 (* remove duplicate attributes - merging them through fexp_union *)
-Function nodupatt (v : list vatt) {measure List.length v} : list vatt :=
+Function nodupatt (v : vatts) {measure List.length v} : vatts :=
    match v with 
    | nil          => nil
    | ae a e :: vs =>  match existsbAtt a vs with
@@ -1163,7 +1161,6 @@ Lemma nodupatt_in_cons : forall a e l,
 Proof. intros. simpl_nodupatt. simpl.
 rewrite <- existsbAtt_InAtt in H. rewrite H. auto.
 Qed.
-
 
 
 (*Lemma nodup_fixed_point : forall (l : list A),
@@ -1248,7 +1245,7 @@ Definition atts_inter (A A': atts) : atts :=
 
 (* Variational Attr List *)
 (* NoDupAtt A -> NoDupAtt (vatts_inter A A') *)
-Function vatts_inter (A A' : list vatt) {measure List.length A} : list vatt :=
+Function vatts_inter (A A' : vatts) {measure List.length A} : vatts :=
    match A with 
    | nil          => nil
    | ae a e :: As =>  match existsbAtt a A' with

@@ -15,24 +15,22 @@ Module Feature.
 Definition fname := string.
 
 (** Feature Exression Syntax. *)
-(* comp is negation. meet is conjunction. join is disjunction.*)
 Inductive fexp : Type :=
   | litB : bool -> fexp
   | litF : fname -> fexp
-  | comp : fexp -> fexp
-  | meet : fexp -> fexp -> fexp
-  | join : fexp -> fexp -> fexp.
+  | comp : fexp -> fexp (* negation *)
+  | meet : fexp -> fexp -> fexp (* conjunction *)
+  | join : fexp -> fexp -> fexp. (* disjunction *)
 
-Notation "~(F) f" := (comp f) (at level 75, right associativity).
-Infix "/\(F)" := meet (at level 80, right associativity).
-Infix "\/(F)" := join (at level 85, right associativity).
+Notation "~(F) f" := (comp f) (at level 35, right associativity).
+Infix "/\(F)" := meet (at level 41, right associativity).
+Infix "\/(F)" := join (at level 45, right associativity).
 
 
 (** Configurations. *)
 Definition config := fname -> bool.
 
 (** Feature Exression Semantics. *)
-
 Fixpoint semE (e : fexp) (c : config) : bool :=
   match e with
   | litB b   => b
@@ -42,7 +40,7 @@ Fixpoint semE (e : fexp) (c : config) : bool :=
   | e1 /\(F) e2 => (semE e1 c) && (semE e2 c)
   end.
 
-Notation "E[[ e ]] c" := (semE e c) (at level 90, left associativity).
+Notation "E[[ e ]] c" := (semE e c) (at level 50, left associativity).
 
 (** Feature Expression Equality - see above *)
 (*Fixpoint eqb (e1 e2: fexp) : bool :=
@@ -127,7 +125,7 @@ Definition not_sat (e:fexp): Prop :=
 Definition implies (e1 e2:fexp) (c:config) : Prop := 
   (E[[ e1 ]] c) = true -> (E[[ e2 ]] c) = true.
 
-Notation "e1 ->> e2 | c" := (implies e1 e2 c) (at level 91, left associativity).
+Notation "e1 -e-> e2 | c" := (implies e1 e2 c) (at level 91, left associativity).
 
 Theorem ex_falso_quodlibet : forall (P:Prop),
   False -> P.
