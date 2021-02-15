@@ -41,13 +41,13 @@ import Data.Maybe (isNothing, isJust, fromJust)
 
 -- | final sql data type that will be sent to the database engine.
 data OutSql = OutSql SelectFromWhere
-  | OutSqlBin SqlBinOp SelectFromWhere SelectFromWhere
+  | OutSqlBin SqlBinOp OutSql OutSql
   | OutSqlEmpty
 
 -- | the intermediate sql data type that is used to translate queries
 --   written in variational relational algebra to final sql queries. 
 data Sql = Sql SelectFromWhere
-  | SqlBin SqlBinOp SelectFromWhere SelectFromWhere
+  | SqlBin SqlBinOp Sql Sql
   | SqlTRef Relation
   | SqlEmpty
 
@@ -120,8 +120,9 @@ issqlslct _       = False
 
 -- | gets attributes from sqlselect: select from where
 sqlattributes :: Sql -> [SqlAttrExpr]
-sqlattributes (Sql q) = attributes q
-sqlattributes _       = error "sql: expected select from where!"
+sqlattributes (Sql q)        = attributes q
+sqlattributes (SqlBin _ l _) = sqlattributes l
+sqlattributes _              = error "sql: expected select from where!"
 
 -- | gets tables from sqlselect: select from where
 sqltables :: Sql -> [Rename SqlRelation]
@@ -188,7 +189,7 @@ ppOutSqlString = render . ppOutSql
 -- | prints output sql queries.
 ppOutSql :: OutSql -> Doc
 ppOutSql (OutSql sql) = ppSelectFromWhere sql
-ppOutSql (OutSqlBin o l r) = ppSqlBin o l r
+ppOutSql (OutSqlBin o l r) = ppSqlBin ppOutSql o l r
 ppOutSql OutSqlEmpty = ppEmpty
 
 
@@ -199,16 +200,16 @@ ppSqlString = render . ppSql
 -- | prints sql select queries.
 ppSql :: Sql -> Doc
 ppSql (Sql sql) = ppSelectFromWhere sql
-ppSql (SqlBin o l r) = ppSqlBin o l r
+ppSql (SqlBin o l r) = ppSqlBin ppSql o l r
 ppSql (SqlTRef r) = text (relationName r)
 ppSql SqlEmpty = ppEmpty
 
 -- | prints sql bin queries.
-ppSqlBin :: SqlBinOp -> SelectFromWhere -> SelectFromWhere -> Doc
-ppSqlBin o l r 
-  = parens (ppSelectFromWhere l)
+ppSqlBin :: (a -> Doc) -> SqlBinOp -> a -> a -> Doc
+ppSqlBin f o l r 
+  = parens (f l)
     <+> text (prettyOp o)
-    <+> parens (ppSelectFromWhere r)
+    <+> parens (f r)
     where
       prettyOp SqlUnion    = "UNION"
       prettyOp SqlUnionAll = "UNION ALL"

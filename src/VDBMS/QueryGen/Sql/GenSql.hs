@@ -43,16 +43,16 @@ genSql = evalQState . nameSubSql
 -- TODO: attributes qualifiers must also be updated.
 -- | names subqueries within a sql query.
 nameSubSql :: Sql -> QState Sql
-nameSubSql = undefined
--- nameSubSql (SqlSelect as ts cs) 
---   = do ts' <- mapM nameRel ts
---        return $ SqlSelect as ts' cs
---   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
--- nameSubSql (SqlBin o lq rq) 
---   = do lq' <- nameSubSql lq
---        rq' <- nameSubSql rq 
---        return $ SqlBin o lq' rq'
--- nameSubSql q = return q
+-- nameSubSql = undefined
+nameSubSql (Sql (SelectFromWhere as ts cs))
+  = do ts' <- mapM nameRel ts
+       return $ Sql (SelectFromWhere as ts' cs)
+  -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
+nameSubSql (SqlBin o lq rq) 
+  = do lq' <- nameSubSql lq
+       rq' <- nameSubSql rq 
+       return $ SqlBin o lq' rq'
+nameSubSql q = return q
 
 -- | names a sql relation without a name.
 -- nameRel :: [SqlAttrExpr] -> [SqlCond SqlSelect] -> Rename SqlRelation 

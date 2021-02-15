@@ -104,11 +104,18 @@ rqone = RRenameAlg "rone" (RTRef rone)
 
 rqrone = RTRef rone 
 rqrtwo = RTRef rtwo
+rqrtwo' = RRenameAlg "rtwo" rqrtwo
 rqrthree = RTRef rthree
 
 rqtwo = RProj [att2attr aone_, att2attr atwo_] rqrone
 
+rqtwo' = RProj [att2attr aone_, att2attr atwo_] rqone
+
 rqthree = RProj [att2attr aone_] rqtwo
+
+rqthree' = RProj [att2attr aone_] rqtwo'
+
+rqthree'' = RProj [att2attr aone_] $ RRenameAlg "try" rqthree'
 
 ctru = SqlCond (RLit False)
 cond = SqlCond (RComp EQ (Att (Attr aone_ Nothing)) (Val (SqlInt32 10004)))

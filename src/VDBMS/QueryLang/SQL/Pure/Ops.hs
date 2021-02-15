@@ -3,7 +3,7 @@ module VDBMS.QueryLang.SQL.Pure.Ops (
 
        adjustQSch
        , updatePC
-       , sqlQAtts
+       , sqlQAtts'
 
 ) where
 
@@ -24,22 +24,27 @@ sqlQAtts sql = map aExprAtt (attributes sql)
 
 sqlQAtts' :: Sql -> [Attribute]
 sqlQAtts' (Sql q)        = sqlQAtts q
-sqlQAtts' (SqlBin _ l _) = sqlQAtts l 
+sqlQAtts' (SqlBin _ l _) = sqlQAtts' l 
 sqlQAtts' (SqlTRef _)    = []
 sqlQAtts' SqlEmpty       = []
 
 sqlQAtts'' :: OutSql -> [Attribute]
 sqlQAtts'' (OutSql q)        = sqlQAtts q
-sqlQAtts'' (OutSqlBin _ l _) = sqlQAtts l 
+sqlQAtts'' (OutSqlBin _ l _) = sqlQAtts'' l 
 sqlQAtts'' OutSqlEmpty       = []
 
 -- | adjusts the schema  of a sql query wrt a given list of attribute.
 adjustQSch :: [Attribute] -> [Attribute] -> Sql -> Sql
--- adjustQSch = undefined
 adjustQSch resAtts qsAtts (Sql sql)
   = Sql (adjustQSchSFW resAtts qsAtts sql)
+    where
+      adjustQSchSFW :: [Attribute] -> [Attribute] -> SelectFromWhere -> SelectFromWhere
+      adjustQSchSFW resAtts qsAtts q 
+        = SelectFromWhere (updatesAs resAtts qsAtts (attributes q))
+                          (tables q)
+                          (conditions q)
 adjustQSch resAtts qsAtts (SqlBin o l r) 
-  = SqlBin o (adjustQSchSFW resAtts qsAtts l) (adjustQSchSFW resAtts qsAtts r)
+  = SqlBin o (adjustQSch resAtts qsAtts l) (adjustQSch resAtts qsAtts r)
 adjustQSch resAtts qsAtts q@(SqlTRef _)  -- should never even get here!
   -- = q
   = error "SHOULD NEVER GET SQLTREF RELATION!! IN ADJUSTING THE SCHEMA OF QUERIES!!"
@@ -50,13 +55,6 @@ adjustQSch resAtts qsAtts SqlEmpty
           (updatesAs resAtts qsAtts []) 
           [Rename Nothing (SqlSubQuery SqlEmpty)] 
           [])
-
--- | adjust schema for a select from where query. 
-adjustQSchSFW :: [Attribute] -> [Attribute] -> SelectFromWhere -> SelectFromWhere
-adjustQSchSFW resAtts qsAtts q 
-  = SelectFromWhere (updatesAs resAtts qsAtts (attributes q))
-                    (tables q)
-                    (conditions q)
 
 -- | adjusts a list of sql attr expr. 
 --   i.e. adds atts in res as null to aes.
@@ -87,20 +85,21 @@ updatesAs res already aes
 updatePC :: PCatt -> Sql -> FeatureExpr -> Sql
 updatePC p (Sql sql) f 
   = Sql (updatePCSFW p sql f)
+    where
+      updatePCSFW :: PCatt -> SelectFromWhere -> FeatureExpr -> SelectFromWhere
+      updatePCSFW p sql f 
+        = SelectFromWhere 
+          ((attributes sql) 
+            ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
+                             [" AND (" ++ show f ++ ")"]]) 
+          (tables sql) 
+          (conditions sql)
 updatePC p (SqlBin o l r) f
-  = SqlBin o (updatePCSFW p l f) (updatePCSFW p r f)
+  = SqlBin o (updatePC p l f) (updatePC p r f)
 updatePC _ _ _ 
   = error "expected a sqlselect value!! but got either tref or empty!!!"
 
--- | update pc for sfw.
-updatePCSFW :: PCatt -> SelectFromWhere -> FeatureExpr -> SelectFromWhere
-updatePCSFW p sql f 
-  = SelectFromWhere 
-    ((attributes sql) 
-      ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
-                       [" AND (" ++ show f ++ ")"]]) 
-    (tables sql) 
-    (conditions sql)
+
 
 
 
