@@ -221,7 +221,7 @@ destruct H.
      rewrite  existsbAtt_InAtt in e1.
      rewrite Hxa. auto.
      +++ rewrite stringBEF.eqb_neq in Hxa. 
-     apply IHl0 in H. 
+     apply IHv in H. 
      rewrite <- (InAtt_InAtt_removeAtt) in H.
      auto. auto.
 - functional induction (nodupatt l) using nodupatt_ind.
@@ -240,7 +240,7 @@ destruct (string_beq x a) eqn: Hxa.
 ++ rewrite stringBEF.eqb_neq in Hxa.
 apply InAtt_inv_noteq in H. right. 
 rewrite (InAtt_InAtt_removeAtt) with (y:=a) in H.
-apply IHl0 in H. auto. auto. eauto.
+apply IHv in H. auto. auto. eauto.
 Qed.
 
 
@@ -266,7 +266,7 @@ Proof. functional induction (nodupatt v) using nodupatt_ind.
   rewrite <- existsbAtt_InAtt. 
   rewrite e1. apply diff_false_true. auto.
 + apply NoDupAtt_cons. rewrite InAtt_nondupatt.
-  apply notInAtt_removeAtt. apply IHl.
+  apply notInAtt_removeAtt. apply IHv0.
 Qed.
 
 
@@ -323,7 +323,7 @@ functional induction (nodupatt v) using nodupatt_ind.
     apply notInAtt_notIn_config with (c:=c) in e1.
     destruct (in_dec string_eq_dec a (configVAttSet vs c)) eqn: Hdec.
     inversion Hdec. contradiction.
-    apply cons_equiv_atts. rewrite IHl. auto. reflexivity.
+    apply cons_equiv_atts. rewrite IHv0. auto. reflexivity.
   + auto.
 
 - simpl. destruct (E[[ e]] c) eqn:He.
@@ -336,7 +336,7 @@ functional induction (nodupatt v) using nodupatt_ind.
     (* ~ In a [[ vs]]c *)
     try(rewrite <- (notin_remove string_eq_dec (configVAttSet vs c) a HInd)); 
      rewrite remove_removeAtt; apply cons_equiv_atts;
-     exact IHl.
+     exact IHv0.
 
  (* (E[[ e]] c) = false  *)
  + rewrite orb_false_l.  
@@ -344,11 +344,11 @@ functional induction (nodupatt v) using nodupatt_ind.
    ++ apply extract_true_In in Hex as HIn.
       rewrite (nodup_remove_cons a _ HIn).
       rewrite remove_removeAtt; apply cons_equiv_atts;
-      exact IHl.
+      exact IHv0.
    ++ apply extract_false_notIn in Hex as HIn.
       rewrite <- (notin_remove string_eq_dec (configVAttSet vs c) a HIn).
       rewrite remove_removeAtt. 
-      exact IHl.
+      exact IHv0.
 Qed.
 
 
