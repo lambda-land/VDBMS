@@ -43,7 +43,6 @@ Import Feature.
 
 Module VRA_RA_encoding.
 
-
 (** -------------------------------------------------------------
   Attribute: Type and Comparison Function, Lemmas
 -----------------------------------------------------------------*)
@@ -589,6 +588,7 @@ Qed. *)
 (** -----------------------atts vatts------------------------ **)
 
 
+
 (** ------------------------------------------------------------
   Relations 
 ---------------------------------------------------------------*)
@@ -600,6 +600,9 @@ Definition relS : Type := (r * atts) % type.
 
 (* Variational Relation Schema - annotated set of variational attributes with a name *)
 Definition vrelS : Type := (r * (vatts * fexp) ) %type. (*assuming always annotated; could've used option*)
+
+(* Plain Schema *)
+Definition schema : Type := set relS.
 
 (* Variational Schema (Implicit encoding) *)
 Definition vschema : Type := ((set vrelS) * fexp) %type.
@@ -613,13 +616,93 @@ Definition getSvrelS (vs:vschema) : (set vrelS) := fst vs.
 Definition getSf  (vs:vschema) : fexp  := snd vs.
 
 
-(* Configuration Variational Relation R[]c *)
+(* Variational Relation Schema Configuration R[]c *)
 Definition configVRelS (vr : vrelS) (c : config) : relS := if semE (snd (snd vr)) c
-                                                         then  (fst vr, (configVAttSet (fst (snd vr)) c)) 
-                                                           else  (fst vr, nil).
-Notation "R[[ vr ]] c" := (configVRelS vr c) (at level 70).
+                                                            then  (fst vr, (configVAttSet (fst (snd vr)) c)) 
+                                                             else  (fst vr, nil).
+Notation "R[[ vr ]] c" := (configVRelS vr c) (at level 50).
+
+(* Variational Relation Schema  Configuration R[]c *)
+Definition configVRelS_ (vr : vrelS) (c : config) : relS := 
+let r := fst vr in
+ let A := fst(snd vr) in
+  let e := snd (snd vr) in 
+  if E[[ e]]c
+   then  (r, (A[[A]]c)) 
+    else  (r, []).
+Notation "R_[[ vr ]] c" := (configVRelS_ vr c) (at level 50).
+
+(* Variational Schema  Configuration S[]c *)
+Definition configVS (vs : vschema) (c : config) : schema := 
+let VR := fst vs in
+ let m := snd vs in
+   if E[[ m]]c
+    then  map (fun vr => (R[[vr]]c)) VR
+     else  [].
+Notation "S[[ vs ]] c" := (configVS vs c) (at level 50).
 
 (** ---------------------------relS-------------------------- **)
+
+(** ------------------------------------------------------------
+  Tables / Content
+---------------------------------------------------------------*)
+(* Plain Value *)
+Definition val : Type := att.
+
+(* Variational Value *)
+Definition vval : Type := vatt. 
+
+(* Plain Tuple *)
+Definition tuple : Type := atts.
+
+(* Variational Tuple *)
+Definition vtuple : Type := (vatts * fexp) % type.
+
+(* Plain Relation Content *)
+Definition rcontent : Type := set tuple.
+
+(* Variational Relation Content *)
+Definition vrcontent : Type := set vtuple.
+
+(* Plain Relation Content *)
+Definition table : Type := (relS * rcontent) %type.
+
+(* Variational Relation Content *)
+Definition vtable : Type := (vrelS * vrcontent) %type.
+
+(* Plain Instance *)
+Definition instance : Type := set table.
+
+(* Variational Relation Content *)
+Definition vinstance : Type := set vtable.
+
+(* Variational Tuple  Configuration U[]c *)
+Definition configVTuple (vtup : vtuple) (c : config) : tuple := 
+let VT := fst vtup in
+ let e := snd vtup in
+  if E[[ e]]c
+   then  (A[[VT]]c)
+    else  [].
+Notation "U[[ vu ]] c" := (configVTuple vu c) (at level 50).
+
+(* Variational Relation Content Configuration T[]c *)
+Definition configVRContent (vrc : vrcontent) (c : config) : rcontent := 
+map (fun v => (U[[v]]c)) vrc.
+Notation "T[[ vrc ]] c" := (configVRContent vrc c) (at level 50).
+
+(* (* Variational Table Configuration T[]c *)
+Definition configVTable (vt : vtable) (c : config) : table := 
+let vrs := fst vt in
+ let vrc := snd vt in
+  (R[[ vrs ]]c, RC[[ vrc ]]c).
+Notation "T[[ vt ]] c" := (configVTable vt c) (at level 50). *)
+
+(* Variational Databse Insatnce Configuration I[]c *)
+Definition configVDBInsatnce (vins : vinstance) (c : config) : instance := 
+map (fun vt => ((R[[(fst vt)]]c), (T[[ (snd vt) ]]c))) vins.
+Notation "I[[ vt ]] c" := (configVDBInsatnce vt c) (at level 50).
+(** ---------------------------tuple-------------------------- **)
+
 
 (** ------------------------------------------------------------
   Properties/ Function defined on vrelS vschema (Implicit encoding)

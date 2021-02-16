@@ -376,7 +376,7 @@ rewrite (notInAtt_extract _ _ HnInAttA'). simpl.
 rewrite orb_false_r. reflexivity. Qed.
        
 
-Lemma vatts_union_is_variation_preserving : forall A  A' c (HA: NoDupAtt A)
+Theorem vatts_union_is_variation_preserving : forall A  A' c (HA: NoDupAtt A)
 (HA': NoDupAtt A'), 
     A[[ vatts_union A A']]c =a= atts_union (A[[ A]] c) (A[[ A']] c).
 Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
@@ -655,32 +655,65 @@ apply configVAttSet_dist_vatts_union.
 intros. simpl. reflexivity.
 Qed.*)
 
-
+Theorem vatts_intersection_is_variation_preserving : forall A  A' c (HA: NoDupAtt A)
+(HA': NoDupAtt A'), A[[ vatts_inter A A']] c =
+      atts_inter (A[[ A]] c) (A[[ A']] c).
+Proof. intros. induction A as [|a A IHA].
+- (* case A = [] *) simpl. reflexivity.
+- (* case A = (a::A) *) 
+   simpl.  destruct a as (a, e). 
+   (* get (~ InAttA a A) from NoDupAtt (ae a e :: A) *)
+   inversion HA as [| a'' e'' A'' HnInAttA HNdpAttA]; subst.
+   (* rewrite vatts_inter equation*)
+   rewrite vatts_inter_equation. 
+   (** Proof by cases of (E[[ e]]c) *)
+   destruct (E[[ e]]c) eqn:He.
+   { (* case He: (E[[e]]c) = true *)
+      simpl atts_inter.
+     (** Proof by cases of (set_mem _ a (A[[ A']] c)) *)
+     destruct (set_mem string_eq_dec a (A[[ A']] c)) eqn: Hset_memaA'.
+    + (* case (set_mem _ a (A[[ A']] c) = true *)
+      (* set_mem _ a (A[[ A']] c) = true -> In a (A[[ A']] c) *)
+      apply (set_mem_correct1 string_eq_dec) in Hset_memaA'.
+      (* In a (A[[ A']] c) -> Hextract: E[[ extract_e a A']] c = true *) 
+      apply extract_true_In in Hset_memaA' as Hextract.
+      (* In a (A[[ A']] c) -> HInattaA': InAtt a A' *) 
+      apply In_InAtt_config in Hset_memaA' as HInattaA'. 
+      (* InAtt a A' -> existsbAtt a A' = true *)
+      rewrite <- existsbAtt_InAtt in HInattaA'. rewrite HInattaA'.
+      (* simpl A[[_]]c. rewrite He Hextract IHA *)
+      simpl configVAttSet. rewrite He, Hextract, IHA. simpl. 
+      reflexivity.  assumption.
+    + (* case (set_mem _ a (A[[ A']] c) <> true *)
+      (* set_mem _ a (A[[ A']] c) <> true -> ~ In a (A[[ A']] c) *)
+      apply (set_mem_complete1 string_eq_dec) in Hset_memaA'. 
+      (* ~ In a (A[[ A']] c) -> Hextract: E[[ extract_e a A']] c = false *) 
+      rewrite <- extract_true_In in Hset_memaA'.
+      (* rewrite <> true <-> = false in Hset_memaA' *) 
+      rewrite not_true_iff_false in Hset_memaA'.
+      (** Proof by cases of existsbAtt a A' *)
+      destruct (existsbAtt a A'). 
+      ++ (* existsbAtt a A' = true *)
+         (* simpl A[[_]]c. rewrite IHA Hset_memaA' *)
+         simpl configVAttSet. rewrite IHA, Hset_memaA'. 
+         rewrite andb_false_r. reflexivity. assumption. 
+      ++ (* existsbAtt a A' = false *) apply(IHA HNdpAttA). 
+   }
+   { (* case He: (E[[e]]c) = true *)
+     (** Proof by cases of existsbAtt a A' *)
+     destruct (existsbAtt a A'). 
+     + (* existsbAtt a A' = true *)
+       (* simpl A[[_]]c. rewrite He IHA *)
+       simpl configVAttSet. rewrite He, IHA. 
+       rewrite andb_false_l. reflexivity. assumption. 
+     + (* existsbAtt a A' = false *) apply(IHA HNdpAttA). 
+   }
+Qed.
 
 Lemma configVAttSet_dist_vatts_inter : forall A  A' c (HA: NoDupAtt A)
 (HA': NoDupAtt A'), configVAttSet (vatts_inter A A') c =
       atts_inter (configVAttSet A c) (configVAttSet A' c).
-Proof. intros. induction A.
-- simpl. reflexivity.
-- simpl.  destruct a. inversion HA; subst.
-rewrite vatts_inter_equation. 
-destruct (E[[ f]]c) eqn:Hf. { simpl atts_inter.
-destruct (set_mem string_eq_dec a (configVAttSet A' c)) eqn: HaA'.
-+ apply (set_mem_correct1 string_eq_dec) in HaA'. 
-apply extract_true_In in HaA' as Hextract.
-apply In_InAtt_config in HaA' as HInattaA'. 
-rewrite <- existsbAtt_InAtt in HInattaA'. rewrite HInattaA'.
-simpl configVAttSet. rewrite Hf, Hextract, IHA. simpl. 
-reflexivity.  assumption.
-+  apply (set_mem_complete1 string_eq_dec) in HaA'. 
-rewrite <- extract_true_In in HaA'. rewrite not_true_iff_false in HaA'.
-destruct (existsbAtt a A'). simpl configVAttSet. 
-rewrite IHA, HaA'. rewrite andb_false_r. reflexivity.
-assumption. apply(IHA H3). }
-{ destruct (existsbAtt a A'). simpl configVAttSet. 
-rewrite Hf, IHA. rewrite andb_false_l. reflexivity.
-assumption. apply(IHA H3). }
-Qed.
+Proof. apply vatts_intersection_is_variation_preserving. Qed.
 
 Lemma configVQType_dist_vatts_inter : forall A A' e e' c 
 (HA: NoDupAtt A) (HA': NoDupAtt A'), 
