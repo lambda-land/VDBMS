@@ -71,7 +71,6 @@ nameRel rq@(Rename a q@(SqlSubQuery subq))
     = do subq' <- nameSubSql subq
          s <- get
          let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
-
          modify succ
          return rq'
   | isNothing a && issqlslct subq 
