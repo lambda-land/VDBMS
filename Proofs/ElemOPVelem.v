@@ -2,7 +2,7 @@
 Set Warnings "-notation-overridden,-parsing".
 
 
-Load extract_lemmas.
+Load get_annot_lemmas.
 
 
 (* configVElemSet InElem *)
@@ -340,12 +340,12 @@ functional induction (nodupelem v) using nodupelem_ind.
 
  (* (E[[ e]] c) = false  *)
  + rewrite orb_false_l.  
-   destruct (E[[ extract_e a vs]] c) eqn:Hex.
-   ++ apply extract_true_In in Hex as HIn.
+   destruct (E[[ get_annot a vs]] c) eqn:Hex.
+   ++ apply get_annot_true_In in Hex as HIn.
       rewrite (nodup_remove_cons a _ HIn).
       rewrite remove_removeElem; apply cons_equiv_elems;
       exact IHv0.
-   ++ apply extract_false_notIn in Hex as HIn.
+   ++ apply get_annot_false_notIn in Hex as HIn.
       rewrite <- (notin_remove string_eq_dec (configVElemSet vs c) a HIn).
       rewrite remove_removeElem. 
       exact IHv0.

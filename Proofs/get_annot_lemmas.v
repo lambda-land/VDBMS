@@ -1,24 +1,24 @@
-(** -- extract_e lemma on whole list -- *)
+(** -- get_annot lemma on whole list -- *)
 Set Warnings "-notation-overridden,-parsing".
 
 
 Load equiv_lemms.
 
 
-Lemma simpl_extract_eq a e A: extract_e a ((ae a e)::A) = (e \/(F) (extract_e a A)).
-Proof. unfold extract_e. simpl. unfold eqbElem.
+Lemma simpl_get_annot_eq a e A: get_annot a ((ae a e)::A) = (e \/(F) (get_annot a A)).
+Proof. unfold get_annot. simpl. unfold eqbElem.
 simpl. rewrite stringBEF.eqb_refl.
 simpl. reflexivity.
 Qed.
 
-Lemma simpl_extract_neq a0 a e A: a0 <> a ->
-       extract_e a0 ((ae a e)::A) = (extract_e a0 A).
-Proof. intro H. unfold extract_e. simpl. unfold eqbElem.
+Lemma simpl_get_annot_neq a0 a e A: a0 <> a ->
+       get_annot a0 ((ae a e)::A) = (get_annot a0 A).
+Proof. intro H. unfold get_annot. simpl. unfold eqbElem.
 simpl. rewrite <- stringBEF.eqb_neq in H.
 rewrite H. simpl. reflexivity.
 Qed.
 
-Lemma extract_true_In a A c: (E[[ extract_e a A]]c) = true 
+Lemma get_annot_true_In a A c: (E[[ get_annot a A]]c) = true 
 <-> In a (configVElemSet A c).
 Proof. split. 
 { 
@@ -26,21 +26,21 @@ induction A; intro H.
 - simpl in H. discriminate H.
 - destruct a0 as (a0, e0). 
   destruct (string_eq_dec a a0); subst.
-  + rewrite simpl_extract_eq in H. 
+  + rewrite simpl_get_annot_eq in H. 
     simpl in H. apply orb_prop in H. 
     destruct H. 
     ++ simpl. rewrite H. simpl. eauto.
     ++  simpl. destruct (E[[ e0]] c); try(simpl; 
         right); apply IHA; apply H.
-  + rewrite (simpl_extract_neq _ _ n) in H.
+  + rewrite (simpl_get_annot_neq _ _ n) in H.
     simpl. destruct (E[[ e0]] c); try(simpl; 
         right); apply IHA; apply H.
 }
 { 
 induction A; intro H.
 - simpl in H. destruct H.
-- unfold extract_e. simpl. 
-  destruct a0 as (a0, e0).
+- unfold get_annot. simpl. 
+  destruct a0 as (a0, e0). simpl.
   destruct (eqbElem a (ae a0 e0))eqn: Haa0;
   unfold eqbElem in Haa0; simpl in Haa0.
   + simpl. apply orb_true_intro. 
@@ -55,28 +55,28 @@ induction A; intro H.
 }
 Qed.
 
-Lemma extract_false_notIn a A c: (E[[ extract_e a A]]c) = false 
+Lemma get_annot_false_notIn a A c: (E[[ get_annot a A]]c) = false 
 <-> ~ In a (configVElemSet A c).
 Proof. 
-pose (extract_true_In a A c) as Hcontra.
+pose (get_annot_true_In a A c) as Hcontra.
 apply contrapositive_iff in Hcontra.
 rewrite not_true_iff_false in Hcontra.
 symmetry in Hcontra. exact Hcontra.
 Qed.
 
-Lemma notInElem_extract: forall a A, ~ InElem a A -> extract_e a A = litB false.
+Lemma notInElem_get_annot: forall a A, ~ InElem a A -> get_annot a A = litB false.
 Proof. 
-intros. unfold extract_e. rewrite <- existsbElem_InElem in H.
+intros. unfold get_annot. rewrite <- existsbElem_InElem in H.
 rewrite not_true_iff_false in H. 
 assert (Hf: filter (eqbElem a) A = []). rewrite <- notIn_nil.
 apply existsbElem_filter. auto.
 rewrite Hf. simpl. auto.
 Qed.
 
-Lemma In_extract a e A (H: NoDupElem A): In (ae a e) A -> 
-extract_e a A = (e \/(F) litB false). 
+Lemma In_get_annot a e A (H: NoDupElem A): In (ae a e) A -> 
+get_annot a A = (e \/(F) litB false). 
 Proof. intros.
-unfold extract_e. induction A.
+unfold get_annot. induction A.
 simpl in H0. destruct H0.
 simpl in H0. inversion H; subst.
 destruct H0.
@@ -99,17 +99,17 @@ destruct (string_beq a a1) eqn:Haa1.
     apply IHA. auto. auto.
 Qed.
 
-Lemma InElem_extract a A (HndpElemA: NoDupElem A): InElem a A -> 
-exists e, In (ae a e) A /\ extract_e a A = (e \/(F) litB false). 
+Lemma InElem_get_annot a A (HndpElemA: NoDupElem A): InElem a A -> 
+exists e, In (ae a e) A /\ get_annot a A = (e \/(F) litB false). 
 Proof. intros HInElemA.
 apply InElem_In_exfexp in HInElemA.
 destruct HInElemA as [e HInA].
-(* NoDupElem A /\ In (ae a' e) A -> extract_e a' A = e *)
-apply (In_extract _ _ HndpElemA) in HInA as Hexe.
+(* NoDupElem A /\ In (ae a' e) A -> get_annot a' A = e *)
+apply (In_get_annot _ _ HndpElemA) in HInA as Hexe.
 exists e. eauto. Qed.
 
-Lemma extract_equiv : forall l l' a,
-l =va= l' -> extract_e a l =e= extract_e a l'.
+Lemma get_annot_equiv : forall l l' a,
+l =va= l' -> get_annot a l =e= get_annot a l'.
 Proof.
 intros l l' a H.
 - unfold equiv_velems in H. 
@@ -118,10 +118,10 @@ unfold equiv_elems in H. specialize H with c a.
 destruct H as [HIniff Hocc].
 destruct (in_dec string_eq_dec a (configVElemSet l c)) as [HInl |HnInl].
 + apply HIniff in HInl as HInl'.
-  rewrite <- extract_true_In in HInl, HInl'.
+  rewrite <- get_annot_true_In in HInl, HInl'.
   rewrite HInl, HInl'. reflexivity.
 + assert(HnInl': ~ In a (configVElemSet l' c)).
   rewrite HIniff in HnInl. assumption.
-  rewrite <- extract_false_notIn in HnInl, HnInl'.
+  rewrite <- get_annot_false_notIn in HnInl, HnInl'.
   rewrite HnInl, HnInl'. reflexivity.
 Qed.

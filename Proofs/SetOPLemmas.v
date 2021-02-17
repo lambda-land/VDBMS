@@ -430,10 +430,10 @@ exists e', In (ae a e') B /\ (E[[ e']]c) = true.
 Proof. apply velems_inter_ind; intros.
 - destruct H. destruct H. 
 - apply H. eauto.
-- (* extract_e a A' -> In a A[[A]]c -> goal *) destruct H0.
+- (* get_annot a A' -> In a A[[A]]c -> goal *) destruct H0.
 destruct H0 as [Heq | HIn]. inversion Heq; subst.
 simpl in H1. rewrite andb_true_iff in H1.
-destruct H1 as [He0 He']. apply extract_true_In in He' as HInElem.
+destruct H1 as [He0 He']. apply get_annot_true_In in He' as HInElem.
 rewrite <- In_config_exists_true in HInElem. auto.
 apply H. eauto.
 
@@ -443,7 +443,7 @@ destruct H. rewrite velems_inter_equation in H.
 destruct a0. destruct (existsbElem a0 B) eqn:Hex.
 simpl in H. destruct H.  inversion H; subst.
 simpl in H0. rewrite andb_true_iff in H0.
-destruct H0. apply extract_true_In in H1 as HInElem. 
+destruct H0. apply get_annot_true_In in H1 as HInElem. 
 rewrite <- In_config_exists_true in HInElem. auto.
 apply IHA. eauto. 
 apply IHA. eauto.*)
@@ -642,16 +642,16 @@ apply cons_equiv_velems. apply IHA.
 all:assumption.
 Qed.
 
-Lemma  extract_set_union: forall a A A' c (HA: NoDupElem A) (HA': NoDupElem A'),
-      (E[[ extract_e a (set_union velem_eq_dec A A')]]c) 
-         = (E[[ (extract_e a A \/(F) extract_e a A')]]c).
+Lemma  get_annot_set_union: forall a A A' c (HA: NoDupElem A) (HA': NoDupElem A'),
+      (E[[ get_annot a (set_union velem_eq_dec A A')]]c) 
+         = (E[[ (get_annot a A \/(F) get_annot a A')]]c).
 Proof. (*intros a A A'. generalize dependent a.*)
  induction A' as [|a' A' IHA']; intros.
 - simpl. rewrite orb_false_r. reflexivity.
 - destruct a' as (a', e').
   inversion HA' as [|a'' e'' A'' HnInElemA' HNdpElemA'] ; subst.
   (* destruct (string_eq_dec a' a); subst.
-  + simpl. rewrite simpl_extract_eq. *)
+  + simpl. rewrite simpl_get_annot_eq. *)
     specialize IHA' with c. pose  (IHA' HA HNdpElemA') as IH.
     destruct (InElem_dec a' A) as [HInElemA | HnInElemA].
     ++ (* InElem a A *) 
@@ -669,13 +669,13 @@ Proof. (*intros a A A'. generalize dependent a.*)
            (* rewrite IH *)
            rewrite IH. 
            destruct (string_eq_dec a a') as [Heq|Heq]; subst.
-           { simpl. rewrite simpl_extract_eq.
-             rewrite (notInElem_extract _ _ HnInElemA').
-             rewrite (In_extract _ _ HA HInA).  simpl.
+           { simpl. rewrite simpl_get_annot_eq.
+             rewrite (notInElem_get_annot _ _ HnInElemA').
+             rewrite (In_get_annot _ _ HA HInA).  simpl.
              repeat( rewrite orb_false_r). 
              rewrite orb_diag. reflexivity.
            }
-           { simpl. rewrite (simpl_extract_neq _ _ Heq).
+           { simpl. rewrite (simpl_get_annot_neq _ _ Heq).
              reflexivity.
            }
        
@@ -692,18 +692,18 @@ Proof. (*intros a A A'. generalize dependent a.*)
            rewrite (notIn_set_union velem_eq_dec) in HnInAUA'.
            (* ~ In a A -> set_add a A =va= (a::A) *)
            apply (notIn_set_add_equiv_velems) in HnInAUA' as Hsetadd.
-           apply extract_equiv with (a:=a) in Hsetadd. rewrite Hsetadd.
+           apply get_annot_equiv with (a:=a) in Hsetadd. rewrite Hsetadd.
            
            (* rewrite IHA' *)
            
            destruct (string_eq_dec a a') as [Heq|Heq]; subst.
-           { simpl. repeat(rewrite simpl_extract_eq). 
+           { simpl. repeat(rewrite simpl_get_annot_eq). 
              simpl. rewrite IH.
-             rewrite (notInElem_extract _ _ HnInElemA').
-             rewrite (In_extract _ _ HA HInA).  simpl.
+             rewrite (notInElem_get_annot _ _ HnInElemA').
+             rewrite (In_get_annot _ _ HA HInA).  simpl.
              repeat( rewrite orb_false_r). apply orb_comm.
            }
-           { simpl. repeat(rewrite (simpl_extract_neq _ _ Heq)).
+           { simpl. repeat(rewrite (simpl_get_annot_neq _ _ Heq)).
              apply IH. 
            }
            
@@ -724,20 +724,20 @@ Proof. (*intros a A A'. generalize dependent a.*)
        rewrite (notIn_set_union velem_eq_dec) in HnInAUA'.
        (* ~ In a A -> set_add a A =va= (a::A) *)
        apply (notIn_set_add_equiv_velems) in HnInAUA' as Hsetadd.
-       apply extract_equiv with (a:=a) in Hsetadd. rewrite Hsetadd.
+       apply get_annot_equiv with (a:=a) in Hsetadd. rewrite Hsetadd.
        
 
        (* rewrite IHA' *)
         
         destruct (string_eq_dec a a') as [Heq|Heq]; subst.
-       { simpl. repeat(rewrite simpl_extract_eq). 
+       { simpl. repeat(rewrite simpl_get_annot_eq). 
          simpl. rewrite IH.
-         rewrite (notInElem_extract _ _ HnInElemA).
-         rewrite (notInElem_extract _ _ HnInElemA').
+         rewrite (notInElem_get_annot _ _ HnInElemA).
+         rewrite (notInElem_get_annot _ _ HnInElemA').
          simpl.
          repeat( rewrite orb_false_r). reflexivity.
        }
-       { simpl. repeat(rewrite (simpl_extract_neq _ _ Heq)).
+       { simpl. repeat(rewrite (simpl_get_annot_neq _ _ Heq)).
          apply IH.
        }
 Qed.
@@ -851,8 +851,8 @@ destruct H.
 simpl. destruct (string_beq a x) eqn:Hxa.
  rewrite stringDecF.eqb_eq in Hxa.
 contradiction. simpl. destruct (existsbElem a B).
-rewrite IHA. Search extract_e.
-rewrite simpl_extract_neq. reflexivity.
+rewrite IHA. Search get_annot.
+rewrite simpl_get_annot_neq. reflexivity.
 all: (try eauto). Qed. 
 
 Lemma velems_inter_pres : forall A (H: NoDupElem A), velems_inter A A =va= A.
@@ -862,7 +862,7 @@ inversion H; subst.
 rewrite velems_inter_equation. 
  simpl. unfold eqbElem. simpl.
 rewrite stringBEF.eqb_refl. simpl.
-rewrite simpl_extract_eq. apply notInElem_extract in H2 as H2e.
+rewrite simpl_get_annot_eq. apply notInElem_get_annot in H2 as H2e.
 rewrite H2e.  eapply velems_inter_notIn in H2.
 rewrite H2. unfold equiv_velems. intro c.
 unfold configVElemSet; fold configVElemSet.
@@ -873,7 +873,7 @@ apply cons_equiv_elems. unfold equiv_velems in IHA.
 all: apply (IHA H4).
 Qed.
 
-(* if not NoDupElem B then replace In (ae a e') B with e' := extract_e a B *)
+(* if not NoDupElem B then replace In (ae a e') B with e' := get_annot a B *)
 Lemma velems_inter_elemchc_more_specific: forall x e e' A B (HndpB: NoDupElem B),
 In (ae x e) (velems_inter A B) -> In (ae x e') B -> forall c,
 ((E[[ e]]c) = true  -> (E[[ e']]c) = true).
@@ -884,7 +884,7 @@ Proof. induction A as [|(a, ea) A].
 unfold eqbElem in *. simpl in *.
 destruct (existsbElem a B) eqn: HInElemaB.
 ++ simpl in HInAB. destruct HInAB as [Heq | HInAB].
-{ inversion Heq; subst. apply (In_extract _ _ HndpB) in HInB.
+{ inversion Heq; subst. apply (In_get_annot _ _ HndpB) in HInB.
 simpl in He. rewrite andb_true_iff in He.
 destruct He as [He1 He2].
 rewrite HInB in He2. simpl in He2. 
@@ -911,8 +911,8 @@ rewrite Ha' in Ha'AvB.
 inversion Ha'AvB; subst.
 rewrite Ha'. simpl. unfold equiv_velems.
 intro c. simpl. 
-destruct ((E[[ e']] c) && (E[[ extract_e a0 (v :: B)]] c) &&
-  (E[[ extract_e a0 (v :: B)]] c)) eqn:Hes;
+destruct ((E[[ e']] c) && (E[[ get_annot a0 (v :: B)]] c) &&
+  (E[[ get_annot a0 (v :: B)]] c)) eqn:Hes;
 rewrite <- andb_assoc in Hes; rewrite andb_diag in Hes;
 rewrite Hes; try( apply cons_equiv_elems);
 unfold equiv_velems in IHA; auto.

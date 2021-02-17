@@ -1202,7 +1202,7 @@ Inductive NoDupElem : velems -> Prop :=
 
 
 
-Definition extract_e (a : elem) (A: velems) : fexp :=  
+Definition get_annot (a : elem) (A: velems) : fexp :=  
                    fold_right Feature.join (litB false) (map (sndVelem) (filter (eqbElem a) A)). 
 
 (*--------------------------------------------------------*)
@@ -1216,7 +1216,7 @@ Function nodupelem (v : velems) {measure List.length v} : velems :=
    | nil          => nil
    | ae a e :: vs =>  match existsbElem a vs with
                       | false => ae a e :: nodupelem vs
-                      | true  => let e' := extract_e a vs in
+                      | true  => let e' := get_annot a vs in
                          (ae a (e \/(F) e') ) :: nodupelem (removeElem a vs)
                       end
    end.
@@ -1239,7 +1239,7 @@ auto. Qed.
 
 Lemma nodupelem_in_cons : forall a e l,
         InElem a l -> 
-          nodupelem (ae a e::l) = ae a (e \/(F) extract_e a l) 
+          nodupelem (ae a e::l) = ae a (e \/(F) get_annot a l) 
                      :: nodupelem (removeElem a l).
 Proof. intros. simpl_nodupelem. simpl.
 rewrite <- existsbElem_InElem in H. rewrite H. auto.
@@ -1333,7 +1333,7 @@ Function velems_inter (A A' : velems) {measure List.length A} : velems :=
    | nil          => nil
    | ae a e :: As =>  match existsbElem a A' with
                       | false => velems_inter As A'
-                      | true  => let e' := extract_e a A' in
+                      | true  => let e' := get_annot a A' in
                          (ae a (e /\(F) e') ) :: velems_inter As A'
                       end
    end.
