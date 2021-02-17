@@ -509,7 +509,7 @@ Fixpoint configVElemSet (vA : velems) (c : config) : elems :=
                              else (           configVElemSet vas c )
   end.
 
-Notation "A[[ vA ]] c" := (configVElemSet vA c) (at level 50).
+Notation "X[[ vA ]] c" := (configVElemSet vA c) (at level 50).
 
 Lemma In_config_true: forall a e A c, In (ae a e) A ->
            (E[[ e]]c) = true -> In a (configVElemSet A c).
@@ -628,7 +628,7 @@ let r := fst vr in
  let A := fst(snd vr) in
   let e := snd (snd vr) in 
   if E[[ e]]c
-   then  (r, (A[[A]]c)) 
+   then  (r, (X[[A]]c)) 
     else  (r, []).
 Notation "R_[[ vr ]] c" := (configVRelS_ vr c) (at level 50).
 
@@ -681,7 +681,7 @@ Definition configVTuple (vtup : vtuple) (c : config) : tuple :=
 let VT := fst vtup in
  let e := snd vtup in
   if E[[ e]]c
-   then  (A[[VT]]c)
+   then  (X[[VT]]c)
     else  [].
 Notation "U[[ vu ]] c" := (configVTuple vu c) (at level 50).
 
@@ -796,7 +796,7 @@ Definition configaVelems (vqt : avelems) (c : config) : elems :=
       match vqt with 
       |(V, e) => if semE e c then  configVElemSet V c else  nil
       end.
-Notation "AE[[ vqt ]] c" := (configaVelems vqt c) (at level 50).
+Notation "AX[[ vqt ]] c" := (configaVelems vqt c) (at level 50).
 
 (** -------------------------------------------------------
   Query 
@@ -1059,25 +1059,25 @@ Definition equiv_elems : relation elems:=
        fun A A' => forall a, (In a A <-> In a A') /\ 
                       ( count_occ string_eq_dec A a = count_occ string_eq_dec A' a).
 
-Infix "=a=" := equiv_elems (at level 70) : type_scope.
+Infix "=x=" := equiv_elems (at level 70) : type_scope.
 
 (* Variational Set (non-annnot-Var Elemr) Equivalence (Only needed for next one)*)
 Definition equiv_velems : relation velems := 
-        fun A A' => forall c, configVElemSet A c =a= configVElemSet A' c.
+        fun A A' => forall c, configVElemSet A c =x= configVElemSet A' c.
 
-Infix "=va=" := equiv_velems (at level 70) : type_scope.
+Infix "=vx=" := equiv_velems (at level 70) : type_scope.
 
 Definition equiv_qtype_bool (A A': qtype) := equiv_elems_bool A A'.
 
 Definition equiv_qtype : relation qtype := 
-        fun A A' => A =a= A'.
+        fun A A' => A =x= A'.
 
 Infix "=t=" := equiv_qtype (at level 70) : type_scope.
 
 (* Variational Set (annotated-Var Query Type) Equivalence *)
 Definition equiv_vqtype : relation vqtype := 
-        fun X X' => forall c, configVQtype X c =a= configVQtype X' c. 
-        (*fun X X' => (fst X) =va= (fst X') /\ (snd X) =e= (snd X').*)
+        fun X X' => forall c, configVQtype X c =x= configVQtype X' c. 
+        (*fun X X' => (fst X) =vx= (fst X') /\ (snd X) =e= (snd X').*)
 
 Infix "=T=" := equiv_vqtype (at level 70) : type_scope.
 
@@ -1180,8 +1180,8 @@ Instance vqtype_Equivalence : Equivalence equiv_vqtype := {
     Equivalence_Symmetric := equiv_vqtype_sym;
     Equivalence_Transitive := equiv_vqtype_trans }.
 
-(*Lemma rewrite_equiv: forall a b c, a=a=b->
-b=a=c-> a=a=c.
+(*Lemma rewrite_equiv: forall a b c, a=x=b->
+b=x=c-> a=x=c.
 Proof. intros. rewrite <- H in H0. apply H0.
 Qed.*)
 
@@ -1494,7 +1494,7 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtype e  S vq1 (A1, e1) ->
        vtype e  S vq2 (A2, e2) ->
        vqtype_inter_vq (A1, e1) (A2, e2) =T= (nil, litB false) ->
-       (*velems_inter A1 A2 =va= nil ->*)
+       (*velems_inter A1 A2 =vx= nil ->*)
        vtype e S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
@@ -1571,7 +1571,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtypeImp e  S vq2 (A2, e2) ->
        vqtype_inter_vq (A1, e1) (A2, e2) =T= (nil, litB false) ->
        (*vqtype_inter (A1, e1) (A2, e2) = nil ->*)
-       (* velems_inter A1 A2 =va= nil -> *)
+       (* velems_inter A1 A2 =vx= nil -> *)
        vtypeImp e  S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)

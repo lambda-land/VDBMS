@@ -461,16 +461,16 @@ simpl. specialize H with c. simpl in H.
 destruct (E[[ e']] c).
 repeat (rewrite andb_true_r). 
 
-assert (H1: velems_union (A1 < (e1 /\(F) e')) (A2 < (e2 /\(F) e')) =va= 
+assert (H1: velems_union (A1 < (e1 /\(F) e')) (A2 < (e2 /\(F) e')) =vx= 
 velems_union ((A1 < e1) < e') ((A2 < e2) < e')). 
 apply velems_union_equiv; try apply NoDupElem_push_annot; auto.
 1, 2: apply push_annot_andf_equiv. Search push_annot.
 
-assert (H2: velems_union ((A1 < e1) < e') ((A2 < e2) < e') =va=
+assert (H2: velems_union ((A1 < e1) < e') ((A2 < e2) < e') =vx=
 (velems_union (A1 < e1) (A2 < e2) < e')).
 apply velems_union_push_annot; try apply NoDupElem_push_annot; auto.
 
-unfold "=va=" in H1, H2. 
+unfold "=vx=" in H1, H2. 
 
 destruct ((E[[ e1]] c) || (E[[ e2]] c)); destruct (E[[ e]] c).
 1, 2: rewrite H1, H2; repeat (rewrite configVElemSet_push_annot);  simpl;
@@ -710,7 +710,7 @@ rewrite Hefq1. eapply contex_intro_equiv_vqtype. apply H. apply H0.
 
 Qed.
 
-(*nodupelem_equiv: forall [A A' : velems], A =va= A' -> nodupelem A =va= nodupelem A'
+(*nodupelem_equiv: forall [A A' : velems], A =vx= A' -> nodupelem A =vx= nodupelem A'
 *)
 
 Lemma vqtype_inter_vq_equiv_Imp_Exp Aqs eqs Ap ep A'Imp e'Imp A'Exp e'Exp e
@@ -937,7 +937,7 @@ rewrite <- sat_taut_comp in HsatExp.
 
 unfold equiv_vqtype. simpl.
 split. 
-(* =va= *)reflexivity.
+(* =vx= *)reflexivity.
 
 (* =e= *)simpl_equivE. destruct (E[[ ea']] c) eqn:Hea.
 apply HsatExp in Hea. simpl in Hea. rewrite Hea. eauto.
@@ -1209,7 +1209,7 @@ try(simpl; assumption).
 unfold subsumpImp_vqtype, subsumpImp_velems in HsbsmpInv.
 intros a ea HIn. simpl in HIn, HsbsmpInv. simpl. 
 
-(*rewrite Htrue_efst in HIn.*) Search "=va=".
+(*rewrite Htrue_efst in HIn.*) Search "=vx=".
 destruct HIn as [HIn HSat].
 
 apply sat_and in HSat as [HSat_ea HSat_].
@@ -1515,7 +1515,7 @@ S4.1 apply IHq in 4 to get 5
 Hexp: { e, S |= ([q] S) | (Aqse', eqse') } ---- HqExp
 
 S4.2 apply imp exp type quiv to 4 and 5
-HqsAe': (Aqse' =va= Aqse) /\ (eqse' =e= eqs /\ e)
+HqsAe': (Aqse' =vx= Aqse) /\ (eqse' =e= eqs /\ e)
 *)
 
 apply IHq in HqImp as HqExp. 
@@ -1553,7 +1553,7 @@ apply Project_vE with (A':=Aqse') (e':=eqse');(*S7*)try assumption.
 (*  
 S8. (Q/-\Qs)^^e -> (Q/-\(Aqs, eqs))^^e -> (Q/-\(Aqs, eqs/\e))
 
-S9. Aqse' =va= Aqs ; eqsq' =e= eqse =e= eqs /\ e
+S9. Aqse' =vx= Aqs ; eqsq' =e= eqse =e= eqs /\ e
 
 ------------------------------------------------
 subsump_vqtype (Q/-\(Aqs, eqs/\e)) (Aqs, eqs/\e)
@@ -1607,7 +1607,7 @@ destruct ((E[[ eq]] c) && (E[[ eqs]] c) && (E[[ e]] c)) eqn:Heqeqse.
   destruct (E[[ eqse']] c);
 
    rewrite HqsAe' in HqsAe;
-   unfold "=a=" in HqsAe; specialize HqsAe with x;
+   unfold "=x=" in HqsAe; specialize HqsAe with x;
    destruct HqsAe as [HqsAeIn HqsAeC]; 
    rewrite <- HqsAeIn; auto.
 }
@@ -1677,7 +1677,7 @@ try assumption;
 pose (ExpQ_ImpType_Equiv_ExpQ_ExpType Hndpq1 Hq1Imp Hq1Exp) as Hq1impexp;
 pose (ExpQ_ImpType_Equiv_ExpQ_ExpType Hndpq2 Hq2Imp Hq2Exp) as Hq2impexp.
 
-{ (* Product_vE_imp -> velems_inter A1 A2 =va= [] *)
+{ (* Product_vE_imp -> velems_inter A1 A2 =vx= [] *)
   pose (vqtype_inter_vq_equiv ) as HInterEqv.
   apply HInterEqv with (A:=(A1Imp, e1Imp)) (A':=(A1Exp, e1Exp)) in Hq2impexp as HInterEqv';
   try (simpl; assumption). 
@@ -1733,7 +1733,7 @@ Qed.
 (*Lemma ExpQ_ImpType_Equiv_ExpQ_ExpType' e1 e2 S q A A': 
   { e1 , S |- [q]S | A }  -> 
   { e2 , S |= [q]S | A' } -> 
-   fst A =va= fst A' /\ ((e1 =e= e2) -> (snd A =e= snd A')).
+   fst A =vx= fst A' /\ ((e1 =e= e2) -> (snd A =e= snd A')).
 Proof. 
 generalize dependent A'.
 generalize dependent A.
@@ -2055,7 +2055,7 @@ S4.1 apply IHq in 4 to get 5
 Hexp: { e, S |= ([q] S) | (Aqse', eqse') } ---- HqExp
 
 S4.2 apply imp exp type quiv to 4 and 5
-HqsAe': (Aqse' =va= Aqse) /\ (eqse' =e= eqs /\ e)
+HqsAe': (Aqse' =vx= Aqse) /\ (eqse' =e= eqs /\ e)
 *)
 
 apply IHq in HqImp as HqExp. destruct HqExp as [eExp HqExp].
@@ -2093,7 +2093,7 @@ apply Project_vE with (A':=Aqse') (e':=eqse');(*S7*)try assumption.
 (*  
 S8. (Q/-\Qs)^^e -> (Q/-\(Aqs, eqs))^^e -> (Q/-\(Aqs, eqs/\e))
 
-S9. Aqse' =va= Aqs ; eqsq' =e= eqse =e= eqs /\ e
+S9. Aqse' =vx= Aqs ; eqsq' =e= eqse =e= eqs /\ e
 
 ------------------------------------------------
 subsump_vqtype (Q/-\(Aqs, eqs/\e)) (Aqs, eqs/\e)
@@ -2196,7 +2196,7 @@ try assumption;
 pose (ExpQ_ImpType_Equiv_ExpQ_ExpType q1 Hq1Imp Hq1Exp) as Hq1impexp;
 pose (ExpQ_ImpType_Equiv_ExpQ_ExpType q2 Hq2Imp Hq2Exp) as Hq2impexp.
 
-{ (* Product_vE_imp -> velems_inter A1 A2 =va= [] *)
+{ (* Product_vE_imp -> velems_inter A1 A2 =vx= [] *)
   pose (vqtype_inter_vq_equiv ) as HInterEqv.
   apply HInterEqv with (A:=(A1Imp, e1Imp)) (A':=(A1Exp, e1Exp)) in Hq2impexp as HInterEqv';
   try (simpl; assumption). 
@@ -2265,7 +2265,7 @@ rewrite <- sat_taut_comp in HsatExp.
 
 unfold equiv_vqtype. simpl.
 split. 
-(* =va= *)reflexivity. 
+(* =vx= *)reflexivity. 
 
 (* =e= *)simpl_equivE. 
 destruct (E[[ ea']] c) eqn:Hea'.
@@ -2636,7 +2636,7 @@ try assumption. 2: { apply Relation_vE; try assumption.
 
 unfold equiv_vqtype. simpl.
 split. 
-(* =va= *)apply velems_inter_pres; assumption.
+(* =vx= *)apply velems_inter_pres; assumption.
 
 (* =e= *)simpl_equivE. 
 rewrite andb_comm. rewrite <- andb_assoc.
@@ -2650,12 +2650,12 @@ simpl. destruct (E[[ e'Imp]] c).
 +++ destruct (E[[ eqs]] c). 
     { simpl. simpl in Htrue_e. destruct (E[[ e]] c).
       { repeat (rewrite configVElemSet_dist_velems_inter); try assumption. symmetry.
-      rewrite set_inter_equiv with (B:=(elems_inter (A[[ Ap]] c) (A[[ Aqs]] c))) (B':=(A[[ Aqs]] c));
+      rewrite set_inter_equiv with (B:=(elems_inter (X[[ Ap]] c) (X[[ Aqs]] c))) (B':=(X[[ Aqs]] c));
       try reflexivity; try assumption. rewrite elems_inter_simpl.
       apply set_inter_equiv; try reflexivity; try assumption.
       all: try (apply NoDupElem_NoDup_config; assumption).
       4: symmetry; assumption. 
-      transitivity (A[[ A'Exp]] c). auto. symmetry; auto. admit. admit. }
+      transitivity (X[[ A'Exp]] c). auto. symmetry; auto. admit. admit. }
       { symmetry. repeat (rewrite configVElemSet_velems_inter_nil_r); try assumption.
         reflexivity. rewrite <- Htrue_e in Hqe. auto. symmetry; auto.
       } 
@@ -2744,7 +2744,7 @@ rewrite <- sat_taut_comp in HsatExp. *)
 
 unfold equiv_vqtype. simpl.
 split. 
-(* =va= *)apply velems_inter_pres; assumption.
+(* =vx= *)apply velems_inter_pres; assumption.
 
 (* =e= *)simpl_equivE. 
 rewrite andb_comm. rewrite <- andb_assoc.
