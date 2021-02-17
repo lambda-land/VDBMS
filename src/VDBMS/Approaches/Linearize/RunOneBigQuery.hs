@@ -27,6 +27,8 @@ import VDBMS.QueryGen.Sql.GenSqlSameSch (optRAQs2Sql)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
 import VDBMS.QueryGen.RA.AddPC (addPC)
+import VDBMS.TypeSystem.Variational.InjectQualifier (injectQualifier)
+import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
 -- for testing
 import VDBMS.DBsetup.Postgres.Test
 import VDBMS.DBMS.Table.Table (prettySqlTable)
@@ -62,10 +64,14 @@ runQ3 conn vq =
          type_as = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
+         vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch
          -- try removing opt
-         ra_qs = optAlgebra vsch vq_constrained_opt
+         -- ra_qs = optAlgebra vsch vq_constrained_opt --revised for the final version
+         ra_qs = optAlgebra vsch vq_constrained_opt_qual
+         ra_qs_subqNamed = map (second nameSubqRAlgebra) ra_qs
          -- the following line are for optimizing the generated RA queries
-         ras_opt = map (second opts_) ra_qs
+         -- ras_opt = map (second opts_) ra_qs --revised for the final version
+         ras_opt = map (second ((addPC pc) . opts_)) ra_qs_subqNamed
          -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
          sql = show $ optRAQs2Sql type_as pc ras_opt
      -- putStrLn (show $ fmap snd ra_qs)
