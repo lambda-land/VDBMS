@@ -75,9 +75,9 @@ runQ1 conn vq =
      end_constQ <- getTime Monotonic
      putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
-     -- putStrLn (show $ fmap snd ra_qs)
-     -- putStrLn (show $ fmap snd ras_opt)
-     -- putStrLn (show $ fmap snd sql_qs)
+     putStrLn (show $ fmap snd ra_qs)
+     putStrLn (show $ fmap snd ras_opt)
+     putStrLn (show $ fmap snd sql_qs)
          -- try removing gensql
      let runq :: (Config Bool, String) -> IO SqlVariantTable
          runq = bitraverse (return . id) (fetchQRows db) 

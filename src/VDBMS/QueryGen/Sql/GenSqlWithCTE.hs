@@ -16,7 +16,7 @@ import VDBMS.VDB.Name
 -- import VDBMS.QueryLang.SQL.Condition 
 -- import VDBMS.QueryLang.RelAlg.Basics.SetOp
 -- import VDBMS.VDB.Schema.Variational.Schema
-
+import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
 -- import Data.List ((\\))
 
 import Data.Maybe (isNothing)
@@ -38,11 +38,11 @@ evalCteState = flip evalState initState
   where initState = 0
 
 -- | generates the cte for a sql query.
-genCTE :: SqlSelect -> CteState SqlTempRes
+genCTE :: Sql -> CteState SqlTempRes
 genCTE = updateCTE . initCTE
 
 -- | takes a sql select query and generates the initial sql temp res.
-initCTE :: SqlSelect -> SqlTempRes
+initCTE :: Sql -> SqlTempRes
 initCTE = undefined
 -- initCTE q@(SqlSelect _ _ _) = SqlCTE M.empty q
 -- initCTE q@(SqlBin _ _ _)    = SqlCTE M.empty q
@@ -105,7 +105,7 @@ updateCTE = undefined
 --            -> 
 
 -- |
-isQueryInCls :: SqlSelect -> CteClosure -> Maybe Name 
+isQueryInCls :: Sql -> CteClosure -> Maybe Name 
 isQueryInCls = undefined
 
 -- |
@@ -113,7 +113,7 @@ isSqlRelInCls :: SqlRelation -> CteClosure -> Maybe Name
 isSqlRelInCls = undefined
 
 -- |
-sqlRel :: Name -> SqlSelect
+sqlRel :: Name -> Sql
 sqlRel = undefined
 -- = SqlTRef . Relation
 
@@ -122,8 +122,8 @@ sqlRel = undefined
 -- if yes gets the name assigned to it. updates atts and conds w.r.t. name from closure
 --   instead of the name from rename q.
 -- otherwise, it increments state, adds rename q to closure, updates atts and conds.
-updateSqlRel :: Rename SqlSelect -> CteClosure -> [SqlAttrExpr] -> [SqlCond SqlSelect]
-             -> CteState (CteClosure, ([SqlAttrExpr], [SqlCond SqlSelect]))
+updateSqlRel :: Rename Sql -> CteClosure -> [SqlAttrExpr] -> [SqlCond Sql]
+             -> CteState (CteClosure, ([SqlAttrExpr], [SqlCond Sql]))
 updateSqlRel rq cls as cs = undefined
   -- = do let q = thing rq
   --          mn = name rq
@@ -145,7 +145,7 @@ updateRCond :: Name -> Name -> RCondition -> RCondition
 updateRCond l r c = undefined
 
 -- | update conditions.
-updateConds :: Name -> [SqlCond SqlSelect] -> [SqlCond SqlSelect]
+updateConds :: Name -> [SqlCond Sql] -> [SqlCond Sql]
 updateConds = undefined 
 
 -- | adds a join to closure. 
@@ -159,8 +159,8 @@ addJoinToCls = undefined
 -- update att list.
 -- update cond list.
 updateJoinRel :: SqlRelation -> CteClosure -> RCondition 
-             -> [SqlAttrExpr] -> [SqlCond SqlSelect]
-             -> CteState (AddClosure SqlRelation, ([SqlAttrExpr], [SqlCond SqlSelect]), RCondition)
+             -> [SqlAttrExpr] -> [SqlCond Sql]
+             -> CteState (AddClosure SqlRelation, ([SqlAttrExpr], [SqlCond Sql]), RCondition)
 updateJoinRel = undefined
 -- r n (SqlSelect as ts cs) = undefined
 -- updateSqlRel _ _ _ = error "only accept sqlselct constructor"
