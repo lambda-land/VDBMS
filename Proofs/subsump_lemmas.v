@@ -24,8 +24,8 @@ Proof. destruct (in_dec eq_dec x l) as [HInl|HnInl];
  rewrite (count_occ_not_In eq_dec) in HnInl]; Lia.lia. 
 Qed.
 
-Lemma nil_subsump_nil: subsump_vatts_exp [] [].
-Proof. unfold subsump_vatts_exp. intros x e c [H1 H2].
+Lemma nil_subsump_nil: subsump_velems_exp [] [].
+Proof. unfold subsump_velems_exp. intros x e c [H1 H2].
 eauto. Qed.
 
 Lemma forall_cons x e l: (forall c : config, (A[[ ae x e :: l]] c) = []) ->
@@ -35,22 +35,22 @@ try(destruct (E[[ e]] c); [pose (nil_cons) as Hnil_cons;
 specialize Hnil_cons with string x (A[[ l]] c); symmetry in H; contradiction |
 auto] ). Qed.
 
-Lemma nilconfig_subsump_nil l: (forall c, A[[ l]]c = []) -> subsump_vatts_exp l [].
+Lemma nilconfig_subsump_nil l: (forall c, A[[ l]]c = []) -> subsump_velems_exp l [].
 Proof. intro H. induction l as [|(x , e)]. apply nil_subsump_nil.
-unfold subsump_vatts_exp. apply forall_cons in H. 
+unfold subsump_velems_exp. apply forall_cons in H. 
 destruct H as [He Hl]. apply IHl in Hl. intros x' e' c HIn.
 destruct HIn as [HIne Hsat]. simpl in HIne. destruct HIne as [Heq | HIn].
 inversion Heq; subst. unfold sat in Hsat. apply PNNP in Hsat. 
 rewrite not_true_iff_false in Hsat. specialize He with c. contradiction.
-unfold subsump_vatts_exp in Hl.
+unfold subsump_velems_exp in Hl.
 assert (Hlp: In (ae x' e') l /\ (E[[ e']] c) = true). eauto. apply Hl in Hlp. eauto.
 Qed.
 
 
 (*Lemma not_cons_subsump_nil l: (exists c, A[[ l]]c <> [])
--> ~ subsump_vatts_exp l []. *)
+-> ~ subsump_velems_exp l []. *)
 (*Proof. unfold not. intros x l H. destruct H
-unfold subsump_vatts_exp in H.
+unfold subsump_velems_exp in H.
 destruct x as (x, e). specialize H with x e. simpl in H. Lia.lia.
 reflexivity. Qed. *)
 
@@ -68,15 +68,15 @@ specialize H with x. destruct H as [H1 H2].
 rewrite count_occ_cons_eq in H2. simpl in H2. Lia.lia.
 reflexivity. Qed.
 
-Lemma subsump_vatts_correctness A A' (HndpA: NoDupAtt A) (HndpA': NoDupAtt A'): 
-       subsump_vatts_exp A A' <-> (forall c, sublist (configVAttSet A c) (configVAttSet A' c)). 
+Lemma subsump_velems_correctness A A' (HndpA: NoDupElem A) (HndpA': NoDupElem A'): 
+       subsump_velems_exp A A' <-> (forall c, sublist (configVElemSet A c) (configVElemSet A' c)). 
 Proof. split; 
 generalize dependent A'; generalize dependent A; 
 induction A' as [|(a', ea') A' IHA'];  
 intros HndpA' H. 
 
 (*Goals -> :  1: A' := [] , 2: A' := [ae a ' ea':A']*)
-1, 2: unfold subsump_vatts_exp in H; unfold sublist; intros c x; 
+1, 2: unfold subsump_velems_exp in H; unfold sublist; intros c x; 
 
 try (split; (* 1: sublist A []     to 1-1: In A []       1-2: count A [] *)
             (* 2: sublist A [_:A'] to 2-1: In A [_:A'][] 2-2: count A [_:A'][] *)
@@ -132,11 +132,11 @@ try (destruct HIne' as [Heq | Hin];
  
 ]). (** 1-> 1(Heq), 2(HIn)  2-> 3(Heq), 4(HIn)*)
 
-3, 4: apply NoDupAtt_NoDup_config with (c:=c) in HndpA as Hcount';
+3, 4: apply NoDupElem_NoDup_config with (c:=c) in HndpA as Hcount';
 rewrite (NoDup_count_occ string_eq_dec) in Hcount'; specialize Hcount' with x; 
 assert (Hn: n = 0); try (Lia.lia); rewrite Hn; 
 
-inversion HndpA'; subst; apply notInAtt_notIn_config with (c:=c) in H2;
+inversion HndpA'; subst; apply notInElem_notIn_config with (c:=c) in H2;
 rewrite (count_occ_not_In string_eq_dec) in H2.
 
 { (* 1: 1- Case Heq *)left. reflexivity. }
@@ -151,7 +151,7 @@ rewrite (count_occ_not_In string_eq_dec) in H2.
                        assert (HInxA': In x (A[[ A']]c));
                        try(rewrite <- In_config_exists_true; exists e'; eauto);
                        rewrite (count_occ_In string_eq_dec) in HInxA'; 
-                       apply NoDupAtt_NoDup_config with (c:=c) in H4 as HcountA';
+                       apply NoDupElem_NoDup_config with (c:=c) in H4 as HcountA';
                        rewrite (NoDup_count_occ string_eq_dec) in HcountA'; 
                        specialize HcountA' with x; Lia.lia. }
 
@@ -159,8 +159,8 @@ rewrite (count_occ_not_In string_eq_dec) in H2.
 
 (* case []: *)
 
-(** Prove with two facts: sublist (A[[A]]c) [] -> subsump_vatts_exp A [] 
-1. forall c, (A[[A]]c)  = [] -> subsump_vatts_exp A []
+(** Prove with two facts: sublist (A[[A]]c) [] -> subsump_velems_exp A [] 
+1. forall c, (A[[A]]c)  = [] -> subsump_velems_exp A []
 2. exists c, (A[[A]]c) <> [] -> ~ sublist (A[[A]]c) [] *)
 
 (* introduce (forall c, (A[[A]]c) = []) \/ (exists c, (A[[A]]c) <> []) *)
@@ -179,7 +179,7 @@ destruct Hclassic as [Hall | Hexists].
   apply not_sublist_cons_nil in H. destruct H. }
 
 (* case (ae a' ea': A'):  *)
-unfold subsump_vatts_exp. intros x e c HInxeA.
+unfold subsump_velems_exp. intros x e c HInxeA.
 destruct HInxeA as[ HInxeA Hsat].
 unfold sublist in H. 
 
@@ -204,23 +204,23 @@ exists e'; split;
 Qed.
 
 
-Lemma subsump_vqtype_correctness X X' {HndpA: NoDupAtt (fst X)} {HndpA': NoDupAtt (fst X')}: 
+Lemma subsump_vqtype_correctness X X' {HndpA: NoDupElem (fst X)} {HndpA': NoDupElem (fst X')}: 
        subsump_vqtype_exp X X' <-> subsump_vqtype X X'. 
-Proof.  unfold subsump_vqtype_exp, avatts_vatts.
-rewrite subsump_vatts_correctness. Search push_annot. 
+Proof.  unfold subsump_vqtype_exp, avelems_velems.
+rewrite subsump_velems_correctness. Search push_annot. 
 split; intro. unfold subsump_vqtype. intro. 
 destruct X as (A, ea). destruct X' as (A', ea').
-repeat (rewrite <- configVAttSet_push_annot). apply H.
-intro. repeat (rewrite configVAttSet_push_annot).
+repeat (rewrite <- configVElemSet_push_annot). apply H.
+intro. repeat (rewrite configVElemSet_push_annot).
 unfold subsump_vqtype in H. destruct X as (A, ea). destruct X' as (A', ea').
 simpl fst. simpl snd. apply H. 
-all: apply NoDupAtt_push_annot; assumption.
+all: apply NoDupElem_push_annot; assumption.
 Qed.
 
 Lemma subsumpImp_vqtype_equiv A A' B: A =T= A' -> 
 subsumpImp_vqtype B A -> subsumpImp_vqtype B A'.
 Proof. intros HT HSImp. 
-(* destruct vqtype into vatt and fexp *)
+(* destruct vqtype into velem and fexp *)
 destruct A as (A, ea).
 destruct B as (B, eb).
 destruct A' as (A', ea').
@@ -265,7 +265,7 @@ destruct (E[[ ea']] c) eqn:Hea'.
   
   apply In_config_exists_true in HInAnde. 
   
-  apply (In_equiv_atts _ HT) in HInAnde. 
+  apply (In_equiv_elems _ HT) in HInAnde. 
   
   rewrite <- In_config_exists_true in HInAnde.
   
@@ -280,12 +280,19 @@ destruct (E[[ ea']] c) eqn:Hea'.
 
   (* In (ae x e1) A -> (E[[ e1]] c) = true -> In x (A[[ A]] c) *)
   apply In_config_true with (c:=c) in HIn; try assumption.
-  apply (In_equiv_atts _ HT) in HIn. destruct HIn.
+  apply (In_equiv_elems _ HT) in HIn. destruct HIn.
 }
 Qed.
 
+(*Lemma In_velems_inter_A a e c A B: 
+In (ae a e) (velems_inter A B) /\ (E[[ e]]c) = true -> 
+exists e', In (ae a e') A /\ (E[[ e']]c) = true.
+Proof. 
+Admitted.
+
+
 Lemma subsumpImp_vqtype_inter_ B C:
-subsumpImp_vqtype (vqtype_inter_vq B C) C.
+subsumpImp_vqtype (vqtype_inter_vq B C) B.
 Proof. 
 destruct B as (B, eb).
 destruct C as (C, ec).
@@ -306,8 +313,8 @@ destruct Hebc as [Heb Hec].
 
 (* sat (ex /\ eb /\ ec) ->  (E[[ ex ]]c) = true *)
 
-pose (conj HIn Hex) as HInCex. 
-apply In_vatts_inter in HInCex.
+pose (conj HIn Hex) as HInBex. 
+apply In_velems_inter_A in HInBex.
 
 (* HInex:             In (x, ex) B /-\ C /\ (E[[ ex ]]c) = true
    HInCex: exists e', In (ae x e') C     /\ (E[[ e']] c) = true
@@ -315,7 +322,7 @@ apply In_vatts_inter in HInCex.
    Goal: exists e', In (x, e') C /\ sat (ex /\ eb /\ ec /\ e')
 *) 
 
-destruct HInCex as [exc [HInC HCex] ]. 
+destruct HInBex as [exc [HInB HBex] ]. 
 
 (*
    HInCex: In (ae x exc) C   
@@ -327,12 +334,12 @@ exists exc.
 split. assumption.
 
 unfold sat. exists c.
-simpl. rewrite Hex, Heb, Hec, HCex.
+simpl. rewrite Hex, Heb, Hec, HBex.
 eauto.
 
 Qed.
 
-(*Lemma subsumpImp_vqtype_inter_intro B C e:
+Lemma subsumpImp_vqtype_inter_intro B C e:
 subsumpImp_vqtype B (fst C, (snd C /\(F) e)) ->
 subsumpImp_vqtype (vqtype_inter_vq B C) (fst C, (snd C /\(F) e)).
 Proof. 
@@ -355,14 +362,14 @@ exists exc.
 split. assumption.
 
 
-Admitted.
+Admitted.*)
 
 
-Lemma subsumpImp_vqtype_inter A B C(HndpA: NoDupAtt (fst A)) :
+(*Lemma subsumpImp_vqtype_inter A B C(HndpA: NoDupElem (fst A)) :
 subsumpImp_vqtype B A -> subsumpImp_vqtype (vqtype_inter_vq B C) A.
 Proof. 
 intros HSImp. 
-(* destruct vqtype into vatt and fexp *)
+(* destruct vqtype into velem and fexp *)
 destruct A as (A, ea).
 destruct B as (B, eb).
 destruct C as (C, ec).
@@ -379,7 +386,7 @@ End subsump_lemmas.
 (*================================================*)
    
 (*
-unfold subsump_vatts_exp in H;  
+unfold subsump_velems_exp in H;  
 unfold sublist; intro x;
 split;
 [ intro HInxA | 
@@ -441,10 +448,10 @@ reflexivity.
 
 
 
-(*Lemma def_equiv (A A': vatts): subsump_vatts_exp A A' <-> subsump_vatts_exp' A A'.
+(*Lemma def_equiv (A A': velems): subsump_velems_exp A A' <-> subsump_velems_exp' A A'.
 Proof. split; intro H.
-unfold subsump_vatts_exp in H.
-unfold subsump_vatts_exp'. intros x e c H0.
+unfold subsump_velems_exp in H.
+unfold subsump_velems_exp'. intros x e c H0.
 destruct H0 as [HIn He].
 assert (HInsat: In (ae x e) A /\ sat e). 
 split; [ | unfold sat; exists c]; auto.
@@ -455,8 +462,8 @@ rewrite <- sat_taut_comp in Hsatee'.
 specialize Hsatee' with c. apply Hsatee' in He.
 exists e'. eauto.
 
-unfold subsump_vatts_exp' in H.
-unfold subsump_vatts_exp. intros x e H0. 
+unfold subsump_velems_exp' in H.
+unfold subsump_velems_exp. intros x e H0. 
  
 
 destruct H0 as [HInA Hsat]. unfold sat in Hsat.
