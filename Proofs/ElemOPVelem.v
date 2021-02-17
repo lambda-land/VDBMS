@@ -1,13 +1,13 @@
-(** Operation on attribute of variational att *)
+(** Operation on elemribute of variational elem *)
 Set Warnings "-notation-overridden,-parsing".
 
 
 Load extract_lemmas.
 
 
-(* configVAttSet InAtt *)
+(* configVElemSet InElem *)
 
-Lemma In_InAtt_config: forall a A c, In a (configVAttSet A c) -> InAtt a A.
+Lemma In_InElem_config: forall a A c, In a (configVElemSet A c) -> InElem a A.
 Proof. 
 intros. induction A.
 - simpl in H. destruct H. 
@@ -22,29 +22,29 @@ intros. induction A.
 Qed.  
 
 
-Lemma notInAtt_notIn_config: forall a A c, ~InAtt a A -> ~In a (configVAttSet A c).
+Lemma notInElem_notIn_config: forall a A c, ~InElem a A -> ~In a (configVElemSet A c).
 Proof. 
 intros a A c H.
-pose (In_InAtt_config a A c) as H1.
+pose (In_InElem_config a A c) as H1.
 apply contrapositive in H1. 
 auto. auto. 
 Qed.
 
 (*----------------------------------------------------------------------*)
 
-(* configVAttSet removeAtt *)
+(* configVElemSet removeElem *)
 
-Lemma count_occ_config_removeAtt_eq a A c:
-count_occ string_eq_dec (configVAttSet (removeAtt a A) c) a = 0.
-Proof. pose (notInAtt_removeAtt A a) as HnInrm.
-apply notInAtt_notIn_config with (c:=c) in HnInrm.
+Lemma count_occ_config_removeElem_eq a A c:
+count_occ string_eq_dec (configVElemSet (removeElem a A) c) a = 0.
+Proof. pose (notInElem_removeElem A a) as HnInrm.
+apply notInElem_notIn_config with (c:=c) in HnInrm.
 rewrite count_occ_not_In in HnInrm.
 apply HnInrm.
 Qed.
 
-Lemma count_occ_config_removeAtt_neq a a0 A c: a <> a0 -> 
-count_occ string_eq_dec (configVAttSet (removeAtt a A) c) a0 = 
-count_occ string_eq_dec (configVAttSet A c) a0.
+Lemma count_occ_config_removeElem_neq a a0 A c: a <> a0 -> 
+count_occ string_eq_dec (configVElemSet (removeElem a A) c) a0 = 
+count_occ string_eq_dec (configVElemSet A c) a0.
 Proof. intro H. induction A as [| a' A IHA].
 + simpl. reflexivity.
 + destruct a' as (a', e'). simpl.
@@ -57,10 +57,10 @@ Proof. intro H. induction A as [| a' A IHA].
        apply IHA).
 Qed. 
 
-(* remove a  [[ A]]c = [[ removeAtt a A]]c *) 
-Lemma remove_removeAtt a A c: 
-      remove string_eq_dec a (configVAttSet A c) 
-      = configVAttSet (removeAtt a A) c.
+(* remove a  [[ A]]c = [[ removeElem a A]]c *) 
+Lemma remove_removeElem a A c: 
+      remove string_eq_dec a (configVElemSet A c) 
+      = configVElemSet (removeElem a A) c.
 Proof. 
 induction A as [|a' A IHA].
 - simpl. reflexivity.
@@ -77,11 +77,11 @@ induction A as [|a' A IHA].
     ++ simpl. rewrite He'. exact IHA.
 Qed.
 
-Lemma removeAtt_equiv a A A':
-A =va= A' -> removeAtt a A =va= removeAtt a A'.
+Lemma removeElem_equiv a A A':
+A =va= A' -> removeElem a A =va= removeElem a A'.
 Proof. 
-unfold equiv_vatts.
-simpl. unfold equiv_atts. intros.
+unfold equiv_velems.
+simpl. unfold equiv_elems. intros.
 specialize H with c a0. destruct H as [H H0].
 split. 
 + split; intro H1; 
@@ -89,82 +89,82 @@ split.
   destruct H1 as [e0 H1]; destruct H1 as [H1 H2];
   destruct (string_eq_dec a0 a) as [Heqdec | Heqdec];
   (* a0 = a *)
-  try (rewrite Heqdec in H1; apply notIn_removeAtt in H1; destruct H1);
+  try (rewrite Heqdec in H1; apply notIn_removeElem in H1; destruct H1);
   (* a0 <> a *)
-  try (apply In_removeAtt in H1; apply In_config_true with (c:=c) in H1;
+  try (apply In_removeElem in H1; apply In_config_true with (c:=c) in H1;
   auto; apply H in H1; 
   rewrite <- In_config_exists_true in H1;
   destruct H1 as [e1 H1]; destruct H1 as [H1 H1e1];
   rewrite <- In_config_exists_true; exists e1;
-  split; try (apply In_removeAtt; eauto); try(eauto)).
+  split; try (apply In_removeElem; eauto); try(eauto)).
   
 + destruct (string_eq_dec a a0) as [eq | neq].
-  rewrite eq. repeat (rewrite count_occ_config_removeAtt_eq).
+  rewrite eq. repeat (rewrite count_occ_config_removeElem_eq).
   reflexivity.
-  repeat (rewrite (count_occ_config_removeAtt_neq _ _ neq)).
+  repeat (rewrite (count_occ_config_removeElem_neq _ _ neq)).
   assumption.
 Qed.
 
 (*----------------------------------------------------------------------*)
 
-(* -- NoDupAtt NoDup -- *)
+(* -- NoDupElem NoDup -- *)
 
-Lemma NoDupAtt_NoDup: forall A, NoDupAtt A -> NoDup A.
+Lemma NoDupElem_NoDup: forall A, NoDupElem A -> NoDup A.
 Proof. intros A H. induction H as [| a e l H1 H2 IHa]. 
        + apply NoDup_nil.
        + apply NoDup_cons.
          ++ unfold not. intro H.
             unfold not in H1. apply H1.
-            rewrite InAtt_In_exfexp. exists e.
+            rewrite InElem_In_exfexp. exists e.
             auto.
          ++ auto.
 Qed.
 
 (* *)
 
-Lemma NoDupAtt_NoDup_config: forall A c, NoDupAtt A -> NoDup (configVAttSet A c).
+Lemma NoDupElem_NoDup_config: forall A c, NoDupElem A -> NoDup (configVElemSet A c).
 Proof. intros A c H. induction H as [| a e l H1 H2 IHa]. 
        + apply NoDup_nil.
        + simpl. destruct (E[[ e]] c) eqn: He. 
          ++ apply NoDup_cons.
             unfold not. intro H.
             unfold not in H1. apply H1.
-            apply In_InAtt_config in H. auto. auto.
+            apply In_InElem_config in H. auto. auto.
          ++ auto.
 Qed.
 
-Lemma NoDupAtt_NoDup_configVQ: forall Q c, NoDupAtt (fst Q) -> NoDup (configVQtype Q c).
+Lemma NoDupElem_NoDup_configVQ: forall Q c, NoDupElem (fst Q) -> NoDup (configVQtype Q c).
 Proof. intros Q c. destruct Q. simpl.
        intro H. destruct (E[[ f]] c).
-       apply NoDupAtt_NoDup_config. apply H.
+       apply NoDupElem_NoDup_config. apply H.
        apply NoDup_nil.
 Qed.
 
-Lemma NoDupAtt_removeAtt: forall a' A,
-      NoDupAtt A -> NoDupAtt (removeAtt a' A).
+Lemma NoDupElem_removeElem: forall a' A,
+      NoDupElem A -> NoDupElem (removeElem a' A).
 Proof. intros. induction H. 
-+ apply NoDupAtt_nil. 
++ apply NoDupElem_nil. 
 + simpl. 
   destruct (string_beq a' a) eqn:Heq.
   eauto. 
   rewrite stringBEF.eqb_neq in Heq.
-  simpl. apply NoDupAtt_cons.
-  ++ rewrite <- InAtt_InAtt_removeAtt.
+  simpl. apply NoDupElem_cons.
+  ++ rewrite <- InElem_InElem_removeElem.
    auto. eauto.
   ++ auto.
 Qed. 
 
-(* -- NoDupAtt In configVAttSet -- *)
+(* -- NoDupElem In configVElemSet -- *)
 
-Lemma NoDupAtt_In_notIn A a e e':
-NoDupAtt A -> In (ae a e) A -> (e <> e') 
+Lemma NoDupElem_In_notIn A a e e':
+NoDupElem A -> In (ae a e) A -> (e <> e') 
 -> ~ In (ae a e') A.
 Proof. intros. induction A. 
 - simpl in H0. destruct H0. 
 - simpl in H0. simpl. 
   apply Classical_Prop.and_not_or.
   split; destruct a0 as (a0, e0);
-  inversion H; subst; rewrite InAtt_In_exfexp in H4. 
+  inversion H; subst; rewrite InElem_In_exfexp in H4. 
   + destruct H0.
     ++ inversion H0; subst. unfold not.
     intro. inversion H2. contradiction.
@@ -178,18 +178,18 @@ Proof. intros. induction A.
     ++ apply IHA. all:assumption.
 Qed.
 
-Lemma In_config_false: forall a e A c, NoDupAtt A-> In (ae a e) A ->
-           (E[[ e]]c) = false -> ~ In a (configVAttSet A c).
+Lemma In_config_false: forall a e A c, NoDupElem A-> In (ae a e) A ->
+           (E[[ e]]c) = false -> ~ In a (configVElemSet A c).
 Proof. intros. induction A. 
        - simpl in H0. destruct H0.
        - simpl in H0. inversion H as [|a' e' A' HIn HNodup]; subst.
          destruct H0.
          + inversion H0; subst. simpl. rewrite H1.
-           apply notInAtt_notIn_config with(c:=c) in HIn. 
+           apply notInElem_notIn_config with(c:=c) in HIn. 
            auto.
          + simpl. destruct (E[[ e']] c) eqn:He'.
            ++ simpl. apply Classical_Prop.and_not_or.
-              split. apply In_InAtt_fstVatt in H0.
+              split. apply In_InElem_fstVelem in H0.
               simpl in H0. 
               destruct (string_beq a' a) eqn:Haa'.
               rewrite stringDecF.eqb_eq in Haa'.
@@ -203,12 +203,12 @@ Qed.
 
 (*---------------------------------------------------------------------------*)
 
-(*------------------------------nodupatt-------------------------------------*)
+(*------------------------------nodupelem-------------------------------------*)
 
-Lemma InAtt_nondupatt: forall x l, InAtt x (nodupatt l) <-> InAtt x l.
+Lemma InElem_nondupelem: forall x l, InElem x (nodupelem l) <-> InElem x l.
 Proof. 
 intros. split.
-- functional induction (nodupatt l) using nodupatt_ind.
+- functional induction (nodupelem l) using nodupelem_ind.
 + eauto.
 + intro H. simpl. simpl in H.
 destruct H. ++ eauto.
@@ -218,40 +218,40 @@ destruct H.
  ++ eauto.
  ++ right. destruct (string_beq x a) eqn: Hxa.
      +++ rewrite stringDecF.eqb_eq in Hxa.
-     rewrite  existsbAtt_InAtt in e1.
+     rewrite  existsbElem_InElem in e1.
      rewrite Hxa. auto.
      +++ rewrite stringBEF.eqb_neq in Hxa. 
      apply IHv in H. 
-     rewrite <- (InAtt_InAtt_removeAtt) in H.
+     rewrite <- (InElem_InElem_removeElem) in H.
      auto. auto.
-- functional induction (nodupatt l) using nodupatt_ind.
+- functional induction (nodupelem l) using nodupelem_ind.
 + eauto.
 + intro H. simpl. 
 destruct (string_beq x a) eqn: Hxa.
 ++ rewrite stringDecF.eqb_eq in Hxa.
    symmetry in Hxa. eauto.
 ++ rewrite stringBEF.eqb_neq in Hxa.
-apply InAtt_inv_noteq in H. eauto. simpl. eauto.
+apply InElem_inv_noteq in H. eauto. simpl. eauto.
 
 + intro H. simpl. 
 destruct (string_beq x a) eqn: Hxa.
 ++ rewrite stringDecF.eqb_eq in Hxa.
    eauto.
 ++ rewrite stringBEF.eqb_neq in Hxa.
-apply InAtt_inv_noteq in H. right. 
-rewrite (InAtt_InAtt_removeAtt) with (y:=a) in H.
+apply InElem_inv_noteq in H. right. 
+rewrite (InElem_InElem_removeElem) with (y:=a) in H.
 apply IHv in H. auto. auto. eauto.
 Qed.
 
 
-Lemma In_InAtt_nodupatt : forall a l,
-           In a l -> InAtt (fstVatt a) (nodupatt l).
+Lemma In_InElem_nodupelem : forall a l,
+           In a l -> InElem (fstVelem a) (nodupelem l).
 Proof. intros. 
 - intros. 
-  rewrite InAtt_nondupatt. rewrite InAtt_In_exvatt.
+  rewrite InElem_nondupelem. rewrite InElem_In_exvelem.
   exists a. split. auto.
   destruct a eqn:Ha. simpl. 
-  unfold eqbAtt. simpl.
+  unfold eqbElem. simpl.
   rewrite stringBEF.eqb_refl. auto.
 Qed.
 
@@ -259,28 +259,28 @@ Qed.
 
 (* apply well_founded_induction.*)
 
-Lemma NoDupAtt_nodupatt (v:vatts) : NoDupAtt (nodupatt v).
-Proof. functional induction (nodupatt v) using nodupatt_ind. 
-+ apply NoDupAtt_nil.
-+ apply NoDupAtt_cons. rewrite InAtt_nondupatt.
-  rewrite <- existsbAtt_InAtt. 
+Lemma NoDupElem_nodupelem (v:velems) : NoDupElem (nodupelem v).
+Proof. functional induction (nodupelem v) using nodupelem_ind. 
++ apply NoDupElem_nil.
++ apply NoDupElem_cons. rewrite InElem_nondupelem.
+  rewrite <- existsbElem_InElem. 
   rewrite e1. apply diff_false_true. auto.
-+ apply NoDupAtt_cons. rewrite InAtt_nondupatt.
-  apply notInAtt_removeAtt. apply IHv0.
++ apply NoDupElem_cons. rewrite InElem_nondupelem.
+  apply notInElem_removeElem. apply IHv0.
 Qed.
 
 
-Lemma nodupatt_fixed_point (v:vatts): NoDupAtt v -> nodupatt v = v.
+Lemma nodupelem_fixed_point (v:velems): NoDupElem v -> nodupelem v = v.
 Proof. intro H. induction H. 
-simpl_nodupatt. auto.
-apply nodupatt_not_in_cons with (e:=e) in H.
-rewrite H. rewrite IHNoDupAtt. auto.
+simpl_nodupelem. auto.
+apply nodupelem_not_in_cons with (e:=e) in H.
+rewrite H. rewrite IHNoDupElem. auto.
 Qed.
 
 Lemma nodup_remove_cons a l: In a l -> nodup string_eq_dec l 
       =a= (a :: nodup string_eq_dec (remove string_eq_dec a l)).
 Proof. 
-intro H. unfold equiv_atts.
+intro H. unfold equiv_elems.
 intro a0. split. split.
 - intro H1. simpl. destruct (string_eq_dec a a0) as [Heq|Hneq].
   + eauto.
@@ -312,30 +312,30 @@ intro a0. split. split.
        reflexivity.
 Qed.
 
-Lemma nodup_nodupatt (v:vatts) (c:config): 
-nodup string_eq_dec (configVAttSet v c) =a= (configVAttSet (nodupatt v) c).
+Lemma nodup_nodupelem (v:velems) (c:config): 
+nodup string_eq_dec (configVElemSet v c) =a= (configVElemSet (nodupelem v) c).
 Proof.
-functional induction (nodupatt v) using nodupatt_ind. 
+functional induction (nodupelem v) using nodupelem_ind. 
 - simpl. reflexivity.
 
 - simpl. destruct (E[[ e]] c) eqn:He.
-  + simpl. not_existsbAtt_InAtt in e1. 
-    apply notInAtt_notIn_config with (c:=c) in e1.
-    destruct (in_dec string_eq_dec a (configVAttSet vs c)) eqn: Hdec.
+  + simpl. not_existsbElem_InElem in e1. 
+    apply notInElem_notIn_config with (c:=c) in e1.
+    destruct (in_dec string_eq_dec a (configVElemSet vs c)) eqn: Hdec.
     inversion Hdec. contradiction.
-    apply cons_equiv_atts. rewrite IHv0. auto. reflexivity.
+    apply cons_equiv_elems. rewrite IHv0. auto. reflexivity.
   + auto.
 
 - simpl. destruct (E[[ e]] c) eqn:He.
   (* (E[[ e]] c) = true *)
   + rewrite orb_true_l. simpl. 
 
-   destruct (in_dec string_eq_dec a (configVAttSet vs c)) as [HInd | HInd];
+   destruct (in_dec string_eq_dec a (configVElemSet vs c)) as [HInd | HInd];
     (* In a [[ vs]]c *)
     try(rewrite (nodup_remove_cons a _ HInd));
     (* ~ In a [[ vs]]c *)
-    try(rewrite <- (notin_remove string_eq_dec (configVAttSet vs c) a HInd)); 
-     rewrite remove_removeAtt; apply cons_equiv_atts;
+    try(rewrite <- (notin_remove string_eq_dec (configVElemSet vs c) a HInd)); 
+     rewrite remove_removeElem; apply cons_equiv_elems;
      exact IHv0.
 
  (* (E[[ e]] c) = false  *)
@@ -343,18 +343,18 @@ functional induction (nodupatt v) using nodupatt_ind.
    destruct (E[[ extract_e a vs]] c) eqn:Hex.
    ++ apply extract_true_In in Hex as HIn.
       rewrite (nodup_remove_cons a _ HIn).
-      rewrite remove_removeAtt; apply cons_equiv_atts;
+      rewrite remove_removeElem; apply cons_equiv_elems;
       exact IHv0.
    ++ apply extract_false_notIn in Hex as HIn.
-      rewrite <- (notin_remove string_eq_dec (configVAttSet vs c) a HIn).
-      rewrite remove_removeAtt. 
+      rewrite <- (notin_remove string_eq_dec (configVElemSet vs c) a HIn).
+      rewrite remove_removeElem. 
       exact IHv0.
 Qed.
 
 
 Lemma nodup_equiv A A': A =a= A' -> 
       nodup string_eq_dec A =a= nodup string_eq_dec A'.
-Proof. unfold equiv_atts. intros. 
+Proof. unfold equiv_elems. intros. 
 specialize H with a. destruct H. 
 split. 
 + repeat (rewrite nodup_In). assumption.
@@ -371,19 +371,19 @@ split.
 Qed.
 
 
-Lemma nodupatt_equiv A A': A =va= A' -> 
-      nodupatt A =va= nodupatt A'.
-Proof. unfold equiv_vatts. intros. 
-repeat (rewrite <- nodup_nodupatt).
+Lemma nodupelem_equiv A A': A =va= A' -> 
+      nodupelem A =va= nodupelem A'.
+Proof. unfold equiv_velems. intros. 
+repeat (rewrite <- nodup_nodupelem).
 apply nodup_equiv. apply H.
 Qed.
 
 (** ------------------------------------------------------------
-  nodupatt_push_annot
+  nodupelem_push_annot
 ---------------------------------------------------------------*)
 
-Lemma notInAtt_push_annot a A e: ~ InAtt a A <->
-~ InAtt a (push_annot A e). 
+Lemma notInElem_push_annot a A e: ~ InElem a A <->
+~ InElem a (push_annot A e). 
 split; induction A; intro H.
 1, 3: simpl; simpl in H; auto. 
 1, 2: destruct a0; simpl; simpl in H; 
@@ -393,15 +393,15 @@ apply Classical_Prop.and_not_or;
 split; [assumption | eauto].
 Qed.
 
-Lemma NoDupAtt_push_annot: forall A e, NoDupAtt (A) -> NoDupAtt (push_annot A e).
+Lemma NoDupElem_push_annot: forall A e, NoDupElem (A) -> NoDupElem (push_annot A e).
 Proof. 
 intros A e. induction A; intro H.
 simpl. assumption.
 destruct a. simpl. simpl in H.
-inversion H; subst. apply NoDupAtt_cons.
-rewrite <- notInAtt_push_annot; try eauto.
+inversion H; subst. apply NoDupElem_cons.
+rewrite <- notInElem_push_annot; try eauto.
 eauto. Qed.
 
-Hint Resolve NoDupAtt_push_annot:core.
+Hint Resolve NoDupElem_push_annot:core.
 
 (*------------------------push_annot---------------------------*)
