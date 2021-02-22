@@ -86,9 +86,10 @@ nameSubqRA q@(RTRef r)      =
   do sc <- gets counter
      modify (addR2env r)
      return $ RRenameAlg ("t" ++ show sc) q
-nameSubqRA (RRenameAlg n q) = 
-  do q' <- nameSubqRA q
-     return $ RRenameAlg n q'
+nameSubqRA q@(RRenameAlg _ _) = 
+  do 
+     -- q' <- nameSubqRA q
+     return q
 nameSubqRA REmpty           = 
   return REmpty
 
