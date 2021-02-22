@@ -23,6 +23,12 @@ data StateInfo = StateInfo
   , env :: RenameEnv
   }
 
+incCounter :: StateInfo -> StateInfo
+incCounter (StateInfo c e) = StateInfo (c+1) e
+
+addR2env :: Relation -> StateInfo -> StateInfo
+addR2env r (StateInfo c e) = StateInfo (c+1) (SM.insert r ("t" ++ show c) e)
+
 type QState = State StateInfo
 
 -- | evaluate the qstate with zero.
@@ -32,59 +38,74 @@ evalQState = flip evalState initState
 
 -- | gives name to subqueries in a relational algebra query.
 nameSubqRAlgebra :: RAlgebra -> RAlgebra
-nameSubqRAlgebra = evalQState . nameSubqRA 
+nameSubqRAlgebra q = 
+  case q' of 
+      (RRenameAlg _ q'') -> q''
+      _ -> q'
+    where
+      q' = evalQState (nameSubqRA q)
 
 -- |
 nameSubqRA :: RAlgebra -> QState RAlgebra
-nameSubqRA = undefined
--- nameSubqRA (RSetOp o l r)   = 
---   do l' <- nameSubqRA l 
---      r' <- nameSubqRA r 
---      return $ RSetOp o l' r'
--- nameSubqRA (RProj as q)     = 
---   do q' <- nameSubqRA q 
---      s <- get
---      let as' = updateAttsQual as q q'
---          q'' = RProj as' (RRenameAlg ("t" ++ show s) q')
---      modify succ
---      return q''
--- nameSubqRA (RSel c q)       = 
---   do q' <- nameSubqRA q 
---      -- s <- get
---      let c'  = updateCond c q q'
---          q'' = RSel c' q'
---      return q''
--- nameSubqRA (RJoin l r c)    = 
---   do l' <- nameSubqRA l
---      r' <- nameSubqRA r 
---      let c'  = updateJoinCond c l r l' r' 
---          q'' = RJoin l' r' c' 
---      return q''
--- nameSubqRA (RProd l r)      = 
---   do l' <- nameSubqRA l
---      r' <- nameSubqRA r
---      return $ RProd l' r'
--- nameSubqRA q@(RTRef _)      = 
---   return q
--- nameSubqRA (RRenameAlg n q) = 
---   do q' <- nameSubqRA q
---      return $ RRenameAlg n q'
--- nameSubqRA REmpty           = 
---   return REmpty
+-- nameSubqRA = undefined
+nameSubqRA (RSetOp o l r)   = 
+  do l' <- nameSubqRA l 
+     r' <- nameSubqRA r 
+     modify incCounter
+     sc <- gets counter
+     -- se <- gets env
+     let q' = RRenameAlg ("t" ++ show sc) (RSetOp o l' r')
+     return q'
+nameSubqRA (RProj as q)     = 
+  do q' <- nameSubqRA q 
+     -- s <- get
+     modify incCounter
+     sc <- gets counter
+     se <- gets env
+     let as' = updateAttsQual as q se 
+         q'' = RRenameAlg ("t" ++ show sc) (RProj as' q')
+     return q''
+nameSubqRA (RSel c q)       = 
+  do q' <- nameSubqRA q 
+     se <- gets env
+     let c'  = updateCond c q se
+         q'' = RSel c' q'
+     return q''
+nameSubqRA (RJoin l r c)    = 
+  do l' <- nameSubqRA l
+     r' <- nameSubqRA r 
+     se <- gets env
+     let c'  = updateJoinCond c l' r' se 
+         q'' = RJoin l' r' c' 
+     return q''
+nameSubqRA (RProd l r)      = 
+  do l' <- nameSubqRA l
+     r' <- nameSubqRA r
+     return $ RProd l' r'
+nameSubqRA q@(RTRef r)      = 
+  do sc <- gets counter
+     modify (addR2env r)
+     return $ RRenameAlg ("t" ++ show sc) q
+nameSubqRA (RRenameAlg n q) = 
+  do q' <- nameSubqRA q
+     return $ RRenameAlg n q'
+nameSubqRA REmpty           = 
+  return REmpty
 
 -- -- | update att qual for attributes. 
--- updateAttsQual :: Attributes -> RAlgebra -> RAlgebra -> Attributes
--- updateAttsQual as q q' = undefined
---   -- map (flip (flip updateAttQual q) q') as
+updateAttsQual :: Attributes -> RAlgebra -> RenameEnv -> Attributes
+updateAttsQual as q e = undefined
+  -- map (flip (flip updateAttQual q) q') as
 
--- -- | updates the attribute qualifier if it has one. from the 
--- --   old query q to the new query q'. 
+-- | updates the attribute qualifier if it has one. from the 
+--   old query q to the new query q'. 
 -- updateAttQual :: Attr -> RAlgebra -> RAlgebra -> Attr
 -- updateAttQual a q q' = undefined
 
 
 -- -- | updates the existing qualifier of attributes in a condition. 
--- updateCond :: SqlCond RAlgebra -> RAlgebra -> RAlgebra -> SqlCond RAlgebra
+updateCond :: SqlCond RAlgebra -> RAlgebra -> RenameEnv -> SqlCond RAlgebra
+updateCond = undefined
 -- updateCond (SqlCond c)  q q' = SqlCond $ updateRCond c q q'
 -- updateCond c@(SqlIn _ _) _ _ = c
 -- updateCond (SqlNot c)   q q' = SqlNot c'
@@ -123,9 +144,10 @@ nameSubqRA = undefined
 -- updateAtom a q q' = undefined
 
 -- -- | updates the existing qualifier of attributes in a join condition. 
--- updateJoinCond :: RCondition 
---                -> RAlgebra -> RAlgebra -> RAlgebra -> RAlgebra 
---                -> RCondition
+updateJoinCond :: RCondition 
+               -> RAlgebra -> RAlgebra -> RenameEnv
+               -> RCondition
+updateJoinCond = undefined
 -- updateJoinCond c@(RLit _)      _ _ _  _  = c 
 -- updateJoinCond (RComp o la ra) l r l' r' = RComp o la' ra'
 --   where
