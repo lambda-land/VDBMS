@@ -166,16 +166,13 @@ Theorem context_type_rel : forall e S vq A' e',
            ~ sat (  e' /\(F) (~(F) (e)) ).
 Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
        - intros. inversion H; subst. rewrite not_sat_not_prop. 
-         rewrite <- sat_taut_comp. intros c Hfalse. simpl in Hfalse.
-         discriminate Hfalse.
-       - intros. inversion H; subst. rewrite not_sat_not_prop. 
          rewrite <- sat_taut_comp.
          intros. simpl in H0. apply andb_true_iff with (b2:=(E[[ e'0]] c)). assumption.
-       - intros. inversion H; subst. apply IHvq in H5. assumption.
        - intros. inversion H; subst.
          rewrite not_sat_not_prop. rewrite <- sat_taut_comp.
          intros. simpl in H0. 
          apply andb_prop in H0. destruct H0. assumption.
+       - intros. inversion H; subst. apply IHvq in H5. assumption.
        - intros. inversion H; subst. rewrite not_sat_not_prop. 
          unfold not_sat. intros.
          destruct (E[[ e1]] c) eqn:E1.
@@ -202,6 +199,9 @@ Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
          rewrite <- sat_taut_comp in H7.
          specialize H7 with c. auto.
        - intros. inversion H; subst. apply IHvq1 in H6. assumption.
+       - intros. inversion H; subst. rewrite not_sat_not_prop. 
+         rewrite <- sat_taut_comp. intros c Hfalse. simpl in Hfalse.
+         discriminate Hfalse.
 Qed. 
 
 
@@ -271,6 +271,11 @@ Proof.
                    e' A' HndpAA' Q HndpQ
                    Hq IHHq Hsbsmp
                    |
+                   e S HndpRS HndpAS
+                   vq HndpvQ A HndpAA e' vc 
+                   Hq IHHq HCond
+                   
+                   |
                    e e' S HndpRS HndpAS 
                    vq1 HndpvQ1 vq2 HndpvQ2
                    A1 HndpAA1 e1 A2 HndpAA2 e2 
@@ -285,10 +290,6 @@ Proof.
                    vq1 HndpvQ1 vq2 HndpvQ2
                    A1 HndpAA1 e1 A2 HndpAA2 e2 op
                    Hq1 IHHq1 Hq2 IHHq2 HEquiv 
-                   |
-                   e S HndpRS HndpAS
-                   vq HndpvQ A HndpAA e' vc 
-                   Hq IHHq HCond
                    ].
  (** ----------------------------- EmptyRelation - E ----------------------------- *) 
   - 
@@ -357,6 +358,45 @@ Proof.
   (*~ Proved by subset A B <-> subset_bool A B = true ~*)
   rewrite <- subset_bool_correct in Hsbsmp. rewrite Hsbsmp.
   reflexivity.
+  
+  (**  ------------------------------- Select - E ------------------------------ *)
+  - apply IHHq in H0 as Htype_. 
+    simpl configVQuery.
+    simpl type_. 
+    
+ (* HCond : {e, (A, e') |- vc}
+    Htype_ : ||= (Q[[ vq]] c) =x= (QT[[ (A, e')]] c)
+    ----------------------------------------------------
+    (if (QT[[ (A, e')]] c) ||- (C[[ vc]] c) 
+                then ||= (Q[[ vq]] c) else []) =x= (QT[[ (A, e')]] c)
+  *)
+  
+  (* {e, (A, e') |- vc} -> (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true *)
+  
+  apply variation_preservation_cond with (c:=c) in HCond.
+  
+ (* HCond : (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true
+    Htype_ : ||= (Q[[ vq]] c) =x= (QT[[ (A, e')]] c)
+    ----------------------------------------------------
+    (if (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) 
+                   then ||= (Q[[ vq]] c) else []) =x= (QT[[ (A, e')]] c)
+  *) 
+  
+ (*~ v-condition (C[[ vc]] c) is well formed in all equivalent contexts:
+      Htype_:      ||= (Q[[ vq]] c) =x= (QT[[ (A, e')]] c) -> 
+      HCond_:  ||= (Q[[ vq]] c) ||- (C[[ vc]] c) = (QT[[ (A, e')]] c) ||- (C[[ vc]] c) ~*)
+  
+  apply condtype_equiv with (c:=(C[[ vc]] c)) in Htype_ as HCond_.   
+  
+ (* HCond : (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true
+    Htype_ : ||= (Q[[ vq]] c) =x= (QT[[ (A, e')]] c)
+    HCond_ : (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) = (QT[[ (A, e')]] c) ||- (C[[ vc]] c)
+    ----------------------------------------------------
+    (if (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) 
+                          then ||= (Q[[ vq]] c) else []) =x= (QT[[ (A, e')]] c)
+  *) 
+  
+  rewrite HCond_, HCond. assumption. auto.
 
  (**  ------------------------------- Choice - E ------------------------------ *)
  - 
@@ -482,7 +522,6 @@ Proof.
     9, 10, 11, 12: simpl; destruct ( E[[ e2]] c).
     all: try(apply NoDupElem_NoDup_config; auto); try (apply NoDup_nil).
 
- (**  ------------------------------- Select - E ------------------------------ *)
  (**  ------------------------------- SetOp - E ------------------------------ *)
  - 
  (* HEquiv : (A1, e1) =T= (A2, e2)
@@ -513,44 +552,8 @@ Proof.
   apply configVQtype_equiv with (c:=c) in HEquiv. rewrite <-IHHq1', <-IHHq2' in HEquiv.
  (*~ Proved by A =x= B -> equiv_qtype_bool A B = true ~*)
   rewrite <- equiv_qtype_bool_correct in HEquiv. rewrite HEquiv. assumption.
-
-  - apply IHHq in H0 as Htype_. 
-    simpl configVQuery.
-    simpl type_. 
-    
- (* HCond : {e, (A, e') |- vc}
-    Htype_ : ||= (Q[[ vq]] c) =x= (QT[[ (A, e')]] c)
-    ----------------------------------------------------
-    (if (QT[[ (A, e')]] c) ||- (C[[ vc]] c) 
-                then ||= (Q[[ vq]] c) else []) =x= (QT[[ (A, e')]] c)
-  *)
   
-  (* {e, (A, e') |- vc} -> (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true *)
   
-  apply variation_preservation_cond with (c:=c) in HCond.
-  
- (* HCond : (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true
-    Htype_ : ||= (Q[[ vq]] c) =x= (QT[[ (A, e')]] c)
-    ----------------------------------------------------
-    (if (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) 
-                   then ||= (Q[[ vq]] c) else []) =x= (QT[[ (A, e')]] c)
-  *) 
-  
- (*~ v-condition (C[[ vc]] c) is well formed in all equivalent contexts:
-      Htype_:      ||= (Q[[ vq]] c) =x= (QT[[ (A, e')]] c) -> 
-      HCond_:  ||= (Q[[ vq]] c) ||- (C[[ vc]] c) = (QT[[ (A, e')]] c) ||- (C[[ vc]] c) ~*)
-  
-  apply condtype_equiv with (c:=(C[[ vc]] c)) in Htype_ as HCond_.   
-  
- (* HCond : (QT[[ (A, e')]] c) ||- (C[[ vc]] c) = true
-    Htype_ : ||= (Q[[ vq]] c) =x= (QT[[ (A, e')]] c)
-    HCond_ : (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) = (QT[[ (A, e')]] c) ||- (C[[ vc]] c)
-    ----------------------------------------------------
-    (if (||= (Q[[ vq]] c)) ||- (C[[ vc]] c) 
-                          then ||= (Q[[ vq]] c) else []) =x= (QT[[ (A, e')]] c)
-  *) 
-  
-  rewrite HCond_, HCond. assumption. auto.
 Qed.
 
 
