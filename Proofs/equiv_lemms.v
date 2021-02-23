@@ -113,10 +113,10 @@ split.
   assumption.
 Qed.*)
 
-Lemma equiv_sublist: forall A B B' , 
-     B =x= B' -> sublist A B <-> sublist A B'.
+Lemma equiv_subset: forall A B B' , 
+     B =x= B' -> subset A B <-> subset A B'.
 Proof. 
-intros. unfold equiv_elems in H. unfold sublist.
+intros. unfold equiv_elems in H. unfold subset.
 split; intro H1;
 intro x; specialize H with x;
 destruct H;  
@@ -168,18 +168,22 @@ destruct (E[[ e']] c).
 apply H. reflexivity.
 Qed.
 
-Lemma configVElemSet_push_annot A e c:
-configVElemSet (push_annot A e) c = configVQtype (A, e) c.
+Lemma push_annot_correctness A e c: 
+    AX[[ (A, e)]] c = X[[ A < e]] c.
 Proof. induction A. 
 simpl. destruct ( E[[ e]] c); reflexivity.
 unfold push_annot; fold push_annot.
 destruct a. simpl configVQtype. 
-simpl configVQtype in IHA.
-simpl configVElemSet.
+simpl (AX[[_]]c) in IHA.
+simpl (X[[_]]c). simpl (AX[[_]]c).
 destruct (E[[ e]] c); destruct (E[[ f]] c); simpl;
 try(eauto).
 rewrite IHA. reflexivity.
 Qed.
+
+Lemma configVElemSet_push_annot A e c:
+configVElemSet (push_annot A e) c = configVQtype (A, e) c.
+Proof. symmetry. apply push_annot_correctness. Qed.
 
 Lemma push_annot_equiv A B e: A =vx= B -> (A < e) =vx= (B < e).
 Proof. intro H. unfold "=vx=". intro c.
@@ -204,8 +208,12 @@ Lemma condtype_equiv: forall A A' c, A =x= A' ->
 (A ||- c) = (A' ||- c).
 Proof. induction c; intros H; simpl condtype.
 - reflexivity.
-- reflexivity.
-- reflexivity.
+- (* apply existsb_elem_equiv with (a:=e) in H.
+  rewrite H.*) reflexivity.
+- (*apply existsb_elem_equiv with (a:=e) in H as He. 
+  apply existsb_elem_equiv with (a:=e0) in H as He0.
+  rewrite He, He0. *)
+  reflexivity.
 - apply IHc in H. rewrite H. reflexivity.
 - apply IHc1 in H as Hc1.
   apply IHc2 in H as Hc2.
@@ -215,6 +223,7 @@ rewrite Hc1, Hc2. reflexivity.
 rewrite Hc1, Hc2. reflexivity.
 Qed.
 
+(* might be useful to have E[[ e]] c = true to prove implies *)
 
 Lemma equiv_vqtype_In Q Q' a : Q =T= Q' -> (exists e : fexp, In (ae a e) (fst Q < snd Q) /\ sat e)
 -> exists e0 : fexp, In (ae a e0) (fst Q' < snd Q') /\ sat e0.

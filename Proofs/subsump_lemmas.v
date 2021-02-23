@@ -5,7 +5,7 @@ Require Export List.
 Require Export Logic.
 Import Coq.Lists.List.ListNotations.
 
-Load configdistUnionInter.
+Load VRA_varPrsrvtn_thm.
 
 
 Module subsump_lemmas. 
@@ -54,32 +54,32 @@ unfold subsump_velems_exp in H.
 destruct x as (x, e). specialize H with x e. simpl in H. Lia.lia.
 reflexivity. Qed. *)
 
-(*Lemma nil_sublist_nil: sublist [] [].
-Proof. unfold sublist. intros x. split; 
+(*Lemma nil_subset_nil: subset [] [].
+Proof. unfold subset. intros x. split; 
 [ intro H | simpl ]; eauto. Qed.*)
 
-Lemma sublist_nil A : sublist [] A.
-Proof. unfold sublist. intros x. split;
+Lemma subset_nil A : subset [] A.
+Proof. unfold subset. intros x. split;
 [ intro H; destruct H | simpl; Lia.lia ]. Qed.
 
-Lemma not_sublist_cons_nil: forall x l, ~ sublist (x::l) [].
-Proof. unfold not. intros x l H. unfold sublist in H.
+Lemma not_subset_cons_nil: forall x l, ~ subset (x::l) [].
+Proof. unfold not. intros x l H. unfold subset in H.
 specialize H with x. destruct H as [H1 H2]. 
 rewrite count_occ_cons_eq in H2. simpl in H2. Lia.lia.
 reflexivity. Qed.
 
-Lemma subsump_velems_correctness A A' (HndpA: NoDupElem A) (HndpA': NoDupElem A'): 
-       subsump_velems_exp A A' <-> (forall c, sublist (configVElemSet A c) (configVElemSet A' c)). 
+Theorem subsump_velems_correctness A A' (HndpA: NoDupElem A) (HndpA': NoDupElem A'): 
+       subsump_velems_exp A A' <-> (forall c, subset (X[[ A]]c) (X[[ A']]c)). 
 Proof. split; 
 generalize dependent A'; generalize dependent A; 
 induction A' as [|(a', ea') A' IHA'];  
 intros HndpA' H. 
 
 (*Goals -> :  1: A' := [] , 2: A' := [ae a ' ea':A']*)
-1, 2: unfold subsump_velems_exp in H; unfold sublist; intros c x; 
+1, 2: unfold subsump_velems_exp in H; unfold subset; intros c x; 
 
-try (split; (* 1: sublist A []     to 1-1: In A []       1-2: count A [] *)
-            (* 2: sublist A [_:A'] to 2-1: In A [_:A'][] 2-2: count A [_:A'][] *)
+try (split; (* 1: subset A []     to 1-1: In A []       1-2: count A [] *)
+            (* 2: subset A [_:A'] to 2-1: In A [_:A'][] 2-2: count A [_:A'][] *)
 
 [ (* 1-1 2-1 In: intro In x X[[A]]c  *) 
   intro HInxA |
@@ -159,9 +159,9 @@ rewrite (count_occ_not_In string_eq_dec) in H2.
 
 (* case []: *)
 
-(** Prove with two facts: sublist (X[[A]]c) [] -> subsump_velems_exp A [] 
+(** Prove with two facts: subset (X[[A]]c) [] -> subsump_velems_exp A [] 
 1. forall c, (X[[A]]c)  = [] -> subsump_velems_exp A []
-2. exists c, (X[[A]]c) <> [] -> ~ sublist (X[[A]]c) [] *)
+2. exists c, (X[[A]]c) <> [] -> ~ subset (X[[A]]c) [] *)
 
 (* introduce (forall c, (X[[A]]c) = []) \/ (exists c, (X[[A]]c) <> []) *)
 pose Classical_Prop.classic as Hclassic.
@@ -176,12 +176,12 @@ destruct Hclassic as [Hall | Hexists].
   apply not_all_ex_not in Hexists. destruct Hexists as [c Hexists].
   specialize H with c.
   destruct ((X[[ A]] c)) eqn: HAc. contradiction. simpl in H. 
-  apply not_sublist_cons_nil in H. destruct H. }
+  apply not_subset_cons_nil in H. destruct H. }
 
 (* case (ae a' ea': A'):  *)
 unfold subsump_velems_exp. intros x e c HInxeA.
 destruct HInxeA as[ HInxeA Hsat].
-unfold sublist in H. 
+unfold subset in H. 
 
 specialize H with c x. 
 destruct H as [HInxAA' Hcount].
@@ -202,7 +202,6 @@ exists e'; split;
 [simpl; right; auto | auto].
 
 Qed.
-
 
 Lemma subsump_vqtype_correctness X X' {HndpA: NoDupElem (fst X)} {HndpA': NoDupElem (fst X')}: 
        subsump_vqtype_exp X X' <-> subsump_vqtype X X'. 
@@ -236,7 +235,7 @@ intros x e HIn.
 
 apply HSImp in HIn. 
 (* unfold vqtype_quiv in A=T=A' *)
-unfold "=T=" in HT.
+unfold "=T=", "=avx=" in HT.
 (* unfold sat in (exists, In x A /\ sat ) || sat: exixts c, E[]c = true *)
 unfold sat in HIn. destruct HIn as [e1 HIn].
 destruct HIn as [HIn HSat].
@@ -387,7 +386,7 @@ End subsump_lemmas.
    
 (*
 unfold subsump_velems_exp in H;  
-unfold sublist; intro x;
+unfold subset; intro x;
 split;
 [ intro HInxA | 
   destruct (count_occ string_eq_dec (X[[ A]] c) x) eqn:Hcount;

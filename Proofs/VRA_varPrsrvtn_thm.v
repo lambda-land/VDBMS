@@ -72,15 +72,15 @@ rewrite Htf; reflexivity.
 Qed.
 
 (** ------------------------------------------------------------
-  sublist_bool correct
+  subset_bool correct
 ---------------------------------------------------------------*)
 
-Lemma sublist_bool_correct: forall A A' , sublist_bool A A' = true
-                        <-> sublist A A'.
+Lemma subset_bool_correct: forall A A' , subset_bool A A' = true
+                        <-> subset A A'.
 Proof. 
 intros A A'. generalize dependent A'. induction A. 
 + split; intro H.
-  ++ unfold sublist. intro x. split.
+  ++ unfold subset. intro x. split.
      simpl. intro HIn. destruct HIn.
      simpl. Lia.lia.
   ++ simpl. reflexivity.
@@ -88,9 +88,9 @@ intros A A'. generalize dependent A'. induction A.
   ++ simpl in H.
      destruct (set_mem string_eq_dec a A') eqn: Hsetmem.
      +++ apply set_mem_correct1 in Hsetmem.
-         unfold sublist. intro x. 
+         unfold subset. intro x. 
          apply IHA in H.
-         unfold sublist in H. specialize H with x.
+         unfold subset in H. specialize H with x.
          destruct H. split.
          ++++ intro. 
          simpl in H1. destruct H1; subst.
@@ -104,7 +104,7 @@ intros A A'. generalize dependent A'. induction A.
     +++ discriminate H. 
   ++ simpl. destruct (set_mem string_eq_dec a A') eqn: Hsetmem.
      +++ apply set_mem_correct1 in Hsetmem.
-         rewrite IHA. unfold sublist. intro x. unfold sublist in H.
+         rewrite IHA. unfold subset. intro x. unfold subset in H.
         specialize H with x. destruct H. split.
         ++++ intro H1. simpl in H. simpl in H0.
         destruct (string_eq_dec a x); subst.
@@ -124,26 +124,26 @@ intros A A'. generalize dependent A'. induction A.
         apply (count_occ_set_remove_In string_eq_dec) in Hsetmem. 
         Lia.lia. apply (count_occ_set_remove_neq string_eq_dec A') in n.
         Lia.lia. 
-     +++ unfold sublist in H. specialize H with a.
+     +++ unfold subset in H. specialize H with a.
          destruct H. apply set_mem_complete1 in Hsetmem.
          rewrite (count_occ_not_In string_eq_dec) in Hsetmem. 
          rewrite Hsetmem in H0. simpl in H0. destruct (string_eq_dec a a).
          Lia.lia. contradiction. 
 Qed.
 
-Lemma sublist_bool_correct': forall A A' , (sublist_bool A A' = false)
-                        <-> (~ sublist A A').
+Lemma subset_bool_correct': forall A A' , (subset_bool A A' = false)
+                        <-> (~ subset A A').
 Proof. intros. rewrite <- not_true_iff_false. unfold not.
-apply contrapositive_iff. symmetry. apply sublist_bool_correct. Qed.
+apply contrapositive_iff. symmetry. apply subset_bool_correct. Qed.
 
-Lemma equiv_sublist_bool: forall A B B' , 
-     B =x= B' -> sublist_bool A B = sublist_bool A B'.
-Proof. intros A B B' H. destruct (sublist_bool A B) eqn:Hsb;
-[ rewrite sublist_bool_correct  in Hsb |
-  rewrite sublist_bool_correct' in Hsb ];
-rewrite (equiv_sublist _ H) in Hsb;
-[ rewrite <- sublist_bool_correct  in Hsb |
-  rewrite <- sublist_bool_correct' in Hsb ];
+Lemma equiv_subset_bool: forall A B B' , 
+     B =x= B' -> subset_bool A B = subset_bool A B'.
+Proof. intros A B B' H. destruct (subset_bool A B) eqn:Hsb;
+[ rewrite subset_bool_correct  in Hsb |
+  rewrite subset_bool_correct' in Hsb ];
+rewrite (equiv_subset _ H) in Hsb;
+[ rewrite <- subset_bool_correct  in Hsb |
+  rewrite <- subset_bool_correct' in Hsb ];
 eauto.
 Qed.
 
@@ -165,7 +165,10 @@ Theorem context_type_rel : forall e S vq A' e',
        { e , S |= vq | (A', e') } -> 
            ~ sat (  e' /\(F) (~(F) (e)) ).
 Proof. intros e S vq. generalize dependent e. induction vq. (* subst. *)
-       - intros. inversion H; subst. (*assumption.*) rewrite not_sat_not_prop. 
+       - intros. inversion H; subst. rewrite not_sat_not_prop. 
+         rewrite <- sat_taut_comp. intros c Hfalse. simpl in Hfalse.
+         discriminate Hfalse.
+       - intros. inversion H; subst. rewrite not_sat_not_prop. 
          rewrite <- sat_taut_comp.
          intros. simpl in H0. apply andb_true_iff with (b2:=(E[[ e'0]] c)). assumption.
        - intros. inversion H; subst. apply IHvq in H5. assumption.
@@ -227,7 +230,7 @@ Lemma type__configVRelS rn A' e' c: ||= rel (R[[ (rn, (A', e'))]] c)
                                   = (if E[[ e']] c then X[[ A']] c else []).
 unfold configVRelS. simpl. destruct (E[[ e']] c); reflexivity. Qed.
 
-Lemma AE_QT Q c: (AX[[ Q]] c) = (QT[[ Q]] c). eauto. Qed.
+Lemma AX_QT Q c: (AX[[ Q]] c) = (QT[[ Q]] c). eauto. Qed.
 
 Theorem variation_preservation_cond : forall e Q vc, 
        { e , Q |- vc } ->
@@ -258,7 +261,9 @@ Theorem variation_preservation : forall e S vq A,
            ||= (Q[[ vq]]c) =x= QT[[ A]]c.
 Proof.
   intros e S vq A H c H0. 
-   induction H as [e S HndpRS HndpAS 
+   induction H as [
+                   |
+                   e S HndpRS HndpAS 
                    rn A' HndpA' e' 
                    HInVR 
                    |
@@ -285,14 +290,20 @@ Proof.
                    vq HndpvQ A HndpAA e' vc 
                    Hq IHHq HCond
                    ].
-
+ (** ----------------------------- EmptyRelation - E ----------------------------- *) 
+  - 
+  (* H0 : (E[[ e]] c) = true
+     -----------------------------------------------
+     ||= (Q[[ empty_v]] c) =x= QT[[ ([], litB false)]] c
+  *)
+  unfold configVQuery, configVQtype, configaVelems. simpl. reflexivity.
  (** ----------------------------- Relation - E ----------------------------- *) 
   - 
   (* H0 : (E[[ e]] c) = true
      -----------------------------------------------
      ||= (Q[[ rel_v (rn, (A', e'))]] c) =x= (QT[[ (A', e /\(F) e')]] c)
   *)
-  unfold configVQuery, configVQtype, configaVelems. (*"Q[[_]]c", "QT[[_]]c", "AX[[_]]c".*) simpl semE. 
+  unfold configVQuery, configVQtype, configaVelems. simpl semE. 
   (* H0 : (E[[ e]] c) = true
      -----------------------------------------------
      ||= rel (R[[ (rn, (A', e'))]] c) =x=
@@ -311,40 +322,40 @@ Proof.
      ||= (Q[[ proj_v Q vq]] c) =x= (QT[[ Q ^^ e]] c)
   *)
   (*~ unfold ||=. AE = QT. Simplify IHHq with (E[[ e]] c) = true. ~*)
-  simpl type_. rewrite AE_QT. unfold subsump_qtype_bool. apply IHHq in H0 as IHHq'. clear IHHq.
+  simpl type_. rewrite AX_QT. unfold subsump_qtype_bool. apply IHHq in H0 as IHHq'. clear IHHq.
   (* Hq: {e, S |= vq | (A', e')} 
      Hsbsmp: subsump_vqtype (Q ^^ e) (A', e')
      IHHq' : ||= (Q[[ vq]] c) =x= (QT[[ (A', e')]] c)
      -----------------------------------------
-     if sublist_bool (QT[[ Q]] c) (||= (Q[[ vq]] c)) then 
+     if subset_bool (QT[[ Q]] c) (||= (Q[[ vq]] c)) then 
           QT[[ Q]] c  =x= (QT[[ Q ^^ e]] c)
   *)
   (* rewrite IHHq' in goal *)
-  rewrite (equiv_sublist_bool _ IHHq'). 
+  rewrite (equiv_subset_bool _ IHHq'). 
   (* Hq: {e, S |= vq | (A', e')} 
      Hsbsmp: subsump_vqtype (Q ^^ e) (A', e')
      -----------------------------------------
-     if sublist_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
+     if subset_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
           QT[[ Q]] c  =x= (QT[[ Q ^^ e]] c)
   *)
-  (*~ By defintion, subsump_vqtype A B = sublist QT[[A]] QT[[B]] ~*)
+  (*~ By defintion, subsump_vqtype A B = subset QT[[A]] QT[[B]] ~*)
   unfold subsump_vqtype in Hsbsmp. specialize Hsbsmp with c.
   (* Hq: {e, S |= vq | (A', e')} 
-     Hsbsmp : sublist (QT[[ Q ^^ e]] c) (QT[[ (A', e')]] c)
+     Hsbsmp : subset (QT[[ Q ^^ e]] c) (QT[[ (A', e')]] c)
      -----------------------------------------
-     if sublist_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
+     if subset_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
          QT[[ Q]] c  =x= (QT[[ Q ^^ e]] c)
   *)
   (*~ (E[[ e]] c) = true -> (QT[[ Q ^^ e]] c) = (QT[[ Q]] c)  ~*)
   rewrite (addannot_config_true _ _ _ H0) in Hsbsmp. rewrite (addannot_config_true _ _ _ H0).
   (* Hq: {e, S |= vq | (A', e')} 
-     Hsbsmp : sublist (QT[[ Q]] c) (QT[[ (A', e')]] c)
+     Hsbsmp : subset (QT[[ Q]] c) (QT[[ (A', e')]] c)
      -----------------------------------------
-     if sublist_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
+     if subset_bool (QT[[ Q]] c) (QT[[ (A', e')]] c) then 
          QT[[ Q]] c  =x= (QT[[ Q]] c)
   *)
-  (*~ Proved by sublist A B <-> sublist_bool A B = true ~*)
-  rewrite <- sublist_bool_correct in Hsbsmp. rewrite Hsbsmp.
+  (*~ Proved by subset A B <-> subset_bool A B = true ~*)
+  rewrite <- subset_bool_correct in Hsbsmp. rewrite Hsbsmp.
   reflexivity.
 
  (**  ------------------------------- Choice - E ------------------------------ *)
@@ -442,7 +453,7 @@ Proof.
  *)
 
  (*~ velems_inter A1 A2 =vx= [] -> elems_inter [[A1]]c [[A2]]c =x= [] ~*)
-    unfold equiv_velems in HInter. unfold vqtype_inter_vq, equiv_vqtype in HInter. 
+    unfold equiv_velems in HInter. unfold vqtype_inter_vq, "=T=", "=avx=" in HInter. 
     specialize HInter with c. simpl in HInter.
     rewrite configVElemSet_dist_velems_inter in HInter; try assumption.
     assert (HInter': elems_inter (QT[[ (A1, e1)]] c) (QT[[ (A2, e2)]] c) =x= [] ).
@@ -631,7 +642,7 @@ Proof.
      ++ 
         simpl. unfold subsump_qtype_bool. rewrite H0.
         specialize H1 with c. rewrite H0, He' in H1. 
-        destruct (sublist_bool (configVElemSet A c) (type' (configVQuery vq c))) eqn:Hsubl.
+        destruct (subset_bool (configVElemSet A c) (type' (configVQuery vq c))) eqn:Hsubl.
         reflexivity.
         rewrite H1. rewrite H0. 
         reflexivity. 

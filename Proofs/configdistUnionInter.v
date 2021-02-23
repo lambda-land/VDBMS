@@ -628,22 +628,24 @@ Lemma configVElemSet_dist_velems_union : forall A  A' c (HA: NoDupElem A)
 Proof. apply velems_union_is_variation_preserving. Qed.
 
 
-Lemma configVQType_dist_vqtype_union_vq : forall Q Q' c (HA: NoDupElem (fst Q))
-(HA': NoDupElem (fst Q')), configVQtype (vqtype_union_vq Q Q') c
-=x= elems_union (configVQtype Q c) (configVQtype Q' c).
+Theorem avelems_union_vq_is_variation_preserving : forall Q Q' c (HA: NoDupElem (fst Q))(HA': NoDupElem (fst Q')), 
+AX[[(vqtype_union_vq Q Q')]]c =x= elems_union (AX[[ Q]]c) (AX[[ Q']]c).
 Proof. 
 intros Q Q' c HQ HQ'. destruct Q as (A, e). destruct Q' as (A', e').
-unfold vqtype_union_vq, configVQtype, configaVelems. simpl fst. simpl snd. 
-simpl. 
+unfold vqtype_union_vq, configaVelems. 
+simpl fst. simpl snd. simpl. 
 destruct (E[[ e]] c) eqn: He; simpl; [|
 destruct (E[[ e']] c) eqn: He'; simpl; [ | (* [] =x= [] *)simpl; reflexivity] ]; 
-
 rewrite configVElemSet_dist_velems_union; 
 try (apply NoDupElem_push_annot; auto); simpl;
 repeat(rewrite configVElemSet_push_annot); simpl;
 rewrite He; [|rewrite He']; reflexivity. 
-
 Qed.
+
+Lemma configVQType_dist_vqtype_union_vq : forall Q Q' c (HA: NoDupElem (fst Q))
+(HA': NoDupElem (fst Q')), configVQtype (vqtype_union_vq Q Q') c
+=x= elems_union (configVQtype Q c) (configVQtype Q' c).
+Proof. apply avelems_union_vq_is_variation_preserving. Qed.
 
 (*Lemma configVQType_dist_velems_union : forall A A' e c (HA: NoDupElem A)
 (HA': NoDupElem A'), configVQtype (velems_union A A', e) c
@@ -715,6 +717,18 @@ Lemma configVElemSet_dist_velems_inter : forall A  A' c (HA: NoDupElem A)
       elems_inter (configVElemSet A c) (configVElemSet A' c).
 Proof. apply velems_intersection_is_variation_preserving. Qed.
 
+Theorem avelems_intersection_vq_is_variation_preserving : forall Q  Q' c (HQ: NoDupElem (fst Q))
+(HQ': NoDupElem (fst Q')), AX[[ avelems_inter_vq Q Q']] c =
+      elems_inter (AX[[ Q]] c) (AX[[ Q']] c).
+Proof. intros Q Q' c HQ HQ'.
+destruct Q as (A, e). destruct Q' as (A', e').
+unfold avelems_inter_vq. simpl. simpl in *. 
+destruct (E[[ e]] c) eqn: He; 
+destruct (E[[ e']] c) eqn: He'; simpl; try reflexivity.
++ apply velems_intersection_is_variation_preserving; auto.
++ rewrite elems_inter_nil_r. auto.
+Qed.
+
 Lemma configVQType_dist_velems_inter : forall A A' e e' c 
 (HA: NoDupElem A) (HA': NoDupElem A'), 
 configVQtype (velems_inter (push_annot A e)
@@ -750,9 +764,9 @@ Lemma vqtype_inter_vq_equiv A A' B B' (HA: NoDupElem (fst A))
 B =T= B' ->
 vqtype_inter_vq A B =T= vqtype_inter_vq A' B'. 
 Proof. intros HAt HBt.  
-unfold equiv_vqtype in HAt. 
-unfold equiv_vqtype in HBt. 
-unfold equiv_vqtype. intro c. specialize HAt with c.
+unfold equiv_vqtype, "=avx=" in HAt. 
+unfold equiv_vqtype, "=avx=" in HBt. 
+unfold equiv_vqtype, "=avx=". intro c. specialize HAt with c.
 specialize HBt with c. destruct A as (A, ea).
 destruct B as (B, eb). destruct A' as (A', ea').
 destruct B' as (B', eb'). unfold vqtype_inter_vq.
@@ -821,9 +835,9 @@ Lemma vqtype_union_vq_equiv A A' B B' (HA: NoDupElem (fst A))
 B =T= B' ->
 vqtype_union_vq A B =T= vqtype_union_vq A' B'. 
 Proof. intros HAt HBt. 
-unfold equiv_vqtype in HAt. 
-unfold equiv_vqtype in HBt. 
-unfold equiv_vqtype. intro c. specialize HAt with c.
+unfold "=T=", "=avx=" in HAt. 
+unfold "=T=", "=avx=" in HBt. 
+unfold "=T=", "=avx=". intro c. specialize HAt with c.
 specialize HBt with c. destruct A as (A, ea).
 destruct B as (B, eb). destruct A' as (A', ea').
 destruct B' as (B', eb'). simpl in *.
@@ -851,6 +865,7 @@ try (symmetry; assumption);
 try (apply NoDup_nil);try (apply NoDupElem_NoDup_config;
 assumption). 
 all: simpl; reflexivity.
+Qed.
 
 (*intros HAt HBt. 
 unfold equiv_vqtype in HAt. destruct HAt.
@@ -862,7 +877,7 @@ unfold equiv_velems; intro c;
 repeat (rewrite configVElemSet_push_annot); 
 apply configVQtype_equiv; unfold equiv_vqtype;
 eauto. unfold equivE; simpl; intro. rewrite H0, H2.
-reflexivity.*) Qed.
+reflexivity.*) 
 
 Lemma In_push_annot_In a e e' A {HndpElemA : NoDupElem A} : 
 In (ae a (e /\(F) e')) (A < e') <-> In (ae a e) A.

@@ -2,9 +2,11 @@
 Set Warnings "-notation-overridden,-parsing".
 
 (*Load configdistUnionInter. *)
+
 Load subsump_lemmas.
 Import subsump_lemmas.
 
+Module VRA_ImptoExp.
 (* Few points to remember:
    1. when destructing (vTypeImp S q = (A, _) ),
       get (NoDupElem A) by applying NoDupElem_vtypeImpNOTC'. 
@@ -36,6 +38,7 @@ Fixpoint vtypeImpNOTC (e:fexp) (vs: vschema) (vq:vquery) : vqtype :=
           | litB true => (getvs vr, getf vr)
           | _         => (getvs vr, (e /\(F) getf vr))
           end*)
+ | (empty_v)  =>  ([], litB false)
  | (rel_v (rn, (A_, e_'))) =>  let vr := (findVR rn vs) in
            (getvs vr, (e /\(F) getf vr))
  | (proj_v Q vq)     => 
@@ -61,6 +64,7 @@ Fixpoint vtypeImpNOTC (e:fexp) (vs: vschema) (vq:vquery) : vqtype :=
 (* Convert implicit vquery to explicit vquery w.r.t vSchema *)
 Fixpoint ImptoExp (vq: vquery) (vs:vschema) : (vquery) :=
  match vq with 
+ | (empty_v)               => empty_v
  | (rel_v (rn, (A_, e_'))) => (* matching paper*) (*let (A, e) := vtypeImpNOTC (litB true) vs vq in 
                                (proj_v (A, e) vq)*)
                               let vr := (findVR rn vs) in
@@ -193,7 +197,7 @@ Qed.
 (* Correctness of vtypeImp_ function *)
  
 Lemma vtypeImpNOTC_correct : forall e vs vq vt {HRn: NoDupRn (fst vs)}, 
-  vtypeImp e vs vq vt -> (vtypeImpNOTC e vs vq) = vt.
+  {e, vs |- vq | vt} -> (vtypeImpNOTC e vs vq) = vt.
 Proof. 
 
 intros. induction H;
@@ -245,6 +249,7 @@ Lemma NoDupElem_vtypeImpNOTC : forall e vs vq {HRn: NoDupRn (fst vs)}
 Proof. 
 
 intros. generalize dependent e. induction vq.
+- simpl. intro. apply NoDupElem_nil.
 - simpl. destruct v as (rn, (A, e')).
 destruct (findVR rn vs) eqn:Hf.
 simpl. destruct p as (Ap, ep).
@@ -312,6 +317,7 @@ all: unfold velems_union; apply NoDupElem_nodupelem. Qed.
 Lemma NoDupElemvQ_ImptoExp q S {HRs: NoDupRn (fst S)} {HS: NODupElemRs S}: 
           NoDupElemvQ q -> NoDupElemvQ ([q]S).
 Proof. intros. induction H.
++ simpl. apply NoDupElemvQ_empty_v.
 + simpl. destruct (findVR rn S) eqn:HInVR. apply NoDupElemvQ_rel_v.
 destruct p as (A', e'). destruct A'. unfold getvs. simpl. apply NoDupElem_nil.
 pose (findVR_fst rn S) as Hrn.
@@ -353,10 +359,11 @@ Proof.
 generalize dependent e2. 
 generalize dependent e1. induction q; 
 intros e1 e2 He12.
+{ simpl. reflexivity. }
 
 { destruct v as (rn, (Av, ev)). simpl.
 destruct (findVR rn S) eqn:Hf.
-unfold getvs, getf, equiv_vqtype.
+unfold getvs, getf, "=T=", "=avx=", "=avx=".
 simpl. (*split. reflexivity. 
 unfold equivE. simpl.  intro.
 rewrite He12. reflexivity.*)
@@ -374,7 +381,7 @@ destruct (vtypeImpNOTC e1 S q) as (Aq1, eq1) eqn:He1.
 destruct (vtypeImpNOTC e2 S q) as (Aq2, eq2) eqn:He2.
 (*destruct IHq' as [IHqA IHqe]. 
 simpl in IHqA. simpl in IHqe. 
-unfold vqtype_inter_vq, equiv_vqtype.
+unfold vqtype_inter_vq, "=T=", "=avx=", "=avx=".
 simpl. split. 
 
 apply NoDupElem_vtypeImpNOTC' in He1 as HnAq1.
@@ -445,7 +452,7 @@ Qed.
 Lemma contex_intro_equiv_vqtype A1 e1 A e e' ee': (A1, e1) =T= (A, e) -> 
 ee' =e= (e /\(F) e') -> 
 (A1, e1 /\(F) e') =T= (A, ee').
-Proof. intros. unfold "=T=" in *. unfold "=T=".
+Proof. intros. unfold "=T=", "=avx=" in *. unfold "=T=", "=avx=".
 intro c. simpl. simpl in *. rewrite H0. simpl.
 destruct (E[[ e']] c). repeat( rewrite andb_true_r). apply H.
 repeat( rewrite andb_false_r). reflexivity. Qed.
@@ -456,7 +463,7 @@ vqtype_union_vq (A1, e1 /\(F) e') (A2, e2 /\(F) e') =T= (A < e', e /\(F) e').
 Proof. intro H. unfold vqtype_union_vq. simpl.
 unfold vqtype_union_vq in H. simpl in H.
 
-unfold "=T=" in H. unfold "=T=". intro c.
+unfold "=T=", "=avx=" in H. unfold "=T=", "=avx=". intro c.
 simpl. specialize H with c. simpl in H.
 destruct (E[[ e']] c).
 repeat (rewrite andb_true_r). 
@@ -497,7 +504,7 @@ simpl. rewrite <- andb_orb_distrib_l. auto. *)
 Qed.
 
 Lemma push_annot_equiv_vqtype A e' e: (A < e', e) =T= (A, e /\(F) e').
-Proof. unfold "=T=". intro c. simpl. destruct (E[[ e]] c).
+Proof. unfold "=T=", "=avx=". intro c. simpl. destruct (E[[ e]] c).
 rewrite configVElemSet_push_annot. simpl. destruct (E[[ e']] c);
 reflexivity. simpl. reflexivity. Qed.
 
@@ -511,10 +518,10 @@ reflexivity. Qed.
 
 Lemma contex_intro_vqtype_inter_vq Q A1 A2 e1 e2 e': vqtype_inter_vq Q (A1, e1) =T= (A2, e2) -> 
 vqtype_inter_vq Q (A1, e1 /\(F) e') =T= (A2, e2 /\(F) e').
-Proof. intro. unfold vqtype_inter_vq, equiv_vqtype in H;
+Proof. intro. unfold vqtype_inter_vq, "=T=", "=avx=" in H;
 simpl in H. 
 
-unfold vqtype_inter_vq, equiv_vqtype;
+unfold vqtype_inter_vq, "=T=", "=avx=";
 simpl.  intro c. destruct (E[[ e']] c).
 
 repeat (rewrite andb_true_r). apply H.
@@ -532,7 +539,7 @@ vqtype_union_vq (A1', e1') (A2', e2') =T= (A, ee').
 Proof. intros. rewrite vqtype_union_vq_equiv with (A':=(A1, e1 /\(F) e'))
 (B':=(A2, e2 /\(F) e')); try(simpl; assumption).
 assert (Hee': (A, ee') =T= (A, (e /\(F) e'))).
-unfold "=T=". intro c. simpl. rewrite H1. simpl. reflexivity.
+unfold "=T=", "=avx=". intro c. simpl. rewrite H1. simpl. reflexivity.
 rewrite Hee'. apply contex_intro_vqtype_union_vq; try assumption.
 Qed.
 
@@ -551,11 +558,20 @@ generalize dependent eq'.
 generalize dependent e'.
 induction q. 
 
+{ simpl. intros e' eq' eq0 Aq f H H0. 
+unfold "=T=", "=avx=","=x=" in H. 
+unfold "=T=", "=avx=", "=x=". intros c a. 
+specialize H with c a. simpl in H.  simpl.
+rewrite H0. simpl.
+destruct H as [HIn Hcount].
+simpl in Hcount. destruct (E[[ eq0]] c);
+destruct (E[[ e']] c); simpl; split; eauto. reflexivity.  }
+
 { intros. simpl in H. 
 destruct v as (rn, (A_, e_)). simpl. 
 destruct (findVR rn S) as (rn_, (Ar, er)).
 unfold getvs, getf, equiv_vqtype in H. simpl in H.
-unfold "=T=". intro c.
+unfold "=T=", "=avx=". intro c.
 (* inversion H; subst.*)
 (* destruct H as [HAr Her]. *)
 unfold getvs, getf. simpl. rewrite H0.
@@ -729,9 +745,9 @@ rewrite vqtype_inter_vq_equiv with (A':=(vqtype_inter_vq (Ap, ep) (Aqs, eqs))) (
 all: try (simpl; assumption); try reflexivity.
 all: try (simpl; apply NoDupElem_velems_inter; auto).
 
-unfold vqtype_inter_vq. simpl. unfold "=T=". simpl. intro c.
+unfold vqtype_inter_vq. simpl. unfold "=T=", "=avx=". simpl. intro c.
 
-unfold "=T=" in *. simpl in *.
+unfold "=T=", "=avx=" in *. simpl in *.
 specialize HImpExp with c. specialize HExpContextIntro with c. 
 
 destruct (E[[ ep]] c).
@@ -749,12 +765,12 @@ Qed.
 
 Lemma vqtype_fexp_assoc A e1 e2 e3: 
 (A, (e1 /\(F) e2) /\(F) e3) =T= (A, e1 /\(F) e2 /\(F) e3).
-Proof. unfold "=T=". intro c. simpl. rewrite andb_assoc.
+Proof. unfold "=T=", "=avx=". intro c. simpl. rewrite andb_assoc.
 reflexivity. Qed.
 
 Lemma vqtype_fexp_comm A e1 e2: 
 (A, (e1 /\(F) e2)) =T= (A, (e2 /\(F) e1)).
-Proof. unfold "=T=". intro c. simpl. rewrite andb_comm.
+Proof. unfold "=T=", "=avx=". intro c. simpl. rewrite andb_comm.
 reflexivity. Qed.
 
 Lemma ImpQ_ImpType_Equiv_ExpQ_ImpType e S q A A': 
@@ -768,7 +784,13 @@ induction q; destruct A as (A, ea);  destruct A' as (A', ea'); intros HImp HExp.
 
 (* []S implementation 1 see commented code 100 *) 
 
-(* []S implementation 2 *){
+{
+inversion HImp; subst. simpl ImptoExp in HExp.
+inversion HExp; subst. reflexivity.
+}
+
+(* []S implementation 2 *)
+{
 inversion HImp; subst. simpl ImptoExp in HExp.
 
 apply InVR_findVR in H3 as HInFind. rewrite HInFind in HExp.
@@ -784,19 +806,17 @@ inversion HInFind'; subst. reflexivity. all: assumption.
 
 
 {
-
-
 simpl in HImp.
 simpl in HExp.
 
 destruct (vtypeImpNOTC (litB true) S ([q] S)) as (Aqs, eqs) eqn:HqST.
 
 
-inversion HImp as [| | | | |
+inversion HImp as [| | | | | |
                    eImp SImp HndpRSImp HndpASImp vqImp HndpvQImp
                    A'Imp HndpAA'Imp e'Imp vcImp
                    HqImp HcondImp ]; subst.
-inversion HExp as [| | | | |
+inversion HExp as [| | | | | |
                    eExp SExp HndpRSExp HndpASExp vqExp HndpvQExp
                    A'Exp HndpAA'Exp e'Exp vcExp
                    HqExp HcondExp]; subst.
@@ -815,11 +835,11 @@ destruct (vtypeImpNOTC (litB true) S ([q] S)) as (Aqs, eqs) eqn:HqST.
 
 destruct a as (Ap, ep).
 
-inversion HImp as [|
+inversion HImp as [| |
                    eImp SImp HndpRSImp HndpASImp vqImp HndpvQImp
                    e'Imp A'Imp HndpAA'Imp QImp HndpQImp
                    HqImp HsbsmpImp | | | |]; subst.
-inversion HExp as [|
+inversion HExp as [| |
                    eExp SExp HndpRSExp HndpASExp vqExp HndpvQExp
                    e'Exp A'Exp HndpAA'Exp QExp HndpQExp
                    HqExp HsbsmpExp| | | |]; subst.
@@ -849,7 +869,8 @@ in Htrue_e as Hvqtype_inter; try (simpl; assumption).
 }
 
 all: inversion HImp as
-[ | | e0 f0 S0 HnS HnAS 
+[ 
+| | | e0 f0 S0 HnS HnAS 
       q10 HnQ1 q20 HnQ2
       A1 HnA1 e1 A2 HnA2 e2 
       Hq1 Hq2
@@ -862,7 +883,8 @@ all: inversion HImp as
       A1 HnA1 e1 A2 HnA2 e2 op
       Hq1 Hq2 HEquiv|]; subst;
 simpl in HExp; inversion HExp as
-[ | | e0 f0 S0 HnSs HnASs 
+[ 
+| | | e0 f0 S0 HnSs HnASs 
       q10 HnQ1s q20 HnQ2s
       A1s HnA1s e1s A2s HnA2s e2s 
       Hq1s Hq2s
@@ -900,7 +922,10 @@ intros HImp HExp.
 
 (* []S implementation 1 see commented code 101*)
 
-
+{
+inversion HImp; subst. simpl ImptoExp in HExp.
+inversion HExp; subst. reflexivity.
+}
 (* []S implementation 2 *) { 
 destruct v as (rn, (A_, e_)).
 simpl in HImp.
@@ -911,12 +936,12 @@ destruct (findVR rn S) as (rn_, (Ar, er)) eqn: HfindVR.
 unfold getvs, getf in HImp. simpl in HImp.
 unfold getvs, getf in HExp. simpl in HExp.
 
-inversion HImp as [eImp' SImp' HndpRSImp' HndpASImp' 
+inversion HImp as [| eImp' SImp' HndpRSImp' HndpASImp' 
                    rnImp' A_Imp' A'Imp' HndpA'Imp' e_Imp' e'Imp' 
                    HInVRImp |
                    | | | |]; subst.
 
-inversion HExp as [eExp' SExp' HndpRSExp' HndpASExp' 
+inversion HExp as [| eExp' SExp' HndpRSExp' HndpASExp' 
                    rnExp' A'Exp' HndpA'Exp' e'Exp' 
                    HInVRExp HsatExp |
                    | | | |]; subst.
@@ -945,19 +970,17 @@ eauto. *)
 } 
 
 {
-
-
 simpl in HImp.
 simpl in HExp.
 
 destruct (vtypeImpNOTC (litB true) S ([q] S)) as (Aqs, eqs) eqn:HqST.
 
 
-inversion HImp as [| | | | |
+inversion HImp as [| | | | | |
                    eImp SImp HndpRSImp HndpASImp vqImp HndpvQImp
                    A'Imp HndpAA'Imp e'Imp vcImp
                    HqImp HcondImp ]; subst.
-inversion HExp as [| | | | |
+inversion HExp as [| | | | | |
                    eExp SExp HndpRSExp HndpASExp vqExp HndpvQExp
                    A'Exp HndpAA'Exp e'Exp vcExp
                    HqExp HcondExp]; subst.
@@ -977,18 +1000,18 @@ destruct (vtypeImpNOTC (litB true) S ([q] S)) as (Aqs, eqs) eqn:HqST.
 
 destruct a as (Ap, ep).
 
-inversion HImp as [|
+inversion HImp as [| |
                    eImp SImp HndpRSImp HndpASImp vqImp HndpvQImp
                    e'Imp A'Imp HndpAA'Imp QImp HndpQImp
                    HqImp HsbsmpImp | | | |]; subst.
-inversion HExp as [|
+inversion HExp as [| |
                    eExp SExp HndpRSExp HndpASExp vqExp HndpvQExp
                    e'Exp A'Exp HndpAA'Exp QExp HndpQExp
                    HqExp HsbsmpExp| | | |]; subst.
 
 apply NoDupElem_vtypeImpNOTC' in HqST as HndpelemAqs; try assumption.
 
-inversion HndpQ as [| | Q' q' HndpAp HndpvQq | | | ]; subst.
+inversion HndpQ as [| | | Q' q' HndpAp HndpvQq | | | ]; subst.
 
 apply eq_equiv_vqtype in HqST.
 
@@ -1021,12 +1044,12 @@ all: (* Choice / Product / SetOp Rules *)
 simpl in HImp;
 simpl in HExp;
 
-inversion HndpQ as [| |
+inversion HndpQ as [| | |
                     | f' q1' q2' Hndpq1 Hndpq2 
                     | q1' q2' Hndpq1 Hndpq2 
                     | op' q1' q2' Hndpq1 Hndpq2]; subst;
 
-inversion HImp as [|
+inversion HImp as [| |
                    | 
                    eImp e'Imp SImp HndpRSImp HndpASImp 
                    vq1Imp HndpvQ1Imp vq2Imp HndpvQ2Imp
@@ -1042,7 +1065,7 @@ inversion HImp as [|
                    vq1Imp HndpvQ1Imp vq2Imp HndpvQ2Imp
                    A1Imp HndpAA1Imp e1Imp A2Imp HndpAA2Imp e2Imp opImp
                    Hq1Imp Hq2Imp HEquivImp| ]; subst; 
-inversion HExp as [|
+inversion HExp as [| |
                    |
                    eExp e'Exp SExp HndpRSExp HndpASExp 
                    vq1Exp HndpvQ1Exp vq2Exp HndpvQ2Exp
@@ -1078,11 +1101,17 @@ generalize dependent e.
 induction q; destruct A as (A, ea);
 intros HImp. 
 
+{
+inversion HImp; subst. 
+simpl. exists (nil, litB false).
+assumption.
+}
+
 { 
 
 destruct v as (rn, (A_, e_)).
 simpl in HImp. simpl.
-inversion HImp as [eInv SInv HndpRSInv HndpASInv rnInv A_Inv
+inversion HImp as [| eInv SInv HndpRSInv HndpASInv rnInv A_Inv
                    A'Inv HndpA'Inv e_Inv e'Inv 
                    HInVRInv | | | | |]; subst.
 
@@ -1092,17 +1121,6 @@ apply InVR_findVR in HInVRInv as HInFindInv; try assumption.
 rewrite HInFindInv.
 
 unfold getvs, getf. simpl.
-
-(* []S implementation 1 *) 
-(*exists (vqtype_inter_vq (A, litB true /\(F) e') (A, e /\(F) e')).
-
-apply Project_vE_imp; try assumption.
-
-apply NoDupElemvQ_rel_v; try assumption.
-
-unfold subsumpImp_vqtype. 
-intros a ea HIn.
-exists ea. assumption. *)
 
 (* []S implementation 2 *)
 exists ((A, e /\(F) e')).
@@ -1115,7 +1133,7 @@ simpl in HImp. simpl.
 
 destruct (vtypeImpNOTC (litB true) S ([q] S)) as (Aqs, eqs) eqn:HqST.
 
-inversion HImp as [|
+inversion HImp as [| |
                    eInv SInv HndpRSInv HndpASInv vqInv HndpvQInv
                    A'Inv HndpAA'Inv e'Inv vcInv
                    HqInv HcondInv  | | | | ]; subst.
@@ -1141,7 +1159,7 @@ destruct (vtypeImpNOTC (litB true) S ([q] S)) as (Aqs, eqs) eqn:HqST.
 
 destruct a as (Ap, ep).
 
-inversion HImp as [| 
+inversion HImp as [| | 
                    eInv SInv HndpRSInv HndpASInv vqInv HndpvQInv
                    e'Inv A'Inv HndpAA'Inv QInv HndpQInv
                    HqInv HsbsmpInv | | | |]; subst.
@@ -1161,15 +1179,6 @@ assert(Htrue_e: (litB true /\(F) e) =e= e ).
 
 apply (contex_equiv_NOTC) with (S:=S) (q:=[q] S) in Htrue_e; try assumption.
 
-(*destruct HqST as [HqSTfst HqSTsnd].
-destruct Htrue_e as [Htrue_efst Htrue_esnd].
-
-rewrite HqSTfst in Htrue_efst.
-rewrite HqSTsnd in Htrue_esnd.
-
-rewrite HqSTine in Htrue_efst, Htrue_esnd.
-simpl in Htrue_efst, Htrue_esnd.*)
-
 rewrite HqST in Htrue_e.
 rewrite HqSTine in Htrue_e.
 
@@ -1182,66 +1191,10 @@ auto.
 
 { unfold vqtype_inter_vq. simpl. simpl in *.
      apply NoDupElem_velems_inter; assumption. }
-
-(*{ 
-(* Easier Proof than subsumpImp_vqtype_inter *)
-apply subsumpImp_vqtype_equiv with (Aqs, eqs /\(F) e);
-try(simpl; assumption).
-
-pose (ImpQ_ImpType_Equiv_ExpQ_ImpType HqInv Hqs) as HqeqvqS.
-apply symmetry in HqeqvqS. apply transitivity with (x:= (Aqs, eqs /\(F) e)) 
-in HqeqvqS; try auto.
-
-apply subsumpImp_vqtype_equiv with (A':=(Aqs, eqs /\(F) e)) in HsbsmpInv;
-[ | symmetry; auto].
-apply subsumpImp_vqtype_inter_intro.
-(*  *)
-
-(** with subsumpImp_vqtype_inter
-apply subsumpImp_vqtype_inter with (C:=(Aqs, eqs)) in HsbsmpInv;
-try(simpl; assumption).
-pose (ImpQ_ImpType_Equiv_ExpQ_ImpType HqInv Hqs) as HqeqvqS.
-apply subsumpImp_vqtype_equiv with (A:=(A'Inv, e'Inv));
-try(simpl; assumption).
-*)
-
-(* unfold subsumpImp_vqtype. 
-unfold subsumpImp_vqtype, subsumpImp_velems in HsbsmpInv.
-intros a ea HIn. simpl in HIn, HsbsmpInv. simpl. 
-
-(*rewrite Htrue_efst in HIn.*) Search "=vx=".
-destruct HIn as [HIn HSat].
-
-apply sat_and in HSat as [HSat_ea HSat_].
-assert(HInSat: In (ae a ea) (velems_inter Ap Aqs) /\ sat ea).
-eauto. apply In_inter_sat in HInSat.
-
-destruct HInSat as [ [ep' [HInAp HSat_Ep'] ] HInAqs].
-apply sat_and in HSat_ as [HSat_ep HSat_eqs].
-
-assert(HInSat: In (ae a ep') Ap /\ sat (ep' /\(F) ep) ).
-split. auto. admit.
-
-apply HsbsmpInv in HInSat.
-
-
-apply In_InElem_fstVelem in HIn as HInElem. simpl in HInElem.
-apply InElem_velems_inter in HInElem. destruct HInElem as [HInElemAp HInElemAqs].
-rewrite InElem_In_exfexp in HInElemAp. 
-destruct HInElemAp as [ep' HInElemApep'].
-apply HsbsmpInv in HInElemApep'.
-assumption. *) }*)
- 
-(*2: { rewrite <- Htrue_efst. assumption. }
-{ unfold vqtype_inter_vq. simpl. simpl in *.
-     apply NoDupElem_velems_inter; assumption. }
-
-}*)
-
 }
 
 all: 
-inversion HImp as [|
+inversion HImp as [| |
                    | 
                    eInv e'Inv SInv HndpRSInv HndpASInv 
                    vq1Inv HndpvQ1Inv vq2Inv HndpvQ2Inv
@@ -1296,7 +1249,8 @@ simpl;
 
 Qed.
 
-Lemma ImpType_implies_ExpType e S q A (HndpQ: NoDupElemvQ q): 
+(* ExpQ_ImpType_implies_ExpQ_ExpType *)
+Lemma ExpQ_ImpType_implies_ExpQ_ExpType e S q A (HndpQ: NoDupElemvQ q): 
   { e , S |- [q]S | A } -> 
   exists A', { e , S |= [q]S | A' }. 
 Proof. 
@@ -1305,51 +1259,9 @@ generalize dependent e.
 induction q; destruct A as (A, ea);
 intros HImp. 
 
-(* []S implementation 1 *) (*{ 
-destruct v as (rn, (A_, e_)).
-simpl in HImp.
-
-
-destruct (findVR rn S) as (rn_, (Ar, er)) eqn: HfindVR.
-
-unfold getvs, getf in HImp. simpl in HImp.
-
-
-inversion HImp as [|
-                   eImp SImp HndpRSImp HndpASImp vqImp HndpvQImp
-                   e'Imp A'Imp HndpAA'Imp QImp HndpQImp
-                   HqImp HsbsmpImp | | | ]; subst.
-
-inversion HqImp as [eImp' SImp' HndpRSImp' HndpASImp' 
-                   rnImp' A_Imp'  A'Imp' HndpA'Imp' e_Imp' e'Imp' 
-                   HInVRImp HsatImp |
-                   | | | ]; subst.
-
-simpl. 
-
-apply InVR_findVR in HInVRImp
-as HInFindImp; try assumption.
-
-rewrite HfindVR in HInFindImp.
-inversion HInFindImp; subst.
-
-simpl. rewrite HfindVR. unfold getvs, getf. simpl.
-rename A'Imp into Ar. rename e'Imp' into er.
-
-exists ((Ar, litB true /\(F) er)^^e).
-
-eapply Project_vE with (A':=A_) (e':=e); try assumption. 
-2: { apply Relation_vE; try assumption. 
-
-destruct (vtypeImpNOTC (litB true) S ([q] S)) as (Aqs, eqs) eqn:HqST.
-exists (). apply Project_vE.
-
-exists (A, ea). inversion HImp; subst. 
-assert (HQe: addannot (velems_inter (velems_inter (fst a) Aqs) A', (snd a /\(F) eqs)) e'
-= (velems_inter (velems_inter (fst a) Aqs) A', (snd a /\(F) eqs) /\(F) e')).
-unfold addannot. simpl. reflexivity. rewrite <- HQe.
-
-admit. }*)
+{ simpl in HImp. inversion HImp; subst.
+  simpl. exists (nil, litB false). 
+  apply EmptyRelation_vE; try assumption. }
 
 (* []S implementation 2 *) 
 { 
@@ -1361,7 +1273,7 @@ destruct (findVR rn S) as (rn_, (Ar, er)) eqn: HfindVR.
 unfold getvs, getf in HImp. simpl in HImp.
 
 
-inversion HImp as [eImp' SImp' HndpRSImp' HndpASImp' 
+inversion HImp as [| eImp' SImp' HndpRSImp' HndpASImp' 
                    rnImp' A_Imp'  A'Imp' HndpA'Imp' e_Imp' e'Imp' 
                    HInVRImp |
                    | | | |]; subst.
@@ -1379,19 +1291,12 @@ unfold getvs, getf. simpl.
 exists (A, (e /\(F) e'Imp')).
 apply Relation_vE; try assumption.
 
-(*rewrite not_sat_not_prop. 
-rewrite <- sat_taut_comp.
-
-intros c Hee'. simpl in Hee'.
-apply andb_true_iff in Hee'. 
-destruct Hee' as [He He'].
-apply He'.*)
 }
 
 {
 simpl in HImp. simpl.
-inversion HndpQ as [| | c' q' Hndpq | | | ]; subst.
-inversion HImp as [| | | | |
+inversion HndpQ as [| | | c' q' Hndpq | | | ]; subst.
+inversion HImp as [| | | | | |
                    eImp SImp HndpRSImp HndpASImp vqImp HndpvQImp
                    A'Imp HndpAA'Imp e'Imp vcImp
                    HqImp HcondImp ]; subst.
@@ -1451,7 +1356,7 @@ S2. inversion HImp to get (A, ea)
 
 HImp: {e, S |- proj_v (Q/-\Qs) ([q] S) | Q/-\Qs/-\Qse }
 *)
-inversion HImp as [|
+inversion HImp as [| |
                    eImp SImp HndpRSImp HndpASImp vqImp HndpvQImp
                    e'Imp A'Imp HndpAA'Imp QImp HndpQImp
                    HqImp HsbsmpImp | | | |]; subst.
@@ -1589,7 +1494,7 @@ simpl.
 apply transitivity with (x0:=Aqs) in HqsA'.
 rewrite <- Hqse', <- Hqse. simpl.*)
 
-unfold "=T=" in *. simpl in *. specialize HqsAe' with c.
+unfold "=T=", "=avx=" in *. simpl in *. specialize HqsAe' with c.
 specialize HqsAe with c.
 
 
@@ -1618,30 +1523,15 @@ simpl in HndpQImp; try (simpl; assumption).
 
 all: inversion HndpQ; subst; auto.
 
-(* rewrite HqsAe' in HqsAe.
-destruct ((E[[ eq]] c) && (E[[ eqs]] c) && (E[[ e]] c)) eqn:Heqeqse.
-rewrite <- In_config_exists_true in HIn. destruct HIn as [eInter HIn].
-apply In_velems_inter in HIn.
-rewrite In_config_exists_true in HIn.
- 
-all: rewrite HeqQiQs in HndpQImp; unfold vqtype_inter_vq in HndpQImp;
-simpl in HndpQImp; try (simpl; assumption). *)
-
-(*rewrite HeqQiQs in HeqQiQsiQsee. simpl in HeqQiQsiQsee.
-rewrite HeqQiQsiQsee in Heimpeq. intro c. specialize Heimpeq with c.
-simpl in Heimpeq. simpl. unfold implies in Heimpeq.
-unfold implies. intro He. apply Heimpeq in He.
-simpl in He. apply andb_true_iff in He. destruct He. auto.*)
-
 }
 
 
 all: simpl in  HImp; simpl;
-inversion HndpQ as [| |
+inversion HndpQ as [| | |
                     | f' q1' q2' Hndpq1 Hndpq2 
                     | q1' q2' Hndpq1 Hndpq2 
                     | op' q1' q2' Hndpq1 Hndpq2]; subst;
-inversion HImp as [|
+inversion HImp as [| |
                    | 
                    eImp e'Imp SImp HndpRSImp HndpASImp 
                    vq1Imp HndpvQ1Imp vq2Imp HndpvQ2Imp
@@ -1691,17 +1581,60 @@ pose (ExpQ_ImpType_Equiv_ExpQ_ExpType Hndpq2 Hq2Imp Hq2Exp) as Hq2impexp.
   transitivity (A2Imp, e2Imp); try assumption.
 }
 
-(* context more specific *)
-(*all: intro c; specialize Heimpeq with c;
-simpl in Heimpeq; simpl;
-unfold implies in Heimpeq;
-unfold implies; intro He. 
-1, 2, 3: simpl in He; apply andb_true_iff in He; destruct He as [He Hf].
-all: apply Heimpeq in He;
-simpl in He. apply andb_true_iff in He. destruct He; auto.*)
-
 Qed.
 
+Lemma ImpQ_ImpType_ExpQ_ImpType e S q A: 
+  { e , S |-  q   | A }  -> 
+  exists A', { e , S |- [q]S | A' } /\ A =T= A'.
+Proof. intro HImpQ. 
+apply ImpQ_ImpType_implies_ExpQ_ImpType in HImpQ as HExpQ.
+destruct HExpQ as [A' HExpQ]. 
+apply (ImpQ_ImpType_Equiv_ExpQ_ImpType HImpQ) in HExpQ as HEquiv.
+exists A'. eauto.
+Qed.
+
+Lemma ExpQ_ImpType_ExpQ_ExpType e S q A (HndpQ: NoDupElemvQ q): 
+  { e , S |-  [q]S   | A }  -> 
+  exists A', { e , S |= [q]S | A' } /\ A =T= A'.
+Proof. intro HImp. 
+apply ExpQ_ImpType_implies_ExpQ_ExpType in HImp as HExp;
+try assumption.
+destruct HExp as [A' HExp]. 
+apply (ExpQ_ImpType_Equiv_ExpQ_ExpType HndpQ HImp) in HExp as HEquiv.
+exists A'. eauto.
+Qed.
+
+Theorem ImpQ_ImpType_ExpQ_ExpType e S q A (HndpQ: NoDupElemvQ q): 
+  { e , S |-  q   | A }  -> 
+  exists A', { e , S |= [q]S | A' } /\ A =T= A'.
+Proof. intro HImp. 
+(*
+  HImp : {e, S |- q | A}
+  --------------------------------------
+  exists A' : vqtype, {e, S |= [q] S | A'} /\ A =T= A'
+*)
+
+(* HImp:{ e , S |-  q   | A } -> HExpQ:{ e , S |- [q]S | A'' } /\ A =T= A'' *)
+apply ImpQ_ImpType_ExpQ_ImpType in HImp as HExpQ.
+destruct HExpQ as [A'' [HExpQ HEqiv''] ]. 
+(* HExpQ:{ e , S |- [q]S | A'' } -> HExp:{ e , S |= [q]S | A' } /\ A''=T=A' *)
+apply ExpQ_ImpType_ExpQ_ExpType in HExpQ as HExp; try auto.
+destruct HExp as [A' [HExp HEqiv'] ]. 
+
+exists A'. 
+(*
+  HExp : {e, S |= [q] S | A'}
+  HEqiv' : A'' =T= A'
+  HEqiv'' : A =T= A''
+  --------------------------------------
+  {e, S |= [q] S | A'} /\ A =T= A'
+*)
+split.
+(* Goal: {e, S |= [q] S | A'} *)
+apply HExp.
+(* Goal: A =T= A' *)
+transitivity (A''); assumption. 
+Qed.
 
 Lemma ImpQ_ImpType_Equiv_ExpQ_ExpType e S q A A' (HndpQ: NoDupElemvQ q): 
   { e , S |-  q   | A }  -> 
@@ -1724,11 +1657,12 @@ Lemma ImpQ_ImpType_implies_ExpQ_ExpType e S q A (HndpQ: NoDupElemvQ q):
 Proof. intros HImpQImpT.
 apply ImpQ_ImpType_implies_ExpQ_ImpType in HImpQImpT.
 destruct HImpQImpT as [A'' HExpQImpT].
-apply ImpType_implies_ExpType in HExpQImpT.
+apply ExpQ_ImpType_implies_ExpQ_ExpType in HExpQImpT.
 destruct HExpQImpT as [A' HExpQExpT].
 exists A'; assumption. assumption.
 Qed.
 
+End VRA_ImptoExp.
 
 (*Lemma ExpQ_ImpType_Equiv_ExpQ_ExpType' e1 e2 S q A A': 
   { e1 , S |- [q]S | A }  -> 
@@ -1914,7 +1848,7 @@ Qed. *)
 Admitted.
 
 
-Lemma ImpType_implies_ExpType' e S q A: 
+Lemma ExpQ_ImpType_implies_ExpQ_ExpType' e S q A: 
   { e , S |- [q]S | A } -> 
   exists e' A', { e' , S |= [q]S | A' }. 
 Proof. 
@@ -2289,7 +2223,7 @@ apply (IHq _ _ _ HqImp) in HqExp as IHqEquiv.
 unfold equiv_vqtype in IHqEquiv;
 simpl in IHqEquiv. destruct IHqEquiv as [IHqA IHqe].
 
-Locate equiv_sublist.
+Locate equiv_subset.
 admit.
 }
 
