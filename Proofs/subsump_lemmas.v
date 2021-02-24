@@ -5,7 +5,7 @@ Require Export List.
 Require Export Logic.
 Import Coq.Lists.List.ListNotations.
 
-Load configdistUnionInter.
+Load VRA_varPrsrvtn_thm.
 
 
 Module subsump_lemmas. 
@@ -28,14 +28,14 @@ Lemma nil_subsump_nil: subsump_velems_exp [] [].
 Proof. unfold subsump_velems_exp. intros x e c [H1 H2].
 eauto. Qed.
 
-Lemma forall_cons x e l: (forall c : config, (A[[ ae x e :: l]] c) = []) ->
-(forall c : config,  (E[[ e]]c) = false) /\ (forall c : config, (A[[ l]] c) = []).
+Lemma forall_cons x e l: (forall c : config, (X[[ ae x e :: l]] c) = []) ->
+(forall c : config,  (E[[ e]]c) = false) /\ (forall c : config, (X[[ l]] c) = []).
 Proof. intros H. split; intro c; specialize H with c; simpl in H; 
 try(destruct (E[[ e]] c); [pose (nil_cons) as Hnil_cons;
-specialize Hnil_cons with string x (A[[ l]] c); symmetry in H; contradiction |
+specialize Hnil_cons with string x (X[[ l]] c); symmetry in H; contradiction |
 auto] ). Qed.
 
-Lemma nilconfig_subsump_nil l: (forall c, A[[ l]]c = []) -> subsump_velems_exp l [].
+Lemma nilconfig_subsump_nil l: (forall c, X[[ l]]c = []) -> subsump_velems_exp l [].
 Proof. intro H. induction l as [|(x , e)]. apply nil_subsump_nil.
 unfold subsump_velems_exp. apply forall_cons in H. 
 destruct H as [He Hl]. apply IHl in Hl. intros x' e' c HIn.
@@ -47,54 +47,54 @@ assert (Hlp: In (ae x' e') l /\ (E[[ e']] c) = true). eauto. apply Hl in Hlp. ea
 Qed.
 
 
-(*Lemma not_cons_subsump_nil l: (exists c, A[[ l]]c <> [])
+(*Lemma not_cons_subsump_nil l: (exists c, X[[ l]]c <> [])
 -> ~ subsump_velems_exp l []. *)
 (*Proof. unfold not. intros x l H. destruct H
 unfold subsump_velems_exp in H.
 destruct x as (x, e). specialize H with x e. simpl in H. Lia.lia.
 reflexivity. Qed. *)
 
-(*Lemma nil_sublist_nil: sublist [] [].
-Proof. unfold sublist. intros x. split; 
+(*Lemma nil_subset_nil: subset [] [].
+Proof. unfold subset. intros x. split; 
 [ intro H | simpl ]; eauto. Qed.*)
 
-Lemma sublist_nil A : sublist [] A.
-Proof. unfold sublist. intros x. split;
+Lemma subset_nil A : subset [] A.
+Proof. unfold subset. intros x. split;
 [ intro H; destruct H | simpl; Lia.lia ]. Qed.
 
-Lemma not_sublist_cons_nil: forall x l, ~ sublist (x::l) [].
-Proof. unfold not. intros x l H. unfold sublist in H.
+Lemma not_subset_cons_nil: forall x l, ~ subset (x::l) [].
+Proof. unfold not. intros x l H. unfold subset in H.
 specialize H with x. destruct H as [H1 H2]. 
 rewrite count_occ_cons_eq in H2. simpl in H2. Lia.lia.
 reflexivity. Qed.
 
-Lemma subsump_velems_correctness A A' (HndpA: NoDupElem A) (HndpA': NoDupElem A'): 
-       subsump_velems_exp A A' <-> (forall c, sublist (configVElemSet A c) (configVElemSet A' c)). 
+Theorem subsump_velems_correctness A A' (HndpA: NoDupElem A) (HndpA': NoDupElem A'): 
+       subsump_velems_exp A A' <-> (forall c, subset (X[[ A]]c) (X[[ A']]c)). 
 Proof. split; 
 generalize dependent A'; generalize dependent A; 
 induction A' as [|(a', ea') A' IHA'];  
 intros HndpA' H. 
 
 (*Goals -> :  1: A' := [] , 2: A' := [ae a ' ea':A']*)
-1, 2: unfold subsump_velems_exp in H; unfold sublist; intros c x; 
+1, 2: unfold subsump_velems_exp in H; unfold subset; intros c x; 
 
-try (split; (* 1: sublist A []     to 1-1: In A []       1-2: count A [] *)
-            (* 2: sublist A [_:A'] to 2-1: In A [_:A'][] 2-2: count A [_:A'][] *)
+try (split; (* 1: subset A []     to 1-1: In A []       1-2: count A [] *)
+            (* 2: subset A [_:A'] to 2-1: In A [_:A'][] 2-2: count A [_:A'][] *)
 
-[ (* 1-1 2-1 In: intro In x A[[A]]c  *) 
+[ (* 1-1 2-1 In: intro In x X[[A]]c  *) 
   intro HInxA |
 
   (* 1-2 2-2 count: destruct (count_occ A x) *)
-  destruct (count_occ string_eq_dec (A[[ A]] c) x) eqn:Hcount;
-  [(* Case 0: count_occ string_eq_dec (A[[ A]] c) x = 0 *)
+  destruct (count_occ string_eq_dec (X[[ A]] c) x) eqn:Hcount;
+  [(* Case 0: count_occ string_eq_dec (X[[ A]] c) x = 0 *)
    (* trivial 0 <= any *) simpl; auto; apply (count_occ_ge_0) |
    
-   (* Case Sn: count_occ l x = S n -> HInxA: In x A[[A]]c *) 
+   (* Case Sn: count_occ l x = S n -> HInxA: In x X[[A]]c *) 
    pose (gt_Sn_O n) as HInxA; rewrite <- Hcount in HInxA;  
    rewrite <- count_occ_In in HInxA ]
 ]); (* 1-1 ->1 , 2-1 -> 2, 2-1 -> 3, 2-2 -> 4*)
 
-(* In x A[[A]]c -> exists e, In (x, e) A /\ E[[e]]c = true *)
+(* In x X[[A]]c -> exists e, In (x, e) A /\ E[[e]]c = true *)
 rewrite <- In_config_exists_true in HInxA;
 destruct HInxA as [e HInxeA];
 specialize H with x e c;
@@ -116,10 +116,10 @@ destruct He' as [HIne' Hsat]; simpl in HIne'.
 rewrite <- sat_taut_comp in Hsat; 
 specialize  Hsat with c; apply Hsat in Hetrue;*)
 
-(* 1: In x (A[[ ae a' ea' :: A']] c) ->  (x = a' /\ ea' = true) \/ In x A[[A']]c *)
-(* 2: count_occ (A[[ ae a' ea' :: A']] c) x ->  
-                    [case (x = a' /\ ea' = true): S (count_occ A[[A']]c x) 
-                     case  _                    :    count_occ A[[A']]c x *)
+(* 1: In x (X[[ ae a' ea' :: A']] c) ->  (x = a' /\ ea' = true) \/ In x X[[A']]c *)
+(* 2: count_occ (X[[ ae a' ea' :: A']] c) x ->  
+                    [case (x = a' /\ ea' = true): S (count_occ X[[A']]c x) 
+                     case  _                    :    count_occ X[[A']]c x *)
 
 (* destruct HIne': (ae a' ea' = ae x e' \/ In (ae x e') A') *) 
 try (destruct HIne' as [Heq | Hin]; 
@@ -148,7 +148,7 @@ rewrite (count_occ_not_In string_eq_dec) in H2.
 { (* 4: 2- Case HIn *)simpl. destruct (E[[ ea']] c); try simpl; 
                       [ case (string_eq_dec a' x); intro; [ Lia.lia | ] |]; 
 
-                       assert (HInxA': In x (A[[ A']]c));
+                       assert (HInxA': In x (X[[ A']]c));
                        try(rewrite <- In_config_exists_true; exists e'; eauto);
                        rewrite (count_occ_In string_eq_dec) in HInxA'; 
                        apply NoDupElem_NoDup_config with (c:=c) in H4 as HcountA';
@@ -159,33 +159,33 @@ rewrite (count_occ_not_In string_eq_dec) in H2.
 
 (* case []: *)
 
-(** Prove with two facts: sublist (A[[A]]c) [] -> subsump_velems_exp A [] 
-1. forall c, (A[[A]]c)  = [] -> subsump_velems_exp A []
-2. exists c, (A[[A]]c) <> [] -> ~ sublist (A[[A]]c) [] *)
+(** Prove with two facts: subset (X[[A]]c) [] -> subsump_velems_exp A [] 
+1. forall c, (X[[A]]c)  = [] -> subsump_velems_exp A []
+2. exists c, (X[[A]]c) <> [] -> ~ subset (X[[A]]c) [] *)
 
-(* introduce (forall c, (A[[A]]c) = []) \/ (exists c, (A[[A]]c) <> []) *)
+(* introduce (forall c, (X[[A]]c) = []) \/ (exists c, (X[[A]]c) <> []) *)
 pose Classical_Prop.classic as Hclassic.
-specialize Hclassic with (forall c, (A[[ A]] c) = []).
+specialize Hclassic with (forall c, (X[[ A]] c) = []).
 
 destruct Hclassic as [Hall | Hexists].
 
-{ (* case 1: forall c, (A[[A]]c) = [] *)
+{ (* case 1: forall c, (X[[A]]c) = [] *)
   apply nilconfig_subsump_nil. assumption. }
 
-{ (* case 2: exists c, (A[[A]]c) <> [] *)
+{ (* case 2: exists c, (X[[A]]c) <> [] *)
   apply not_all_ex_not in Hexists. destruct Hexists as [c Hexists].
   specialize H with c.
-  destruct ((A[[ A]] c)) eqn: HAc. contradiction. simpl in H. 
-  apply not_sublist_cons_nil in H. destruct H. }
+  destruct ((X[[ A]] c)) eqn: HAc. contradiction. simpl in H. 
+  apply not_subset_cons_nil in H. destruct H. }
 
 (* case (ae a' ea': A'):  *)
 unfold subsump_velems_exp. intros x e c HInxeA.
 destruct HInxeA as[ HInxeA Hsat].
-unfold sublist in H. 
+unfold subset in H. 
 
 specialize H with c x. 
 destruct H as [HInxAA' Hcount].
-assert (HInxA: In x (A[[A]]c)).
+assert (HInxA: In x (X[[A]]c)).
 rewrite <- In_config_exists_true. exists e. eauto.
 apply HInxAA' in HInxA as HInxA'. simpl in HInxA'.
 destruct (E[[ ea']] c) eqn: Hea; 
@@ -202,7 +202,6 @@ exists e'; split;
 [simpl; right; auto | auto].
 
 Qed.
-
 
 Lemma subsump_vqtype_correctness X X' {HndpA: NoDupElem (fst X)} {HndpA': NoDupElem (fst X')}: 
        subsump_vqtype_exp X X' <-> subsump_vqtype X X'. 
@@ -236,7 +235,7 @@ intros x e HIn.
 
 apply HSImp in HIn. 
 (* unfold vqtype_quiv in A=T=A' *)
-unfold "=T=" in HT.
+unfold "=T=", "=avx=" in HT.
 (* unfold sat in (exists, In x A /\ sat ) || sat: exixts c, E[]c = true *)
 unfold sat in HIn. destruct HIn as [e1 HIn].
 destruct HIn as [HIn HSat].
@@ -257,9 +256,9 @@ specialize HT with c. simpl in HT. rewrite Hea in HT.
 
 destruct (E[[ ea']] c) eqn:Hea'. 
 
-{ (* (E[[ ea']] c) = true -> A[[ A]] c =a= A[[ A']] c *)
+{ (* (E[[ ea']] c) = true -> X[[ A]] c =a= X[[ A']] c *)
   
-  (* In (ae x e1) A /\ (E[[ e1]] c) = true -> In x (A[[ A]] c) *)
+  (* In (ae x e1) A /\ (E[[ e1]] c) = true -> In x (X[[ A]] c) *)
   assert (HInAnde: exists e, In (ae x e) A /\ (E[[ e]] c) = true).
   { exists e1. split; auto. }
   
@@ -276,9 +275,9 @@ destruct (E[[ ea']] c) eqn:Hea'.
   auto.
 }
 
-{ (*  (E[[ ea']] c) = false -> A[[ A]] c =a= [] *)
+{ (*  (E[[ ea']] c) = false -> X[[ A]] c =a= [] *)
 
-  (* In (ae x e1) A -> (E[[ e1]] c) = true -> In x (A[[ A]] c) *)
+  (* In (ae x e1) A -> (E[[ e1]] c) = true -> In x (X[[ A]] c) *)
   apply In_config_true with (c:=c) in HIn; try assumption.
   apply (In_equiv_elems _ HT) in HIn. destruct HIn.
 }
@@ -387,11 +386,11 @@ End subsump_lemmas.
    
 (*
 unfold subsump_velems_exp in H;  
-unfold sublist; intro x;
+unfold subset; intro x;
 split;
 [ intro HInxA | 
-  destruct (count_occ string_eq_dec (A[[ A]] c) x) eqn:Hcount;
-  [(* Case 0: count_occ string_eq_dec (A[[ A]] c) x = 0 *)
+  destruct (count_occ string_eq_dec (X[[ A]] c) x) eqn:Hcount;
+  [(* Case 0: count_occ string_eq_dec (X[[ A]] c) x = 0 *)
    simpl; auto |
    (* count_occ l x > 0 -> In x l *) 
    pose (gt_Sn_O n) as HInxA; rewrite <- Hcount in HInxA;  
@@ -420,7 +419,7 @@ destruct He' as [HIne' Hsat]. simpl in HIne'.
 
 
 (*
-destruct (existsb (stringDecF.eqb x) (A[[ A]] c)) eqn: HIn;
+destruct (existsb (stringDecF.eqb x) (X[[ A]] c)) eqn: HIn;
 [rewrite existsb_exists in HIn | apply not_true_iff_false in HIn;
 rewrite <- (contrapositive_iff _ _ (existsb_exists _ _)) in HIn ].
 

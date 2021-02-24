@@ -509,7 +509,7 @@ Fixpoint configVElemSet (vA : velems) (c : config) : elems :=
                              else (           configVElemSet vas c )
   end.
 
-Notation "A[[ vA ]] c" := (configVElemSet vA c) (at level 50).
+Notation "X[[ vA ]] c" := (configVElemSet vA c) (at level 50).
 
 Lemma In_config_true: forall a e A c, In (ae a e) A ->
            (E[[ e]]c) = true -> In a (configVElemSet A c).
@@ -628,7 +628,7 @@ let r := fst vr in
  let A := fst(snd vr) in
   let e := snd (snd vr) in 
   if E[[ e]]c
-   then  (r, (A[[A]]c)) 
+   then  (r, (X[[A]]c)) 
     else  (r, []).
 Notation "R_[[ vr ]] c" := (configVRelS_ vr c) (at level 50).
 
@@ -681,7 +681,7 @@ Definition configVTuple (vtup : vtuple) (c : config) : tuple :=
 let VT := fst vtup in
  let e := snd vtup in
   if E[[ e]]c
-   then  (A[[VT]]c)
+   then  (X[[VT]]c)
     else  [].
 Notation "U[[ vu ]] c" := (configVTuple vu c) (at level 50).
 
@@ -785,7 +785,7 @@ Fixpoint configVCond (vc : vcond) (c : config) : cond :=
   | disjC_v  vc1 vc2     => disjC (configVCond vc1 c) (configVCond vc2 c)
   | chcC e   vc1 vc2    => if semE e c then configVCond vc1 c else configVCond vc2 c
   end.
-Notation "C[[ vc ]] c" := (configVCond vc c) (at level 70).
+Notation "C[[ vc ]] c" := (configVCond vc c) (at level 50).
 (** -----------------------cond vcond------------------------ **)
 
 (* Annotated Variaitonal Set (Variaitonal Query Type) *)
@@ -796,7 +796,7 @@ Definition configaVelems (vqt : avelems) (c : config) : elems :=
       match vqt with 
       |(V, e) => if semE e c then  configVElemSet V c else  nil
       end.
-Notation "AE[[ vqt ]] c" := (configaVelems vqt c) (at level 50).
+Notation "AX[[ vqt ]] c" := (configaVelems vqt c) (at level 50).
 
 (** -------------------------------------------------------
   Query 
@@ -807,35 +807,35 @@ Inductive setop : Type := union | inter.
 (* Plain Query*)
 Inductive query : Type :=
   | rel   : relS    -> query
+  | proj  : elems   -> query -> query 
   | sel   : cond    -> query -> query 
-  | proj  : elems    -> query -> query 
   (*| join  : cond    -> query -> query -> query *)
   | prod  : query   -> query -> query 
   | setU  : setop   -> query -> query -> query
-  (*| empty : query*).
+  | empty : query.
 
 (* Variaitonal Query *)
 Inductive vquery : Type :=
   | rel_v   : vrelS    -> vquery
+  | proj_v  : avelems  -> vquery -> vquery 
   | sel_v   : vcond    -> vquery -> vquery 
-  | proj_v  : avelems   -> vquery -> vquery 
   | chcQ    : fexp     -> vquery -> vquery -> vquery
   (*| join_v  : vcond    -> vquery -> vquery -> vquery *)
   | prod_v  : vquery   -> vquery -> vquery 
   | setU_v  : setop    -> vquery -> vquery -> vquery
-  (*| empty_v : vquery*).
+  | empty_v : vquery.
 
 (* Configuration Variational Query Q[]c *)
 Fixpoint configVQuery (vq : vquery) (c : config) : query :=
   match vq with
-  | rel_v  vr            => rel (configVRelS vr c)
-  | sel_v  vc  vq        => sel (configVCond vc c) (configVQuery vq c)
-  | proj_v avelems vq     => proj (configaVelems avelems c) (configVQuery vq c)
+  | rel_v  vr            => rel (R[[ vr]]c)
+  | proj_v avelems vq    => proj (AX[[ avelems]] c) (configVQuery vq c)
+  | sel_v  vc  vq        => sel (C[[ vc]]c) (configVQuery vq c)
   | chcQ e vq1 vq2       => if semE e c then configVQuery vq1 c else configVQuery vq2 c
   (*| join_v vc  vq1 vq2   => join (configVCond vc c) (configVQuery vq1 c) (configVQuery vq2 c)*)
   | prod_v vq1 vq2       => prod (configVQuery vq1 c) (configVQuery vq2 c) 
   | setU_v setop vq1 vq2 => setU setop (configVQuery vq1 c) (configVQuery vq2 c) 
-  (*| empty_v              => empty*)
+  | empty_v              => empty
   end.
 
 Notation "Q[[ vq ]] c" := (configVQuery vq c) (at level 50).
@@ -852,7 +852,7 @@ Definition qtype  : Type := (elems) %type.
 (* Variaitonal Query Type *)
 Definition vqtype : Type := avelems. (*(velems * fexp) %type.*) (*assuming always annotated; could've used option*)
 
-(* Configuration Variational Query Type T[]c *)
+(* Configuration Variational Query Type QT[]c *)
 Definition configVQtype (vqt : vqtype) (c : config) : qtype := configaVelems vqt c.
       (*match vqt with 
       |(V, e) => if semE e c then  configVElemSet V c else  nil
@@ -877,47 +877,50 @@ Definition getf_vqt (X:vqtype) : fexp := snd X.
   Plain and Variational Set Subsumption
 ---------------------------------------------------------------*)
 (* Checks count
-   Ex: sublist_bool [1;1;2] [1;2] = false 
+   Ex: subset_bool [1;1;2] [1;2] = false 
 *)
 (* Subset of Plain Set  *)
-Fixpoint sublist_bool (A A': list string): bool :=
+Fixpoint subset_bool (A A': elems): bool :=
     match A with
     | nil => true
     | cons x xs => match set_mem string_eq_dec x A' with 
                    | false => false
-                   | true  => sublist_bool xs (set_remove string_eq_dec x A')
+                   | true  => subset_bool xs (set_remove string_eq_dec x A')
                    end
     end. 
 
 (* Also check count
-   sublist [1; 1; 2] [1; 2] doesn't hold
+   subset [1; 1; 2] [1; 2] doesn't hold
 *)
-Definition sublist (A A': list string):= forall x, (In x A -> In x A') /\ (* In clause is redundant *)
+Definition subset (A A': elems):= forall x, (In x A -> In x A') /\ (* In clause is redundant *)
            (count_occ string_eq_dec A x <= count_occ string_eq_dec A' x).
 
 (* Subsumption of Plain Set (Query Type) *)
-Definition subsump_qtype_bool (A A': qtype) := sublist_bool A A'.
+Definition subsump_qtype_bool (A A': qtype) := subset_bool A A'.
 
 (* Subsumption of Variational Set (Query Type) *)
 Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c, 
-    sublist (configVQtype X c) (configVQtype X' c).
+    subset (configVQtype X c) (configVQtype X' c).
 
 Definition subsump_velems ( A A': velems ) : Prop := forall c, 
-      sublist (configVElemSet A c) (configVElemSet A' c).
+      subset (configVElemSet A c) (configVElemSet A' c).
+      
+Definition subsump_avelems ( A A': avelems ) : Prop := forall c, 
+   subset (AX[[ A]]c) (AX[[ A']]c).
 
 
 
-(* current def (null is sublist): forall x e,
+(* current def (null is subset): forall x e,
 (In (ae x e) A /\ (exists c, E[[e]]c = true) ) -> (exists e', (In (ae x e') A') /\  (~ sat (e /\(F) (~(F)(e')))) ).*)
 (* should be: forall x e,
 In (ae x e) A -> (exists e', (In (ae x e') A') /\  (~ sat (e /\(F) (~(F)(e')))) ). *)
 
 (*
 subsump_velems_exp (<_e) : A <_e A' [need for proj_v A A']
-  If it entails forall c, [A]c to be sublist( <_a) of [A']c ... (1), where 
-sublist is defined as, forall x, count x [A]c <= count x [A']c [note: {} <_a {any}],
+  If it entails forall c, [A]c to be subset( <_a) of [A']c ... (1), where 
+subset is defined as, forall x, count x [A]c <= count x [A']c [note: {} <_a {any}],
 it would be a reasonable choice as then, after configuration, proj [A]c [A']c, is a valid plain query in RA.
-  Therefore, forall (a,e), In (a, e) A we have two cases that would make [A]c valid configured sublist of [A']c.
+  Therefore, forall (a,e), In (a, e) A we have two cases that would make [A]c valid configured subset of [A']c.
 Case 1: ~ (sat e) 
   [ a will never be in [A]c, any c. thus, we don't need a elem-matching variational elemribute in A'. 
     i.e. It doesn't melemer whether there exists e', In (a, e') A']
@@ -937,7 +940,7 @@ Definition subsump_velems_exp A A': forall (a, e), [In (a, e) A /\ (sat e)] -> e
    where A A' is NoDupElem. 
 ================================= *)
 (**  Lemma subsump_velems_correctness (NoDupElem A)(NoDupElem A'): 
-       subsump_velems_exp A A' <-> sublist (configVElemSet A c) (configVElemSet A' c). *)
+       subsump_velems_exp A A' <-> subset (configVElemSet A c) (configVElemSet A' c). *)
 
 (* [Note: forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ (e -> e'). is unreasonable/ not necessary/ over restriction, 
       because if e is not sat, then, there is no reason to ask/check for elemribute a in A' with some e'.] *)
@@ -960,7 +963,7 @@ Definition subsump_vqtype_exp X X': forall (a, e), [In (a, e) (fst X) /\ sat (e/
    where (fst X) (fst X') is NoDupElem.
 ================================= *) 
 (**  Lemma subsump_vqtype_correctness (NoDupElem (fst X))(NoDupElem (fst X')): 
-                subsump_vqtype_exp X X' <-> sublist (configVQtype X c) (configVQtype X' c). *)
+                subsump_vqtype_exp X X' <-> subset (configVQtype X c) (configVQtype X' c). *)
 
 (* SatATuples X := SatTuples (push_annot (fst X, snd X)).  [SatTuples (fst X) /\ Sat (snd X)] doesn't guarantee sat (e/\snd X). *)
 
@@ -1059,25 +1062,28 @@ Definition equiv_elems : relation elems:=
        fun A A' => forall a, (In a A <-> In a A') /\ 
                       ( count_occ string_eq_dec A a = count_occ string_eq_dec A' a).
 
-Infix "=a=" := equiv_elems (at level 70) : type_scope.
+Infix "=x=" := equiv_elems (at level 70) : type_scope.
 
 (* Variational Set (non-annnot-Var Elemr) Equivalence (Only needed for next one)*)
 Definition equiv_velems : relation velems := 
-        fun A A' => forall c, configVElemSet A c =a= configVElemSet A' c.
+        fun A A' => forall c, configVElemSet A c =x= configVElemSet A' c.
 
-Infix "=va=" := equiv_velems (at level 70) : type_scope.
+Infix "=vx=" := equiv_velems (at level 70) : type_scope.
+
+Definition equiv_avelems : relation vqtype := 
+        fun X X' => forall c, AX[[ X]]c =x= AX[[ X']]c. 
+Infix "=avx=" := equiv_avelems (at level 70) : type_scope.
 
 Definition equiv_qtype_bool (A A': qtype) := equiv_elems_bool A A'.
 
 Definition equiv_qtype : relation qtype := 
-        fun A A' => A =a= A'.
+        fun A A' => A =x= A'.
 
 Infix "=t=" := equiv_qtype (at level 70) : type_scope.
 
 (* Variational Set (annotated-Var Query Type) Equivalence *)
 Definition equiv_vqtype : relation vqtype := 
-        fun X X' => forall c, configVQtype X c =a= configVQtype X' c. 
-        (*fun X X' => (fst X) =va= (fst X') /\ (snd X) =e= (snd X').*)
+        fun X X' => X =avx= X'. 
 
 Infix "=T=" := equiv_vqtype (at level 70) : type_scope.
 
@@ -1141,47 +1147,45 @@ Instance velems_Equivalence : Equivalence equiv_velems := {
     Equivalence_Symmetric := equiv_velems_sym;
     Equivalence_Transitive := equiv_velems_trans }.
 
-(* equiv_vqtype is Equivalence relation *)
+(* equiv_avelems is Equivalence relation *)
 
-Remark equiv_vqtype_refl: Reflexive equiv_vqtype.
+Remark equiv_avelems_refl: Reflexive equiv_avelems.
 Proof.
-  intro X. destruct X. unfold equiv_vqtype. split; 
+  intro X. destruct X. unfold equiv_avelems. split; 
   reflexivity. 
 Qed.
 
-Remark equiv_vqtype_sym : Symmetric equiv_vqtype.
+Remark equiv_avelems_sym : Symmetric equiv_avelems.
 Proof.
-  intros X Y. intros H. destruct X, Y. unfold equiv_vqtype. 
-  unfold equiv_vqtype in H. (*destruct H. split. symmetry. 
-  apply H. symmetry. 
-  apply H0.*) symmetry. apply H.
+  intros X Y. intros H. destruct X, Y. unfold equiv_avelems. 
+  unfold equiv_avelems in H. symmetry. apply H.
 Qed.
 
 
-Remark equiv_vqtype_trans : Transitive equiv_vqtype.
+Remark equiv_avelems_trans : Transitive equiv_avelems.
 Proof.
   intros X Y Z. intros H1 H2. 
   destruct X as (vx, fx), Y as (vy, fy), Z as (vz, fz). 
-  unfold equiv_vqtype in H1. (* destruct H1 as [H11 H12]. *)
-  unfold equiv_vqtype in H2. (* destruct H2 as [H21 H22]. *)
-  unfold equiv_vqtype. (*split.
-  transitivity (fst (vy, fy)).
-    apply H11.
-    apply H21.
-  transitivity (snd (vy, fy)).
-    apply H12.
-    apply H22.*)
+  unfold equiv_vqtype in H1. 
+  unfold equiv_vqtype in H2. 
+  unfold equiv_vqtype.
   intro c. transitivity (QT[[ (vy, fy)]] c); auto.
 Qed.
 
-(** velems equivalence is an equivalence relation. *)
+(** avelems equivalence is an equivalence relation. *)
+Instance avelems_Equivalence : Equivalence equiv_avelems := {
+    Equivalence_Reflexive := equiv_avelems_refl;
+    Equivalence_Symmetric := equiv_avelems_sym;
+    Equivalence_Transitive := equiv_avelems_trans }.
+    
+(** vqtype equivalence is an equivalence relation. *)
 Instance vqtype_Equivalence : Equivalence equiv_vqtype := {
-    Equivalence_Reflexive := equiv_vqtype_refl;
-    Equivalence_Symmetric := equiv_vqtype_sym;
-    Equivalence_Transitive := equiv_vqtype_trans }.
+    Equivalence_Reflexive := equiv_avelems_refl;
+    Equivalence_Symmetric := equiv_avelems_sym;
+    Equivalence_Transitive := equiv_avelems_trans }.
 
-(*Lemma rewrite_equiv: forall a b c, a=a=b->
-b=a=c-> a=a=c.
+(*Lemma rewrite_equiv: forall a b c, a=x=b->
+b=x=c-> a=x=c.
 Proof. intros. rewrite <- H in H0. apply H0.
 Qed.*)
 
@@ -1317,6 +1321,11 @@ Definition velems_union (A A': velems) : velems :=
 Definition vqtype_union (Q Q': vqtype) : velems := 
      velems_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')). 
 
+Definition avelems_union_vq (Q Q': avelems) : avelems := 
+let (A, e) := Q in
+ let (A', e') := Q' in
+     (velems_union (A < e) (A' < e'), e \/(F) e').
+
 Definition vqtype_union_vq (Q Q': vqtype) : vqtype := 
      (velems_union (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')), (snd Q) \/(F) (snd Q')).
      (* WRONG (velems_union (fst Q) (fst Q'), (snd Q) \/(F) (snd Q')).*)
@@ -1346,6 +1355,11 @@ Defined.
 (* Variational Query Type*)
 Definition vqtype_inter (Q Q': vqtype) : velems := 
      velems_inter (push_annot (fst Q) (snd Q)) (push_annot (fst Q') (snd Q')).
+
+Definition avelems_inter_vq (Q Q': avelems) : avelems := 
+let (A, e) := Q in
+ let (A', e') := Q' in
+     (velems_inter A A', e /\(F) e').
 
 Definition vqtype_inter_vq (Q Q': vqtype) : vqtype := 
      (velems_inter (fst Q) (fst Q'), (snd Q) /\(F) (snd Q')).
@@ -1382,17 +1396,18 @@ Definition NODupElemRs (vs:vschema) : Prop:=
 forall vr, InVR vr vs -> NoDupElem (getvs vr).
 
 Inductive NoDupElemvQ: vquery -> Prop :=
-  | NoDupElemvQ_rel_v  : forall rn A e, NoDupElem A -> NoDupElemvQ (rel_v (rn, (A, e)))
-  | NoDupElemvQ_proj_v : forall Q vq, NoDupElem (fst Q) -> NoDupElemvQ vq -> 
+  | NoDupElemvQ_rel_v    : forall rn A e, NoDupElem A -> NoDupElemvQ (rel_v (rn, (A, e)))
+  | NoDupElemvQ_proj_v   : forall Q vq, NoDupElem (fst Q) -> NoDupElemvQ vq -> 
                                                 NoDupElemvQ (proj_v Q vq)
-  | NoDupElemvQ_sel_v : forall vc vq, NoDupElemvQ vq -> 
+  | NoDupElemvQ_sel_v    : forall vc vq, NoDupElemvQ vq -> 
                                          NoDupElemvQ (sel_v vc vq)
-  | NoDupElemvQ_chcQ   : forall e' vq1 vq2, NoDupElemvQ vq1 ->
+  | NoDupElemvQ_chcQ     : forall e' vq1 vq2, NoDupElemvQ vq1 ->
                              NoDupElemvQ vq2 -> NoDupElemvQ (chcQ e' vq1 vq2)
-  | NoDupElemvQ_prod_v : forall vq1 vq2, NoDupElemvQ vq1 ->
+  | NoDupElemvQ_prod_v   : forall vq1 vq2, NoDupElemvQ vq1 ->
                              NoDupElemvQ vq2 -> NoDupElemvQ (prod_v vq1 vq2)
-  | NoDupElemvQ_setU_v : forall op vq1 vq2, NoDupElemvQ vq1 ->
-                             NoDupElemvQ vq2 -> NoDupElemvQ (setU_v op vq1 vq2).
+  | NoDupElemvQ_setU_v   : forall op vq1 vq2, NoDupElemvQ vq1 ->
+                             NoDupElemvQ vq2 -> NoDupElemvQ (setU_v op vq1 vq2)
+  | NoDupElemvQ_empty_v  : NoDupElemvQ (empty_v).
 
 (*--------------------Schema Property End ---------------------------*)
 
@@ -1452,6 +1467,10 @@ Notation " Q ^^ e " := (addannot Q e) (at level 70).
 
 
 Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
+  (*   -- EMPTYRELATION-E --  *)
+  | EmptyRelation_vE : forall e S {HndpRS:NoDupRn (fst S)} 
+                                  {HndpAS: NODupElemRs S}, 
+       vtype e S (empty_v) ([], litB false)
   (*  -- intro LESS specific context --
     S |= rn : A^e'  ~sat(e' /\ (~m))
     ------------------------------------ intro less specific context
@@ -1467,6 +1486,7 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
     ------------------------------------  RELATION-E 
                e  |= rn : A^e
    *)
+  (*   -- RELATION-E --  *)
   | Relation_vE : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
                         rn A {HA: NoDupElem A} e',
         InVR (rn, (A, e')) S -> 
@@ -1478,6 +1498,13 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtype e S vq (A', e') -> 
        subsump_vqtype (Q^^e) (A', e') ->
        vtype e S (proj_v Q vq) (Q^^e)
+  (*  -- SELECT-E --  *)
+  | Select_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
+                           vq {HndpvQ: NoDupElemvQ vq}
+                            A {HndpAA: NoDupElem A} e' vc,
+       vtype e S vq (A, e') ->
+       { e, (A, e') |- vc } ->
+       vtype e S (sel_v vc vq) (A, e')
   (*  -- CHOICE-E --  *)
   | Choice_vE: forall e e' S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
                               vq1 {HndpvQ1: NoDupElemvQ vq1} vq2 {HndpvQ2: NoDupElemvQ vq2} 
@@ -1494,7 +1521,7 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtype e  S vq1 (A1, e1) ->
        vtype e  S vq2 (A2, e2) ->
        vqtype_inter_vq (A1, e1) (A2, e2) =T= (nil, litB false) ->
-       (*velems_inter A1 A2 =va= nil ->*)
+       (*velems_inter A1 A2 =vx= nil ->*)
        vtype e S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
@@ -1504,14 +1531,7 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtype e S vq1 (A1, e1) ->
        vtype e S vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
-       vtype e S (setU_v op vq1 vq2) (A1, e1)
-  (*  -- SELECT-E --  *)
-  | Select_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
-                           vq {HndpvQ: NoDupElemvQ vq}
-                            A {HndpAA: NoDupElem A} e' vc,
-       vtype e S vq (A, e') ->
-       { e, (A, e') |- vc } ->
-       vtype e S (sel_v vc vq) (A, e').
+       vtype e S (setU_v op vq1 vq2) (A1, e1).
 
 Notation "{ e , S |= vq | vt }" := (vtype e S vq vt) (e at level 200).
 
@@ -1533,15 +1553,20 @@ Check ({(litB false) , vs |= empty_v | vt }).*)
 *)
 
 Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
+  (*   -- EMPTYRELATION-E --  *)
+  | EmptyRelation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} 
+                                      {HndpAS: NODupElemRs S}, 
+       vtypeImp e S (empty_v) ([], litB false)
   (*| Relation_vE_imp_empty : forall S (HS:NoDupRn (fst S)) rn A_ A' {HA: NoDupElem A'} e_ e',
        InVR (rn, (A', e')) S ->
        vtypeImp (litB true) S (rel_v (rn, (A_, e_))) (A', e')*)
   
-  (*   -- RELATION-E --
+  (*   -- RELATION-E --  
     empty |- rn : A^e'  
     ------------------------------------  RELATION-E 
                e  |- rn : A^e
   *)
+  (*   -- RELATION-E --  *)
   | Relation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} rn A_ 
                                  A' {HndpA': NoDupElem A'} e_ e',
        InVR (rn, (A', e')) S ->
@@ -1549,11 +1574,19 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
        (*SatTuples (A, (e /\(F) e')) ->*)
        vtypeImp e S (rel_v (rn, (A_, e_))) (A', (e /\(F) e')) 
   (*   -- PROJECT-E --  *)
-  | Project_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} vq {HndpvQ: NoDupElemvQ vq} e' A' 
+  | Project_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
+                            vq {HndpvQ: NoDupElemvQ vq} e' A' 
                                {HndpAA': NoDupElem A'} Q {HndpQ: NoDupElem (fst Q)},
        vtypeImp e S vq (A', e') -> 
        (*subsumpImp_vqtype Q (A', e') ->*) (* see below why subsumpImp_vqtype is not needed? *)
        vtypeImp e S (proj_v Q vq) (vqtype_inter_vq Q (A', e'))
+  (*  -- SELECT-E --  *)
+  | Select_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
+                           vq {HndpvQ: NoDupElemvQ vq}
+                            A {HndpAA: NoDupElem A} e' vc,
+       vtypeImp e S vq (A, e') ->
+       { e, (A, e') |- vc } ->
+       vtypeImp e S (sel_v vc vq) (A, e')
   (*  -- CHOICE-E --  *)
   | Choice_vE_imp: forall e e' S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
                              vq1 {HndpvQ1: NoDupElemvQ vq1} vq2 {HndpvQ2: NoDupElemvQ vq2}
@@ -1571,7 +1604,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtypeImp e  S vq2 (A2, e2) ->
        vqtype_inter_vq (A1, e1) (A2, e2) =T= (nil, litB false) ->
        (*vqtype_inter (A1, e1) (A2, e2) = nil ->*)
-       (* velems_inter A1 A2 =va= nil -> *)
+       (* velems_inter A1 A2 =vx= nil -> *)
        vtypeImp e  S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
@@ -1581,14 +1614,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
        vtypeImp e S vq1 (A1, e1) ->
        vtypeImp e S vq2 (A2, e2) ->
        equiv_vqtype (A1, e1) (A2, e2) ->
-       vtypeImp e S (setU_v op vq1 vq2) (A1, e1)
-  (*  -- SELECT-E --  *)
-  | Select_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
-                           vq {HndpvQ: NoDupElemvQ vq}
-                            A {HndpAA: NoDupElem A} e' vc,
-       vtypeImp e S vq (A, e') ->
-       { e, (A, e') |- vc } ->
-       vtypeImp e S (sel_v vc vq) (A, e').  
+       vtypeImp e S (setU_v op vq1 vq2) (A1, e1).  
 
 Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
 
@@ -1604,7 +1630,7 @@ Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
        { e S |= (proj_v Q vq) | (Q^^e)
 
 -  subsump_vqtype (Q^^e) (A', e') implies
--  forall c, sublist (QT[[Q^^e]]c) (QT[[(A', e')]]c) 
+-  forall c, subset (QT[[Q^^e]]c) (QT[[(A', e')]]c) 
 -  so that plain projection query: proj QT[[Q^^e]]c QT[[(A', e')]]c is valid
 
 -  So, what is different in Implicit that we don't need it?
@@ -1617,13 +1643,13 @@ Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
          [ proj_v Q vq ]_S => proj_v (Q /-\ (As, es)) [vq]_S 
   
 
--  From defn of /-\, forall c, sublist (QT[[(Q /-\ (As, es))]]c) (QT[[(As, es)]]c)  *)
+-  From defn of /-\, forall c, subset (QT[[(Q /-\ (As, es))]]c) (QT[[(As, es)]]c)  *)
 
-(** In context e, forall c, sublist (QT[[(Q /-\ (As, es))^^e]]c) (QT[[(As, es/\e)]]c) *) (*
+(** In context e, forall c, subset (QT[[(Q /-\ (As, es))^^e]]c) (QT[[(As, es/\e)]]c) *) (*
 
 -  So even if, user provided a not subsumpImp Q that would make configured Q, before annotaion
--  to not be sublist of configured vq's type for some c, after going though the explicit annotation 
--  stage sublist forall c requirement for projection is bound to be fullfilled. Therefore
+-  to not be subset of configured vq's type for some c, after going though the explicit annotation 
+-  stage subset forall c requirement for projection is bound to be fullfilled. Therefore
 -  THERE IS NO NEED TO CHECK SUBSUMP CONDITION IN INPLICIT TYPE SYSTEM. IT is guaranteed by the process.
 *)
 (* ------------------------------------------------------------
@@ -1633,9 +1659,9 @@ Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
 
 Fixpoint condtype (c:cond) (A:elems) : bool :=
   match c with
-  | litCB b        => true
-  | elemOpV o a n   => true (* if (existsb (string_beq a) A)  then true else false *)
-  | elemOpA o a1 a2 => true (* if (existsb (string_beq a1) A) 
+  | litCB b         => true
+  | elemOpV o a n   => true (*if (existsb (string_beq a) A) then true else false *)
+  | elemOpA o a1 a2 => true (*if (existsb (string_beq a1) A) 
                                        && (existsb (string_beq a2) A) then true else false *)
   | negC  c     => if (condtype c  A)                   then true else false
   | conjC c1 c2 => if (condtype c1 A) && (condtype c2 A) then true else false
@@ -1648,14 +1674,15 @@ Notation "A ||- c " := (condtype c A) (at level 49).
 *)
 Fixpoint type_ (q:query) : qtype :=
  match q with
+ | (empty)       => []
  | (rel (rn, A)) => A
- | (proj A q)    => let A' := type_ q in 
-                      if subsump_qtype_bool A A' then A else nil 
- | (setU op q1 q2) => if equiv_qtype_bool (type_ q1) (type_ q2) then type_ q1 else nil
- | (prod  q1 q2) => if (is_disjoint_bool (type_ q1) (type_ q2)) then 
-                          elems_union (type_ q1) (type_ q2) else nil
  | (sel c q) => let A := type_ q in 
-                     if (condtype c A) then A else nil
+                     if (condtype c A) then A else []
+ | (proj A q)    => let A' := type_ q in 
+                      if subsump_qtype_bool A A' then A else [] 
+ | (setU op q1 q2) => if equiv_qtype_bool (type_ q1) (type_ q2) then type_ q1 else []
+ | (prod  q1 q2) => if (is_disjoint_bool (type_ q1) (type_ q2)) then 
+                          elems_union (type_ q1) (type_ q2) else []
  end.
 
 Notation "||= q " := (type_ q) (at level 49).

@@ -6,16 +6,16 @@ Import VRA_RA_encoding.
 
 
 
-Lemma eq_equiv_elems: forall A A', A = A' -> A =a= A'.
+Lemma eq_equiv_elems: forall A A', A = A' -> A =x= A'.
 Proof. intros. rewrite H. reflexivity. Qed.
 
-Lemma eq_equiv_velems: forall A A', A = A' -> A =va= A'.
+Lemma eq_equiv_velems: forall A A', A = A' -> A =vx= A'.
 Proof. intros. rewrite H. reflexivity. Qed.
 
 Lemma eq_equiv_vqtype: forall A A', A = A' -> A =T= A'.
 Proof. intros. rewrite H. reflexivity. Qed.
 
-Lemma cons_equiv_elems: forall a l1 l2, l1 =a= l2 -> (a::l1) =a= (a::l2).
+Lemma cons_equiv_elems: forall a l1 l2, l1 =x= l2 -> (a::l1) =x= (a::l2).
 Proof. 
 intros. 
 unfold equiv_elems in H.
@@ -34,7 +34,7 @@ destruct H.
 
 Qed.
 
-Lemma cons_equiv_velems: forall a l1 l2, l1 =va= l2 -> (a::l1) =va= (a::l2).
+Lemma cons_equiv_velems: forall a l1 l2, l1 =vx= l2 -> (a::l1) =vx= (a::l2).
 Proof. 
 intros. 
 unfold equiv_velems in H. 
@@ -58,12 +58,12 @@ simpl; destruct (E[[ e]] c).
 + rewrite H0; auto.
 Qed.
 
-Lemma In_equiv_elems A A' x: A =a= A' ->
-In x A <-> In x A'. Proof. intro H. unfold "=a=" in H.
+Lemma In_equiv_elems A A' x: A =x= A' ->
+In x A <-> In x A'. Proof. intro H. unfold "=x=" in H.
 specialize H with x. destruct H. auto. Qed.
 
 
-Lemma equiv_irres_order x y l: (x::y::l) =a= (y::x::l).
+Lemma equiv_irres_order x y l: (x::y::l) =x= (y::x::l).
 Proof. unfold equiv_elems. intro. split. split;
 try (intro H; simpl in H; simpl;
 destruct H; eauto; try (destruct H); eauto).
@@ -73,7 +73,7 @@ Qed.
 
 
 
-Lemma NoDup_equiv_elems l l': l =a= l' -> 
+Lemma NoDup_equiv_elems l l': l =x= l' -> 
     (NoDup l <-> NoDup l').
 Proof. intro H. split;
 intro H1; unfold equiv_elems in H;
@@ -86,7 +86,7 @@ try (rewrite H0; apply H1). Qed.
 
 
 (*Lemma removeElem_equiv a A A':
-A =va= A' -> removeElem a A =va= removeElem a A'.
+A =vx= A' -> removeElem a A =vx= removeElem a A'.
 Proof. 
 unfold equiv_velems.
 simpl. unfold equiv_elems. intros.
@@ -113,10 +113,10 @@ split.
   assumption.
 Qed.*)
 
-Lemma equiv_sublist: forall A B B' , 
-     B =a= B' -> sublist A B <-> sublist A B'.
+Lemma equiv_subset: forall A B B' , 
+     B =x= B' -> subset A B <-> subset A B'.
 Proof. 
-intros. unfold equiv_elems in H. unfold sublist.
+intros. unfold equiv_elems in H. unfold subset.
 split; intro H1;
 intro x; specialize H with x;
 destruct H;  
@@ -126,14 +126,14 @@ apply H1.
 Qed.
 
 
-Lemma nil_equiv_eq: forall A, A =a= [] -> 
+Lemma nil_equiv_eq: forall A, A =x= [] -> 
 A = []. intros. unfold equiv_elems in H. 
 simpl in H.
 apply (count_occ_inv_nil string_eq_dec).
 intro x. specialize H with x. destruct H.
 exact H0. Qed.
 
-Lemma cons_equiv_neq: forall x l A, A =a= (x::l) -> 
+Lemma cons_equiv_neq: forall x l A, A =x= (x::l) -> 
 A <> []. 
 Proof. intros. unfold equiv_elems in H. 
 assert (H1: exists a, count_occ string_eq_dec (x :: l) a <> 0).
@@ -149,7 +149,7 @@ destruct (string_eq_dec x x) as [Heq|Heq]; subst.
 Qed.
 
 Lemma configVQtype_equiv: forall Q Q' c, Q =T= Q' ->
-(QT[[ Q]] c) =a= (QT[[ Q']] c).
+(QT[[ Q]] c) =x= (QT[[ Q']] c).
 Proof. intros. unfold "=T=" in H. apply H.
 (* unfold configVQtype, configaVelems. unfold equiv_vqtype in H.
 destruct H. destruct Q as (A, e). destruct Q' as (A', e').
@@ -157,10 +157,10 @@ simpl in *. rewrite H0. destruct (E[[ e']] c).
 apply H. reflexivity.*)
 Qed.
 
-Lemma configaVelems_equivE_configVQtype: forall Q Q', (fst Q) =va= (fst Q') ->
+Lemma configaVelems_equivE_configVQtype: forall Q Q', (fst Q) =vx= (fst Q') ->
 (snd Q) =e= (snd Q') -> Q =T= Q'. 
 Proof. intros. 
-unfold "=va=" in H. 
+unfold "=vx=" in H. 
 destruct Q as (A, e). destruct Q' as (A', e').
 simpl in *. unfold "=T=". intro c. simpl.
 rewrite H0. 
@@ -168,30 +168,34 @@ destruct (E[[ e']] c).
 apply H. reflexivity.
 Qed.
 
-Lemma configVElemSet_push_annot A e c:
-configVElemSet (push_annot A e) c = configVQtype (A, e) c.
+Lemma push_annot_correctness A e c: 
+    AX[[ (A, e)]] c = X[[ A < e]] c.
 Proof. induction A. 
 simpl. destruct ( E[[ e]] c); reflexivity.
 unfold push_annot; fold push_annot.
 destruct a. simpl configVQtype. 
-simpl configVQtype in IHA.
-simpl configVElemSet.
+simpl (AX[[_]]c) in IHA.
+simpl (X[[_]]c). simpl (AX[[_]]c).
 destruct (E[[ e]] c); destruct (E[[ f]] c); simpl;
 try(eauto).
 rewrite IHA. reflexivity.
 Qed.
 
-Lemma push_annot_equiv A B e: A =va= B -> (A < e) =va= (B < e).
-Proof. intro H. unfold "=va=". intro c.
+Lemma configVElemSet_push_annot A e c:
+configVElemSet (push_annot A e) c = configVQtype (A, e) c.
+Proof. symmetry. apply push_annot_correctness. Qed.
+
+Lemma push_annot_equiv A B e: A =vx= B -> (A < e) =vx= (B < e).
+Proof. intro H. unfold "=vx=". intro c.
 repeat(rewrite configVElemSet_push_annot).
 simpl. destruct (E[[ e]] c). apply H. reflexivity.
 (*apply configVQtype_equiv. unfold "=T=". simpl. 
 split; [assumption | reflexivity].*) Qed.
 
-Lemma existsb_elem_equiv: forall A A', A =a= A' ->
+Lemma existsb_elem_equiv: forall A A', A =x= A' ->
 (forall a, (existsb (string_beq a) A) = (existsb (string_beq a) A')).
 Proof. intros A A' H. intro a.
-unfold "=a=" in H.
+unfold "=x=" in H.
 specialize H with a. destruct H as [HIn Hcount].
 destruct (existsb (string_beq a) A) eqn: HexA.
 rewrite existsb_In_elem in HexA. rewrite HIn in HexA.
@@ -200,12 +204,16 @@ rewrite not_existsb_In_elem in HexA. rewrite HIn in HexA.
 rewrite <- not_existsb_In_elem in HexA. symmetry. assumption.
 Qed.
 
-Lemma condtype_equiv: forall A A' c, A =a= A' ->
+Lemma condtype_equiv: forall A A' c, A =x= A' ->
 (A ||- c) = (A' ||- c).
 Proof. induction c; intros H; simpl condtype.
 - reflexivity.
-- reflexivity.
-- reflexivity.
+- (* apply existsb_elem_equiv with (a:=e) in H.
+  rewrite H.*) reflexivity.
+- (*apply existsb_elem_equiv with (a:=e) in H as He. 
+  apply existsb_elem_equiv with (a:=e0) in H as He0.
+  rewrite He, He0. *)
+  reflexivity.
 - apply IHc in H. rewrite H. reflexivity.
 - apply IHc1 in H as Hc1.
   apply IHc2 in H as Hc2.
@@ -215,6 +223,7 @@ rewrite Hc1, Hc2. reflexivity.
 rewrite Hc1, Hc2. reflexivity.
 Qed.
 
+(* might be useful to have E[[ e]] c = true to prove implies *)
 
 Lemma equiv_vqtype_In Q Q' a : Q =T= Q' -> (exists e : fexp, In (ae a e) (fst Q < snd Q) /\ sat e)
 -> exists e0 : fexp, In (ae a e0) (fst Q' < snd Q') /\ sat e0.
@@ -247,7 +256,7 @@ auto.
 Qed.
 
 (*
-Lemma condtype_equiv: forall A A' c, A =a= A' ->
+Lemma condtype_equiv: forall A A' c, A =x= A' ->
 (A ||- c) = (A' ||- c).
 Proof. induction c; intros H; simpl condtype.
 - reflexivity.
@@ -269,8 +278,8 @@ Qed.
 *)
 
 (*Lemma equiv_push_annot: forall A A' e e' , 
-     A =va= A' -> e =e= e' -> 
-     push_annot A e =va= push_annot A' e'.
+     A =vx= A' -> e =e= e' -> 
+     push_annot A e =vx= push_annot A' e'.
 Proof. 
 intros. unfold equiv_velems in H. 
 unfold equiv_velems. 

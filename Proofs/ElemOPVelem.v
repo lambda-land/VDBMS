@@ -78,7 +78,7 @@ induction A as [|a' A IHA].
 Qed.
 
 Lemma removeElem_equiv a A A':
-A =va= A' -> removeElem a A =va= removeElem a A'.
+A =vx= A' -> removeElem a A =vx= removeElem a A'.
 Proof. 
 unfold equiv_velems.
 simpl. unfold equiv_elems. intros.
@@ -278,7 +278,7 @@ rewrite H. rewrite IHNoDupElem. auto.
 Qed.
 
 Lemma nodup_remove_cons a l: In a l -> nodup string_eq_dec l 
-      =a= (a :: nodup string_eq_dec (remove string_eq_dec a l)).
+      =x= (a :: nodup string_eq_dec (remove string_eq_dec a l)).
 Proof. 
 intro H. unfold equiv_elems.
 intro a0. split. split.
@@ -313,7 +313,7 @@ intro a0. split. split.
 Qed.
 
 Lemma nodup_nodupelem (v:velems) (c:config): 
-nodup string_eq_dec (configVElemSet v c) =a= (configVElemSet (nodupelem v) c).
+nodup string_eq_dec (configVElemSet v c) =x= (configVElemSet (nodupelem v) c).
 Proof.
 functional induction (nodupelem v) using nodupelem_ind. 
 - simpl. reflexivity.
@@ -352,8 +352,8 @@ functional induction (nodupelem v) using nodupelem_ind.
 Qed.
 
 
-Lemma nodup_equiv A A': A =a= A' -> 
-      nodup string_eq_dec A =a= nodup string_eq_dec A'.
+Lemma nodup_equiv A A': A =x= A' -> 
+      nodup string_eq_dec A =x= nodup string_eq_dec A'.
 Proof. unfold equiv_elems. intros. 
 specialize H with a. destruct H. 
 split. 
@@ -371,8 +371,8 @@ split.
 Qed.
 
 
-Lemma nodupelem_equiv A A': A =va= A' -> 
-      nodupelem A =va= nodupelem A'.
+Lemma nodupelem_equiv A A': A =vx= A' -> 
+      nodupelem A =vx= nodupelem A'.
 Proof. unfold equiv_velems. intros. 
 repeat (rewrite <- nodup_nodupelem).
 apply nodup_equiv. apply H.
