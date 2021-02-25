@@ -641,6 +641,47 @@ let VR := fst vs in
      else  [].
 Notation "S[[ vs ]] c" := (configVS vs c) (at level 50).
 
+(** ---------------------------Scheme equality for relS-------------------------- **)
+
+Scheme Equality for list. 
+Definition relS_beq (r1 r2:relS) : bool := string_beq (fst r1) (fst r2) && list_beq (string_beq) (snd r1) (snd r2).
+
+Lemma relSeqb_eqb_eq : forall x y, relS_beq x y = true <-> x = y.
+Proof. 
+destruct x. destruct y. 
+unfold relS_beq. simpl.
+split. 
+intro H.
+apply andb_prop in H.
+destruct H.
+apply internal_string_dec_bl in H.
+apply internal_list_dec_bl in H0.
+rewrite H, H0. reflexivity.
+apply internal_string_dec_bl.
+
+intro H.
+apply pair_equal_spec in H. 
+destruct H.
+rewrite H, H0.
+rewrite andb_true_iff. split.
+apply internal_string_dec_lb. auto.
+apply internal_list_dec_lb. 
+apply internal_string_dec_lb. auto. 
+Qed.
+
+Lemma existsb_In_relS : 
+    forall a l, 
+         existsb (relS_beq a) l = true <-> In a l.
+Proof. intros. split.
+- intro H. rewrite existsb_exists in H.
+  destruct H. destruct H.
+  rewrite relSeqb_eqb_eq in H0.
+  rewrite H0. auto.
+- intro H. rewrite existsb_exists.
+  exists a. split. auto.
+  rewrite relSeqb_eqb_eq. auto.
+Qed.
+
 (** ---------------------------relS-------------------------- **)
 
 (** ------------------------------------------------------------
@@ -745,8 +786,6 @@ Fixpoint getVRAe (rn : string) (vrs:set vrelS) : vrelS :=
 
 Definition findVR (rn : string) (vs:vschema) : vrelS := 
    let vr' := getVRAe rn (fst vs) in  (getr vr', (getvs vr', getf vr' /\(F) snd vs)).
-
-
 
 (** ------------------------------------------------------------
   Condition(theta) 
@@ -1380,6 +1419,10 @@ Definition is_disjoint_bool (A A': elems) : bool :=
    ---------------------------------------------------------------
 *)
 
+Definition empRelInempS rn: Prop:= 
+forall (S:vschema) c A e, (E[[ snd S]]c) = false /\
+In (rn, (A, e)) (fst S) -> In (rn, []) (S[[S]]c).
+
 Definition SatTuples (avs:avelems) : Prop:= 
 let A := fst avs in 
   let e := snd avs in 
@@ -1488,7 +1531,7 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
    *)
   (*   -- RELATION-E --  *)
   | Relation_vE : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
-                        rn A {HA: NoDupElem A} e',
+                          rn {Hrn: empRelInempS rn} A {HA: NoDupElem A} e',
         InVR (rn, (A, e')) S -> 
        (*~ sat (  e    /\(F)   (~(F) (e')) ) ->*) (* why are we restricting ourselves to introduce only more specific context? It's not even maintained in the type system e.g. choice will have less specif context evemn if we start with more specific ones. *)
        vtype e S (rel_v (rn, (A, e' ))) (A, (e /\(F) e'))
@@ -1567,8 +1610,8 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
                e  |- rn : A^e
   *)
   (*   -- RELATION-E --  *)
-  | Relation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} rn A_ 
-                                 A' {HndpA': NoDupElem A'} e_ e',
+  | Relation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
+                              rn {Hrn: empRelInempS rn} A_ A' {HndpA': NoDupElem A'} e_ e',
        InVR (rn, (A', e')) S ->
        (*sat (e /\(F) e') *)
        (*SatTuples (A, (e /\(F) e')) ->*)
@@ -1668,24 +1711,26 @@ Fixpoint condtype (c:cond) (A:elems) : bool :=
   | disjC c1 c2 => if (condtype c1 A) && (condtype c2 A) then true else false
   end.
 Notation "A ||- c " := (condtype c A) (at level 49).
+
 (* ------------------------------------------------------------
   | Type of plain query
    ------------------------------------------------------------
-*)
-Fixpoint type_ (q:query) : qtype :=
+*) 
+
+Fixpoint type_ (q:query) (s:schema) : qtype :=
  match q with
  | (empty)       => []
- | (rel (rn, A)) => A
- | (sel c q) => let A := type_ q in 
+ | (rel (rn, A)) => if (existsb (relS_beq (rn, A)) s) then A else []
+ | (sel c q) => let A := type_ q s in 
                      if (condtype c A) then A else []
- | (proj A q)    => let A' := type_ q in 
+ | (proj A q)    => let A' := type_ q s in 
                       if subsump_qtype_bool A A' then A else [] 
- | (setU op q1 q2) => if equiv_qtype_bool (type_ q1) (type_ q2) then type_ q1 else []
- | (prod  q1 q2) => if (is_disjoint_bool (type_ q1) (type_ q2)) then 
-                          elems_union (type_ q1) (type_ q2) else []
+ | (setU op q1 q2) => if equiv_qtype_bool (type_ q1 s) (type_ q2 s) then type_ q1 s else []
+ | (prod  q1 q2) => if (is_disjoint_bool (type_ q1 s) (type_ q2 s)) then 
+                          elems_union (type_ q1 s) (type_ q2 s) else []
  end.
 
-Notation "||= q " := (type_ q) (at level 49).
+Notation "s ||= q " := (type_ q s) (at level 49).
 
 (*------------------------------type'-----------------------------*)
 

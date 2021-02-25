@@ -192,8 +192,6 @@ unfold getf. rewrite <- H1 at 2. reflexivity.
 inversion H. rewrite Heqf. rewrite H1. reflexivity.
 Qed.
 
- 
-
 (* Correctness of vtypeImp_ function *)
  
 Lemma vtypeImpNOTC_correct : forall e vs vq vt {HRn: NoDupRn (fst vs)}, 
@@ -943,12 +941,12 @@ unfold getvs, getf in HImp. simpl in HImp.
 unfold getvs, getf in HExp. simpl in HExp.
 
 inversion HImp as [| eImp' SImp' HndpRSImp' HndpASImp' 
-                   rnImp' A_Imp' A'Imp' HndpA'Imp' e_Imp' e'Imp' 
+                   rnImp' HeRImp' A_Imp' A'Imp' HndpA'Imp' e_Imp' e'Imp' 
                    HInVRImp |
                    | | | |]; subst.
 
 inversion HExp as [| eExp' SExp' HndpRSExp' HndpASExp' 
-                   rnExp' A'Exp' HndpA'Exp' e'Exp' 
+                   rnExp' HeRExp' A'Exp' HndpA'Exp' e'Exp' 
                    HInVRExp HsatExp |
                    | | | |]; subst.
 
@@ -1116,7 +1114,7 @@ intros HImp.
 
 destruct v as (rn, (A_, e_)).
 simpl in HImp. simpl.
-inversion HImp as [| eInv SInv HndpRSInv HndpASInv rnInv A_Inv
+inversion HImp as [| eInv SInv HndpRSInv HndpASInv rnInv HeRInv A_Inv
                    A'Inv HndpA'Inv e_Inv e'Inv 
                    HInVRInv | | | | |]; subst.
 
@@ -1282,7 +1280,7 @@ unfold getvs, getf in HImp. simpl in HImp.
 
 
 inversion HImp as [| eImp' SImp' HndpRSImp' HndpASImp' 
-                   rnImp' A_Imp'  A'Imp' HndpA'Imp' e_Imp' e'Imp' 
+                   rnImp' HeRImp' A_Imp'  A'Imp' HndpA'Imp' e_Imp' e'Imp' 
                    HInVRImp |
                    | | | |]; subst.
 
