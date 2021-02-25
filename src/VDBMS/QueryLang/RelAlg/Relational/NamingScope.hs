@@ -11,8 +11,10 @@ import VDBMS.VDB.Name
 
 import Control.Monad.State
 
-import qualified Data.Map as M 
+-- import qualified Data.Map as M 
 import qualified Data.Map.Strict as SM
+
+import Data.Maybe (fromJust, isNothing)
 
 type AliasNum = Int 
 
@@ -95,73 +97,89 @@ nameSubqRA REmpty           =
 
 -- -- | update att qual for attributes. 
 updateAttsQual :: Attributes -> RAlgebra -> RenameEnv -> Attributes
-updateAttsQual as q e = undefined
-  -- map (flip (flip updateAttQual q) q') as
+updateAttsQual as q e = 
+  map (flip (flip updateAttQual q) e) as
 
 -- | updates the attribute qualifier if it has one. from the 
 --   old query q to the new query q'. 
--- updateAttQual :: Attr -> RAlgebra -> RAlgebra -> Attr
--- updateAttQual a q q' = undefined
+-- TODO: i may need to get the most outermost name instead of lookup
+updateAttQual :: Attr -> RAlgebra -> RenameEnv -> Attr
+updateAttQual a _ e 
+  | isQualRel aq = 
+    updateAttrQual 
+      a 
+      (SubqueryQualifier (fromJust (SM.lookup (relQualifier aq) e)))
+  | otherwise    = a
+    where
+      aq = fromJust (qualifier a) 
 
 
--- -- | updates the existing qualifier of attributes in a condition. 
+-- | updates the existing qualifier of attributes in a condition. 
 updateCond :: SqlCond RAlgebra -> RAlgebra -> RenameEnv -> SqlCond RAlgebra
-updateCond = undefined
--- updateCond (SqlCond c)  q q' = SqlCond $ updateRCond c q q'
--- updateCond c@(SqlIn _ _) _ _ = c
--- updateCond (SqlNot c)   q q' = SqlNot c'
---   where
---     c' = updateCond c q q' 
--- updateCond (SqlOr l r)  q q' = SqlOr l' r'
---   where
---     l' = updateCond l q q' 
---     r' = updateCond r q q'
--- updateCond (SqlAnd l r) q q' = SqlAnd l' r' 
---   where
---     l' = updateCond l q q' 
---     r' = updateCond r q q'
+updateCond (SqlCond c)   q e = SqlCond $ updateRCond c q e
+updateCond c@(SqlIn _ _) _ _ = c
+updateCond (SqlNot c)    q e = SqlNot c'
+  where
+    c' = updateCond c q e
+updateCond (SqlOr l r)   q e = SqlOr l' r'
+  where
+    l' = updateCond l q e
+    r' = updateCond r q e
+updateCond (SqlAnd l r)  q e = SqlAnd l' r' 
+  where
+    l' = updateCond l q e
+    r' = updateCond r q e
 
--- -- |
--- updateRCond :: RCondition -> RAlgebra -> RAlgebra -> RCondition
--- updateRCond c@(RLit _)    _ _  = c
--- updateRCond (RComp o l r) q q' = RComp o l' r' 
---   where 
---     l' = updateAtom l q q'
---     r' = updateAtom r q q'
--- updateRCond (RNot c)      q q' = RNot c'
---   where
---     c' = updateRCond c q q'
--- updateRCond (ROr l r)     q q' = ROr l' r'
---   where
---     l' = updateRCond l q q'
---     r' = updateRCond r q q' 
--- updateRCond (RAnd l r)    q q' = RAnd l' r' 
---   where
---     l' = updateRCond l q q'
---     r' = updateRCond r q q' 
+-- |
+updateRCond :: RCondition -> RAlgebra -> RenameEnv -> RCondition
+updateRCond c@(RLit _)    _ _  = c
+updateRCond (RComp o l r) q e = RComp o l' r' 
+  where 
+    l' = updateAtom l q e
+    r' = updateAtom r q e
+updateRCond (RNot c)      q e = RNot c'
+  where
+    c' = updateRCond c q e
+updateRCond (ROr l r)     q e = ROr l' r'
+  where
+    l' = updateRCond l q e
+    r' = updateRCond r q e
+updateRCond (RAnd l r)    q e = RAnd l' r' 
+  where
+    l' = updateRCond l q e
+    r' = updateRCond r q e
 
--- -- | 
--- updateAtom :: Atom -> RAlgebra -> RAlgebra -> Atom
--- updateAtom a q q' = undefined
+-- | updates the qualifier of an attribute atom.
+-- TODO: i may need to get the most outermost name instead of lookup
+updateAtom :: Atom -> RAlgebra -> RenameEnv -> Atom
+updateAtom at@(Att a) _ e 
+  | isNothing aq = at 
+  | isQualRel (fromJust aq) = Att $
+    updateAttrQual 
+      a 
+      (SubqueryQualifier (fromJust (SM.lookup (relQualifier (fromJust aq)) e)))
+  | otherwise    = at
+    where
+      aq = qualifier a 
+updateAtom v       _ _ = v
 
--- -- | updates the existing qualifier of attributes in a join condition. 
+-- | updates the existing qualifier of attributes in a join condition. 
 updateJoinCond :: RCondition 
                -> RAlgebra -> RAlgebra -> RenameEnv
                -> RCondition
-updateJoinCond = undefined
--- updateJoinCond c@(RLit _)      _ _ _  _  = c 
--- updateJoinCond (RComp o la ra) l r l' r' = RComp o la' ra'
---   where
---     la' = updateAtom la l l'
---     ra' = updateAtom ra r r'
--- updateJoinCond (RNot c)        l r l' r' = RNot c'
---   where
---     c' = updateJoinCond c l r l' r'
--- updateJoinCond (ROr lc rc)     l r l' r' = ROr lc' rc' 
---   where
---     lc' = updateJoinCond lc l r l' r'
---     rc' = updateJoinCond rc l r l' r'
--- updateJoinCond (RAnd lc rc)    l r l' r' = RAnd lc' rc'
---   where
---     lc' = updateJoinCond lc l r l' r'
---     rc' = updateJoinCond rc l r l' r'
+updateJoinCond c@(RLit _)      _ _ _ = c 
+updateJoinCond (RComp o la ra) l r e = RComp o la' ra'
+  where
+    la' = updateAtom la l e
+    ra' = updateAtom ra r e
+updateJoinCond (RNot c)        l r e = RNot c'
+  where
+    c' = updateJoinCond c l r e
+updateJoinCond (ROr lc rc)     l r e = ROr lc' rc' 
+  where
+    lc' = updateJoinCond lc l r e
+    rc' = updateJoinCond rc l r e
+updateJoinCond (RAnd lc rc)    l r e = RAnd lc' rc'
+  where
+    lc' = updateJoinCond lc l r e
+    rc' = updateJoinCond rc l r e

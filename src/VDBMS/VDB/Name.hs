@@ -15,6 +15,7 @@ module VDBMS.VDB.Name (
         , renameMap
         , attsSet
         , qualName
+        , isQualRel
 
 ) where
 
@@ -40,6 +41,12 @@ data Qualifier
       subqueryQualifier :: Name
     }
  deriving (Data,Eq,Ord,Read,Show,Typeable)
+
+-- | returns true if a qualifier is a relation and 
+--   false otherwise. 
+isQualRel :: Qualifier -> Bool 
+isQualRel (RelQualifier _) = True
+isQualRel _                = False
 
 -- | The qualifier name.
 qualName :: Qualifier -> String
