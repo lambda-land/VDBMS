@@ -15,7 +15,8 @@ import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 -- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
-import VDBMS.QueryGen.Sql.GenSql (genSql)
+-- import VDBMS.QueryGen.Sql.GenSql (genSql)
+import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.Features.Config (Config)
@@ -41,7 +42,8 @@ runRelQ conn c vq =
          features = dbFeatures conn
          configs = getAllConfig conn
          pc = presCond conn
-         q = (show . genSql . transAlgebra2Sql . (addPC pc) . opts_) 
+         -- q = (show . genSql . transAlgebra2Sql . (addPC pc) . opts_) 
+         q = (show . transAlgebra2Sql . nameSubqRAlgebra . (addPC pc) . opts_) 
              (configure c 
                (chcSimpleReduceRec (pushSchToQ vsch vq)))
      tab <- fetchQRows conn q
