@@ -50,6 +50,7 @@ data Sql = Sql SelectFromWhere
   | SqlBin SqlBinOp Sql Sql
   | SqlTRef Relation
   | SqlEmpty
+    -- deriving Show
 
 -- -- | Sql select statements.
 -- data SqlSelect =  
@@ -72,10 +73,12 @@ data SelectFromWhere =
     , tables :: [Rename SqlRelation]
     , conditions :: [SqlCond Sql] -- TODO: debateable
   }
+    -- deriving Show
 
 -- | Sql null attribute.
 data SqlNullAtt = SqlNullAtt
   deriving (Eq)
+  -- deriving (Eq, Show)
 
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
@@ -84,6 +87,7 @@ data SqlAttrExpr =
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
   | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   deriving (Eq)
+  -- deriving (Eq, Show)
 
 -- | attributes in an attribute expr.
 aExprAtt :: SqlAttrExpr -> Attribute 
@@ -221,18 +225,29 @@ ppEmpty = text "SELECT NULL"
 -- | prints select from where queries.
 ppSelectFromWhere :: SelectFromWhere -> Doc
 ppSelectFromWhere (SelectFromWhere as ts cs)
-  | null as && null cs = 
-     vcomma ppRenameRel ts
-  | null cs = text "SELECT"
-    <+> vcomma ppAtts as
-    $$ text "FROM"
-    <+> vcomma ppRenameRel ts
-  | otherwise = text "SELECT"
-    <+> vcomma ppAtts as
-    $$ text "FROM"
-    <+> vcomma ppRenameRel ts
-    $$ text "WHERE"
-    <+> vcomma ppCond cs
+  | not (null ts) = case (null as, null cs) of 
+    (False, False) -> 
+      text "SELECT"
+      <+> vcomma ppAtts as
+      $$ text "FROM"
+      <+> vcomma ppRenameRel ts
+      $$ text "WHERE"
+      <+> vcomma ppCond cs  
+    (False, True)  -> 
+      text "SELECT"
+      <+> vcomma ppAtts as
+      $$ text "FROM"
+      <+> vcomma ppRenameRel ts
+    (True, False)  -> 
+      text "SELECT * FROM "
+      <+> vcomma ppRenameRel ts
+      $$ text "WHERE"
+      <+> vcomma ppCond cs  
+    (True, True)  -> 
+      text "SELECT * FROM "
+      <+> vcomma ppRenameRel ts
+  | otherwise = error "Sql. select from where cannot have no tables."
+
 
 -- | prints sql attribute expressions.
 -- TODO: this may have bugs!!!! NEED TO BE TESTED!

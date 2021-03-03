@@ -21,6 +21,8 @@ import Control.Monad.State
 
 import Data.Maybe (isNothing, fromJust)
 
+import Debug.Trace
+
 -- | number for generating names.
 type AliasNum = Int 
 
@@ -38,12 +40,14 @@ evalQState = flip evalState initState
 -- | gives names to a subqueries and relations of a given
 --   sql query.
 genSql :: Sql -> Sql
+-- genSql = trace "checking00000000000" $ 
 genSql = evalQState . nameSubSql 
 
 -- TODO: attributes qualifiers must also be updated.
 -- | names subqueries within a sql query.
 nameSubSql :: Sql -> QState Sql
 nameSubSql (Sql (SelectFromWhere as ts cs))
+  -- = trace "checking111111111111" $ 
   = do ts' <- mapM nameRel ts
        return $ Sql (SelectFromWhere as ts' cs)
   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
@@ -57,7 +61,6 @@ nameSubSql q = return q
 -- nameRel :: [SqlAttrExpr] -> [SqlCond SqlSelect] -> Rename SqlRelation 
 --         -> QState (Rename SqlRelation)
 nameRel :: Rename SqlRelation -> QState (Rename SqlRelation)
--- nameRel = undefined
 -- nameRel rq@(Rename a q@(SqlTRef _)) 
 --   | isNothing a 
 --     = do s <- get
@@ -74,24 +77,26 @@ nameRel rq@(Rename a q@(SqlSubQuery subq))
          modify succ
          return rq'
   | isNothing a && issqlslct subq 
-    = do if null (sqlattributes subq)
-            then return rq
-            else do subq' <- nameSubSql subq
-                    s <- get
-                    let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
-                    modify succ
-                    return rq'
+    -- = trace "checking!!!!!!!!" $ 
+    = do subq' <- nameSubSql subq
+         s <- get
+         let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
+         modify succ
+         return rq'
   | otherwise = return rq
 -- TODO: we may need to updates condition for attributes qualifiers.
 nameRel rq@(Rename a (SqlInnerJoin l r c)) 
   | isNothing a 
     = do l' <- nameRel l
          r' <- nameRel r
-         return $ Rename Nothing (SqlInnerJoin l' r' c)
+         s <- get 
+         let rq' = Rename Nothing (SqlInnerJoin l' r' c)
+         modify succ
+         return $ rq'
   | otherwise = error "an inner join shouldn't have a name"
-    where
-      la = name l 
-      ra = name r
+    -- where
+    --   la = name l 
+    --   ra = name r
 
 -- |
 -- updateAttsQual :: SqlSelect -> SqlSelect

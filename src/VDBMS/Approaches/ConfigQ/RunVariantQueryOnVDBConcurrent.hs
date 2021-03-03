@@ -65,7 +65,7 @@ runQ4 conn vq =
          atts = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained 
-         vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch
+         vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch pc
          -- try removing opt
          -- ra_qs = map (\c -> (c, configure c vq_constrained_opt)) configs --revised for the final version
          ra_qs = map (\c -> (c, configure c vq_constrained_opt_qual)) configs

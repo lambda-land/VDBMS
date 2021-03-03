@@ -37,8 +37,13 @@ transAlgebra2Sql (RProj as q)
                       []
   | issqlslct sql = Sql
     $ SelectFromWhere (map (\a -> SqlAttr (renameNothing a)) as) 
-                      [renameNothing (SqlSubQuery sql)]
-                      (sqlconditions sql)
+                      [renameNothing (SqlSubQuery sql)] 
+                      []
+                      -- (SqlSubQuery (Sql (SelectFromWhere
+                      --     (sqlattributes sql)
+                      --     (sqltables sql)
+                      --     [])))
+                      -- (sqlconditions sql)
     -- $ SelectFromWhere (sqlattributes sql 
     --   ++ map (\a -> SqlAttr (renameNothing a)) as) 
     --                   (sqltables sql)
