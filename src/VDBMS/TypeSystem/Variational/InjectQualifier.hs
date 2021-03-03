@@ -31,13 +31,12 @@ import Data.Generics.Uniplate.Direct (transform)
 
 import Control.Monad.Catch 
 
-import Debug.Trace
+-- import Debug.Trace
 
 -- | forces the qualifier to their projected attributes.
 injectQualifier :: Algebra -> Schema -> PCatt -> Algebra
 injectQualifier q s pc 
-  | isJust tq = trace (show q)
-    $ transform attrScopeInQ q
+  | isJust tq = transform attrScopeInQ q
   | otherwise = error "the query is type-ill"
     where 
       tq :: MonadThrow m => m TypeEnv

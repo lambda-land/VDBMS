@@ -117,6 +117,10 @@ isrel :: Sql -> Bool
 isrel (SqlTRef _) = True 
 isrel _           = False
 
+sqlrel :: Sql -> Relation
+sqlrel (SqlTRef r) = r 
+sqlrel _ = error "sql. expected sqltref"
+
 -- | returns true if sqlselect is select ...
 issqlslct :: Sql -> Bool
 issqlslct (Sql _) = True
@@ -232,7 +236,7 @@ ppSelectFromWhere (SelectFromWhere as ts cs)
       $$ text "FROM"
       <+> vcomma ppRenameRel ts
       $$ text "WHERE"
-      <+> vcomma ppCond cs  
+      <+> vand ppCond cs  
     (False, True)  -> 
       text "SELECT"
       <+> vcomma ppAtts as
@@ -242,7 +246,7 @@ ppSelectFromWhere (SelectFromWhere as ts cs)
       text "SELECT * FROM "
       <+> vcomma ppRenameRel ts
       $$ text "WHERE"
-      <+> vcomma ppCond cs  
+      <+> vand ppCond cs  
     (True, True)  -> 
       text "SELECT * FROM "
       <+> vcomma ppRenameRel ts
@@ -369,6 +373,9 @@ hcomma f = hcat . punctuate comma . map f
 -- | vertical comma concat.
 vcomma :: (a -> Doc) -> [a] -> Doc
 vcomma f = vcat . punctuate comma . map f
+
+vand :: (a -> Doc) -> [a] -> Doc
+vand = undefined
 
 instance Show OutSql where
   show = ppOutSqlString

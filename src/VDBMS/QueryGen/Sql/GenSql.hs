@@ -9,6 +9,7 @@ module VDBMS.QueryGen.Sql.GenSql (
 
 -- import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
+import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
 -- import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 import VDBMS.VDB.Name 
 -- import VDBMS.QueryLang.SQL.Condition 
@@ -21,21 +22,37 @@ import Control.Monad.State
 
 import Data.Maybe (isNothing, fromJust)
 
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as SM
+
 import Debug.Trace
 
 -- | number for generating names.
 type AliasNum = Int 
 
+type RenameEnv = SM.Map Relation Name 
+
+data StateInfo = StateInfo 
+  { counter :: AliasNum
+  , env :: RenameEnv
+  }
+
+incCounter :: StateInfo -> StateInfo
+incCounter (StateInfo c e) = StateInfo (c+1) e
+
+addR2env :: Relation -> StateInfo -> StateInfo
+addR2env r (StateInfo c e) = StateInfo (c+1) (SM.insert r ("t" ++ show c) e)
+
 -- -- | A Query monad provides unique names (aliases)
 -- --   and constructs a SqlSelect.
 -- type QState = State AliasNum SqlSelect
-type QState = State AliasNum 
+type QState = State StateInfo 
 -- data Query  = Query (QState -> QState)
 
 -- | evaluates the qstate with zero.
 evalQState :: QState a -> a
 evalQState = flip evalState initState
-  where initState = 0
+  where initState = StateInfo 0 SM.empty
 
 -- | gives names to a subqueries and relations of a given
 --   sql query.
@@ -49,7 +66,10 @@ nameSubSql :: Sql -> QState Sql
 nameSubSql (Sql (SelectFromWhere as ts cs))
   -- = trace "checking111111111111" $ 
   = do ts' <- mapM nameRel ts
-       return $ Sql (SelectFromWhere as ts' cs)
+       renv <- gets env
+       let as' = updateAttsQual as ts' renv 
+           cs' = updateCondsQual cs ts' renv
+       return $ Sql (SelectFromWhere as' ts' cs')
   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
 nameSubSql (SqlBin o lq rq) 
   = do lq' <- nameSubSql lq
@@ -61,27 +81,21 @@ nameSubSql q = return q
 -- nameRel :: [SqlAttrExpr] -> [SqlCond SqlSelect] -> Rename SqlRelation 
 --         -> QState (Rename SqlRelation)
 nameRel :: Rename SqlRelation -> QState (Rename SqlRelation)
--- nameRel rq@(Rename a q@(SqlTRef _)) 
---   | isNothing a 
---     = do s <- get
---          let rq' = Rename (Just ("t" ++ show s)) q
---          modify succ
---          -- put s
---          return rq'
---   | otherwise = return rq
 nameRel rq@(Rename a q@(SqlSubQuery subq)) 
   | isNothing a && isrel subq
     = do subq' <- nameSubSql subq
-         s <- get
+         s <- gets counter
          let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
-         modify succ
+         if isrel subq 
+         then modify (addR2env (sqlrel subq))
+         else modify id 
          return rq'
   | isNothing a && issqlslct subq 
     -- = trace "checking!!!!!!!!" $ 
     = do subq' <- nameSubSql subq
-         s <- get
+         s <- gets counter
          let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
-         modify succ
+         modify incCounter
          return rq'
   | otherwise = return rq
 -- TODO: we may need to updates condition for attributes qualifiers.
@@ -89,9 +103,11 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
   | isNothing a 
     = do l' <- nameRel l
          r' <- nameRel r
-         s <- get 
-         let rq' = Rename Nothing (SqlInnerJoin l' r' c)
-         modify succ
+         s <- gets counter
+         renv <- gets env
+         let c' = updateJCondQual c l' r' renv
+             rq' = Rename Nothing (SqlInnerJoin l' r' c')
+         -- modify 
          return $ rq'
   | otherwise = error "an inner join shouldn't have a name"
     -- where
@@ -99,26 +115,28 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
     --   ra = name r
 
 -- |
--- updateAttsQual :: SqlSelect -> SqlSelect
--- updateAttsQual (SqlSelect as ts cs) = undefined
---   -- = SqlSelect (map () as)
---   --             ts 
---   --             cs
--- updateAttsQual (SqlBin o l r) 
---   = SqlBin o (updateAttsQual l) (updateAttsQual r)
--- updateAttsQual q = q
+updateAttsQual :: [SqlAttrExpr] -> [Rename SqlRelation] -> RenameEnv 
+               -> [SqlAttrExpr]
+updateAttsQual = undefined
 
--- -- | updates attribute's qualifer.
--- updateAttQual :: Attr -> Alias -> Attr
--- updateAttQual a n 
---   | isNothing (qualifier a) = a 
---   | not (isNothing n) = updateAttrQual a (SubqueryQualifier (fromJust n))
---   | otherwise = error "alias shouldn't be nothing"
+-- |
+updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv 
+              -> SqlAttrExpr
+updateAttQual = undefined
 
--- -- |
--- updateQualsInCond :: SqlSelect -> SqlSelect
--- updateQualsInCond (SqlSelect as ts cs) = undefined
--- updateQualsInCond (SqlBin o l r) 
---   = SqlBin o (updateQualsInCond l) (updateQualsInCond r)
--- updateQualsInCond q = q
+-- |
+updateJCondQual :: RCondition 
+                -> Rename SqlRelation -> Rename SqlRelation
+                -> RenameEnv
+                -> RCondition
+updateJCondQual = undefined
 
+-- |
+updateCondsQual :: [SqlCond Sql] -> [Rename SqlRelation] -> RenameEnv
+               -> [SqlCond Sql]
+updateCondsQual = undefined
+
+-- |
+updateCondQual :: SqlCond Sql -> [Rename SqlRelation] -> RenameEnv
+               -> SqlCond Sql
+updateCondQual = undefined
