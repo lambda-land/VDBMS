@@ -375,7 +375,7 @@ vcomma :: (a -> Doc) -> [a] -> Doc
 vcomma f = vcat . punctuate comma . map f
 
 vand :: (a -> Doc) -> [a] -> Doc
-vand = undefined
+vand f = vcat . punctuate (text " AND ") . map f 
 
 instance Show OutSql where
   show = ppOutSqlString

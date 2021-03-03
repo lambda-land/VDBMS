@@ -10,6 +10,7 @@ module VDBMS.QueryGen.Sql.GenSql (
 -- import VDBMS.QueryLang.RelAlg.Relational.Algebra 
 import VDBMS.QueryLang.SQL.Pure.Sql
 import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
+import VDBMS.QueryLang.RelAlg.Relational.Algebra
 -- import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 import VDBMS.VDB.Name 
 -- import VDBMS.QueryLang.SQL.Condition 
@@ -67,9 +68,9 @@ nameSubSql (Sql (SelectFromWhere as ts cs))
   -- = trace "checking111111111111" $ 
   = do ts' <- mapM nameRel ts
        renv <- gets env
-       let as' = updateAttsQual as ts' renv 
-           cs' = updateCondsQual cs ts' renv
-       return $ Sql (SelectFromWhere as' ts' cs')
+       -- let as' = updateAttsQual as ts' renv 
+       --     cs' = updateCondsQual cs ts' renv
+       return $ Sql (SelectFromWhere as ts' cs)
   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
 nameSubSql (SqlBin o lq rq) 
   = do lq' <- nameSubSql lq
@@ -101,7 +102,8 @@ nameRel rq@(Rename a q@(SqlSubQuery subq))
 -- TODO: we may need to updates condition for attributes qualifiers.
 nameRel rq@(Rename a (SqlInnerJoin l r c)) 
   | isNothing a 
-    = do l' <- nameRel l
+    = trace (show c) $ 
+      do l' <- nameRel l
          r' <- nameRel r
          s <- gets counter
          renv <- gets env
@@ -115,28 +117,70 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
     --   ra = name r
 
 -- |
-updateAttsQual :: [SqlAttrExpr] -> [Rename SqlRelation] -> RenameEnv 
-               -> [SqlAttrExpr]
-updateAttsQual = undefined
+-- updateAttsQual :: [SqlAttrExpr] -> [Rename SqlRelation] -> RenameEnv 
+--                -> [SqlAttrExpr]
+-- updateAttsQual = undefined
 
--- |
-updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv 
-              -> SqlAttrExpr
-updateAttQual = undefined
+-- -- |
+-- updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv 
+--               -> SqlAttrExpr
+-- updateAttQual = undefined
 
 -- |
 updateJCondQual :: RCondition 
                 -> Rename SqlRelation -> Rename SqlRelation
                 -> RenameEnv
                 -> RCondition
-updateJCondQual = undefined
+updateJCondQual c ls rs env = updateRCondQual c [ls,rs] env 
 
 -- |
-updateCondsQual :: [SqlCond Sql] -> [Rename SqlRelation] -> RenameEnv
-               -> [SqlCond Sql]
-updateCondsQual = undefined
+-- updateCondsQual :: [SqlCond Sql] -> [Rename SqlRelation] -> RenameEnv
+--                -> [SqlCond Sql]
+-- updateCondsQual = undefined
 
 -- |
-updateCondQual :: SqlCond Sql -> [Rename SqlRelation] -> RenameEnv
-               -> SqlCond Sql
-updateCondQual = undefined
+updateRCondQual :: RCondition -> [Rename SqlRelation] -> RenameEnv
+                -> RCondition
+updateRCondQual c@(RLit _) _ _ = c
+updateRCondQual (RComp o l r) rs env = RComp o l' r' 
+  where
+    l' = updateAtomQual l rs env
+    r' = updateAtomQual r rs env 
+updateRCondQual (RNot c) rs env = RNot c'
+  where
+    c' = updateRCondQual c rs env
+updateRCondQual (ROr l r) rs env = ROr l' r'
+  where 
+    l' = updateRCondQual l rs env
+    r' = updateRCondQual r rs env
+updateRCondQual (RAnd l r) rs env = RAnd l' r'
+  where 
+    l' = updateRCondQual l rs env
+    r' = updateRCondQual r rs env
+
+updateAtomQual :: Atom -> [Rename SqlRelation] -> RenameEnv -> Atom
+updateAtomQual at@(Att a) rs env 
+  | isNothing aq = at 
+  | isQualRel (fromJust aq) = Att $
+    updateAttrQual 
+      a 
+      (SubqueryQualifier 
+        (fromJust (SM.lookup (relQualifier (fromJust aq)) env)))
+  | otherwise = at 
+    where
+      aq = qualifier a 
+updateAtomQual v _ _ = v
+
+-- |
+-- updateCondQual :: SqlCond Sql -> [Rename SqlRelation] -> RenameEnv
+--                -> SqlCond Sql
+-- updateCondQual (SqlCond c) rs env = SqlCond $ updateRCondQual c rs env
+-- updateCondQual c@(SqlIn _ _) _ _ = c
+-- updateCondQual (SqlNot c) rs env = undefined
+-- updateCondQual (SqlOr l r) rs env = undefined
+-- updateCondQual (SqlAnd l r) rs env = undefined
+
+
+
+
+
