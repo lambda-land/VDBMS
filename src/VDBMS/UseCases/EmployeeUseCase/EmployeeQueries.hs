@@ -117,7 +117,7 @@ empVQ1 =
                 (joinEqCond (att2attrQualRel title_ empacct)
                             (att2attrQualRel title_ job)))
 empVQ1' = 
-  project (pure $ att2optatt salary_ empv3)
+  project (pure $ att2optattQualRel salary_ job empv3)
           (select empSqlCond (join (tRef empacct)
                 (tRef job)
                 (joinEqCond (att2attrQualRel title_ empacct)

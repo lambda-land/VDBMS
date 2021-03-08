@@ -40,9 +40,9 @@ import Data.Maybe (isNothing, isJust, fromJust)
 
 
 -- | final sql data type that will be sent to the database engine.
-data OutSql = OutSql SelectFromWhere
-  | OutSqlBin SqlBinOp OutSql OutSql
-  | OutSqlEmpty
+-- data OutSql = OutSql SelectFromWhere
+--   | OutSqlBin SqlBinOp OutSql OutSql
+--   | OutSqlEmpty
 
 -- | the intermediate sql data type that is used to translate queries
 --   written in variational relational algebra to final sql queries. 
@@ -191,14 +191,14 @@ getThing = fst
 --   | SqlNoTemp SqlSelect
 
 -- |returns the string of output sql.
-ppOutSqlString :: OutSql -> String
-ppOutSqlString = render . ppOutSql
+-- ppOutSqlString :: OutSql -> String
+-- ppOutSqlString = render . ppOutSql
 
 -- | prints output sql queries.
-ppOutSql :: OutSql -> Doc
-ppOutSql (OutSql sql) = ppSelectFromWhere sql
-ppOutSql (OutSqlBin o l r) = ppSqlBin ppOutSql o l r
-ppOutSql OutSqlEmpty = ppEmpty
+-- ppOutSql :: OutSql -> Doc
+-- ppOutSql (OutSql sql) = ppSelectFromWhere sql
+-- ppOutSql (OutSqlBin o l r) = ppSqlBin ppOutSql o l r
+-- ppOutSql OutSqlEmpty = ppEmpty
 
 
 -- | returns the string of sql select.
@@ -377,8 +377,8 @@ vcomma f = vcat . punctuate comma . map f
 vand :: (a -> Doc) -> [a] -> Doc
 vand f = vcat . punctuate (text " AND ") . map f 
 
-instance Show OutSql where
-  show = ppOutSqlString
+-- instance Show OutSql where
+--   show = ppOutSqlString
 
 instance Show Sql where 
   show = ppSqlString

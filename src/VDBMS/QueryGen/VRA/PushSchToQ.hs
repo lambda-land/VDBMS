@@ -35,6 +35,8 @@ import Data.Maybe (isJust, fromJust)
 
 import Control.Monad.Catch (MonadThrow)
 
+import Debug.Trace
+
 -- import Control.Arrow (second)
 
 -- | optionalizes a query after pushing the schema to it.
@@ -95,6 +97,8 @@ pushSchToQ _ Empty = Empty
 --                  subsumes      -> isSubsumed    -> intersection
 intersectOptAtts :: OptAttributes -> OptAttributes -> OptAttributes
 intersectOptAtts big small = map (restrictOptAtt big) small
+  -- trace ("big is : " ++ show big ++ "small is : " ++ show small)
+  -- $ map (restrictOptAtt big) small
   where
     restrictOptAtt :: OptAttributes -> OptAttribute -> OptAttribute
     restrictOptAtt oas oa = conjFexpOptAttr (genFexp oasFiltered) oa
@@ -106,7 +110,8 @@ intersectOptAtts big small = map (restrictOptAtt big) small
           Just aq -> qual == qualOfOptAttr a && att == attrOfOptAttr a 
           _ -> att == attrOfOptAttr a
         genFexp :: OptAttributes -> F.FeatureExpr
-        genFexp [] = error "shouldnt be getting empty list. func: intersectOptAtts in PushSchToQ"
+        genFexp [] = F.Lit True
+          -- error "shouldnt be getting empty list. func: intersectOptAtts in PushSchToQ"
         genFexp (x:xs) = foldl (\f at -> F.Or f (getFexp at)) (getFexp x) xs
 
 -- | pushes schema to vsqlcond which pushes the schema into the

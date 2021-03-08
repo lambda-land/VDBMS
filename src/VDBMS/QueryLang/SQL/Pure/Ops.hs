@@ -28,10 +28,10 @@ sqlQAtts' (SqlBin _ l _) = sqlQAtts' l
 sqlQAtts' (SqlTRef _)    = []
 sqlQAtts' SqlEmpty       = []
 
-sqlQAtts'' :: OutSql -> [Attribute]
-sqlQAtts'' (OutSql q)        = sqlQAtts q
-sqlQAtts'' (OutSqlBin _ l _) = sqlQAtts'' l 
-sqlQAtts'' OutSqlEmpty       = []
+-- sqlQAtts'' :: OutSql -> [Attribute]
+-- sqlQAtts'' (OutSql q)        = sqlQAtts q
+-- sqlQAtts'' (OutSqlBin _ l _) = sqlQAtts'' l 
+-- sqlQAtts'' OutSqlEmpty       = []
 
 -- | adjusts the schema  of a sql query wrt a given list of attribute.
 adjustQSch :: [Attribute] -> [Attribute] -> Sql -> Sql

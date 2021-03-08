@@ -68,9 +68,9 @@ nameSubSql (Sql (SelectFromWhere as ts cs))
   -- = trace "checking111111111111" $ 
   = do ts' <- mapM nameRel ts
        renv <- gets env
-       -- let as' = updateAttsQual as ts' renv 
-       --     cs' = updateCondsQual cs ts' renv
-       return $ Sql (SelectFromWhere as ts' cs)
+       let as' = updateAttsQual as ts' renv 
+           cs' = updateCondsQual cs ts' renv
+       return $ Sql (SelectFromWhere as' ts' cs')
   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
 nameSubSql (SqlBin o lq rq) 
   = do lq' <- nameSubSql lq
@@ -117,14 +117,14 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
     --   ra = name r
 
 -- |
--- updateAttsQual :: [SqlAttrExpr] -> [Rename SqlRelation] -> RenameEnv 
---                -> [SqlAttrExpr]
--- updateAttsQual = undefined
+updateAttsQual :: [SqlAttrExpr] -> [Rename SqlRelation] -> RenameEnv 
+               -> [SqlAttrExpr]
+updateAttsQual = undefined
 
 -- -- |
--- updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv 
---               -> SqlAttrExpr
--- updateAttQual = undefined
+updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv 
+              -> SqlAttrExpr
+updateAttQual = undefined
 
 -- |
 updateJCondQual :: RCondition 
@@ -134,9 +134,9 @@ updateJCondQual :: RCondition
 updateJCondQual c ls rs env = updateRCondQual c [ls,rs] env 
 
 -- |
--- updateCondsQual :: [SqlCond Sql] -> [Rename SqlRelation] -> RenameEnv
---                -> [SqlCond Sql]
--- updateCondsQual = undefined
+updateCondsQual :: [SqlCond Sql] -> [Rename SqlRelation] -> RenameEnv
+               -> [SqlCond Sql]
+updateCondsQual = undefined
 
 -- |
 updateRCondQual :: RCondition -> [Rename SqlRelation] -> RenameEnv
@@ -172,13 +172,13 @@ updateAtomQual at@(Att a) rs env
 updateAtomQual v _ _ = v
 
 -- |
--- updateCondQual :: SqlCond Sql -> [Rename SqlRelation] -> RenameEnv
---                -> SqlCond Sql
--- updateCondQual (SqlCond c) rs env = SqlCond $ updateRCondQual c rs env
--- updateCondQual c@(SqlIn _ _) _ _ = c
--- updateCondQual (SqlNot c) rs env = undefined
--- updateCondQual (SqlOr l r) rs env = undefined
--- updateCondQual (SqlAnd l r) rs env = undefined
+updateCondQual :: SqlCond Sql -> [Rename SqlRelation] -> RenameEnv
+               -> SqlCond Sql
+updateCondQual (SqlCond c) rs env = SqlCond $ updateRCondQual c rs env
+updateCondQual c@(SqlIn _ _) _ _ = c
+updateCondQual (SqlNot c) rs env = undefined
+updateCondQual (SqlOr l r) rs env = undefined
+updateCondQual (SqlAnd l r) rs env = undefined
 
 
 

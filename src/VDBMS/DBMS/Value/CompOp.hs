@@ -18,7 +18,7 @@ data CompOp = EQ | NEQ | LT | LTE | GTE | GT
 
 -- | pretty print compOp
 prettyCompOp :: CompOp -> String
-prettyCompOp EQ  = " == "
+prettyCompOp EQ  = " = "
 prettyCompOp NEQ = " <> "
 prettyCompOp LT  = " < "
 prettyCompOp LTE = " <= "
