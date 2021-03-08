@@ -69,8 +69,8 @@ nameSubSql (Sql (SelectFromWhere as ts cs))
   = do ts' <- mapM nameRel ts
        renv <- gets env
        let as' = updateAttsQual as ts' renv 
-           -- cs' = updateCondsQual cs ts' renv
-       return $ Sql (SelectFromWhere as' ts' cs)
+           cs' = updateCondsQual cs ts' renv
+       return $ Sql (SelectFromWhere as' ts' cs')
   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
 nameSubSql (SqlBin o lq rq) 
   = do lq' <- nameSubSql lq
@@ -96,8 +96,10 @@ nameRel rq@(Rename a q@(SqlSubQuery subq))
     = do subq' <- nameSubSql subq
          s <- gets counter
          let rq' = Rename (Just ("t" ++ show s)) (SqlSubQuery subq')
-         modify incCounter
-         return rq'
+         if null (sqlattributes subq) 
+         then return $ Rename Nothing (SqlSubQuery subq')
+         else do modify incCounter
+                 return rq'
   | otherwise = return rq
 -- TODO: we may need to updates condition for attributes qualifiers.
 nameRel rq@(Rename a (SqlInnerJoin l r c)) 
@@ -105,7 +107,7 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
     = trace (show c) $ 
       do l' <- nameRel l
          r' <- nameRel r
-         s <- gets counter
+         -- s <- gets counter
          renv <- gets env
          let c' = updateJCondQual c l' r' renv
              rq' = Rename Nothing (SqlInnerJoin l' r' c')
@@ -138,41 +140,41 @@ updateJCondQual :: RCondition
                 -> Rename SqlRelation -> Rename SqlRelation
                 -> RenameEnv
                 -> RCondition
-updateJCondQual c ls rs env = updateRCondQual c [ls,rs] env 
+updateJCondQual c ls rs e = updateRCondQual c [ls,rs] e 
 
 -- |
 updateCondsQual :: [SqlCond Sql] -> [Rename SqlRelation] -> RenameEnv
                -> [SqlCond Sql]
-updateCondsQual = undefined
+updateCondsQual cs rs e = map (flip (flip updateCondQual rs) e) cs
 
 -- |
 updateRCondQual :: RCondition -> [Rename SqlRelation] -> RenameEnv
                 -> RCondition
 updateRCondQual c@(RLit _) _ _ = c
-updateRCondQual (RComp o l r) rs env = RComp o l' r' 
+updateRCondQual (RComp o l r) rs e = RComp o l' r' 
   where
-    l' = updateAtomQual l rs env
-    r' = updateAtomQual r rs env 
-updateRCondQual (RNot c) rs env = RNot c'
+    l' = updateAtomQual l rs e
+    r' = updateAtomQual r rs e 
+updateRCondQual (RNot c) rs e = RNot c'
   where
-    c' = updateRCondQual c rs env
-updateRCondQual (ROr l r) rs env = ROr l' r'
+    c' = updateRCondQual c rs e
+updateRCondQual (ROr l r) rs e = ROr l' r'
   where 
-    l' = updateRCondQual l rs env
-    r' = updateRCondQual r rs env
-updateRCondQual (RAnd l r) rs env = RAnd l' r'
+    l' = updateRCondQual l rs e
+    r' = updateRCondQual r rs e
+updateRCondQual (RAnd l r) rs e = RAnd l' r'
   where 
-    l' = updateRCondQual l rs env
-    r' = updateRCondQual r rs env
+    l' = updateRCondQual l rs e
+    r' = updateRCondQual r rs e
 
 updateAtomQual :: Atom -> [Rename SqlRelation] -> RenameEnv -> Atom
-updateAtomQual at@(Att a) rs env 
+updateAtomQual at@(Att a) _ e
   | isNothing aq = at 
   | isQualRel (fromJust aq) = Att $
     updateAttrQual 
       a 
       (SubqueryQualifier 
-        (fromJust (SM.lookup (relQualifier (fromJust aq)) env)))
+        (fromJust (SM.lookup (relQualifier (fromJust aq)) e)))
   | otherwise = at 
     where
       aq = qualifier a 
@@ -181,12 +183,17 @@ updateAtomQual v _ _ = v
 -- |
 updateCondQual :: SqlCond Sql -> [Rename SqlRelation] -> RenameEnv
                -> SqlCond Sql
-updateCondQual (SqlCond c) rs env = SqlCond $ updateRCondQual c rs env
+updateCondQual (SqlCond c)  rs e = SqlCond $ updateRCondQual c rs e
 updateCondQual c@(SqlIn _ _) _ _ = c
-updateCondQual (SqlNot c) rs env = undefined
-updateCondQual (SqlOr l r) rs env = undefined
-updateCondQual (SqlAnd l r) rs env = undefined
-
+updateCondQual (SqlNot c)   rs e = SqlNot $ updateCondQual c rs e 
+updateCondQual (SqlOr l r)  rs e = SqlOr l' r'
+  where
+    l' = updateCondQual l rs e
+    r' = updateCondQual r rs e
+updateCondQual (SqlAnd l r) rs e = SqlAnd l' r' 
+  where
+    l' = updateCondQual l rs e
+    r' = updateCondQual r rs e
 
 
 

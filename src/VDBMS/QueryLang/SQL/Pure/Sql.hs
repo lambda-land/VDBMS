@@ -242,14 +242,15 @@ ppSelectFromWhere (SelectFromWhere as ts cs)
       <+> vcomma ppAtts as
       $$ text "FROM"
       <+> vcomma ppRenameRel ts
-    (True, False)  -> 
-      text "SELECT * FROM "
-      <+> vcomma ppRenameRel ts
-      $$ text "WHERE"
-      <+> vand ppCond cs  
+    (True, False)  -> error "sql. ppSelectFromWhere. shouldnt be here."
+      -- text "SELECT * FROM "
+      -- <+> vcomma ppRenameRel ts
+      -- $$ text "WHERE"
+      -- <+> vand ppCond cs  
     (True, True)  -> 
-      text "SELECT * FROM "
-      <+> vcomma ppRenameRel ts
+      -- text "SELECT * FROM "
+      -- <+> 
+      vcomma ppRenameRel ts
   | otherwise = error "Sql. select from where cannot have no tables."
 
 
