@@ -69,8 +69,8 @@ nameSubSql (Sql (SelectFromWhere as ts cs))
   = do ts' <- mapM nameRel ts
        renv <- gets env
        let as' = updateAttsQual as ts' renv 
-           cs' = updateCondsQual cs ts' renv
-       return $ Sql (SelectFromWhere as' ts' cs')
+           -- cs' = updateCondsQual cs ts' renv
+       return $ Sql (SelectFromWhere as' ts' cs)
   -- = mapM nameRels ts >>= return (\ts' -> SqlSelect as ts' cs)
 nameSubSql (SqlBin o lq rq) 
   = do lq' <- nameSubSql lq
@@ -119,12 +119,19 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
 -- |
 updateAttsQual :: [SqlAttrExpr] -> [Rename SqlRelation] -> RenameEnv 
                -> [SqlAttrExpr]
-updateAttsQual = undefined
+updateAttsQual as rs e = map (flip (flip updateAttQual rs) e) as 
 
 -- -- |
 updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv 
               -> SqlAttrExpr
-updateAttQual = undefined
+updateAttQual ae@(SqlAttr (Rename Nothing at@(Attr _ q))) _ e 
+  | isNothing q = ae
+  | isQualRel aq 
+    = SqlAttr (Rename Nothing (updateAttrQual at (SubqueryQualifier aq')))
+      where 
+        aq = fromJust q
+        aq' = fromJust (SM.lookup (relQualifier aq) e)
+updateAttQual _ _ _ = error "updateAttQual. GenSql. shoulnt have got such SqlAttrExpr"
 
 -- |
 updateJCondQual :: RCondition 
