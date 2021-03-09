@@ -30,6 +30,7 @@ module VDBMS.QueryLang.SQL.Pure.Sql where
 
 import VDBMS.VDB.Name 
 import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
+import VDBMS.Features.FeatureExpr.FeatureExpr
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -85,7 +86,9 @@ data SqlAttrExpr =
     -- SqlAllAtt -- ^ *
     SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
-  | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
+  | SqlAndPCs [Attr] PCatt 
+  | SqlAndPCFexp Attr FeatureExpr PCatt
+  -- | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   deriving (Eq)
   -- deriving (Eq, Show)
 
@@ -97,8 +100,9 @@ aExprAtt (SqlAttr ra)                         = (attribute . thing) ra
 aExprAtt (SqlNullAttr (Rename Nothing _)) 
   = error "null attribute!!"
 aExprAtt (SqlNullAttr (Rename (Just n) _))    = Attribute n 
-aExprAtt (SqlConcatAtt (Rename Nothing a) _)  = attribute a 
-aExprAtt (SqlConcatAtt (Rename (Just n) _) _) = Attribute n
+aExprAtt _ = "aExprAtt. Sql. check if you should have got here!!"
+-- aExprAtt (SqlConcatAtt (Rename Nothing a) _)  = attribute a 
+-- aExprAtt (SqlConcatAtt (Rename (Just n) _) _) = Attribute n
 
 -- | Sql From expressions.
 --   Note that right now since we're only using inner joins that's 
@@ -253,49 +257,80 @@ ppSelectFromWhere (SelectFromWhere as ts cs)
       vcomma ppRenameRel ts
   | otherwise = error "Sql. select from where cannot have no tables."
 
+-- |
+ppAttr :: Attr -> Doc
+ppAttr (Attr a Nothing) 
+  = text (attributeName a)
+ppAttr (Attr a (Just (RelQualifier r))) 
+  = text (relationName r)
+  <> char '.'
+  <> text (attributeName a)
+ppAttr (Attr a (Just (SubqueryQualifier n))) 
+  = text n 
+  <> char '.'
+  <> text (attributeName a)
+
+-- |
+ppRenameAttr :: Rename Attr -> Doc
+ppRenameAttr (Rename Nothing a) = ppAttr a 
+ppRenameAttr (Rename (Just n) a) = ppAttr a <+> "AS" <+> text n
 
 -- | prints sql attribute expressions.
 -- TODO: this may have bugs!!!! NEED TO BE TESTED!
 ppAtts :: SqlAttrExpr -> Doc
 -- ppAtts SqlAllAtt = text "*"
-ppAtts (SqlAttr ra) 
-  | isNothing n && isNothing q = a
-  | isNothing n && isJust q    
-    = text ((qualName . fromJust) q) <> char '.' <> a
-  | isJust n    && isNothing q = a <+> text "AS" <+> text (fromJust n)
-  | isJust n    && isJust q    
-    = text ((qualName . fromJust) q) 
-      <> char '.' 
-      <> a 
-      <+> text "AS" 
-      <+> text (fromJust n)
-  | otherwise = error "the attr expr must have already matched one of the cases!"
-    where 
-      n = name ra
-      q = (qualifier . thing) ra
-      a = (text . attributeName . attribute . thing) ra
+ppAtts (SqlAttr ra) = ppRenameAttr ra 
+  -- | isNothing n && isNothing q = a
+  -- | isNothing n && isJust q    
+  --   = text ((qualName . fromJust) q) <> char '.' <> a
+  -- | isJust n    && isNothing q = a <+> text "AS" <+> text (fromJust n)
+  -- | isJust n    && isJust q    
+  --   = text ((qualName . fromJust) q) 
+  --     <> char '.' 
+  --     <> a 
+  --     <+> text "AS" 
+  --     <+> text (fromJust n)
+  -- | otherwise = error "the attr expr must have already matched one of the cases!"
+  --   where 
+  --     n = name ra
+  --     q = (qualifier . thing) ra
+  --     a = (text . attributeName . attribute . thing) ra
 ppAtts (SqlNullAttr rnull) 
   | isNothing n = text "NULL"
   | isJust n    = text "NULL AS" <+> text (fromJust n)
   | otherwise = error "the attr expr must have already matched one of the cases!"
       where
       n = name rnull
-ppAtts (SqlConcatAtt ra ss) 
-  | isNothing n && isNothing q = concat a
-  | isNothing n && isJust q    
-    = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
-  | isJust n    && isNothing q 
-    = concat a <+> text "AS" <+> text (fromJust n)
-  | isJust n    && isJust q    
-    = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
-      <+> text "AS" <+> text (fromJust n)
-  | otherwise = error "the attr expr must have already matched one of the cases!"
-    where 
-      n = name ra
-      q = (qualifier . thing) ra
-      a = (text . attributeName . attribute . thing) ra
-      concat rest = text "CONCAT" <+> parens (rest <+> comma <+> ts)
-      ts = hcomma quotes (fmap text ss)
+ppAtts (SqlAndPCs as pc) = 
+  text "CONCAT("
+  <+> vandfexp ppAttr as
+  <> ") AS "
+  <> text (attributeName pc)
+ppAtts (SqlAndPCFexp a f pc) = 
+  text "CONCAT("
+  <> quotes lparen <> comma
+  <+> ppAttr a
+  <> comma <+> text ") AND ("
+  <+> text (show f) <> comma <+> quotes rparen
+  <> ") AS "
+  <> text (attributeName pc)
+
+-- ppAtts (SqlConcatAtt ra ss) 
+--   | isNothing n && isNothing q = concat a
+--   | isNothing n && isJust q    
+--     = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
+--   | isJust n    && isNothing q 
+--     = concat a <+> text "AS" <+> text (fromJust n)
+--   | isJust n    && isJust q    
+--     = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
+--       <+> text "AS" <+> text (fromJust n)
+--   | otherwise = error "the attr expr must have already matched one of the cases!"
+--     where 
+--       n = name ra
+--       q = (qualifier . thing) ra
+--       a = (text . attributeName . attribute . thing) ra
+--       concat rest = text "CONCAT" <+> parens (rest <+> comma <+> ts)
+--       ts = hcomma quotes (fmap text ss)
 
 -- | prints sql relations.
 ppRel :: SqlRelation -> Doc
@@ -376,7 +411,11 @@ vcomma :: (a -> Doc) -> [a] -> Doc
 vcomma f = vcat . punctuate comma . map f
 
 vand :: (a -> Doc) -> [a] -> Doc
-vand f = vcat . punctuate (text " AND ") . map f 
+vand f = hcat . punctuate (text " AND ") . map f 
+
+vandfexp :: (a -> Doc) -> [a] -> Doc
+vandfexp f = hcat . punctuate (comma <+> quotes (text " AND ")) 
+  . map (\a -> quotes lparen <> comma <+> f a <> comma <+> quotes rparen)
 
 -- instance Show OutSql where
 --   show = ppOutSqlString

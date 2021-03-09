@@ -87,13 +87,13 @@ updatePC p (Sql sql) f
   = Sql (updatePCSFW p sql f)
     where
       updatePCSFW :: PCatt -> SelectFromWhere -> FeatureExpr -> SelectFromWhere
-      updatePCSFW p sql f 
-        = SelectFromWhere 
-          ((attributes sql) 
-            ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
-                             [" AND (" ++ show f ++ ")"]]) 
-          (tables sql) 
-          (conditions sql)
+      updatePCSFW p sql f = undefined
+        -- = SelectFromWhere 
+        --   ((attributes sql) 
+        --     ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
+        --                      [" AND (" ++ show f ++ ")"]]) 
+        --   (tables sql) 
+        --   (conditions sql)
 updatePC p (SqlBin o l r) f
   = SqlBin o (updatePC p l f) (updatePC p r f)
 updatePC _ _ _ 
@@ -101,5 +101,7 @@ updatePC _ _ _
 
 
 
+  -- | SqlAndPCs [Attr] PCatt 
+  -- | SqlAndPCFexp Attr FeatureExpr PCatt
 
 
