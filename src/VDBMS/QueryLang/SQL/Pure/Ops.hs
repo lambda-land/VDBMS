@@ -4,6 +4,7 @@ module VDBMS.QueryLang.SQL.Pure.Ops (
        adjustQSch
        , updatePC
        , sqlQAtts'
+       , deletePC
 
 ) where
 
@@ -83,25 +84,26 @@ updatesAs res already aes
 --   or sqlbin o l r. this function is used for combining 
 --   sql queries with the same schema into one query in genOneQ.
 updatePC :: PCatt -> Sql -> FeatureExpr -> Sql
-updatePC p (Sql sql) f 
-  = Sql (updatePCSFW p sql f)
+updatePC pc (Sql sql) fexp 
+  = Sql (updatePCSFW pc sql fexp)
     where
       updatePCSFW :: PCatt -> SelectFromWhere -> FeatureExpr -> SelectFromWhere
-      updatePCSFW p sql f = undefined
-        -- = SelectFromWhere 
-        --   ((attributes sql) 
-        --     ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
-        --                      [" AND (" ++ show f ++ ")"]]) 
-        --   (tables sql) 
-        --   (conditions sql)
+      updatePCSFW p sql f 
+        = SelectFromWhere 
+          ((attributes sql) 
+            ++ [SqlAndPCFexp (Attr p Nothing) f p])
+            -- ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
+            --                  [" AND (" ++ show f ++ ")"]]) 
+          (tables sql) 
+          (conditions sql)
 updatePC p (SqlBin o l r) f
   = SqlBin o (updatePC p l f) (updatePC p r f)
 updatePC _ _ _ 
   = error "expected a sqlselect value!! but got either tref or empty!!!"
 
+-- | drops the attribute with pc attribute name. 
+deletePC :: [SqlAttrExpr] -> PCatt -> [SqlAttrExpr]
+deletePC as pc = filter (\a -> aExprAtt a /= pc) as 
 
-
-  -- | SqlAndPCs [Attr] PCatt 
-  -- | SqlAndPCFexp Attr FeatureExpr PCatt
 
 

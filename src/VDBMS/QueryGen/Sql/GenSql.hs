@@ -104,7 +104,8 @@ nameRel rq@(Rename a q@(SqlSubQuery subq))
 -- TODO: we may need to updates condition for attributes qualifiers.
 nameRel rq@(Rename a (SqlInnerJoin l r c)) 
   | isNothing a 
-    = trace (show c) $ 
+    = 
+      -- trace (show c) $ 
       do l' <- nameRel l
          r' <- nameRel r
          -- s <- gets counter

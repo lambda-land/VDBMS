@@ -414,7 +414,7 @@ vand :: (a -> Doc) -> [a] -> Doc
 vand f = hcat . punctuate (text " AND ") . map f 
 
 vandfexp :: (a -> Doc) -> [a] -> Doc
-vandfexp f = hcat . punctuate (comma <+> quotes (text " AND ")) 
+vandfexp f = hcat . punctuate (comma <+> quotes (text " AND ") <> comma) 
   . map (\a -> quotes lparen <> comma <+> f a <> comma <+> quotes rparen)
 
 -- instance Show OutSql where
