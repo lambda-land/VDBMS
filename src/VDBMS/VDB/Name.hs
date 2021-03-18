@@ -16,6 +16,7 @@ module VDBMS.VDB.Name (
         , attsSet
         , qualName
         , isQualRel
+        , isPCAttr
 
 ) where
 
@@ -106,3 +107,6 @@ type PCatt = Attribute
 -- | presence condition attribute name.
 presCondAttName :: PCatt -> Name 
 presCondAttName (Attribute p) = p
+
+isPCAttr :: Attr -> PCatt -> Bool
+isPCAttr (Attr a _) pc = a == pc

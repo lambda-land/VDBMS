@@ -31,9 +31,11 @@ import Data.Generics.Uniplate.Direct (transform)
 
 import Control.Monad.Catch 
 
+-- import Debug.Trace
+
 -- | forces the qualifier to their projected attributes.
-injectQualifier :: Algebra -> Schema -> Algebra
-injectQualifier q s 
+injectQualifier :: Algebra -> Schema -> PCatt -> Algebra
+injectQualifier q s pc 
   | isJust tq = transform attrScopeInQ q
   | otherwise = error "the query is type-ill"
     where 
@@ -41,18 +43,20 @@ injectQualifier q s
       tq = runTypeQuery q s 
       attrScopeInQ :: Algebra -> Algebra 
       attrScopeInQ (Proj as q') 
-        = Proj (updateAttsQual (flip attrScope (extrctType tq)) as) q'
+        = Proj (updateAttsQual (flip (flip attrScope (extrctType tq)) pc) as) q'
       attrScopeInQ q' = q'
 
 -- | updates the qualifier of an attribute based on a given type env.
 --   note that if the env has more than one info it assumes that it 
 --   doesn't have a differencce on which one is used. 
-attrScope :: Attr -> TypeEnv -> Attr
-attrScope a t 
+attrScope :: Attr -> TypeEnv -> PCatt -> Attr
+attrScope a t pc
+  | isPCAttr a pc = a
   | isNothing q && isJust a' = updateAttrQual a (attrQual $ head $ fromJust a')
   | isNothing q && isNothing a' 
-    = error "attrScope. ForceScope. should have had a in t!"
+    = error ("attrScope. ForceScope. should have had a in t!" ++ show a ++ show t)
   | otherwise = a 
     where 
       q = qualifier a 
       a' = SM.lookup (attribute a) (typeMap t)
+

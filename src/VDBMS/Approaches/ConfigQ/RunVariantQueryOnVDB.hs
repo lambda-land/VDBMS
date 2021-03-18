@@ -25,13 +25,15 @@ import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
 import VDBMS.QueryGen.RA.AddPC (addPC)
-import VDBMS.TypeSystem.Variational.InjectQualifier (injectQualifier)
-import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
+import VDBMS.QueryGen.Sql.FixPC (fixPC)
+-- import VDBMS.TypeSystem.Variational.InjectQualifier (injectQualifier)
+-- import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
 -- import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 -- for testing
 import VDBMS.DBsetup.Postgres.Test
 import VDBMS.DBMS.Table.Table (prettySqlTable)
 import VDBMS.UseCases.Test.Schema
+import VDBMS.DBsetup.Postgres.EmployeeDB
 -- for testing
 
 import Control.Arrow (first, second, (***))
@@ -65,24 +67,28 @@ runQ1 conn vq =
          atts = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
-         vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch
+         -- vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch pc
          -- try removing opt
-         -- ra_qs = map (\c -> (c, configure c vq_constrained_opt)) configs --revised for the final version
-         ra_qs = map (\c -> (c, configure c vq_constrained_opt_qual)) configs
-         ra_qs_subqNamed = map (second nameSubqRAlgebra) ra_qs
+         ra_qs = map (\c -> (c, configure c vq_constrained_opt)) configs --revised for the final version
+         -- ra_qs = map (\c -> (c, configure c vq_constrained_opt_qual)) configs
+         -- ra_qs_subqNamed = map (second nameSubqRAlgebra) ra_qs
          -- the following two lines are for optimizing the generated RA queries
          -- ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
          -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
          ras_opt = map (second ((addPC pc) . opts_)) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
-         -- sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt --revised for the final version
-         sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt
+         sql_qs = fmap (bimapDefault id (show . (fixPC pc) . genSql . transAlgebra2Sql)) ras_opt --revised for the final version
+         -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt --revised for the final version
+         -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt
      -- putStrLn (show type_sch)
+     -- putStrLn ("vq_constrained " ++ show vq_constrained)
+     -- putStrLn ("vq_constrained_opt " ++ show vq_constrained_opt)
+     -- putStrLn (show )
      end_constQ <- getTime Monotonic
      putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
-     putStrLn (show $ fmap snd ra_qs)
-     putStrLn (show $ fmap snd ras_opt)
+     -- putStrLn (show $ fmap snd ra_qs)
+     -- putStrLn (show $ fmap snd ras_opt)
      putStrLn (show $ fmap snd sql_qs)
          -- try removing gensql
      let runq :: (Config Bool, String) -> IO SqlVariantTable
@@ -110,7 +116,10 @@ runQ1 conn vq =
 --      fetchQRows db q
 
 run1test :: Algebra -> IO Table
-run1test q = runQ1 tstVDBone q
+run1test = runQ1 tstVDBone
+
+run1emp :: Algebra -> IO Table
+run1emp = runQ1 employeeVDB
 
 -- -- |
 -- runQ1test :: Database conn => conn -> Algebra -> IO [(String, Config Bool)]

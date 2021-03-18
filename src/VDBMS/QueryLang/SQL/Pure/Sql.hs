@@ -30,6 +30,7 @@ module VDBMS.QueryLang.SQL.Pure.Sql where
 
 import VDBMS.VDB.Name 
 import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
+import VDBMS.Features.FeatureExpr.FeatureExpr
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -40,9 +41,9 @@ import Data.Maybe (isNothing, isJust, fromJust)
 
 
 -- | final sql data type that will be sent to the database engine.
-data OutSql = OutSql SelectFromWhere
-  | OutSqlBin SqlBinOp OutSql OutSql
-  | OutSqlEmpty
+-- data OutSql = OutSql SelectFromWhere
+--   | OutSqlBin SqlBinOp OutSql OutSql
+--   | OutSqlEmpty
 
 -- | the intermediate sql data type that is used to translate queries
 --   written in variational relational algebra to final sql queries. 
@@ -50,6 +51,7 @@ data Sql = Sql SelectFromWhere
   | SqlBin SqlBinOp Sql Sql
   | SqlTRef Relation
   | SqlEmpty
+    -- deriving Show
 
 -- -- | Sql select statements.
 -- data SqlSelect =  
@@ -72,18 +74,23 @@ data SelectFromWhere =
     , tables :: [Rename SqlRelation]
     , conditions :: [SqlCond Sql] -- TODO: debateable
   }
+    -- deriving Show
 
 -- | Sql null attribute.
 data SqlNullAtt = SqlNullAtt
   deriving (Eq)
+  -- deriving (Eq, Show)
 
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
     -- SqlAllAtt -- ^ *
     SqlAttr (Rename Attr) -- ^ A, A as A, R.A, R.A as A
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
-  | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
+  | SqlAndPCs [Attr] PCatt 
+  | SqlAndPCFexp Attr FeatureExpr PCatt
+  -- | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   deriving (Eq)
+  -- deriving (Eq, Show)
 
 -- | attributes in an attribute expr.
 aExprAtt :: SqlAttrExpr -> Attribute 
@@ -93,8 +100,9 @@ aExprAtt (SqlAttr ra)                         = (attribute . thing) ra
 aExprAtt (SqlNullAttr (Rename Nothing _)) 
   = error "null attribute!!"
 aExprAtt (SqlNullAttr (Rename (Just n) _))    = Attribute n 
-aExprAtt (SqlConcatAtt (Rename Nothing a) _)  = attribute a 
-aExprAtt (SqlConcatAtt (Rename (Just n) _) _) = Attribute n
+aExprAtt _ = "aExprAtt. Sql. check if you should have got here!!"
+-- aExprAtt (SqlConcatAtt (Rename Nothing a) _)  = attribute a 
+-- aExprAtt (SqlConcatAtt (Rename (Just n) _) _) = Attribute n
 
 -- | Sql From expressions.
 --   Note that right now since we're only using inner joins that's 
@@ -112,6 +120,10 @@ data SqlRelation =
 isrel :: Sql -> Bool
 isrel (SqlTRef _) = True 
 isrel _           = False
+
+sqlrel :: Sql -> Relation
+sqlrel (SqlTRef r) = r 
+sqlrel _ = error "sql. expected sqltref"
 
 -- | returns true if sqlselect is select ...
 issqlslct :: Sql -> Bool
@@ -183,14 +195,14 @@ getThing = fst
 --   | SqlNoTemp SqlSelect
 
 -- |returns the string of output sql.
-ppOutSqlString :: OutSql -> String
-ppOutSqlString = render . ppOutSql
+-- ppOutSqlString :: OutSql -> String
+-- ppOutSqlString = render . ppOutSql
 
 -- | prints output sql queries.
-ppOutSql :: OutSql -> Doc
-ppOutSql (OutSql sql) = ppSelectFromWhere sql
-ppOutSql (OutSqlBin o l r) = ppSqlBin ppOutSql o l r
-ppOutSql OutSqlEmpty = ppEmpty
+-- ppOutSql :: OutSql -> Doc
+-- ppOutSql (OutSql sql) = ppSelectFromWhere sql
+-- ppOutSql (OutSqlBin o l r) = ppSqlBin ppOutSql o l r
+-- ppOutSql OutSqlEmpty = ppEmpty
 
 
 -- | returns the string of sql select.
@@ -221,61 +233,104 @@ ppEmpty = text "SELECT NULL"
 -- | prints select from where queries.
 ppSelectFromWhere :: SelectFromWhere -> Doc
 ppSelectFromWhere (SelectFromWhere as ts cs)
-  | null as && null cs = 
-     vcomma ppRenameRel ts
-  | null cs = text "SELECT"
-    <+> vcomma ppAtts as
-    $$ text "FROM"
-    <+> vcomma ppRenameRel ts
-  | otherwise = text "SELECT"
-    <+> vcomma ppAtts as
-    $$ text "FROM"
-    <+> vcomma ppRenameRel ts
-    $$ text "WHERE"
-    <+> vcomma ppCond cs
+  | not (null ts) = case (null as, null cs) of 
+    (False, False) -> 
+      text "SELECT"
+      <+> vcomma ppAtts as
+      $$ text "FROM"
+      <+> vcomma ppRenameRel ts
+      $$ text "WHERE"
+      <+> vand ppCond cs  
+    (False, True)  -> 
+      text "SELECT"
+      <+> vcomma ppAtts as
+      $$ text "FROM"
+      <+> vcomma ppRenameRel ts
+    (True, False)  -> error "sql. ppSelectFromWhere. shouldnt be here."
+      -- text "SELECT * FROM "
+      -- <+> vcomma ppRenameRel ts
+      -- $$ text "WHERE"
+      -- <+> vand ppCond cs  
+    (True, True)  -> 
+      -- text "SELECT * FROM "
+      -- <+> 
+      vcomma ppRenameRel ts
+  | otherwise = error "Sql. select from where cannot have no tables."
+
+-- |
+ppAttr :: Attr -> Doc
+ppAttr (Attr a Nothing) 
+  = text (attributeName a)
+ppAttr (Attr a (Just (RelQualifier r))) 
+  = text (relationName r)
+  <> char '.'
+  <> text (attributeName a)
+ppAttr (Attr a (Just (SubqueryQualifier n))) 
+  = text n 
+  <> char '.'
+  <> text (attributeName a)
+
+-- |
+ppRenameAttr :: Rename Attr -> Doc
+ppRenameAttr (Rename Nothing a) = ppAttr a 
+ppRenameAttr (Rename (Just n) a) = ppAttr a <+> "AS" <+> text n
 
 -- | prints sql attribute expressions.
 -- TODO: this may have bugs!!!! NEED TO BE TESTED!
 ppAtts :: SqlAttrExpr -> Doc
 -- ppAtts SqlAllAtt = text "*"
-ppAtts (SqlAttr ra) 
-  | isNothing n && isNothing q = a
-  | isNothing n && isJust q    
-    = text ((qualName . fromJust) q) <> char '.' <> a
-  | isJust n    && isNothing q = a <+> text "AS" <+> text (fromJust n)
-  | isJust n    && isJust q    
-    = text ((qualName . fromJust) q) 
-      <> char '.' 
-      <> a 
-      <+> text "AS" 
-      <+> text (fromJust n)
-  | otherwise = error "the attr expr must have already matched one of the cases!"
-    where 
-      n = name ra
-      q = (qualifier . thing) ra
-      a = (text . attributeName . attribute . thing) ra
+ppAtts (SqlAttr ra) = ppRenameAttr ra 
+  -- | isNothing n && isNothing q = a
+  -- | isNothing n && isJust q    
+  --   = text ((qualName . fromJust) q) <> char '.' <> a
+  -- | isJust n    && isNothing q = a <+> text "AS" <+> text (fromJust n)
+  -- | isJust n    && isJust q    
+  --   = text ((qualName . fromJust) q) 
+  --     <> char '.' 
+  --     <> a 
+  --     <+> text "AS" 
+  --     <+> text (fromJust n)
+  -- | otherwise = error "the attr expr must have already matched one of the cases!"
+  --   where 
+  --     n = name ra
+  --     q = (qualifier . thing) ra
+  --     a = (text . attributeName . attribute . thing) ra
 ppAtts (SqlNullAttr rnull) 
   | isNothing n = text "NULL"
   | isJust n    = text "NULL AS" <+> text (fromJust n)
   | otherwise = error "the attr expr must have already matched one of the cases!"
       where
       n = name rnull
-ppAtts (SqlConcatAtt ra ss) 
-  | isNothing n && isNothing q = concat a
-  | isNothing n && isJust q    
-    = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
-  | isJust n    && isNothing q 
-    = concat a <+> text "AS" <+> text (fromJust n)
-  | isJust n    && isJust q    
-    = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
-      <+> text "AS" <+> text (fromJust n)
-  | otherwise = error "the attr expr must have already matched one of the cases!"
-    where 
-      n = name ra
-      q = (qualifier . thing) ra
-      a = (text . attributeName . attribute . thing) ra
-      concat rest = text "CONCAT" <+> parens (rest <+> comma <+> ts)
-      ts = hcomma quotes (fmap text ss)
+ppAtts (SqlAndPCs as pc) = 
+  text "CONCAT("
+  <+> vandfexp ppAttr as
+  <> ") AS "
+  <> text (attributeName pc)
+ppAtts (SqlAndPCFexp a f pc) = 
+  text "CONCAT("
+  <> quotes lparen <> comma
+  <+> ppAttr a
+  <> comma <+> text ") AND ("
+  <+> text (show f) <> comma <+> quotes rparen
+  <> ") AS "
+  <> text (attributeName pc)
+
+-- ppAtts (SqlConcatAtt ra ss) 
+--   | isNothing n && isNothing q = concat a
+--   | isNothing n && isJust q    
+--     = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
+--   | isJust n    && isNothing q 
+--     = concat a <+> text "AS" <+> text (fromJust n)
+--   | isJust n    && isJust q    
+--     = concat (text ((qualName . fromJust) q) <+> char '.' <> a)
+--       <+> text "AS" <+> text (fromJust n)
+--   | otherwise = error "the attr expr must have already matched one of the cases!"
+--     where 
+--       n = name ra
+--       q = (qualifier . thing) ra
+--       a = (text . attributeName . attribute . thing) ra
+--       concat rest = text "CONCAT" <+> parens (rest <+> comma <+> ts)
+--       ts = hcomma quotes (fmap text ss)
 
 -- | prints sql relations.
 ppRel :: SqlRelation -> Doc
@@ -355,8 +410,15 @@ hcomma f = hcat . punctuate comma . map f
 vcomma :: (a -> Doc) -> [a] -> Doc
 vcomma f = vcat . punctuate comma . map f
 
-instance Show OutSql where
-  show = ppOutSqlString
+vand :: (a -> Doc) -> [a] -> Doc
+vand f = hcat . punctuate (text " AND ") . map f 
+
+vandfexp :: (a -> Doc) -> [a] -> Doc
+vandfexp f = hcat . punctuate (comma <+> quotes (text " AND ") <> comma) 
+  . map (\a -> quotes lparen <> comma <+> f a <> comma <+> quotes rparen)
+
+-- instance Show OutSql where
+--   show = ppOutSqlString
 
 instance Show Sql where 
   show = ppSqlString

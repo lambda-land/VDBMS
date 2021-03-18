@@ -49,7 +49,6 @@ nameSubqRAlgebra q =
 
 -- |
 nameSubqRA :: RAlgebra -> QState RAlgebra
--- nameSubqRA = undefined
 nameSubqRA (RSetOp o l r)   = 
   do l' <- nameSubqRA l 
      r' <- nameSubqRA r 

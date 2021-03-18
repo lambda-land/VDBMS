@@ -19,7 +19,7 @@ import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 -- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
-import VDBMS.QueryGen.Sql.GenSql (genSql)
+-- import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (sqlVtables2VTable)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 -- import VDBMS.Features.Config (Config)
@@ -64,7 +64,7 @@ runQ2 conn vq =
          atts = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
-         vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch
+         vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch pc
          -- try removing opt
          -- ra_qs = optAlgebra vsch vq_constrained_opt --revised for the final version
          ra_qs = optAlgebra vsch vq_constrained_opt_qual

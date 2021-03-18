@@ -4,6 +4,7 @@ module VDBMS.QueryLang.SQL.Pure.Ops (
        adjustQSch
        , updatePC
        , sqlQAtts'
+       , deletePC
 
 ) where
 
@@ -28,10 +29,10 @@ sqlQAtts' (SqlBin _ l _) = sqlQAtts' l
 sqlQAtts' (SqlTRef _)    = []
 sqlQAtts' SqlEmpty       = []
 
-sqlQAtts'' :: OutSql -> [Attribute]
-sqlQAtts'' (OutSql q)        = sqlQAtts q
-sqlQAtts'' (OutSqlBin _ l _) = sqlQAtts'' l 
-sqlQAtts'' OutSqlEmpty       = []
+-- sqlQAtts'' :: OutSql -> [Attribute]
+-- sqlQAtts'' (OutSql q)        = sqlQAtts q
+-- sqlQAtts'' (OutSqlBin _ l _) = sqlQAtts'' l 
+-- sqlQAtts'' OutSqlEmpty       = []
 
 -- | adjusts the schema  of a sql query wrt a given list of attribute.
 adjustQSch :: [Attribute] -> [Attribute] -> Sql -> Sql
@@ -83,15 +84,16 @@ updatesAs res already aes
 --   or sqlbin o l r. this function is used for combining 
 --   sql queries with the same schema into one query in genOneQ.
 updatePC :: PCatt -> Sql -> FeatureExpr -> Sql
-updatePC p (Sql sql) f 
-  = Sql (updatePCSFW p sql f)
+updatePC pc (Sql sql) fexp 
+  = Sql (updatePCSFW pc sql fexp)
     where
       updatePCSFW :: PCatt -> SelectFromWhere -> FeatureExpr -> SelectFromWhere
       updatePCSFW p sql f 
         = SelectFromWhere 
           ((attributes sql) 
-            ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
-                             [" AND (" ++ show f ++ ")"]]) 
+            ++ [SqlAndPCFexp (Attr p Nothing) f p])
+            -- ++ [SqlConcatAtt (Rename (Just (attributeName p)) (Attr p Nothing)) 
+            --                  [" AND (" ++ show f ++ ")"]]) 
           (tables sql) 
           (conditions sql)
 updatePC p (SqlBin o l r) f
@@ -99,7 +101,9 @@ updatePC p (SqlBin o l r) f
 updatePC _ _ _ 
   = error "expected a sqlselect value!! but got either tref or empty!!!"
 
-
+-- | drops the attribute with pc attribute name. 
+deletePC :: [SqlAttrExpr] -> PCatt -> [SqlAttrExpr]
+deletePC as pc = filter (\a -> aExprAtt a /= pc) as 
 
 
 

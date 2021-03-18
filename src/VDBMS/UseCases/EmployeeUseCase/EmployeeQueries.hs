@@ -116,6 +116,12 @@ empVQ1 =
                 (tRef job)
                 (joinEqCond (att2attrQualRel title_ empacct)
                             (att2attrQualRel title_ job)))
+empVQ1' = 
+  project (pure $ att2optattQualRel salary_ job empv3)
+          (select empSqlCond (join (tRef empacct)
+                (tRef job)
+                (joinEqCond (att2attrQualRel title_ empacct)
+                            (att2attrQualRel title_ job))))
 
 -- π (empno^v_3, salary^v_3)
 --   (empacct ⋈_{empacct.title=job.title} job)
