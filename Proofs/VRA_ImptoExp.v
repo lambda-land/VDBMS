@@ -796,15 +796,17 @@ generalize dependent A'. generalize dependent A. generalize dependent e.
 induction q; destruct A as (A, ea);  destruct A' as (A', ea'); intros HImp HExp.
 
 { (* Relation - E *)
-inversion HImp; subst. simpl ImptoExp in HExp.
+inversion HImp; subst. 
 
-apply InVR_findVR in H3 as HInFind. rewrite HInFind in HExp.
+simpl ImptoExp in HExp.
+
+apply InVR_findVR in H4 as HInFind. rewrite HInFind in HExp.
 
 unfold getvs in HExp. unfold getf in HExp.
 
 simpl in HExp. inversion HExp; subst.
 
-apply InVR_findVR in H2 as HInFind'. rewrite HInFind in HInFind'.
+apply InVR_findVR in H3 as HInFind'. rewrite HInFind in HInFind'.
 
 inversion HInFind'; subst. reflexivity. all: assumption.
 } 
@@ -942,7 +944,7 @@ unfold getvs, getf in HExp. simpl in HExp.
 
 inversion HImp as [| eImp' SImp' HndpRSImp' HndpASImp' 
                    rnImp' HeRImp' A_Imp' A'Imp' HndpA'Imp' e_Imp' e'Imp' 
-                   HInVRImp |
+                   HInVRImp HSatImp |
                    | | | |]; subst.
 
 inversion HExp as [| eExp' SExp' HndpRSExp' HndpASExp' 
@@ -1116,7 +1118,7 @@ destruct v as (rn, (A_, e_)).
 simpl in HImp. simpl.
 inversion HImp as [| eInv SInv HndpRSInv HndpASInv rnInv HeRInv A_Inv
                    A'Inv HndpA'Inv e_Inv e'Inv 
-                   HInVRInv | | | | |]; subst.
+                   HInVRInv HSatInv | | | | |]; subst.
 
 rename e'Inv into e'.
 apply InVR_findVR in HInVRInv as HInFindInv; try assumption.
@@ -1281,7 +1283,7 @@ unfold getvs, getf in HImp. simpl in HImp.
 
 inversion HImp as [| eImp' SImp' HndpRSImp' HndpASImp' 
                    rnImp' HeRImp' A_Imp'  A'Imp' HndpA'Imp' e_Imp' e'Imp' 
-                   HInVRImp |
+                   HInVRImp HSatImp |
                    | | | |]; subst.
 
 apply InVR_findVR in HInVRImp

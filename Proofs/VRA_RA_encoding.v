@@ -1613,7 +1613,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
   | Relation_vE_imp : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
                               rn {Hrn: empRelInempS rn} A_ A' {HndpA': NoDupElem A'} e_ e',
        InVR (rn, (A', e')) S ->
-       (*sat (e /\(F) e') *)
+       sat (e /\(F) e') ->
        (*SatTuples (A, (e /\(F) e')) ->*)
        vtypeImp e S (rel_v (rn, (A_, e_))) (A', (e /\(F) e')) 
   (*   -- PROJECT-E --  *)
