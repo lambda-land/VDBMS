@@ -942,7 +942,7 @@ Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c,
     subset (configVQtype X c) (configVQtype X' c).
 
 Definition subsump_velems ( A A': velems ) : Prop := forall c, 
-      subset (configVElemSet A c) (configVElemSet A' c).
+    subset (configVElemSet A c) (configVElemSet A' c).
       
 Definition subsump_avelems ( A A': avelems ) : Prop := forall c, 
    subset (AX[[ A]]c) (AX[[ A']]c).
@@ -1621,7 +1621,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
                             vq {HndpvQ: NoDupElemvQ vq} e' A' 
                                {HndpAA': NoDupElem A'} Q {HndpQ: NoDupElem (fst Q)},
        vtypeImp e S vq (A', e') -> 
-       (*subsumpImp_vqtype Q (A', e') ->*) (* see below why subsumpImp_vqtype is not needed? *)
+       subsumpImp_vqtype Q (A', e') -> (* see below why subsumpImp_vqtype is not needed? *)
        vtypeImp e S (proj_v Q vq) (vqtype_inter_vq Q (A', e'))
   (*  -- SELECT-E --  *)
   | Select_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 

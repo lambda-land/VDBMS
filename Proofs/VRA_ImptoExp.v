@@ -1172,6 +1172,24 @@ auto.
 
 { unfold vqtype_inter_vq. simpl. simpl in *.
      apply NoDupElem_velems_inter; assumption. }
+     
+pose (ImpQ_ImpType_Equiv_ExpQ_ImpType HqInv Hqs) as HqeqvqS.
+
+apply (subsumpImp_vqtype_equiv _ HqeqvqS) in HsbsmpInv.
+
+apply (subsumpImp_vqtype_equiv _ Htrue_e).
+symmetry in Htrue_e.
+apply (subsumpImp_vqtype_equiv _ Htrue_e) in HsbsmpInv. 
+
+apply subsumpImp_vqtype_inter_intro in  HsbsmpInv.
+
+auto. simpl in HndpQInv. auto. auto.
+
+(* pose (subsumpImp_vqtype_inter_l (Ap, ep) (Aqs, eqs)) as HsbsmpInter.
+
+apply (subsumpImp_vqtype_trans _ _ _ HsbsmpInter) in  HsbsmpInv.
+
+auto. *)  
 
 }
 

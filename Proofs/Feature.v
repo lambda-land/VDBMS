@@ -152,6 +152,17 @@ Proof.
    rewrite not_true_iff_false. apply H.
 Qed.
 
+Theorem sat_and_dist : forall e1 e2, 
+           sat (e1 /\(F) e2) -> sat(e1) /\ sat(e2).
+Proof. unfold sat. intros. 
+simpl in H. 
+destruct H as [c H].
+apply andb_true_iff in H.
+destruct H as [H1 H2].
+split; exists c; eauto.
+Qed.
+
+
 (* not_sat (e1 /\(F) ~(F)e2) is saying that e2 is a subset of e1, i.e., e2 is more specific than e1. *)
 Theorem sat_taut_comp : forall e1 e2, 
            (forall c, semE e1 c = true -> semE e2 c = true) 
