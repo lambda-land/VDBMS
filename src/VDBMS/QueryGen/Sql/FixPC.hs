@@ -74,3 +74,22 @@ fixPCrenameSqlRelation pc (Rename a (SqlInnerJoin l r c))
                            (fixPCrenameSqlRelation pc r)
                            c)
 
+-- |
+fixMisplacedPC :: SelectFromWhere -> SelectFromWhere
+fixMisplacedPC sfw = undefined
+
+-- |
+dropEmptyPC :: [SqlAttrExpr] -> [SqlAttrExpr]
+dropEmptyPC as = filter (not . isAndPCsEmpty) as  
+
+-- |
+isPCOnlyAtt :: [SqlAttrExpr] -> Bool
+isPCOnlyAtt as 
+  | length as == 1 = case (isAndPCs (head as)) of 
+    True  -> True
+    False -> False
+  | otherwise = False
+
+
+
+

@@ -92,6 +92,16 @@ data SqlAttrExpr =
   deriving (Eq)
   -- deriving (Eq, Show)
 
+-- | returns true if the attribute expression is and of pcs.
+isAndPCs :: SqlAttrExpr -> Bool
+isAndPCs (SqlAndPCs _ _) = True
+isAndPCs _               = False
+
+-- | is attribute expression and of pcs and is the list empty.
+isAndPCsEmpty :: SqlAttrExpr -> Bool
+isAndPCsEmpty (SqlAndPCs as _) = null as 
+isAndPCsEmpty _                = False
+
 -- | attributes in an attribute expr.
 aExprAtt :: SqlAttrExpr -> Attribute 
 -- aExprAtt SqlAllAtt 
