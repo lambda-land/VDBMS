@@ -423,6 +423,20 @@ InElem a (velems_inter A B) <-> InElem a A /\ InElem a B.
 Proof. split. apply InElem_velems_inter.
 apply InElem_velems_inter_2. Qed.
 
+Lemma In_velems_inter_existsAB a e A B: 
+In (ae a e) (velems_inter A B) -> 
+(exists e', In (ae a e') A ) /\
+(exists e', In (ae a e') B ).
+Proof. intro H.
+apply In_InElem_fstVelem in H.
+simpl in H.
+rewrite InElem_velems_inter_rewrite in H.
+destruct H as [HA HB].
+split;
+[ rewrite InElem_In_exfexp in HA |
+rewrite InElem_In_exfexp in HB ]; auto.
+Qed.
+
 
 Lemma In_velems_inter a e c A B: 
 In (ae a e) (velems_inter A B) /\ (E[[ e]]c) = true -> 
@@ -449,6 +463,32 @@ apply IHA. eauto.
 apply IHA. eauto.*)
 Qed.
 
+Lemma In_velems_inter_A a e c A B: 
+In (ae a e) (velems_inter A B) /\ (E[[ e]]c) = true -> 
+exists e', In (ae a e') A /\ (E[[ e']]c) = true.
+Proof. apply velems_inter_ind; intros.
+- destruct H. destruct H. 
+- apply H in H0. destruct H0 as [e' [ HIne' He' ] ].
+exists e'. split; try eauto. apply in_cons. auto.
+- (* get_annot a A' -> In a X[[A]]c -> goal *) destruct H0.
+destruct H0 as [Heq | HIn]. inversion Heq; subst.
+exists e0. split. simpl. left. auto.
+simpl in H1. rewrite andb_true_iff in H1.
+destruct H1 as [He0 He']. auto.
+assert(H0: In (ae a e) (velems_inter As A') /\ E[[ e]] c = true).
+eauto. apply H in H0. destruct H0 as [e'' [ HIne' He'' ] ].
+exists e''. split; try eauto. apply in_cons. auto.
+Qed.
+
+Lemma In_velems_inter_AB a e c A B: 
+In (ae a e) (velems_inter A B) /\ (E[[ e]]c) = true -> 
+(exists e', In (ae a e') A /\ (E[[ e']]c) = true) /\
+(exists e', In (ae a e') B /\ (E[[ e']]c) = true).
+Proof.
+intros. split.
+eapply In_velems_inter_A. eauto.
+eapply In_velems_inter. eauto.
+Qed.
 
 Lemma set_add_equiv: forall a A A',
 A=x=A' -> set_add string_eq_dec a A =x= set_add string_eq_dec a A'.
@@ -875,8 +915,8 @@ Qed.
 
 (* if not NoDupElem B then replace In (ae a e') B with e' := get_annot a B *)
 Lemma velems_inter_elemchc_more_specific: forall x e e' A B (HndpB: NoDupElem B),
-In (ae x e) (velems_inter A B) -> In (ae x e') B -> forall c,
-((E[[ e]]c) = true  -> (E[[ e']]c) = true).
+In (ae x e) (velems_inter A B) -> In (ae x e') B -> (forall c,
+((E[[ e]]c) = true  -> (E[[ e']]c) = true)).
 Proof. induction A as [|(a, ea) A].
 - simpl. intros. destruct H.
 - intros B HndpB HInAB HInB c He.
@@ -891,6 +931,97 @@ rewrite HInB in He2. simpl in He2.
 rewrite orb_false_r in He2. assumption. }
 { apply (IHA B HndpB HInAB HInB) with (c:= c) in He. assumption. } 
 ++ apply (IHA B HndpB HInAB HInB) with (c:= c) in He. assumption.
+Qed.
+
+Lemma velems_inter_elemchc_more_specific_A: forall x e e' A B (HndpB: NoDupElem A),
+In (ae x e) (velems_inter A B) -> In (ae x e') A -> (forall c,
+((E[[ e]]c) = true  -> (E[[ e']]c) = true)).
+Proof. induction A as [|(a, ea) A].
+- simpl. intros. destruct H.
+- intros B HndpB HInAB HInB c He.
+rewrite velems_inter_equation in *.
+unfold eqbElem in *. simpl in *.
+inversion HndpB; subst. 
+destruct (existsbElem a B) eqn: HInElemaB.
++ simpl in HInAB. destruct HInAB as [Heq | HInAB];
+[ inversion Heq; subst |  ];
+destruct HInB as [Heq' | HInB];
+[ inversion Heq'; subst | |
+  inversion Heq'; subst |  ].
+{ simpl in He. apply andb_true_iff in He. 
+destruct He as [He1 He2]. auto. }
+{ 
+apply In_InElem_fstVelem in HInB.
+simpl in HInB. contradiction.
+}
+
+{ 
+apply In_InElem_fstVelem in HInAB.
+simpl in HInAB. rewrite InElem_velems_inter_rewrite in HInAB.
+destruct HInAB as [HInA HInB]. contradiction. 
+}
+
+{ apply IHA with (B:=B); eauto. }
+
++ apply not_existsbElem_InElem in HInElemaB.
+
+destruct HInB as [Heq | HInB]. 
+inversion Heq; subst. 
+apply In_InElem_fstVelem in HInAB.
+simpl in HInAB. 
+rewrite InElem_velems_inter_rewrite in HInAB.
+destruct HInAB as [HInA HInB']. contradiction.
+apply IHA with (B:=B); eauto. 
+
+Qed.
+
+Lemma In_velems_inter_equivE x e ea eb A 
+(HndpA: NoDupElem A) B (HndpB: NoDupElem B):
+In (ae x e) (velems_inter A B) -> In (ae x ea) A ->
+In (ae x eb) B ->  e =e= (ea /\(F) eb).
+Proof. intros HInAB HInA HInB.
+induction A as [|(x', ex') A].
+- simpl. intros. destruct HInA.
+- 
+rewrite velems_inter_equation in HInAB.
+inversion HndpA; subst. 
+destruct (existsbElem x' B) eqn: HInElemaB.
++ simpl in HInAB. destruct HInAB as [Heq | HInAB];
+[ inversion Heq; subst |  ];
+destruct HInA as [Heq' | HInA];
+[ inversion Heq'; subst | |
+  inversion Heq'; subst |  ].
+{ apply (In_get_annot _ _ HndpB) in HInB.
+rewrite HInB. unfold equivE.
+intro c.
+simpl. rewrite orb_false_r. reflexivity.
+}
+
+{ 
+apply In_InElem_fstVelem in HInA.
+simpl in HInA. contradiction.
+}
+
+{ 
+apply In_InElem_fstVelem in HInAB.
+simpl in HInAB. rewrite InElem_velems_inter_rewrite in HInAB.
+destruct HInAB as [HInA HInB']. contradiction. 
+}
+
+{
+apply IHA; eauto.
+}
+
++ apply not_existsbElem_InElem in HInElemaB.
+
+destruct HInA as [Heq | HInA]. 
+inversion Heq; subst. 
+apply In_InElem_fstVelem in HInAB.
+simpl in HInAB. 
+rewrite InElem_velems_inter_rewrite in HInAB.
+destruct HInAB as [HInA' HInB']. contradiction.
+apply IHA ; eauto. 
+
 Qed.
 
 Lemma velems_inter_simpl A B:

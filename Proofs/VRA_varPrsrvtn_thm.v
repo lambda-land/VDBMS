@@ -154,6 +154,31 @@ unfold is_disjoint_bool. destruct (elems_inter A B).
 split; intro; reflexivity. split; intro H; discriminate H.
 Qed.
 
+Lemma InVR_In vr S c (HeR:empRelInempS (fst vr)):
+   InVR vr S -> In (R[[ vr]]c) (S[[S]]c).
+Proof. intros. 
+unfold InVR in H.
+unfold empRelInempS in HeR.
+destruct vr as (rn, (A, e)).
+unfold getvs, getf, getr in H.
+simpl in H. destruct S as (vrs, m). 
+simpl in H.
+destruct H as [er [HIn He] ].
+specialize HeR with ((vrs, m)) c A er.
+unfold configVS in HeR. simpl in HeR.
+simpl in HeR.
+rewrite <-He. simpl.
+unfold configVRelS, configVS.
+simpl. destruct (E[[ m]] c) eqn:Hm.
++ simpl. rewrite andb_true_r.
+apply in_map with (f:= (fun vr : vrelS => R[[ vr]] c)) in HIn. 
+unfold configVRelS at 1 in HIn. simpl in HIn.
+assumption. 
++ rewrite andb_false_r.
+apply HeR. split. reflexivity.
+assumption.
+Qed.
+
 (* -----------------------------------------------------
   | Relation-E inverse
   | e |= vq : A'^e' ->
@@ -226,9 +251,13 @@ Lemma addannot_config_true Q e c: (E[[ e]] c) = true -> (QT[[ Q ^^ e]] c) = (QT[
 intro H0.  simpl. rewrite H0. rewrite andb_true_r. unfold configaVelems. destruct Q.
   simpl. reflexivity. Qed.
   
-Lemma type__configVRelS rn A' e' c: ||= rel (R[[ (rn, (A', e'))]] c) 
-                                  = (if E[[ e']] c then X[[ A']] c else []).
-unfold configVRelS. simpl. destruct (E[[ e']] c); reflexivity. Qed.
+Lemma type__configVRelS rn A' e' c s: s ||= (rel (R[[ (rn, (A', e'))]] c)) 
+                                  = (if E[[ e']] c 
+                                     then (if existsb (relS_beq (rn, (X[[ A']] c))) s
+                                            then  X[[ A']] c else [])
+                                     else []).
+unfold configVRelS. simpl. destruct (E[[ e']] c). reflexivity.
+rewrite Tauto.if_same. reflexivity. Qed.
 
 Lemma AX_QT Q c: (AX[[ Q]] c) = (QT[[ Q]] c). eauto. Qed.
 
@@ -255,16 +284,16 @@ simpl in *. rewrite andb_true_r in IHvcondtype2.
 apply IHvcondtype2 in He as He2. eauto.
 Qed.
 
-Theorem variation_preservation : forall e S vq A, 
-       { e , S |= vq | A } ->
+Theorem variation_preservation : forall e S vq A' e', 
+       { e , S |= vq | (A', e') } ->
        forall c, E[[e]]c = true ->
-           ||= (Q[[ vq]]c) =x= QT[[ A]]c.
+          (S[[ S]]c) ||= (Q[[ vq]]c) =x= QT[[ (A', e')]]c.
 Proof.
-  intros e S vq A H c H0. 
+  intros e S vq A'' e'' H c H0. 
    induction H as [
                    |
                    e S HndpRS HndpAS 
-                   rn A' HndpA' e' 
+                   rn HeR A' HndpA' e' 
                    HInVR 
                    |
                    e S HndpRS HndpAS vq HndpvQ
@@ -312,8 +341,11 @@ Proof.
   *)
   (* (E[[ e]] c) = true *)
   rewrite H0. rewrite andb_true_l. 
-  (* Proved by definitions configVRelS and ||= rel (rn, A) = A*)
-  rewrite type__configVRelS. reflexivity.
+  (* Proved by definitions InVR_In, configVRelS and ||= rel (rn, A) = A*)
+  rewrite type__configVRelS. apply InVR_In with (c:=c) in HInVR; try auto.
+  unfold configVRelS in HInVR. simpl in HInVR.
+  rewrite <- existsb_In_relS in HInVR. destruct (E[[e']]c).
+  rewrite HInVR. all: reflexivity.
 
  (** ----------------------------- Project - E ----------------------------- *)
   - 

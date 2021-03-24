@@ -283,6 +283,188 @@ destruct (E[[ ea']] c) eqn:Hea'.
 }
 Qed.
 
+
+Lemma subsumpImp_vqtype_inter_l B C:
+subsumpImp_vqtype (vqtype_inter_vq B C) B.
+Proof. 
+destruct B as (B, eb).
+destruct C as (C, ec).
+(* unfold subsumpImp_vqtype in context and goal *)
+unfold subsumpImp_vqtype. simpl. 
+intros x ex HIn. 
+(* HIn:             In (x, ex) B /_\ C /\ sat (ex /\ eb /\ ec)
+   -------------------------------------------------
+   Goal: exists e', In (x, e') C /\ sat (ex /\ eb /\ ec /\ e')
+*) 
+destruct HIn as [HIn HSat].
+
+unfold sat in HSat. destruct HSat as [c HSat].
+simpl in HSat. rewrite andb_true_iff in HSat.
+destruct HSat as [Hex Hebc].
+rewrite andb_true_iff in Hebc.
+destruct Hebc as [Heb Hec].
+
+(* sat (ex /\ eb /\ ec) ->  (E[[ ex ]]c) = true *)
+
+pose (conj HIn Hex) as HInBex. 
+apply In_velems_inter_A in HInBex.
+
+(* HInex:             In (x, ex) B /-\ C /\ (E[[ ex ]]c) = true
+   HInCex: exists e', In (ae x e') C     /\ (E[[ e']] c) = true
+   -------------------------------------------------
+   Goal: exists e', In (x, e') C /\ sat (ex /\ eb /\ ec /\ e')
+*) 
+
+destruct HInBex as [exc [HInB HBex] ]. 
+
+(*
+   HInCex: In (ae x exc) C   
+   HCex:   (E[[ exc]] c) = true
+*)
+
+exists exc.
+
+split. assumption.
+
+unfold sat. exists c.
+simpl. rewrite Hex, Heb, Hec, HBex.
+eauto.
+
+Qed.
+
+Lemma implies_sat e1 e2 e3: 
+(forall c, E[[ e1]] c = true -> E[[ e2]] c = true )
+-> sat(e1 /\(F) e3) -> sat(e2 /\(F) e3).
+Proof. unfold sat. intros He1impe2 Hsate1e3.
+destruct Hsate1e3 as [c Hsate1e3].
+simpl in Hsate1e3. rewrite andb_true_iff in Hsate1e3.
+destruct Hsate1e3. 
+exists c. simpl. rewrite andb_true_iff.
+split. eauto.
+auto.
+Qed.
+
+Lemma sat_assoc e1 e2 e3:  sat (e1 /\(F) e2 /\(F) e3) <->
+sat ((e1 /\(F) e2) /\(F) e3).
+Proof. split; unfold sat; intro H;
+destruct H as [c H];
+simpl in H;
+exists c; simpl;
+[ rewrite andb_assoc in H |
+  rewrite andb_assoc ];
+auto.
+Qed.
+
+Lemma sat_comm e1 e2:  sat (e1 /\(F) e2) <->
+sat (e2 /\(F) e1) .
+Proof. split; unfold sat; intro H;
+destruct H as [c H];
+simpl in H;
+exists c; simpl;
+[ rewrite andb_comm in H |
+  rewrite andb_comm ];
+auto.
+Qed.
+
+Lemma sat_equiv e1 e2 e3:  e1 =e= e2 ->
+sat (e1 /\(F) e3) ->
+sat (e2 /\(F) e3).
+Proof. unfold equivE.
+unfold sat. intros Hequiv H.
+destruct H as [c H].
+simpl in H. 
+exists c. simpl.
+rewrite Hequiv in H.
+auto.
+Qed.
+
+
+Lemma subsumpImp_vqtype_inter_intro Ap (HndpAp: NoDupElem Ap) ep 
+Aqs (HndpAqs: NoDupElem Aqs) eqs e: subsumpImp_vqtype (Ap, ep) (Aqs, eqs /\(F) e) -> 
+subsumpImp_vqtype (vqtype_inter_vq (Ap, ep) (Aqs, eqs)) (Aqs, eqs /\(F) e).
+Proof.
+unfold subsumpImp_vqtype. simpl. 
+intros H x e12 HInpq.
+
+destruct HInpq as [HInpq Hsatpq].
+apply In_velems_inter_existsAB in HInpq as HInpq'.
+destruct HInpq' as [HInp HInq].
+destruct HInp as [e1 HInp].
+
+pose (velems_inter_elemchc_more_specific_A x e12 e1 Aqs HndpAp) as He12impe1.
+apply implies_sat with (e2:=e1) in Hsatpq.
+apply sat_assoc in Hsatpq.
+
+apply sat_and_dist in Hsatpq. 
+destruct Hsatpq as [Hsatp Hsatq].
+
+pose (conj HInp Hsatp) as HInAp.
+
+apply H in HInAp.
+
+destruct HInAp as [e2 [HInAqs HsatApAqse] ].
+
+exists e2.
+
+split. auto.
+
+apply (In_velems_inter_equivE x e12 e1 e2 HndpAp
+HndpAqs HInpq HInp) in HInAqs as Hequiv.
+
+symmetry in Hequiv.
+
+apply (sat_equiv Hequiv).
+
+unfold sat. simpl.
+unfold sat in HsatApAqse.
+simpl in HsatApAqse.
+destruct HsatApAqse as [c HsatApAqse].
+exists c.
+
+apply andb_true_iff in HsatApAqse.
+ destruct HsatApAqse as [He1 HsatApAqse].
+apply andb_true_iff in HsatApAqse.
+ destruct HsatApAqse as [Hep HsatApAqse].
+apply andb_true_iff in HsatApAqse.
+ destruct HsatApAqse as [He2 HsatApAqse].
+apply andb_true_iff in HsatApAqse.
+ destruct HsatApAqse as [Heqs He].
+ 
+apply andb_true_iff. split; eauto.
+apply andb_true_iff. split; eauto.
+apply andb_true_iff. split; eauto.
+apply andb_true_iff. split; eauto.
+apply andb_true_iff. split; eauto.
+apply andb_true_iff. split; eauto.
+
+apply He12impe1; eauto.
+Qed.
+     
+(*Lemma subsumpImp_vqtype_trans A B C: subsumpImp_vqtype A B -> subsumpImp_vqtype B C ->
+subsumpImp_vqtype A C.
+Proof.
+destruct A as (A, ea).
+destruct B as (B, eb).
+destruct C as (C, ec).
+(* unfold subsumpImp_vqtype in context and goal *)
+unfold subsumpImp_vqtype. simpl. 
+intros HAB HBC x e1 HInA.
+apply HAB in HInA as HInB.
+destruct HInB as [e2 HInB].
+
+destruct HInB as [HInB HsatAB].
+apply sat_and_dist in HsatAB as Hsat.
+*)
+
+
+(*
+Lemma subsumpImp_vqtype_inter_l A B: subsumpImp_vqtype (vqtype_inter_vq A B) A.
+Admitted.
+
+Lemma subsumpImp_vqtype_inter_r A B: subsumpImp_vqtype (vqtype_inter_vq A B) B.
+Admitted.*)
+
+
 (*Lemma In_velems_inter_A a e c A B: 
 In (ae a e) (velems_inter A B) /\ (E[[ e]]c) = true -> 
 exists e', In (ae a e') A /\ (E[[ e']]c) = true.

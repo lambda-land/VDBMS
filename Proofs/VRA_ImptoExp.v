@@ -192,8 +192,6 @@ unfold getf. rewrite <- H1 at 2. reflexivity.
 inversion H. rewrite Heqf. rewrite H1. reflexivity.
 Qed.
 
- 
-
 (* Correctness of vtypeImp_ function *)
  
 Lemma vtypeImpNOTC_correct : forall e vs vq vt {HRn: NoDupRn (fst vs)}, 
@@ -798,15 +796,17 @@ generalize dependent A'. generalize dependent A. generalize dependent e.
 induction q; destruct A as (A, ea);  destruct A' as (A', ea'); intros HImp HExp.
 
 { (* Relation - E *)
-inversion HImp; subst. simpl ImptoExp in HExp.
+inversion HImp; subst. 
 
-apply InVR_findVR in H3 as HInFind. rewrite HInFind in HExp.
+simpl ImptoExp in HExp.
+
+apply InVR_findVR in H4 as HInFind. rewrite HInFind in HExp.
 
 unfold getvs in HExp. unfold getf in HExp.
 
 simpl in HExp. inversion HExp; subst.
 
-apply InVR_findVR in H2 as HInFind'. rewrite HInFind in HInFind'.
+apply InVR_findVR in H3 as HInFind'. rewrite HInFind in HInFind'.
 
 inversion HInFind'; subst. reflexivity. all: assumption.
 } 
@@ -943,12 +943,12 @@ unfold getvs, getf in HImp. simpl in HImp.
 unfold getvs, getf in HExp. simpl in HExp.
 
 inversion HImp as [| eImp' SImp' HndpRSImp' HndpASImp' 
-                   rnImp' A_Imp' A'Imp' HndpA'Imp' e_Imp' e'Imp' 
-                   HInVRImp |
+                   rnImp' HeRImp' A_Imp' A'Imp' HndpA'Imp' e_Imp' e'Imp' 
+                   HInVRImp HSatImp |
                    | | | |]; subst.
 
 inversion HExp as [| eExp' SExp' HndpRSExp' HndpASExp' 
-                   rnExp' A'Exp' HndpA'Exp' e'Exp' 
+                   rnExp' HeRExp' A'Exp' HndpA'Exp' e'Exp' 
                    HInVRExp HsatExp |
                    | | | |]; subst.
 
@@ -1116,9 +1116,9 @@ intros HImp.
 
 destruct v as (rn, (A_, e_)).
 simpl in HImp. simpl.
-inversion HImp as [| eInv SInv HndpRSInv HndpASInv rnInv A_Inv
+inversion HImp as [| eInv SInv HndpRSInv HndpASInv rnInv HeRInv A_Inv
                    A'Inv HndpA'Inv e_Inv e'Inv 
-                   HInVRInv | | | | |]; subst.
+                   HInVRInv HSatInv | | | | |]; subst.
 
 rename e'Inv into e'.
 apply InVR_findVR in HInVRInv as HInFindInv; try assumption.
@@ -1172,6 +1172,24 @@ auto.
 
 { unfold vqtype_inter_vq. simpl. simpl in *.
      apply NoDupElem_velems_inter; assumption. }
+     
+pose (ImpQ_ImpType_Equiv_ExpQ_ImpType HqInv Hqs) as HqeqvqS.
+
+apply (subsumpImp_vqtype_equiv _ HqeqvqS) in HsbsmpInv.
+
+apply (subsumpImp_vqtype_equiv _ Htrue_e).
+symmetry in Htrue_e.
+apply (subsumpImp_vqtype_equiv _ Htrue_e) in HsbsmpInv. 
+
+apply subsumpImp_vqtype_inter_intro in  HsbsmpInv.
+
+auto. simpl in HndpQInv. auto. auto.
+
+(* pose (subsumpImp_vqtype_inter_l (Ap, ep) (Aqs, eqs)) as HsbsmpInter.
+
+apply (subsumpImp_vqtype_trans _ _ _ HsbsmpInter) in  HsbsmpInv.
+
+auto. *)  
 
 }
 
@@ -1282,8 +1300,8 @@ unfold getvs, getf in HImp. simpl in HImp.
 
 
 inversion HImp as [| eImp' SImp' HndpRSImp' HndpASImp' 
-                   rnImp' A_Imp'  A'Imp' HndpA'Imp' e_Imp' e'Imp' 
-                   HInVRImp |
+                   rnImp' HeRImp' A_Imp'  A'Imp' HndpA'Imp' e_Imp' e'Imp' 
+                   HInVRImp HSatImp |
                    | | | |]; subst.
 
 apply InVR_findVR in HInVRImp
