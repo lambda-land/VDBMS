@@ -26,7 +26,7 @@ import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.QueryGen.Sql.GenSqlSameSch (optRAQs2Sql)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
-import VDBMS.QueryGen.RA.AddPC (addPC)
+-- import VDBMS.QueryGen.RA.AddPC (addPC)
 import VDBMS.TypeSystem.Variational.InjectQualifier (injectQualifier)
 import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
 -- for testing
@@ -71,7 +71,8 @@ runQ3 conn vq =
          ra_qs_subqNamed = map (second nameSubqRAlgebra) ra_qs
          -- the following line are for optimizing the generated RA queries
          -- ras_opt = map (second opts_) ra_qs --revised for the final version
-         ras_opt = map (second ((addPC pc) . opts_)) ra_qs_subqNamed
+         -- ras_opt = map (second ((addPC pc) . opts_)) ra_qs_subqNamed --dropped addpc below
+         ras_opt = map (second opts_) ra_qs_subqNamed
          -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
          sql = show $ optRAQs2Sql type_as pc ras_opt
      -- putStrLn (show $ fmap snd ra_qs)

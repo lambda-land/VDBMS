@@ -24,7 +24,7 @@ import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
-import VDBMS.QueryGen.RA.AddPC (addPC)
+-- import VDBMS.QueryGen.RA.AddPC (addPC)
 import VDBMS.QueryGen.Sql.FixPC (fixPC)
 -- import VDBMS.TypeSystem.Variational.InjectQualifier (injectQualifier)
 -- import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
@@ -75,7 +75,8 @@ runQ1 conn vq =
          -- the following two lines are for optimizing the generated RA queries
          -- ra_qs_schemas = map (\c -> ((configure c vq_constrained_opt, configure c vsch), c)) configs
          -- ras_opt = map (first (uncurry appOpt)) ra_qs_schemas
-         ras_opt = map (second ((addPC pc) . opts_)) ra_qs
+         -- ras_opt = map (second ((addPC pc) . opts_)) ra_qs --dropped addpc below
+         ras_opt = map (second opts_) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
          sql_qs = fmap (bimapDefault id (show . (fixPC pc) . genSql . transAlgebra2Sql)) ras_opt --revised for the final version
          -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt --revised for the final version

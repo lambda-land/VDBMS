@@ -22,7 +22,7 @@ import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
-import VDBMS.QueryGen.RA.AddPC (addPC)
+-- import VDBMS.QueryGen.RA.AddPC (addPC)
 import VDBMS.DBMS.Table.Table (SqlTable, configSqlTable)
 -- import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 -- for testing
@@ -43,7 +43,8 @@ runRelQ conn c vq =
          configs = getAllConfig conn
          pc = presCond conn
          -- q = (show . genSql . transAlgebra2Sql . (addPC pc) . opts_) 
-         q = (show . transAlgebra2Sql . nameSubqRAlgebra . (addPC pc) . opts_) 
+         -- q = (show . transAlgebra2Sql . nameSubqRAlgebra . (addPC pc) . opts_) -- dropped addpc below
+         q = (show . transAlgebra2Sql . nameSubqRAlgebra .  opts_) 
              (configure c 
                (chcSimpleReduceRec (pushSchToQ vsch vq)))
      tab <- fetchQRows conn q
