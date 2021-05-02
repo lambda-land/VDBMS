@@ -38,7 +38,7 @@ import qualified Data.Map.Strict as M
 import Prelude hiding ((<>), concat)
 import Text.PrettyPrint
 import Data.Maybe (isNothing, isJust, fromJust)
-
+import Data.List (delete)
 
 -- | final sql data type that will be sent to the database engine.
 -- data OutSql = OutSql SelectFromWhere
@@ -51,7 +51,7 @@ data Sql = Sql SelectFromWhere
   | SqlBin SqlBinOp Sql Sql
   | SqlTRef Relation
   | SqlEmpty
-    -- deriving Show
+    deriving Show
 
 -- -- | Sql select statements.
 -- data SqlSelect =  
@@ -74,12 +74,12 @@ data SelectFromWhere =
     , tables :: [Rename SqlRelation]
     , conditions :: [SqlCond Sql] -- TODO: debateable
   }
-    -- deriving Show
+    deriving Show
 
 -- | Sql null attribute.
 data SqlNullAtt = SqlNullAtt
-  deriving (Eq)
-  -- deriving (Eq, Show)
+  -- deriving (Eq)
+  deriving (Eq, Show)
 
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
@@ -89,8 +89,43 @@ data SqlAttrExpr =
   | SqlAndPCs [Attr] PCatt 
   | SqlAndPCFexp Attr FeatureExpr PCatt
   -- | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
-  deriving (Eq)
-  -- deriving (Eq, Show)
+  -- deriving (Eq)
+  deriving (Eq, Show)
+
+-- | appends the two lists of attributes for a sqlandpc.
+andSqlAtts :: SqlAttrExpr -> SqlAttrExpr -> SqlAttrExpr
+andSqlAtts l r 
+  | isAndPCs l && isAndPCs r = SqlAndPCs (pcatts l ++ pcatts r) (pcatt l)
+  | otherwise = error "andSqlAtts. sql. shouldnt be here!!"
+
+-- | returns the list of conjuncted pc atts.
+pcatts :: SqlAttrExpr -> [Attr]
+pcatts (SqlAndPCs as _) = as 
+pcatts _ = error "andSqlAtts. sql. shouldnt be here!!"
+
+-- | returns the andpc attribute if it exists.
+getAndPC :: [SqlAttrExpr] -> Maybe SqlAttrExpr
+getAndPC as = case null as' of 
+                True  -> Nothing
+                False -> Just (head as')
+  where as' = filter isAndPCs as
+
+-- | adds the second list which only contains sqlattandpcs with the first
+--   list. so it checks in the first list to find the andpc attribute.
+--   if it finds it then it combines the list of all pcs. otherwise
+--   it creates a new pc attribute.
+addAttPCs2attExp :: PCatt -> [SqlAttrExpr] -> [SqlAttrExpr] -> [SqlAttrExpr]
+addAttPCs2attExp pc as pcs 
+  | isNothing apc = as ++ [foldr andSqlAtts (SqlAndPCs [] pc) pcs]
+  | otherwise = (delete (fromJust apc) as) 
+      ++  [foldr andSqlAtts (fromJust apc) pcs]
+    where
+      apc = getAndPC as
+
+-- | returns the name of the pc from sqlandpcs.
+pcatt :: SqlAttrExpr -> PCatt
+pcatt (SqlAndPCs _ pc) = pc 
+pcatt _ = error "andSqlAtts. sql. shouldnt be here!!"
 
 -- | returns true if the attribute expression is and of pcs.
 isAndPCs :: SqlAttrExpr -> Bool
@@ -124,13 +159,14 @@ data SqlRelation =
     SqlSubQuery Sql
   | SqlInnerJoin (Rename SqlRelation) (Rename SqlRelation) RCondition
   -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
-  -- deriving Show
+  deriving Show
 
 -- | returns true if a subquery is just a relation.
 isrel :: Sql -> Bool
 isrel (SqlTRef _) = True 
 isrel _           = False
 
+-- | returns the relation of a sqltref.
 sqlrel :: Sql -> Relation
 sqlrel (SqlTRef r) = r 
 sqlrel _ = error "sql. expected sqltref"
@@ -168,7 +204,7 @@ isSqlEmpty _        = False
 
 -- | Sql set operations.
 data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
-  -- deriving Show
+  deriving Show
 
 -- | Sql temparory storing intermediate results.
 --   Note: you can only use WITH statements in a single sql query.
@@ -237,6 +273,7 @@ ppSqlBin f o l r
       prettyOp SqlUnionAll = "UNION ALL"
       prettyOp SqlDiff     = "EXCEPT"
 
+-- | print empty. 
 ppEmpty :: Doc
 ppEmpty = text "SELECT NULL"
 
@@ -267,7 +304,7 @@ ppSelectFromWhere (SelectFromWhere as ts cs)
       vcomma ppRenameRel ts
   | otherwise = error "Sql. select from where cannot have no tables."
 
--- |
+-- | prints attr. 
 ppAttr :: Attr -> Doc
 ppAttr (Attr a Nothing) 
   = text (attributeName a)
@@ -280,7 +317,7 @@ ppAttr (Attr a (Just (SubqueryQualifier n)))
   <> char '.'
   <> text (attributeName a)
 
--- |
+-- | print rename attr. 
 ppRenameAttr :: Rename Attr -> Doc
 ppRenameAttr (Rename Nothing a) = ppAttr a 
 ppRenameAttr (Rename (Just n) a) = ppAttr a <+> "AS" <+> text n
@@ -420,9 +457,11 @@ hcomma f = hcat . punctuate comma . map f
 vcomma :: (a -> Doc) -> [a] -> Doc
 vcomma f = vcat . punctuate comma . map f
 
+-- | ands where conditions.
 vand :: (a -> Doc) -> [a] -> Doc
 vand f = hcat . punctuate (text " AND ") . map f 
 
+-- | and fexps.
 vandfexp :: (a -> Doc) -> [a] -> Doc
 vandfexp f = hcat . punctuate (comma <+> quotes (text " AND ") <> comma) 
   . map (\a -> quotes lparen <> comma <+> f a <> comma <+> quotes rparen)
@@ -430,7 +469,7 @@ vandfexp f = hcat . punctuate (comma <+> quotes (text " AND ") <> comma)
 -- instance Show OutSql where
 --   show = ppOutSqlString
 
-instance Show Sql where 
-  show = ppSqlString
+-- instance Show Sql where 
+--   show = ppSqlString
 
 
