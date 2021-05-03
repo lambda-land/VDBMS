@@ -11,6 +11,36 @@ import VDBMS.VDB.Name
 import VDBMS.VDB.GenName 
 
 import Data.List ((\\))
+import Data.Maybe (isJust, fromJust)
+
+-- | translates an relational query to a sql after fixing it.
+transAlgebra2Sql :: RAlgebra -> Sql 
+transAlgebra2Sql = fixSql . transAlg2Sql
+
+-- | changes the subqueries with empty attributes and conditions to just 
+--   relation refs.
+fixSql :: Sql -> Sql
+fixSql (Sql (SelectFromWhere as ts cs)) 
+  = Sql (SelectFromWhere as (fixTS ts) cs) 
+fixSql (SqlBin o l r) = SqlBin o (fixSql l) (fixSql r)
+fixSql q = q
+
+fixTS :: [Rename SqlRelation] -> [Rename SqlRelation]
+fixTS = map fixT 
+  where
+    fixT :: Rename SqlRelation -> Rename SqlRelation
+    fixT rq@(Rename n (SqlSubQuery (Sql (SelectFromWhere as ts cs)))) 
+      | null as && null cs && length ts == 1 && 
+        isJust (relFromSqlRel ((thing . head) ts)) 
+          = Rename n 
+                  ((SqlSubQuery . SqlTRef . fromJust) 
+                    (relFromSqlRel ((thing . head) ts)))
+      | otherwise = rq
+    fixT (Rename n (SqlSubQuery (SqlBin o l r))) = error "AlgebraToSql. highly doubt i get here."
+    fixT rq@(Rename _ (SqlSubQuery _)) = rq
+    fixT (Rename n (SqlInnerJoin rl rr c)) 
+      = Rename n (SqlInnerJoin (fixT rl) (fixT rr) c)
+
 
 -- | Translates type-correct relational algebra queries to sql queries.
 --   Notes:
@@ -20,13 +50,13 @@ import Data.List ((\\))
 --   It just translates queries. it doesn't optimize the generated sql query.
 --  You could possibly add qualifier where ever possible in this step!
 --  Sth to keep in mind if things go wrong!!
-transAlgebra2Sql :: RAlgebra -> Sql
-transAlgebra2Sql (RSetOp o l r) 
-  = SqlBin (algBin2SqlBin o) (transAlgebra2Sql l) (transAlgebra2Sql r)
+transAlg2Sql :: RAlgebra -> Sql
+transAlg2Sql (RSetOp o l r) 
+  = SqlBin (algBin2SqlBin o) (transAlg2Sql l) (transAlg2Sql r)
     where
       algBin2SqlBin Union = SqlUnion
       algBin2SqlBin Diff  = SqlDiff
-transAlgebra2Sql (RProj as q) 
+transAlg2Sql (RProj as q) 
   | issqlop sql = Sql
     $ SelectFromWhere (map (\a -> SqlAttr (renameNothing a)) as) 
                       [renameNothing (SqlSubQuery sql)] -- TODO: it should be renamed!!
@@ -57,7 +87,7 @@ transAlgebra2Sql (RProj as q)
     --                   (sqlconditions sql)
   | otherwise = error "transAlgebra2Sql: (prj) shouldn't have got SqlEmpty!!"
     where 
-      sql = transAlgebra2Sql q
+      sql = transAlg2Sql q
     -- SqlSelect (map (\a -> SqlAttr (renameNothing a)) as) 
     --           (gentables sql)
     --           (genconds sql)
@@ -77,7 +107,7 @@ transAlgebra2Sql (RProj as q)
     --   -- sql = thing rsql
     --   -- atts = attributes sql 
     --   -- \\ [SqlAllAtt]
-transAlgebra2Sql (RSel c q) 
+transAlg2Sql (RSel c q) 
   | issqlop sql   = Sql
     $ SelectFromWhere (sqlattributes sql)
                       [renameNothing (SqlSubQuery sql)] -- TODO: it should be renamed!! in fact, instead of rename nothing copy renaming from the original RA query.
@@ -92,8 +122,8 @@ transAlgebra2Sql (RSel c q)
                       [algCond2SqlCond c]
   | otherwise = error "transAlgebra2Sql: (sel) shouldn't have got SqlEmpty!!"
     where 
-      sql = transAlgebra2Sql q
-transAlgebra2Sql (RJoin l r c) 
+      sql = transAlg2Sql q
+transAlg2Sql (RJoin l r c) 
   = Sql 
      $ SelectFromWhere 
          []
@@ -102,20 +132,20 @@ transAlgebra2Sql (RJoin l r c)
                                       c)] 
          []
     where
-      lsql = transAlgebra2Sql l
-      rsql = transAlgebra2Sql r
-transAlgebra2Sql (RProd l r)   
+      lsql = transAlg2Sql l
+      rsql = transAlg2Sql r
+transAlg2Sql (RProd l r)   
   = Sql $ SelectFromWhere 
                   [] 
                   [ renameNothing (SqlSubQuery lsql) 
                   , renameNothing (SqlSubQuery rsql)]
                   []
     where
-      lsql =  transAlgebra2Sql l 
-      rsql =  transAlgebra2Sql r
-transAlgebra2Sql (RTRef r)    
+      lsql =  transAlg2Sql l 
+      rsql =  transAlg2Sql r
+transAlg2Sql (RTRef r)    
   = SqlTRef r
-transAlgebra2Sql (RRenameAlg n q) 
+transAlg2Sql (RRenameAlg n q) 
   | issqlop sql = Sql 
     $ SelectFromWhere 
       (sqlattributes sql)
@@ -137,8 +167,8 @@ transAlgebra2Sql (RRenameAlg n q)
 --                               : tail (tables sql)) 
 --                             (condition sql) 
     where
-      sql = transAlgebra2Sql q
-transAlgebra2Sql REmpty         = SqlEmpty
+      sql = transAlg2Sql q
+transAlg2Sql REmpty         = SqlEmpty
 
 -- | Translates algebra conditions to sql conditions.
 --   Helper for transAlgebra2Sql.

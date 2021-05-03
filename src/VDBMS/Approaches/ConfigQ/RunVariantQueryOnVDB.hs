@@ -78,6 +78,7 @@ runQ1 conn vq =
          -- ras_opt = map (second ((addPC pc) . opts_)) ra_qs --dropped addpc below
          ras_opt = map (second opts_) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
+         -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt --trying transalg. uncomment below after the check. 
          sql_qs = fmap (bimapDefault id (show . (fixPC pc) . genSql . transAlgebra2Sql)) ras_opt --revised for the final version
          -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt --revised for the final version
          -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt
@@ -86,6 +87,7 @@ runQ1 conn vq =
      -- putStrLn ("vq_constrained_opt " ++ show vq_constrained_opt)
      -- putStrLn (show )
      end_constQ <- getTime Monotonic
+     -- putStrLn ("explicitly anntoted query: " ++ show vq_constrained_opt) 
      putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
      -- putStrLn (show $ fmap snd ra_qs)

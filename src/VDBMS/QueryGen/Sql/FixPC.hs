@@ -28,7 +28,8 @@ import Debug.Trace
 -- | drops the pc attribute and instead conjuncts the 
 --   pc of all attributes and renames it as pc.
 fixPC :: PCatt -> Sql -> Sql 
-fixPC pc q@(Sql sfw)      = trace ("query is :" ++ show q) $
+fixPC pc q@(Sql sfw)      = 
+  -- trace ("query is :" ++ show q) $
   Sql $ fixPCsfw pc sfw
 fixPC pc (SqlBin o l r) = SqlBin o (fixPC pc l) (fixPC pc r)
 fixPC _   sql           = sql  

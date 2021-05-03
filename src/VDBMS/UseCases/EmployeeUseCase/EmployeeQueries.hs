@@ -110,13 +110,13 @@ v45 = F.Or empv4 empv5
 
 -- tbltest = (vtest,fromList [(Attribute {attributeName = "salary"},(F.Lit True,TInt32)),(Attribute {attributeName = "title"},(F.Lit True,TString))])
 empVQ1, empVQ1_alt, empVQ1_old, empVQ1_alt0, empVQ1_alt1, empVQ1_alt2 :: Algebra
-empVQ1 = 
+empVQ1' = 
   project (pure $ att2optatt salary_ empv3)
           (join (select empSqlCond $ tRef empacct)
                 (tRef job)
                 (joinEqCond (att2attrQualRel title_ empacct)
                             (att2attrQualRel title_ job)))
-empVQ1' = 
+empVQ1 = 
   project (pure $ att2optattQualRel salary_ job empv3)
           (select empSqlCond (join (tRef empacct)
                 (tRef job)

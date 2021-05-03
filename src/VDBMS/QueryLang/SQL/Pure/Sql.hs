@@ -161,6 +161,11 @@ data SqlRelation =
   -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
   deriving Show
 
+-- | returns a relation if sqlrel is just a rel.
+relFromSqlRel :: SqlRelation -> Maybe Relation
+relFromSqlRel (SqlSubQuery (SqlTRef r)) = Just r
+relFromSqlRel _ = Nothing
+
 -- | returns true if a subquery is just a relation.
 isrel :: Sql -> Bool
 isrel (SqlTRef _) = True 
