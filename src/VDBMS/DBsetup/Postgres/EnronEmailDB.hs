@@ -12,8 +12,8 @@ import Database.HDBC.PostgreSQL
 -- for other options look into:
 -- https://www.postgresql.org/docs/8.1/libpq.html#LIBPQ-CONNECT
 enronConn :: String 
--- enronConn = "host=localhost dbname=enron user=postgres password=paris1993"
-enronConn = "dbname=enron user=ataeip"
+enronConn = "host=localhost dbname=enron user=postgres password=paris1993"
+-- enronConn = "dbname=enron user=ataeip"
 
 -- | enron VDB
 enronVDB :: IO PostgresHDBC

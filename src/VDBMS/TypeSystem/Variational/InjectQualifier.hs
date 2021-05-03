@@ -5,7 +5,7 @@
 --   qualifier in the type enviroment since it has
 --   passed the type system (thus a projected attribute
 --   isn't ambigious about its qualifier).
-module VDBMS.TypeSystem.Variational.InjectQualifier where
+module VDBMS.TypeSystem.Variational.InjectQualifier () where
 
 import VDBMS.QueryLang.RelAlg.Variational.Algebra 
 import VDBMS.TypeSystem.Variational.TypeSystem

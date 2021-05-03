@@ -16,7 +16,8 @@ import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 -- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 -- import VDBMS.QueryGen.Sql.GenSql (genSql)
-import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
+-- import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
+import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.Features.Config (Config)
@@ -24,6 +25,7 @@ import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
 -- import VDBMS.QueryGen.RA.AddPC (addPC)
 import VDBMS.DBMS.Table.Table (SqlTable, configSqlTable)
+import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 -- import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 -- for testing
 import VDBMS.DBsetup.Postgres.Test
@@ -44,7 +46,7 @@ runRelQ conn c vq =
          pc = presCond conn
          -- q = (show . genSql . transAlgebra2Sql . (addPC pc) . opts_) 
          -- q = (show . transAlgebra2Sql . nameSubqRAlgebra . (addPC pc) . opts_) -- dropped addpc below
-         q = (show . transAlgebra2Sql . nameSubqRAlgebra .  opts_) 
+         q = (ppSqlString . genSql . transAlgebra2Sql .  opts_) 
              (configure c 
                (chcSimpleReduceRec (pushSchToQ vsch vq)))
      tab <- fetchQRows conn q

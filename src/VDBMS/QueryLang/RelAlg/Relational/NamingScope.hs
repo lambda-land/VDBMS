@@ -3,7 +3,7 @@
   -- projection and conditions. note that if conditions
   -- don't have qualifiers it won't add them because
   -- they won't matter since the input query is type-correct.
-module VDBMS.QueryLang.RelAlg.Relational.NamingScope where
+module VDBMS.QueryLang.RelAlg.Relational.NamingScope () where
 
 
 import VDBMS.QueryLang.RelAlg.Relational.Algebra
