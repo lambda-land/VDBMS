@@ -1,8 +1,8 @@
 -- | it names every subquery if it's not renamed already
---   and adjusts the qualifier of attirubtes both in 
---   projection and conditions. note that if conditions
---   don't have qualifiers it won't add them because
---   they won't matter since the input query is type-correct.
+  -- and adjusts the qualifier of attirubtes both in 
+  -- projection and conditions. note that if conditions
+  -- don't have qualifiers it won't add them because
+  -- they won't matter since the input query is type-correct.
 module VDBMS.QueryLang.RelAlg.Relational.NamingScope where
 
 

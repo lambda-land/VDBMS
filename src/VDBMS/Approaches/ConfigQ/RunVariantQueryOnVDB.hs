@@ -18,6 +18,7 @@ import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 -- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
+import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
@@ -78,8 +79,8 @@ runQ1 conn vq =
          -- ras_opt = map (second ((addPC pc) . opts_)) ra_qs --dropped addpc below
          ras_opt = map (second opts_) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
-         -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt --trying transalg. uncomment below after the check. 
-         sql_qs = fmap (bimapDefault id (show . (fixPC pc) . genSql . transAlgebra2Sql)) ras_opt --revised for the final version
+         -- sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt -- testing gensql. uncomment below after test
+         sql_qs = fmap (bimapDefault id (ppSqlString . (fixPC pc) . genSql . transAlgebra2Sql)) ras_opt --revised for the final version
          -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt --revised for the final version
          -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt
      -- putStrLn (show type_sch)

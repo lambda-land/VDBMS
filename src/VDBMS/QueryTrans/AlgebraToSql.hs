@@ -30,11 +30,12 @@ fixTS = map fixT
   where
     fixT :: Rename SqlRelation -> Rename SqlRelation
     fixT rq@(Rename n (SqlSubQuery (Sql (SelectFromWhere as ts cs)))) 
-      | null as && null cs && length ts == 1 && 
-        isJust (relFromSqlRel ((thing . head) ts)) 
-          = Rename n 
-                  ((SqlSubQuery . SqlTRef . fromJust) 
-                    (relFromSqlRel ((thing . head) ts)))
+      | null as && null cs && length ts == 1 
+        = head ts
+        -- isJust (relFromSqlRel ((thing . head) ts)) 
+        --   = Rename n 
+        --           ((SqlSubQuery . SqlTRef . fromJust) 
+        --             (relFromSqlRel ((thing . head) ts)))
       | otherwise = rq
     fixT (Rename n (SqlSubQuery (SqlBin o l r))) = error "AlgebraToSql. highly doubt i get here."
     fixT rq@(Rename _ (SqlSubQuery _)) = rq
