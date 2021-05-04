@@ -983,8 +983,9 @@ enronQ2part2_alt =
                 , trueAttr rvalue_
                 , trueAttr subject_
                 , trueAttr body_])
-                (join (join (join (select (eqAttValSqlCond is_signed_ falseValue) 
-                                          (tRef messages))
+                (select (eqAttValSqlCond is_signed_ falseValue) 
+                        (join (join (join 
+                                          (tRef messages)
                                   (tRef recipientinfo)
                                   (joinEqCond (att2attrQualRel mid_ messages)
                                               (att2attrQualRel mid_ recipientinfo)))
@@ -993,7 +994,7 @@ enronQ2part2_alt =
                                         (att2attrQualRel email_id_ employeelist)))
                       (tRef remail_msg)
                       (joinEqCond (att2attrQualRel eid_ employeelist)
-                                  (att2attrQualRel eid_ remail_msg)))
+                                  (att2attrQualRel eid_ remail_msg))))
 
 -- 3. Purpose: Generate the header for an email when both ENCRYPTION and AUTORESPONDER
 --             have been enabled. The header is for the email to be autoresponded.
@@ -1236,7 +1237,7 @@ enronQ5_alt =
                   , trueAttr public_key_
                   , trueAttr subject_
                   , trueAttr body_])
-                 (join (join (join (select midXcond (tRef messages))
+                 (join (join (join (tRef messages)
                                    (tRef recipientinfo)
                                    (joinEqCond (att2attrQualRel mid_ messages)
                                                (att2attrQualRel mid_ recipientinfo)))
@@ -1482,7 +1483,7 @@ enronQ8part1 =
                          q_basic))
 
 -- autoresponder ∧ filtermessages⟪π (messages.mid, sender, rvalue, subject, body)
---        ((σ (is_autoresponse) messages) 
+--        (σ (is_autoresponse) (messages
 --         ⋈_{messages.mid=recipientinfo.mid} recipientinfo)
 --    , autoresponder⟪ q_autoresponder_alt, filtermessages⟪ q_filtermessages_alt, q_basic_alt⟫⟫⟫
 -- 
@@ -1496,11 +1497,11 @@ enronQ8part1_alt =
   choice (F.And autoresponder filtermessages)
          (project ((pure $ trueAttrQualRel mid_ messages)
                   ++ fmap trueAttr [sender_, rvalue_, subject_, body_])
-                  (join (select (eqAttValSqlCond is_autoresponse_ trueValue)
-                                (tRef messages))
-                        (tRef recipientinfo)
-                        (joinEqCond (att2attrQualRel mid_ messages)
-                                   (att2attrQualRel mid_ recipientinfo))))
+                  (select (eqAttValSqlCond is_autoresponse_ trueValue)
+                          (join (tRef messages)
+                                (tRef recipientinfo)
+                                (joinEqCond (att2attrQualRel mid_ messages)
+                                           (att2attrQualRel mid_ recipientinfo)))))
          (choice autoresponder 
                  q_autoresponder_alt
                  (choice filtermessages
@@ -1932,7 +1933,7 @@ enronQ13_alt =
                 , trueAttr mailhost_attr_
                 , trueAttr subject_
                 , trueAttr body_])
-                (join (join (join (join (select midXcond (tRef messages))
+                (join (join (join (join (tRef messages)
                                         (tRef recipientinfo)
                                         (joinEqCond (att2attrQualRel mid_ messages)
                                                     (att2attrQualRel mid_ recipientinfo)))
