@@ -13,6 +13,8 @@ import VDBMS.VDB.GenName
 import Data.List ((\\))
 import Data.Maybe (isJust, fromJust)
 
+import Debug.Trace
+
 -- | translates an relational query to a sql after fixing it.
 transAlgebra2Sql :: RAlgebra -> Sql 
 transAlgebra2Sql = fixSql . transAlg2Sql
@@ -31,7 +33,7 @@ fixTS = map fixT
     fixT :: Rename SqlRelation -> Rename SqlRelation
     fixT rq@(Rename n (SqlSubQuery (Sql (SelectFromWhere as ts cs)))) 
       | null as && null cs && length ts == 1 
-        = head ts
+        = (fixT . head) ts
         -- isJust (relFromSqlRel ((thing . head) ts)) 
         --   = Rename n 
         --           ((SqlSubQuery . SqlTRef . fromJust) 
