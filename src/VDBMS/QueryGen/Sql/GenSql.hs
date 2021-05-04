@@ -130,7 +130,7 @@ updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv
 updateAttQual ae@(SqlAttr (Rename Nothing at@(Attr _ q))) _ e 
   | isNothing q = ae
   | isQualRel aq 
-    = SqlAttr (Rename Nothing (updateAttrQual at (SubqueryQualifier aq')))
+    = trace ("problem is here!!!!" ++ show aq ++ show e) $ SqlAttr (Rename Nothing (updateAttrQual at (SubqueryQualifier aq')))
       where 
         aq = fromJust q
         aq' = fromJust (SM.lookup (relQualifier aq) e)
@@ -172,6 +172,7 @@ updateAtomQual :: Atom -> [Rename SqlRelation] -> RenameEnv -> Atom
 updateAtomQual at@(Att a) _ e
   | isNothing aq = at 
   | isQualRel (fromJust aq) = Att $
+    -- trace ("here000000000" ++ show (relQualifier (fromJust aq)) ++ "show e: " ++ show e) $ Att $
     updateAttrQual 
       a 
       (SubqueryQualifier 
