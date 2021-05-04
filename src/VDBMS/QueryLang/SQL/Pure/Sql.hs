@@ -29,7 +29,7 @@ module VDBMS.QueryLang.SQL.Pure.Sql where
 -- ) where
 
 import VDBMS.VDB.Name 
-import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..))
+import VDBMS.QueryLang.SQL.Condition (SqlCond(..),RCondition(..),Atom(..))
 import VDBMS.Features.FeatureExpr.FeatureExpr
 
 import Data.Map.Strict (Map)
@@ -435,7 +435,8 @@ ppRCond (RLit b)
   | otherwise = text "FALSE"
 ppRCond (RComp o l r) = sht l <> (text . show) o <> sht r
   where 
-    sht = text . show
+    sht a@(Att _) = text (show a)
+    sht v@(Val _) = quotes (text (show v))
 ppRCond (RNot c)   = text "NOT" <+> parens (ppRCond c)
 ppRCond (ROr l r)  = ppRCond l <+> text "OR" <+> ppRCond r
 ppRCond (RAnd l r) = ppRCond l <+> text "AND" <+> ppRCond r

@@ -418,7 +418,8 @@ empVQ2_alt3_thought_wrong_but_correct =
 empVQ3, empVQ3_alt, empVQ3_old :: Algebra
 empVQ3 = 
   project (pure $ att2optatt name_ empv3)
-          (select (eqAttValSqlCond deptno_ departno_value)
+          (select (eqAttrValSqlCond (att2attrQualRel deptno_ empacct) 
+                                    departno_value)
                   (join (tRef empacct)
                          (tRef dept)
                          (joinEqCond (att2attrQualRel empno_ empacct)
@@ -478,7 +479,8 @@ empVQ4, empVQ4_alt, empVQ4_old, empVQ4_alt1 :: Algebra
 empVQ4 = 
   choice v345
          (project (fmap trueAttr [name_, firstname_, lastname_])
-                  (select (eqAttValSqlCond deptno_ departno_value)
+                  (select (eqAttrValSqlCond (att2attrQualRel deptno_ dept) 
+                                    departno_value)
                           (join (choice empv3 (tRef empacct) (tRef empbio))
                                 (tRef dept)
                                 (joinEqCond (att2attr empno_)
@@ -565,7 +567,8 @@ empVQ4_alt1 =
 empVQ5, empVQ5_alt, empVQ5_old :: Algebra
 empVQ5 = 
   project (pure $ att2optatt name_ empv3)
-          (select (eqAttValSqlCond deptno_ departno_value)
+          (select (eqAttrValSqlCond (att2attrQualRel deptno_ dept) 
+                                    departno_value)
                   (join (tRef empacct)
                         (tRef dept)
                         (joinEqCond (att2attrQualRel empno_ empacct)
