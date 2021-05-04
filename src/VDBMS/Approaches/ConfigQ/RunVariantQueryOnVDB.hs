@@ -77,7 +77,7 @@ runQ1_ conn vq =
          ras_opt = map (second opts_) ra_qs
          -- sql_qs = fmap (bimapDefault (ppSqlString . genSql . transAlgebra2Sql) id) ra_qs
          -- sql_qs = fmap (bimapDefault id (show . genSql . transAlgebra2Sql)) ras_opt -- testing gensql. uncomment below after test
-         sql_qs = fmap (bimapDefault id (ppSqlString . genSql . transAlgebra2Sql)) ras_opt --revised for the final version
+         sql_qs = fmap (bimapDefault id (ppSqlString . (fixPC pc) . genSql . transAlgebra2Sql)) ras_opt --revised for the final version
          -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt --revised for the final version
          -- sql_qs = fmap (bimapDefault id (show . transAlgebra2Sql)) ras_opt
      -- putStrLn (show type_sch)
