@@ -33,6 +33,8 @@ import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
 import VDBMS.DBsetup.Postgres.Test
 import VDBMS.DBMS.Table.Table (prettySqlTable)
 import VDBMS.UseCases.Test.Schema
+import VDBMS.DBsetup.Postgres.EmployeeDB
+import VDBMS.DBsetup.Postgres.EnronEmailDB
 -- for testing
 
 import Control.Arrow (first, second, (***))
@@ -45,8 +47,51 @@ import Formatting.Clock
 
 -- |
 runQ3_ :: Database conn => IO conn -> Algebra -> IO ()
-runQ3_ conn vq = runQ3 conn vq >> return ()
-
+runQ3_ conn vq =
+-- = runQ3 conn vq >> return ()
+  do db <- conn
+     let vsch = schema db
+         vsch_pc = featureModel vsch
+         features = dbFeatures db
+         configs = getAllConfig db
+         pc = presCond db
+     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     start_constQ <- getTime Monotonic
+     let 
+         -- type_pc = typePC vq_type
+         type_sch = typeEnv2tableSch vq_type
+         type_as = typeAtts vq_type
+         vq_constrained = pushSchToQ vsch vq
+         vq_constrained_opt = chcSimpleReduceRec vq_constrained
+         -- vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch pc
+         -- try removing opt
+         -- ra_qs = optAlgebra vsch vq_constrained_opt --revised for the final version
+         ra_qs = optAlgebra vsch vq_constrained_opt
+         -- ra_qs_subqNamed = map (second nameSubqRAlgebra) ra_qs
+         -- the following line are for optimizing the generated RA queries
+         -- ras_opt = map (second opts_) ra_qs --revised for the final version
+         -- ras_opt = map (second ((addPC pc) . opts_)) ra_qs_subqNamed --dropped addpc below
+         ras_opt = map (second opts_) ra_qs
+         -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
+         sql = show $ genSql (optRAQs2Sql type_as pc ras_opt)
+     -- putStrLn (show $ fmap snd ra_qs)
+     -- putStrLn (show $ fmap snd ras_opt)
+     -- putStrLn sql
+     end_constQ <- getTime Monotonic
+     putStrLn "constructing queries:"
+     fprint (timeSpecs % "\n") start_constQ end_constQ
+     sqlTab <- timeItName "running query" Monotonic $ fetchQRows db sql
+     -- putStrLn (prettySqlTable (type_as ++ pure pc) sqlTab)
+     -- putStrLn (show sqlTab)
+     putStrLn "gathering results: "
+     strt_res <- getTime Monotonic
+     let res = mkVTable type_sch sqlTab
+     end_res <- getTime Monotonic
+     fprint (timeSpecs % "\n") strt_res end_res
+     -- timeItName "make vtable" Monotonic $ return 
+     --   $ mkVTable type_sch sqlTab
+     -- putStrLn (show res)
+     return ()
 -- |
 runQ3 :: Database conn => IO conn -> Algebra -> IO Table
 runQ3 conn vq = 
@@ -96,3 +141,15 @@ runQ3 conn vq =
 
 runtest :: Algebra -> IO Table
 runtest q = runQ3 tstVDBone q
+
+run3emp :: Algebra -> IO ()
+run3emp = runQ3_ employeeVDB
+
+run3emp' :: Algebra -> IO Table
+run3emp' = runQ3 employeeVDB
+
+run3en :: Algebra -> IO ()
+run3en = runQ3_ enronVDB
+
+run3en' :: Algebra -> IO Table
+run3en' = runQ3 enronVDB

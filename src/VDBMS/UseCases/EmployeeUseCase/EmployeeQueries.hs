@@ -253,7 +253,7 @@ empVQ1_alt_typeErr =
 --                                ,σ (empno=10004) empacct⟩), ε⟩
 -- 
 empVQ2, empVQ2_alt, empVQ2_old, empVQ2_alt_thought_wrong_but_correct, empVQ2_alt2, empVQ2_alt3_thought_wrong_but_correct :: Algebra
-empVQ2 = 
+empVQ2' = 
   choice v345
          (project (pure $ trueAttr salary_)
                   (choice v34
@@ -265,6 +265,18 @@ empVQ2 =
                           (select empSqlCond $ tRef empacct)))
          Empty
 
+empVQ2 = 
+  choice v345
+                  (choice v34
+                          (project (pure $ att2optattQualRel salary_ job (F.Lit True))
+                            (select empSqlCond 
+                                  (join (tRef empacct)
+                                        (tRef job)
+                                        (joinEqCond (att2attrQualRel title_ empacct)
+                                                    (att2attrQualRel title_ job)))))
+                          (project (pure $ trueAttr salary_)
+                            (select empSqlCond $ tRef empacct)))
+         Empty
 -- empvq2lchc =
 --   (project (pure $ trueAttr salary_)
 --                   (choice v34
@@ -673,6 +685,16 @@ empVQ6_old =
 -- 
 empVQ7, empVQ7_alt, empVQ7_old :: Algebra
 empVQ7 = 
+  project ([att2optattQualRel managerno_ dept empv3, att2optattQualRel salary_ job empv3])
+          (join (tRef dept)
+                (join (tRef empacct)
+                      (tRef job)
+                      (joinEqCond (att2attrQualRel title_ empacct)
+                                  (att2attrQualRel title_ job)))
+                (joinEqCond (att2attr managerno_)
+                            (att2attr empno_)))
+-- att2optattQualRel salary_ job (F.Lit True))
+empVQ7' = 
   project (fmap (flip att2optatt empv3) [managerno_, salary_])
           (join (tRef dept)
                 (join (tRef empacct)
