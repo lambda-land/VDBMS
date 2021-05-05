@@ -38,33 +38,44 @@ fixPC _   sql           = sql
 -- | drops the pc attribute and instead conjuncts the 
 --   pc of all attributes and renames it as pc.
 fixPCsfw :: PCatt -> SelectFromWhere -> SelectFromWhere
-fixPCsfw pc (SelectFromWhere as ts cs) = SelectFromWhere as' ts' cs
-  where
-    as' = deletePC as pc ++ [SqlAndPCs pcs pc]
-    pcs = map (\q -> Attr pc (Just (SubqueryQualifier q))) 
-              (concatMap getQual ts)
-    getQual :: Rename SqlRelation -> [Name]
-    getQual (Rename (Just alias) (SqlSubQuery _)) 
-      = [alias]
-    getQual (Rename Nothing (SqlSubQuery sql)) 
-      -- = trace (show sql) $
-      =  []
-      -- = error "FixPC. fixPCsfw. shouldnt be in this case!!!"
-    getQual (Rename Nothing (SqlInnerJoin lsr rsr _)) 
-      = case (isNothing nlsr, isNothing nrsr) of
-        (True,  True)  -> getQual lsr ++ getQual rsr
-        (True,  False) -> getQual lsr ++ [fromJust nrsr]
-        (False, True)  -> [fromJust nlsr] ++ getQual rsr
-        (False, False) -> [fromJust nlsr, fromJust nrsr]
-        where
-          nlsr = name lsr
-          nrsr = name rsr
-    getQual (Rename _ (SqlInnerJoin _ _ _)) 
-      = error "FixPC. fixPCsfw. shouldnt be in this case"
-      -- | isNothing (name lsr) && isNothing (name rsr) 
-      --   = getQual lsr ++ getQual rsr
-      -- | isNothing (name lsr) && isNothing (name rsr) 
-    ts' = map (fixPCrenameSqlRelation pc) ts
+fixPCsfw pc (SelectFromWhere as ts cs) 
+  = SelectFromWhere (dropEmptyConcat as') ts' cs
+    where
+      as' = deletePC as pc ++ [SqlAndPCs pcs pc]
+      pcs = map (\q -> Attr pc (Just (SubqueryQualifier q))) 
+                (concatMap getQual ts)
+      getQual :: Rename SqlRelation -> [Name]
+      getQual (Rename (Just alias) (SqlSubQuery _)) 
+        = [alias]
+      getQual (Rename Nothing (SqlSubQuery sql)) 
+        -- = trace (show sql) $
+        =  []
+        -- = error "FixPC. fixPCsfw. shouldnt be in this case!!!"
+      getQual (Rename Nothing (SqlInnerJoin lsr rsr _)) 
+        = case (isNothing nlsr, isNothing nrsr) of
+          (True,  True)  -> getQual lsr ++ getQual rsr
+          (True,  False) -> getQual lsr ++ [fromJust nrsr]
+          (False, True)  -> [fromJust nlsr] ++ getQual rsr
+          (False, False) -> [fromJust nlsr, fromJust nrsr]
+          where
+            nlsr = name lsr
+            nrsr = name rsr
+      getQual (Rename _ (SqlInnerJoin _ _ _)) 
+        = error "FixPC. fixPCsfw. shouldnt be in this case"
+        -- | isNothing (name lsr) && isNothing (name rsr) 
+        --   = getQual lsr ++ getQual rsr
+        -- | isNothing (name lsr) && isNothing (name rsr) 
+      ts' = map (fixPCrenameSqlRelation pc) ts
+      -- drops the empty concat of pc and replaces it with pc
+      dropEmptyConcat :: [SqlAttrExpr] -> [SqlAttrExpr]
+      dropEmptyConcat = map dropIt
+        where 
+          dropIt :: SqlAttrExpr -> SqlAttrExpr
+          dropIt (SqlAndPCs [] pc) 
+            = SqlAttr (Rename Nothing (Attr pc Nothing))
+          dropIt a = a
+
+
 
 -- | drops the pc attribute and instead conjuncts the 
 --   pc of all attributes and renames it as pc.
@@ -96,17 +107,17 @@ fixPCrenameSqlRelation pc (Rename a (SqlInnerJoin l r c))
 --                    -> ([Rename SqlRelation], [SqlAttrExpr])
 -- fixMisplacedPCsubs rrs = undefined
 
--- | drops the sql att that has an empty list of pc.
-dropEmptyPC :: [SqlAttrExpr] -> [SqlAttrExpr]
-dropEmptyPC as = filter (not . isAndPCsEmpty) as  
+-- -- | drops the sql att that has an empty list of pc.
+-- dropEmptyPC :: [SqlAttrExpr] -> [SqlAttrExpr]
+-- dropEmptyPC as = filter (not . isAndPCsEmpty) as  
 
--- | checks if and of pcs is the only sql att exp.
-isPCOnlyAtt :: [SqlAttrExpr] -> Bool
-isPCOnlyAtt as 
-  | length as == 1 = case (isAndPCs (head as)) of 
-    True  -> True
-    False -> False
-  | otherwise = False
+-- -- | checks if and of pcs is the only sql att exp.
+-- isPCOnlyAtt :: [SqlAttrExpr] -> Bool
+-- isPCOnlyAtt as 
+--   | length as == 1 = case (isAndPCs (head as)) of 
+--     True  -> True
+--     False -> False
+--   | otherwise = False
 
 
 

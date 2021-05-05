@@ -959,13 +959,13 @@ empVQ12_old =
 
 -- 13.intent: For all managers, find all managers in the department that he/she worked in, 
 --            for VDB variant \vThree. 
---
+
 -- #variants = 1
 -- #unique_variants = 1
--- 
+
 -- after pushing schema: #variants = 
 -- after pushing schema: #unique_variants = 
--- 
+
 -- π (temp.managerno^{v_3}, deptname^{v_3}, dept.managerno^{v_3})
 --   ((ρ (temp) (π (managerno, deptno) dept)) ⋈_{temp.deptno=dept.deptno} dept)
 -- 

@@ -74,11 +74,14 @@ transAlg2Sql (RProj as q)
                       []
   | issqlslct sql && null (sqlattributes sql) = Sql
     $ SelectFromWhere (map (\a -> SqlAttr (renameNothing a)) as) 
-                      [renameNothing (SqlSubQuery (Sql (SelectFromWhere
-                          (sqlattributes sql)
-                          (sqltables sql)
-                          [])))]
+                      (sqltables sql)
                       (sqlconditions sql)
+                       -- trace ("query here is::" ++ ppSqlString sql ++ "oh hell noooo" ++ show (sqlattributes sql)) $ 
+                      -- [renameNothing (SqlSubQuery (Sql (SelectFromWhere
+                      --     (sqlattributes sql)
+                      --     (sqltables sql)
+                      --     [])))]
+                      -- (sqlconditions sql)
                       -- (SqlSubQuery (Sql (SelectFromWhere
                       --     (sqlattributes sql)
                       --     (sqltables sql)
@@ -158,9 +161,9 @@ transAlg2Sql (RRenameAlg n q)
     $ SelectFromWhere [] [Rename (Just n) (SqlSubQuery sql)] []
   | issqlslct sql = Sql
     $ SelectFromWhere 
-      (sqlattributes sql)
+      []
       [Rename (Just n) (SqlSubQuery sql)]
-      (sqlconditions sql)
+      []
 --   = case q of
 --      (RTRef r) -> SqlSelect [] 
 --                             [Rename (Just n) (SqlSubQuery (SqlTRef r))] 
