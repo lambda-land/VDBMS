@@ -25,6 +25,36 @@ import Data.Maybe (isNothing, fromJust)
 
 import Debug.Trace
 
+-- | fixPC for one big query approach.
+fixPC' :: PCatt -> Sql -> Sql
+fixPC' pc q = fixDoublePC pc (fixPC pc q)
+
+-- | 
+fixDoublePC :: PCatt -> Sql -> Sql
+fixDoublePC pc q@(Sql (SelectFromWhere as ts cs)) 
+  = Sql (SelectFromWhere (removeDoublePC pc as) (ts) cs)
+fixDoublePC pc (SqlBin o l r) 
+  = SqlBin o (fixDoublePC pc l) (fixDoublePC pc r)
+fixDoublePC _ q = q
+
+removeDoublePC :: PCatt -> [SqlAttrExpr] -> [SqlAttrExpr]
+removeDoublePC pc as = updated:rest 
+  where
+    rest = filter (\a -> (not (isFexp a))) (filter (\a -> (not (isPCs a))) as)
+    fexp = getF (head (filter isFexp as))
+    pcAtts = getAs (head (filter isPCs as))
+    updated = SqlAndPCsFexp pcAtts fexp pc
+    isPCs :: SqlAttrExpr -> Bool
+    isPCs (SqlAndPCs _ _) = True
+    isPCs _ = False
+    isFexp :: SqlAttrExpr -> Bool
+    isFexp (SqlAndPCFexp _ _ _) = True
+    isFexp _ = False
+    -- getF :: SqlAttrExpr -> FeatureExpr
+    getF (SqlAndPCFexp _ f _) = f
+    getAs :: SqlAttrExpr -> [Attr]
+    getAs (SqlAndPCs as _) = as
+
 -- | drops the pc attribute and instead conjuncts the 
 --   pc of all attributes and renames it as pc.
 fixPC :: PCatt -> Sql -> Sql 

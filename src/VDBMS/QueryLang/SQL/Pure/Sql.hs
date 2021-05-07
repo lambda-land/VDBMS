@@ -88,6 +88,7 @@ data SqlAttrExpr =
   | SqlNullAttr (Rename SqlNullAtt) -- ^ Null, Null as A
   | SqlAndPCs [Attr] PCatt 
   | SqlAndPCFexp Attr FeatureExpr PCatt
+  | SqlAndPCsFexp [Attr] FeatureExpr PCatt
   -- | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
   -- deriving (Eq)
   deriving (Eq, Show)
@@ -362,8 +363,17 @@ ppAtts (SqlAndPCFexp a f pc) =
   text "CONCAT("
   <> quotes lparen <> comma
   <+> ppAttr a
-  <> comma <+> text ") AND ("
-  <+> text (show f) <> comma <+> quotes rparen
+  <> comma <+> quotes (text ") AND (") <> comma
+  <+> quotes (text (show f)) <> comma <+> quotes rparen
+  <> ") AS "
+  <> text (attributeName pc)
+ppAtts (SqlAndPCsFexp as f pc) = 
+  text "CONCAT("
+  <+> vandfexp ppAttr as
+  -- <> quotes lparen <> comma
+  -- <+> ppAttr a
+  <> comma <+> quotes (text ") AND (") <> comma
+  <+> quotes (text (show f)) <> comma <+> quotes rparen
   <> ") AS "
   <> text (attributeName pc)
 

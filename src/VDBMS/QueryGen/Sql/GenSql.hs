@@ -140,6 +140,8 @@ updateAttQual ae@(SqlAttr (Rename Nothing at@(Attr _ q))) _ e
           where 
         aq = fromJust q
         aq' = fromJust (SM.lookup (relQualifier aq) e)
+updateAttQual ae@(SqlAndPCFexp _ _ _) _ _ = ae
+updateAttQual ae@(SqlNullAttr _) _ _ = ae
 updateAttQual ae _ _ = trace ("att expr is:" ++ show ae) $ error "updateAttQual. GenSql. shoulnt have got such SqlAttrExpr"
 
 -- |

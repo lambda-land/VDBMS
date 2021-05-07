@@ -19,6 +19,7 @@ import VDBMS.QueryGen.VRA.PushSchToQ (pushSchToQ)
 import VDBMS.QueryLang.RelAlg.Variational.Minimization (chcSimpleReduceRec)
 import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 -- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
+import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
 import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
 import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
@@ -26,6 +27,7 @@ import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.QueryGen.Sql.GenSqlSameSch (optRAQs2Sql)
 import VDBMS.Approaches.Timing (timeItName)
 import VDBMS.QueryLang.RelAlg.Relational.Optimization (opts_)
+import VDBMS.QueryGen.Sql.FixPC (fixPC')
 -- import VDBMS.QueryGen.RA.AddPC (addPC)
 -- import VDBMS.TypeSystem.Variational.InjectQualifier (injectQualifier)
 -- import VDBMS.QueryLang.RelAlg.Relational.NamingScope (nameSubqRAlgebra)
@@ -73,11 +75,12 @@ runQ3_ conn vq =
          -- ras_opt = map (second ((addPC pc) . opts_)) ra_qs_subqNamed --dropped addpc below
          ras_opt = map (second opts_) ra_qs
          -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
-         sql = show $ genSql (optRAQs2Sql type_as pc ras_opt)
+         sql = ppSqlString $ fixPC' pc (genSql (optRAQs2Sql type_as pc ras_opt))
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
      -- putStrLn sql
      end_constQ <- getTime Monotonic
+     putStrLn sql
      putStrLn "constructing queries:"
      fprint (timeSpecs % "\n") start_constQ end_constQ
      sqlTab <- timeItName "running query" Monotonic $ fetchQRows db sql
