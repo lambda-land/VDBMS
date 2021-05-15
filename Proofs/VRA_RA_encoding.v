@@ -500,7 +500,7 @@ Hint Resolve remove_reduce.
 (*-------------------------------------------------------------------------------*)
 
 
-(* Configuration Variational Set A[]c (see A3)*)
+(* Configuration Variational Set X[]c (see A3)*)
 Fixpoint configVElemSet (vA : velems) (c : config) : elems :=
   match vA with
   | nil                  => nil
@@ -607,9 +607,9 @@ Definition schema : Type := set relS.
 (* Variational Schema (Implicit encoding) *)
 Definition vschema : Type := ((set vrelS) * fexp) %type.
 
-Definition getr  (vr:vrelS) : r     := fst vr. 
+Definition getr  (vr:vrelS) : r      := fst vr. 
 Definition getvs (vr:vrelS) : velems := fst (snd vr).
-Definition getf  (vr:vrelS) : fexp  := snd (snd vr).
+Definition getf  (vr:vrelS) : fexp   := snd (snd vr).
 
 
 Definition getSvrelS (vs:vschema) : (set vrelS) := fst vs.
@@ -694,10 +694,10 @@ Definition val : Type := elem.
 Definition vval : Type := velem. 
 
 (* Plain Tuple *)
-Definition tuple : Type := elems.
+Definition tuple : Type := list elem.
 
 (* Variational Tuple *)
-Definition vtuple : Type := (velems * fexp) % type.
+Definition vtuple : Type := (list velem * fexp) % type.
 
 (* Plain Relation Content *)
 Definition rcontent : Type := set tuple.
@@ -717,12 +717,23 @@ Definition instance : Type := set table.
 (* Variational Relation Content *)
 Definition vinstance : Type := set vtable.
 
+(* Configuration Variational List V[]c *)
+Fixpoint configVElemList (vl : list velem) (c : config) : list elem :=
+  match vl with
+  | nil                  => nil
+  | cons (ae a e) val => if semE e c 
+                             then (cons a (configVElemList val c))
+                             else (        configVElemList val c )
+  end.
+
+Notation "V[[ vl ]] c" := (configVElemList vl c) (at level 50).
+
 (* Variational Tuple  Configuration U[]c *)
 Definition configVTuple (vtup : vtuple) (c : config) : tuple := 
 let VT := fst vtup in
  let e := snd vtup in
   if E[[ e]]c
-   then  (X[[VT]]c)
+   then  (V[[VT]]c)
     else  [].
 Notation "U[[ vu ]] c" := (configVTuple vu c) (at level 50).
 
@@ -935,16 +946,16 @@ Definition subset (A A': elems):= forall x, (In x A -> In x A') /\ (* In clause 
            (count_occ string_eq_dec A x <= count_occ string_eq_dec A' x).
 
 (* Subsumption of Plain Set (Query Type) *)
-Definition subsump_qtype_bool (A A': qtype) := subset_bool A A'.
+Definition subset_qtype_bool (A A': qtype) := subset_bool A A'.
 
 (* Subsumption of Variational Set (Query Type) *)
-Definition subsump_vqtype ( X X': vqtype ) : Prop := forall c, 
+Definition subset_vqtype ( X X': vqtype ) : Prop := forall c, 
     subset (configVQtype X c) (configVQtype X' c).
 
-Definition subsump_velems ( A A': velems ) : Prop := forall c, 
+Definition subset_velems ( A A': velems ) : Prop := forall c, 
     subset (configVElemSet A c) (configVElemSet A' c).
       
-Definition subsump_avelems ( A A': avelems ) : Prop := forall c, 
+Definition subset_avelems ( A A': avelems ) : Prop := forall c, 
    subset (AX[[ A]]c) (AX[[ A']]c).
 
 
@@ -955,7 +966,7 @@ Definition subsump_avelems ( A A': avelems ) : Prop := forall c,
 In (ae x e) A -> (exists e', (In (ae x e') A') /\  (~ sat (e /\(F) (~(F)(e')))) ). *)
 
 (*
-subsump_velems_exp (<_e) : A <_e A' [need for proj_v A A']
+subset_velems_exp (<_e) : A <_e A' [need for proj_v A A']
   If it entails forall c, [A]c to be subset( <_a) of [A']c ... (1), where 
 subset is defined as, forall x, count x [A]c <= count x [A']c [note: {} <_a {any}],
 it would be a reasonable choice as then, after configuration, proj [A]c [A']c, is a valid plain query in RA.
@@ -975,11 +986,11 @@ Case 2: sat e -> exists e', In (a, e') A' /\ (e -> e'). (not true if A A' is not
     Then, e -> e' is sufficient. 
 *)
 (** ------------------------------
-Definition subsump_velems_exp A A': forall (a, e), [In (a, e) A /\ (sat e)] -> exists e', [In (a, e') A' /\ (e -> e')].
+Definition subset_velems_exp A A': forall (a, e), [In (a, e) A /\ (sat e)] -> exists e', [In (a, e') A' /\ (e -> e')].
    where A A' is NoDupElem. 
 ================================= *)
-(**  Lemma subsump_velems_correctness (NoDupElem A)(NoDupElem A'): 
-       subsump_velems_exp A A' <-> subset (configVElemSet A c) (configVElemSet A' c). *)
+(**  Lemma subset_velems_correctness (NoDupElem A)(NoDupElem A'): 
+       subset_velems_exp A A' <-> subset (configVElemSet A c) (configVElemSet A' c). *)
 
 (* [Note: forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ (e -> e'). is unreasonable/ not necessary/ over restriction, 
       because if e is not sat, then, there is no reason to ask/check for elemribute a in A' with some e'.] *)
@@ -991,42 +1002,42 @@ tuple based on their satisfiability, if sat then need exists clause to be true o
 elemain that. *)
 
 (** ------------------------------
-Definition subsump_velems_exp_Wrong A A' : Prop := SatTuples A -> forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ (e -> e').
+Definition subset_velems_exp_Wrong A A' : Prop := SatTuples A -> forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ (e -> e').
 ================================= *)
 
 (** why don't we need  SatTuples A' as well? ==> A' doesn't not need to be SatTuples (all sat) but to have sat e's (exists sat) i.e.
 exists e', [sat e' /\ In (a, e') A' /\ (e -> e')]. However, (e -> e' -> sat e') thus can remove sat e'*) 
 
 (** ------------------------------ 
-Definition subsump_vqtype_exp X X': forall (a, e), [In (a, e) (fst X) /\ sat (e/\snd X)]  -> exists e', In (a, e') X' /\ (e/\snd X -> e'/\snd X').
+Definition subset_vqtype_exp X X': forall (a, e), [In (a, e) (fst X) /\ sat (e/\snd X)]  -> exists e', In (a, e') X' /\ (e/\snd X -> e'/\snd X').
    where (fst X) (fst X') is NoDupElem.
 ================================= *) 
-(**  Lemma subsump_vqtype_correctness (NoDupElem (fst X))(NoDupElem (fst X')): 
-                subsump_vqtype_exp X X' <-> subset (configVQtype X c) (configVQtype X' c). *)
+(**  Lemma subset_vqtype_correctness (NoDupElem (fst X))(NoDupElem (fst X')): 
+                subset_vqtype_exp X X' <-> subset (configVQtype X c) (configVQtype X' c). *)
 
 (* SatATuples X := SatTuples (push_annot (fst X, snd X)).  [SatTuples (fst X) /\ Sat (snd X)] doesn't guarantee sat (e/\snd X). *)
 
 (* Similar reasoning gives us *)
 (** ------------------------------
-Definition subsump_velems_imp A A' : forall (a, e), In (a, e) A /\ sat(e) -> exists e', In (a, e') A' /\ sat(e /\ e').
+Definition subset_velems_imp A A' : forall (a, e), In (a, e) A /\ sat(e) -> exists e', In (a, e') A' /\ sat(e /\ e').
        where A A' is NoDupElem.
 ==================================
-Definition subsump_velems_imp_Wrong A A' [HA: SatTuples A] : forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ sat(e /\ e').
+Definition subset_velems_imp_Wrong A A' [HA: SatTuples A] : forall (a, e), In (a, e) A  -> exists e', In (a, e') A' /\ sat(e /\ e').
 ---------------------------------- 
-Definition subsump_vqtype_imp X X' : forall (a, e), In (a, e) A /\ sat (e/\snd X)  -> exists e', In (a, e') A' /\ sat(e/\snd X /\ e'/\snd X').
+Definition subset_vqtype_imp X X' : forall (a, e), In (a, e) A /\ sat (e/\snd X)  -> exists e', In (a, e') A' /\ sat(e/\snd X /\ e'/\snd X').
     where (fst X) (fst X') is NoDupElem.
 ================================= *)
 
 (* Lemma : sat (A /\ B) -> sat A /\ sat B. but not <- *)
 
-(*Definition subsump_velems_exp (A A': velems) :Prop := forall x e,
+(*Definition subset_velems_exp (A A': velems) :Prop := forall x e,
 In (ae x e) A /\ sat e  -> exists e', In (ae x e') A' /\  (~ sat (e /\(F) (~(F)(e')))).*)
 
-Definition subsump_velems_exp (A A': velems) :Prop := forall x e c,
+Definition subset_velems_exp (A A': velems) :Prop := forall x e c,
 In (ae x e) A /\ ((E[[ e]]c) = true)  -> 
        exists e', In (ae x e') A' /\  (E[[ e']]c) = true.
 
-(* Definition subsump_vqtype_exp (X X': vqtype) :Prop := 
+(* Definition subset_vqtype_exp (X X': vqtype) :Prop := 
 let (A, ea) := X in 
   let (A', ea') := X' in 
     forall x e c,
@@ -1036,30 +1047,30 @@ let (A, ea) := X in
 
 
 (** A and A' has to be NoDupElem *)
-Definition subsumpImp_velems (A A': velems) :Prop := 
+Definition subsump_velems (A A': velems) :Prop := 
 forall x e, In (ae x e) A /\ sat e -> exists e', In (ae x e') A' /\ sat(e /\(F) e').
 (*In (ae x e) A -> (exists e', (In (ae x e') A') /\ sat(e /\(F) e')).*)
 
 (** (fst X) and (fst X') has to be NoDupElem *)
-Definition subsumpImp_vqtype ( X X': vqtype) : Prop := 
-(*subsumpImp_velems (fst X < snd X) (fst X' < snd X'). *)
+Definition subsump_vqtype ( X X': vqtype) : Prop := 
+(*subsump_velems (fst X < snd X) (fst X' < snd X'). *)
 let (A, ea) := X in 
   let (A', ea') := X' in 
     forall x e, In (ae x e) A /\ sat (e /\(F) ea) -> 
                        exists e', In (ae x e') A' /\ sat (e /\(F) ea /\(F) e' /\(F) ea').
-(* subsumpImp_velems (fst X) (fst X') /\ sat((snd X) /\(F) (snd X')). *)
+(* subsump_velems (fst X) (fst X') /\ sat((snd X) /\(F) (snd X')). *)
 
 
-(*Lemma subsump_velems_exp_ind A a ea A': subsump_velems_exp A (ae a ea :: A') ->
+(*Lemma subset_velems_exp_ind A a ea A': subset_velems_exp A (ae a ea :: A') ->
 (forall x e, In (ae x e) A /\ sat e -> exists e', (ae x e') = (ae a ea) /\ sat(e /\(F) e'))
-    \/ subsump_velems_exp A A'.
+    \/ subset_velems_exp A A'.
 Proof. intros H. 
-unfold subsump_velems_exp in H. simpl in H. 
+unfold subset_velems_exp in H. simpl in H. 
 rewrite and_distributes_over_or in H.*)
 
 
-(*Lemma subsumpImp_velems_refl A: subsumpImp_velems A A.
-Proof. unfold subsumpImp_velems. intros x e H.
+(*Lemma subsump_velems_refl A: subsump_velems A A.
+Proof. unfold subsump_velems. intros x e H.
 exists e. auto. (*destruct H as [HIn Hsat]. split. 
 assumption. 
 unfold sat. simpl. unfold sat in Hsat. 
@@ -1101,30 +1112,30 @@ Definition equiv_elems : relation elems:=
        fun A A' => forall a, (In a A <-> In a A') /\ 
                       ( count_occ string_eq_dec A a = count_occ string_eq_dec A' a).
 
-Infix "=x=" := equiv_elems (at level 70) : type_scope.
+Infix "=set=" := equiv_elems (at level 70) : type_scope.
 
 (* Variational Set (non-annnot-Var Elemr) Equivalence (Only needed for next one)*)
 Definition equiv_velems : relation velems := 
-        fun A A' => forall c, configVElemSet A c =x= configVElemSet A' c.
+        fun A A' => forall c, configVElemSet A c =set= configVElemSet A' c.
 
-Infix "=vx=" := equiv_velems (at level 70) : type_scope.
+Infix "=vset=" := equiv_velems (at level 70) : type_scope.
 
 Definition equiv_avelems : relation vqtype := 
-        fun X X' => forall c, AX[[ X]]c =x= AX[[ X']]c. 
-Infix "=avx=" := equiv_avelems (at level 70) : type_scope.
+        fun X X' => forall c, AX[[ X]]c =set= AX[[ X']]c. 
+Infix "=avset=" := equiv_avelems (at level 70) : type_scope.
 
 Definition equiv_qtype_bool (A A': qtype) := equiv_elems_bool A A'.
 
 Definition equiv_qtype : relation qtype := 
-        fun A A' => A =x= A'.
+        fun A A' => A =set= A'.
 
-Infix "=t=" := equiv_qtype (at level 70) : type_scope.
+Infix "=qtype=" := equiv_qtype (at level 70) : type_scope.
 
 (* Variational Set (annotated-Var Query Type) Equivalence *)
 Definition equiv_vqtype : relation vqtype := 
-        fun X X' => X =avx= X'. 
+        fun X X' => X =avset= X'. 
 
-Infix "=T=" := equiv_vqtype (at level 70) : type_scope.
+Infix "=vqtype=" := equiv_vqtype (at level 70) : type_scope.
 
 (* equiv_qtype is an Equivalence relation *)
 Remark equiv_elems_refl: Reflexive equiv_elems.
@@ -1223,8 +1234,8 @@ Instance vqtype_Equivalence : Equivalence equiv_vqtype := {
     Equivalence_Symmetric := equiv_avelems_sym;
     Equivalence_Transitive := equiv_avelems_trans }.
 
-(*Lemma rewrite_equiv: forall a b c, a=x=b->
-b=x=c-> a=x=c.
+(*Lemma rewrite_equiv: forall a b c, a=set=b->
+b=set=c-> a=set=c.
 Proof. intros. rewrite <- H in H0. apply H0.
 Qed.*)
 
@@ -1336,11 +1347,11 @@ Proof. intros. induction A.
           + rewrite andb_false_r. reflexivity.
 Qed.
 
-(*Definition subsumpImp_vqtype ( X X': vqtype) :Prop := 
-subsumpImp_velems (avelems_velems X) (avelems_velems X').*)
+(*Definition subsump_vqtype ( X X': vqtype) :Prop := 
+subsump_velems (avelems_velems X) (avelems_velems X').*)
 
-Definition subsump_vqtype_exp (X X': vqtype) :Prop := 
-subsump_velems_exp (avelems_velems X) (avelems_velems X').
+Definition subset_vqtype_exp (X X': vqtype) :Prop := 
+subset_velems_exp (avelems_velems X) (avelems_velems X').
 
 (*------------------------push_annot---------------------------*)
 
@@ -1533,13 +1544,14 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
   | Relation_vE : forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
                           rn {Hrn: empRelInempS rn} A {HA: NoDupElem A} e',
         InVR (rn, (A, e')) S -> 
+        sat (e /\(F) e') ->
        (*~ sat (  e    /\(F)   (~(F) (e')) ) ->*) (* why are we restricting ourselves to introduce only more specific context? It's not even maintained in the type system e.g. choice will have less specif context evemn if we start with more specific ones. *)
        vtype e S (rel_v (rn, (A, e' ))) (A, (e /\(F) e'))
   (*   -- PROJECT-E --  *)
   | Project_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} vq {HndpvQ: NoDupElemvQ vq} e' A' 
                            {HndpAA': NoDupElem A'} Q {HndpQ: NoDupElem (fst Q)},
        vtype e S vq (A', e') -> 
-       subsump_vqtype (Q^^e) (A', e') ->
+       subset_vqtype (Q^^e) (A', e') ->
        vtype e S (proj_v Q vq) (Q^^e)
   (*  -- SELECT-E --  *)
   | Select_vE: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
@@ -1563,8 +1575,8 @@ Inductive vtype :fexp -> vschema -> vquery -> vqtype -> Prop :=
                             A1 {HndpAA1: NoDupElem A1} e1 A2 {HndpAA2: NoDupElem A2} e2 ,
        vtype e  S vq1 (A1, e1) ->
        vtype e  S vq2 (A2, e2) ->
-       vqtype_inter_vq (A1, e1) (A2, e2) =T= (nil, litB false) ->
-       (*velems_inter A1 A2 =vx= nil ->*)
+       vqtype_inter_vq (A1, e1) (A2, e2) =vqtype= (nil, litB false) ->
+       (*velems_inter A1 A2 =vset= nil ->*)
        vtype e S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
@@ -1621,7 +1633,7 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
                             vq {HndpvQ: NoDupElemvQ vq} e' A' 
                                {HndpAA': NoDupElem A'} Q {HndpQ: NoDupElem (fst Q)},
        vtypeImp e S vq (A', e') -> 
-       subsumpImp_vqtype Q (A', e') -> (* see below why subsumpImp_vqtype is not needed? *)
+       subsump_vqtype Q (A', e') -> (* see below why subsump_vqtype is not needed? *)
        vtypeImp e S (proj_v Q vq) (vqtype_inter_vq Q (A', e'))
   (*  -- SELECT-E --  *)
   | Select_vE_imp: forall e S {HndpRS:NoDupRn (fst S)} {HndpAS: NODupElemRs S} 
@@ -1645,9 +1657,9 @@ Inductive vtypeImp :fexp -> vschema -> vquery -> vqtype -> Prop :=
                             A1 {HndpAA1: NoDupElem A1} e1 A2 {HndpAA2: NoDupElem A2} e2 ,
        vtypeImp e  S vq1 (A1, e1) ->
        vtypeImp e  S vq2 (A2, e2) ->
-       vqtype_inter_vq (A1, e1) (A2, e2) =T= (nil, litB false) ->
+       vqtype_inter_vq (A1, e1) (A2, e2) =vqtype= (nil, litB false) ->
        (*vqtype_inter (A1, e1) (A2, e2) = nil ->*)
-       (* velems_inter A1 A2 =vx= nil -> *)
+       (* velems_inter A1 A2 =vset= nil -> *)
        vtypeImp e  S (prod_v vq1 vq2)
         (vqtype_union_vq (A1, e1) (A2, e2))
   (*  -- SETOP-E --  *)
@@ -1663,16 +1675,16 @@ Notation "{ e , S |- vq | vt }" := (vtypeImp e S vq vt) (e at level 200).
 
 (*-----------------------vqtype--------------------------------*)
 
-(* WHY subsumpImp_vqtype IS NOT NEEDED in Implicit but in Explicit? *)
+(* WHY subsump_vqtype IS NOT NEEDED in Implicit but in Explicit? *)
 (* 
 -  First let's look at why do we use subsump in Explicit?
 -  Explicit Project rule:
 -  Project_vE:
        { e S |= vq | (A', e')} -> 
-       subsump_vqtype (Q^^e) (A', e') ->
+       subset_vqtype (Q^^e) (A', e') ->
        { e S |= (proj_v Q vq) | (Q^^e)
 
--  subsump_vqtype (Q^^e) (A', e') implies
+-  subset_vqtype (Q^^e) (A', e') implies
 -  forall c, subset (QT[[Q^^e]]c) (QT[[(A', e')]]c) 
 -  so that plain projection query: proj QT[[Q^^e]]c QT[[(A', e')]]c is valid
 
@@ -1724,7 +1736,7 @@ Fixpoint type_ (q:query) (s:schema) : qtype :=
  | (sel c q) => let A := type_ q s in 
                      if (condtype c A) then A else []
  | (proj A q)    => let A' := type_ q s in 
-                      if subsump_qtype_bool A A' then A else [] 
+                      if subset_qtype_bool A A' then A else [] 
  | (setU op q1 q2) => if equiv_qtype_bool (type_ q1 s) (type_ q2 s) then type_ q1 s else []
  | (prod  q1 q2) => if (is_disjoint_bool (type_ q1 s) (type_ q2 s)) then 
                           elems_union (type_ q1 s) (type_ q2 s) else []

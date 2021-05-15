@@ -109,7 +109,7 @@ apply (In_get_annot _ _ HndpElemA) in HInA as Hexe.
 exists e. eauto. Qed.
 
 Lemma get_annot_equiv : forall l l' a,
-l =vx= l' -> get_annot a l =e= get_annot a l'.
+l =vset= l' -> get_annot a l =e= get_annot a l'.
 Proof.
 intros l l' a H.
 - unfold equiv_velems in H. 

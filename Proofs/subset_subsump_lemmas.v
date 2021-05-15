@@ -8,7 +8,7 @@ Import Coq.Lists.List.ListNotations.
 Load VRA_varPrsrvtn_thm.
 
 
-Module subsump_lemmas. 
+Module subset_subsump_lemmas. 
 
 Lemma count_occ_NoDup_0_or_1 {A:Type} eq_dec (l:list A):
   NoDup l <-> forall x, count_occ eq_dec l x = 0 \/ count_occ eq_dec l x = 1.
@@ -24,8 +24,8 @@ Proof. destruct (in_dec eq_dec x l) as [HInl|HnInl];
  rewrite (count_occ_not_In eq_dec) in HnInl]; Lia.lia. 
 Qed.
 
-Lemma nil_subsump_nil: subsump_velems_exp [] [].
-Proof. unfold subsump_velems_exp. intros x e c [H1 H2].
+Lemma nil_subset_nil: subset_velems_exp [] [].
+Proof. unfold subset_velems_exp. intros x e c [H1 H2].
 eauto. Qed.
 
 Lemma forall_cons x e l: (forall c : config, (X[[ ae x e :: l]] c) = []) ->
@@ -35,22 +35,22 @@ try(destruct (E[[ e]] c); [pose (nil_cons) as Hnil_cons;
 specialize Hnil_cons with string x (X[[ l]] c); symmetry in H; contradiction |
 auto] ). Qed.
 
-Lemma nilconfig_subsump_nil l: (forall c, X[[ l]]c = []) -> subsump_velems_exp l [].
-Proof. intro H. induction l as [|(x , e)]. apply nil_subsump_nil.
-unfold subsump_velems_exp. apply forall_cons in H. 
+Lemma nilconfig_subset_nil l: (forall c, X[[ l]]c = []) -> subset_velems_exp l [].
+Proof. intro H. induction l as [|(x , e)]. apply nil_subset_nil.
+unfold subset_velems_exp. apply forall_cons in H. 
 destruct H as [He Hl]. apply IHl in Hl. intros x' e' c HIn.
 destruct HIn as [HIne Hsat]. simpl in HIne. destruct HIne as [Heq | HIn].
 inversion Heq; subst. unfold sat in Hsat. apply PNNP in Hsat. 
 rewrite not_true_iff_false in Hsat. specialize He with c. contradiction.
-unfold subsump_velems_exp in Hl.
+unfold subset_velems_exp in Hl.
 assert (Hlp: In (ae x' e') l /\ (E[[ e']] c) = true). eauto. apply Hl in Hlp. eauto.
 Qed.
 
 
-(*Lemma not_cons_subsump_nil l: (exists c, X[[ l]]c <> [])
--> ~ subsump_velems_exp l []. *)
+(*Lemma not_cons_subset_nil l: (exists c, X[[ l]]c <> [])
+-> ~ subset_velems_exp l []. *)
 (*Proof. unfold not. intros x l H. destruct H
-unfold subsump_velems_exp in H.
+unfold subset_velems_exp in H.
 destruct x as (x, e). specialize H with x e. simpl in H. Lia.lia.
 reflexivity. Qed. *)
 
@@ -68,15 +68,15 @@ specialize H with x. destruct H as [H1 H2].
 rewrite count_occ_cons_eq in H2. simpl in H2. Lia.lia.
 reflexivity. Qed.
 
-Theorem subsump_velems_correctness A A' (HndpA: NoDupElem A) (HndpA': NoDupElem A'): 
-       subsump_velems_exp A A' <-> (forall c, subset (X[[ A]]c) (X[[ A']]c)). 
+Theorem subset_velems_correctness A A' (HndpA: NoDupElem A) (HndpA': NoDupElem A'): 
+       subset_velems_exp A A' <-> (forall c, subset (X[[ A]]c) (X[[ A']]c)). 
 Proof. split; 
 generalize dependent A'; generalize dependent A; 
 induction A' as [|(a', ea') A' IHA'];  
 intros HndpA' H. 
 
 (*Goals -> :  1: A' := [] , 2: A' := [ae a ' ea':A']*)
-1, 2: unfold subsump_velems_exp in H; unfold subset; intros c x; 
+1, 2: unfold subset_velems_exp in H; unfold subset; intros c x; 
 
 try (split; (* 1: subset A []     to 1-1: In A []       1-2: count A [] *)
             (* 2: subset A [_:A'] to 2-1: In A [_:A'][] 2-2: count A [_:A'][] *)
@@ -159,8 +159,8 @@ rewrite (count_occ_not_In string_eq_dec) in H2.
 
 (* case []: *)
 
-(** Prove with two facts: subset (X[[A]]c) [] -> subsump_velems_exp A [] 
-1. forall c, (X[[A]]c)  = [] -> subsump_velems_exp A []
+(** Prove with two facts: subset (X[[A]]c) [] -> subset_velems_exp A [] 
+1. forall c, (X[[A]]c)  = [] -> subset_velems_exp A []
 2. exists c, (X[[A]]c) <> [] -> ~ subset (X[[A]]c) [] *)
 
 (* introduce (forall c, (X[[A]]c) = []) \/ (exists c, (X[[A]]c) <> []) *)
@@ -170,7 +170,7 @@ specialize Hclassic with (forall c, (X[[ A]] c) = []).
 destruct Hclassic as [Hall | Hexists].
 
 { (* case 1: forall c, (X[[A]]c) = [] *)
-  apply nilconfig_subsump_nil. assumption. }
+  apply nilconfig_subset_nil. assumption. }
 
 { (* case 2: exists c, (X[[A]]c) <> [] *)
   apply not_all_ex_not in Hexists. destruct Hexists as [c Hexists].
@@ -179,7 +179,7 @@ destruct Hclassic as [Hall | Hexists].
   apply not_subset_cons_nil in H. destruct H. }
 
 (* case (ae a' ea': A'):  *)
-unfold subsump_velems_exp. intros x e c HInxeA.
+unfold subset_velems_exp. intros x e c HInxeA.
 destruct HInxeA as[ HInxeA Hsat].
 unfold subset in H. 
 
@@ -203,39 +203,39 @@ exists e'; split;
 
 Qed.
 
-Lemma subsump_vqtype_correctness X X' {HndpA: NoDupElem (fst X)} {HndpA': NoDupElem (fst X')}: 
-       subsump_vqtype_exp X X' <-> subsump_vqtype X X'. 
-Proof.  unfold subsump_vqtype_exp, avelems_velems.
-rewrite subsump_velems_correctness. Search push_annot. 
-split; intro. unfold subsump_vqtype. intro. 
+Lemma subset_vqtype_correctness X X' {HndpA: NoDupElem (fst X)} {HndpA': NoDupElem (fst X')}: 
+       subset_vqtype_exp X X' <-> subset_vqtype X X'. 
+Proof.  unfold subset_vqtype_exp, avelems_velems.
+rewrite subset_velems_correctness. Search push_annot. 
+split; intro. unfold subset_vqtype. intro. 
 destruct X as (A, ea). destruct X' as (A', ea').
 repeat (rewrite <- configVElemSet_push_annot). apply H.
 intro. repeat (rewrite configVElemSet_push_annot).
-unfold subsump_vqtype in H. destruct X as (A, ea). destruct X' as (A', ea').
+unfold subset_vqtype in H. destruct X as (A, ea). destruct X' as (A', ea').
 simpl fst. simpl snd. apply H. 
 all: apply NoDupElem_push_annot; assumption.
 Qed.
 
-Lemma subsumpImp_vqtype_equiv A A' B: A =T= A' -> 
-subsumpImp_vqtype B A -> subsumpImp_vqtype B A'.
+Lemma subsump_vqtype_equiv A A' B: A =vqtype= A' -> 
+subsump_vqtype B A -> subsump_vqtype B A'.
 Proof. intros HT HSImp. 
 (* destruct vqtype into velem and fexp *)
 destruct A as (A, ea).
 destruct B as (B, eb).
 destruct A' as (A', ea').
-(* unfold subsumpImp_vqtype in context and goal *)
-unfold subsumpImp_vqtype. unfold subsumpImp_vqtype in HSImp.
+(* unfold subsump_vqtype in context and goal *)
+unfold subsump_vqtype. unfold subsump_vqtype in HSImp.
 intros x e HIn. 
-(* HSImp: subsumpImp_vqtype B A : In x B -> exists, In x A /\ sat
+(* HSImp: subsump_vqtype B A : In x B -> exists, In x A /\ sat
    -------------------------------------------------
-   Goal: subsumpImp_vqtype B A' : In x B -> exists, In x A' /\ sat
+   Goal: subsump_vqtype B A' : In x B -> exists, In x A' /\ sat
    
    ==> apply HSImp in (In x B) to get (exists, In x A /\ sat )
 *) 
 
 apply HSImp in HIn. 
-(* unfold vqtype_quiv in A=T=A' *)
-unfold "=T=", "=avx=" in HT.
+(* unfold vqtype_quiv in A=vqtype=A' *)
+unfold "=vqtype=", "=avset=" in HT.
 (* unfold sat in (exists, In x A /\ sat ) || sat: exixts c, E[]c = true *)
 unfold sat in HIn. destruct HIn as [e1 HIn].
 destruct HIn as [HIn HSat].
@@ -284,13 +284,13 @@ destruct (E[[ ea']] c) eqn:Hea'.
 Qed.
 
 
-Lemma subsumpImp_vqtype_inter_l B C:
-subsumpImp_vqtype (vqtype_inter_vq B C) B.
+Lemma subsump_vqtype_inter_l B C:
+subsump_vqtype (vqtype_inter_vq B C) B.
 Proof. 
 destruct B as (B, eb).
 destruct C as (C, ec).
-(* unfold subsumpImp_vqtype in context and goal *)
-unfold subsumpImp_vqtype. simpl. 
+(* unfold subsump_vqtype in context and goal *)
+unfold subsump_vqtype. simpl. 
 intros x ex HIn. 
 (* HIn:             In (x, ex) B /_\ C /\ sat (ex /\ eb /\ ec)
    -------------------------------------------------
@@ -379,11 +379,11 @@ auto.
 Qed.
 
 
-Lemma subsumpImp_vqtype_inter_intro Ap (HndpAp: NoDupElem Ap) ep 
-Aqs (HndpAqs: NoDupElem Aqs) eqs e: subsumpImp_vqtype (Ap, ep) (Aqs, eqs /\(F) e) -> 
-subsumpImp_vqtype (vqtype_inter_vq (Ap, ep) (Aqs, eqs)) (Aqs, eqs /\(F) e).
+Lemma subsump_vqtype_inter_intro Ap (HndpAp: NoDupElem Ap) ep 
+Aqs (HndpAqs: NoDupElem Aqs) eqs e: subsump_vqtype (Ap, ep) (Aqs, eqs /\(F) e) -> 
+subsump_vqtype (vqtype_inter_vq (Ap, ep) (Aqs, eqs)) (Aqs, eqs /\(F) e).
 Proof.
-unfold subsumpImp_vqtype. simpl. 
+unfold subsump_vqtype. simpl. 
 intros H x e12 HInpq.
 
 destruct HInpq as [HInpq Hsatpq].
@@ -440,14 +440,14 @@ apply andb_true_iff. split; eauto.
 apply He12impe1; eauto.
 Qed.
      
-(*Lemma subsumpImp_vqtype_trans A B C: subsumpImp_vqtype A B -> subsumpImp_vqtype B C ->
-subsumpImp_vqtype A C.
+(*Lemma subsump_vqtype_trans A B C: subsump_vqtype A B -> subsump_vqtype B C ->
+subsump_vqtype A C.
 Proof.
 destruct A as (A, ea).
 destruct B as (B, eb).
 destruct C as (C, ec).
-(* unfold subsumpImp_vqtype in context and goal *)
-unfold subsumpImp_vqtype. simpl. 
+(* unfold subsump_vqtype in context and goal *)
+unfold subsump_vqtype. simpl. 
 intros HAB HBC x e1 HInA.
 apply HAB in HInA as HInB.
 destruct HInB as [e2 HInB].
@@ -458,10 +458,10 @@ apply sat_and_dist in HsatAB as Hsat.
 
 
 (*
-Lemma subsumpImp_vqtype_inter_l A B: subsumpImp_vqtype (vqtype_inter_vq A B) A.
+Lemma subsump_vqtype_inter_l A B: subsump_vqtype (vqtype_inter_vq A B) A.
 Admitted.
 
-Lemma subsumpImp_vqtype_inter_r A B: subsumpImp_vqtype (vqtype_inter_vq A B) B.
+Lemma subsump_vqtype_inter_r A B: subsump_vqtype (vqtype_inter_vq A B) B.
 Admitted.*)
 
 
@@ -472,13 +472,13 @@ Proof.
 Admitted.
 
 
-Lemma subsumpImp_vqtype_inter_ B C:
-subsumpImp_vqtype (vqtype_inter_vq B C) B.
+Lemma subsump_vqtype_inter_ B C:
+subsump_vqtype (vqtype_inter_vq B C) B.
 Proof. 
 destruct B as (B, eb).
 destruct C as (C, ec).
-(* unfold subsumpImp_vqtype in context and goal *)
-unfold subsumpImp_vqtype. simpl. 
+(* unfold subsump_vqtype in context and goal *)
+unfold subsump_vqtype. simpl. 
 intros x ex HIn. 
 (* HIn:             In (x, ex) B /_\ C /\ sat (ex /\ eb /\ ec)
    -------------------------------------------------
@@ -520,12 +520,12 @@ eauto.
 
 Qed.
 
-Lemma subsumpImp_vqtype_inter_intro B C e:
-subsumpImp_vqtype B (fst C, (snd C /\(F) e)) ->
-subsumpImp_vqtype (vqtype_inter_vq B C) (fst C, (snd C /\(F) e)).
+Lemma subsump_vqtype_inter_intro B C e:
+subsump_vqtype B (fst C, (snd C /\(F) e)) ->
+subsump_vqtype (vqtype_inter_vq B C) (fst C, (snd C /\(F) e)).
 Proof. 
 intros HB.
-pose subsumpImp_vqtype_inter_ as HBC.
+pose subsump_vqtype_inter_ as HBC.
 specialize HBC with B C. 
 
 destruct B as [B eb].
@@ -546,16 +546,16 @@ split. assumption.
 Admitted.*)
 
 
-(*Lemma subsumpImp_vqtype_inter A B C(HndpA: NoDupElem (fst A)) :
-subsumpImp_vqtype B A -> subsumpImp_vqtype (vqtype_inter_vq B C) A.
+(*Lemma subsump_vqtype_inter A B C(HndpA: NoDupElem (fst A)) :
+subsump_vqtype B A -> subsump_vqtype (vqtype_inter_vq B C) A.
 Proof. 
 intros HSImp. 
 (* destruct vqtype into velem and fexp *)
 destruct A as (A, ea).
 destruct B as (B, eb).
 destruct C as (C, ec).
-(* unfold subsumpImp_vqtype in context and goal *)
-unfold subsumpImp_vqtype. unfold subsumpImp_vqtype in HSImp.
+(* unfold subsump_vqtype in context and goal *)
+unfold subsump_vqtype. unfold subsump_vqtype in HSImp.
 intros x e HIn. 
 
 simpl in HIn.
@@ -563,11 +563,11 @@ simpl.
 Admitted.*)
 
  
-End subsump_lemmas.  
+End subset_subsump_lemmas.  
 (*================================================*)
    
 (*
-unfold subsump_velems_exp in H;  
+unfold subset_velems_exp in H;  
 unfold subset; intro x;
 split;
 [ intro HInxA | 
@@ -629,10 +629,10 @@ reflexivity.
 
 
 
-(*Lemma def_equiv (A A': velems): subsump_velems_exp A A' <-> subsump_velems_exp' A A'.
+(*Lemma def_equiv (A A': velems): subset_velems_exp A A' <-> subset_velems_exp' A A'.
 Proof. split; intro H.
-unfold subsump_velems_exp in H.
-unfold subsump_velems_exp'. intros x e c H0.
+unfold subset_velems_exp in H.
+unfold subset_velems_exp'. intros x e c H0.
 destruct H0 as [HIn He].
 assert (HInsat: In (ae x e) A /\ sat e). 
 split; [ | unfold sat; exists c]; auto.
@@ -643,8 +643,8 @@ rewrite <- sat_taut_comp in Hsatee'.
 specialize Hsatee' with c. apply Hsatee' in He.
 exists e'. eauto.
 
-unfold subsump_velems_exp' in H.
-unfold subsump_velems_exp. intros x e H0. 
+unfold subset_velems_exp' in H.
+unfold subset_velems_exp. intros x e H0. 
  
 
 destruct H0 as [HInA Hsat]. unfold sat in Hsat.

@@ -42,7 +42,7 @@ pose (NoDupElem_NoDup_config c HA') as HA'temp;
 pose (set_union_nodup string_eq_dec HAtemp HA'temp) as HNDpUcAA'.
 
 Lemma set_remove_dist_set_union_elems: forall a A A' (HA: NoDup A) (HA': NoDup A'), 
-set_remove string_eq_dec a (set_union string_eq_dec A A') =x= 
+set_remove string_eq_dec a (set_union string_eq_dec A A') =set= 
 set_union string_eq_dec (set_remove string_eq_dec a A) 
 (set_remove string_eq_dec a A').
 Proof.
@@ -92,7 +92,7 @@ Qed.
 
 (* -- removeElem set_union -- *)
 Lemma removeElem_dist_set_union_velems : forall a A A', 
-removeElem a (set_union velem_eq_dec A A') =vx= 
+removeElem a (set_union velem_eq_dec A A') =vset= 
 set_union velem_eq_dec (removeElem a A) (removeElem a A').
 Proof. intros a A. generalize dependent A. induction A'. 
 - intro. simpl. reflexivity. 
@@ -137,9 +137,9 @@ Proof. intros a A. generalize dependent A. induction A'.
 Qed.
 
 (*Lemma velems_union_cases A b eb B : NoDupElem (ae b eb::B) -> 
-(  In (ae b eb) A -> velems_union A (ae b eb::B) =vx= velems_union A B ) \/
+(  In (ae b eb) A -> velems_union A (ae b eb::B) =vset= velems_union A B ) \/
 (~ In (ae b eb) A -> 
-   (  InElem b A -> velems_union A (ae b eb::B) =vx= 
+   (  InElem b A -> velems_union A (ae b eb::B) =vset= 
                    ( ae b (eb \/(F) (get_annot b A)) ::
                            velems_union (removeElem b A) B ) ) \/
    ( ~InElem b A ->  )
@@ -150,7 +150,7 @@ Qed.
 (* ---------- velems_union case analysis lemmas -------------  *)
 
 Lemma velems_union_InA A b eb B : 
-In (ae b eb) A -> velems_union A (ae b eb::B) =vx= velems_union A B .
+In (ae b eb) A -> velems_union A (ae b eb::B) =vset= velems_union A B .
 
 Proof.
 intro HInA.
@@ -163,7 +163,7 @@ Qed.
 Lemma velems_union_nInA_InElemA A b eb B {HndpElemA: NoDupElem A}
 {HndpElembB: NoDupElem (ae b eb::B)} : 
 ~ In (ae b eb) A /\ InElem b A -> 
-   velems_union A (ae b eb::B) =vx= ( ae b (eb \/(F) get_annot b (set_union velem_eq_dec A B)) 
+   velems_union A (ae b eb::B) =vset= ( ae b (eb \/(F) get_annot b (set_union velem_eq_dec A B)) 
                                    :: velems_union (removeElem b A) B ).
 Proof.
 (* derive ~ In (ae b eb) B *)
@@ -209,7 +209,7 @@ Qed.
 
 Lemma velems_union_nInA_nInElemA A b eb B {HndpElembB: NoDupElem (ae b eb::B)} : 
 ~ In (ae b eb) A /\ ~ InElem b A -> 
-   velems_union A (ae b eb::B) =vx= 
+   velems_union A (ae b eb::B) =vset= 
                    ( ae b eb :: velems_union A B ).
 Proof.
 (* derive ~ In (ae b eb) B *)
@@ -255,8 +255,8 @@ Qed.
 
 Lemma velems_union_nInElemA_nInElemB b A B eb c: 
 ~ InElem b A -> ~ InElem b B ->
-(X[[ velems_union A B]] c) =x= elems_union (X[[ A]] c) (X[[ B]] c) ->
-(X[[ ae b eb :: velems_union A B]] c) =x= 
+(X[[ velems_union A B]] c) =set= elems_union (X[[ A]] c) (X[[ B]] c) ->
+(X[[ ae b eb :: velems_union A B]] c) =set= 
                       elems_union (X[[ A]] c) (X[[ ae b eb :: B]] c).
 Proof. intros HnInElemA HnInElemB H.
 simpl. destruct (E[[ eb]] c) eqn:Heb.
@@ -271,7 +271,7 @@ Qed.
 
 Lemma In_set_union_removeElem a' A A' c (HNdpElemA: NoDupElem A)
 (HNdpElemA': NoDupElem A'):  In a' (X[[ A]] c) -> ~InElem a' A' ->
-       set_union string_eq_dec (X[[ A]] c)              (X[[ A']] c) =x= 
+       set_union string_eq_dec (X[[ A]] c)              (X[[ A']] c) =set= 
 (a' :: set_union string_eq_dec (X[[ removeElem a' A]] c) (X[[ A']] c)).
 Proof. 
 intros HInA HnInElemA'.
@@ -281,27 +281,27 @@ unfold set_In in HInA.
 (* HNDpUcAA': NoDup (elems_union (X[[ A]] c) (X[[ A']] c)) *)   
 NoDupElemAA'_NoDupAcUAc' HNdpElemA HNdpElemA' c.
 
-(* set add a (set remove a A) =x= A *)
+(* set add a (set remove a A) =set= A *)
 rewrite <- (In_set_add_remove a' HNDpUcAA' HInA).
        
 (* NoDupElem -> NoDup X[[ ]] c *)
 apply NoDupElem_NoDup_config with (c:=c) in HNdpElemA as HNdpCA.
 apply NoDupElem_NoDup_config with (c:=c) in HNdpElemA' as HNdpCA'.
 
-(* set_remove a (set_union A B) =x= set_union (set_remove a A) (set_remove a B) *)
+(* set_remove a (set_union A B) =set= set_union (set_remove a A) (set_remove a B) *)
 rewrite (set_add_equiv _
            (set_remove_dist_set_union_elems _ HNdpCA HNdpCA')); try assumption.
 
-(*set_remove a X[[ A]] c =x= X[[set_remove a A ]] c *)
+(*set_remove a X[[ A]] c =set= X[[set_remove a A ]] c *)
 repeat (rewrite set_remove_config; try assumption).
 
-(* ~InElem a' A -> removeElem a' A =x= A *)
+(* ~InElem a' A -> removeElem a' A =set= A *)
 rewrite (notInElem_removeElem_eq A' a' HnInElemA').
           
 (* intro HInremA: ~ InElem a' (removeElem a' A) *)
 pose (notInElem_removeElem A a') as HInremA.
 
-(* ~ In a A -> set_add a A =x= a::A *)
+(* ~ In a A -> set_add a A =set= a::A *)
 set_add_to_cons HInremA HnInElemA' a' c A A'.
 rewrite Hsetadd_cons.  
 
@@ -312,7 +312,7 @@ Qed.
 Lemma notInElem_set_union_removeElem a' A A' c (HNdpElemA: NoDupElem A)
 (HNdpElemA': NoDupElem A'): 
 ~ In a' (X[[ A]] c) -> ~InElem a' A' ->
-set_union string_eq_dec (X[[ A]] c)              (X[[ A']] c) =x= 
+set_union string_eq_dec (X[[ A]] c)              (X[[ A']] c) =set= 
 set_union string_eq_dec (X[[ removeElem a' A]] c) (X[[ A']] c).
 Proof. 
 intros HnInA HnInElemA'.
@@ -334,7 +334,7 @@ Qed.
 
 Lemma notInElemA'_set_union_cons_removeElem a' A' A c (HNdpElemA: NoDupElem A) (HNdpElemA': NoDupElem A'):
  ~ InElem a' A' -> 
-       set_union string_eq_dec (X[[ A]] c)              (a' :: (X[[ A']] c)) =x= 
+       set_union string_eq_dec (X[[ A]] c)              (a' :: (X[[ A']] c)) =set= 
 (a' :: set_union string_eq_dec (X[[ removeElem a' A]] c)        (X[[ A']] c)) .
 Proof.  intro HnInElemA'. 
 
@@ -378,27 +378,27 @@ rewrite orb_false_r. reflexivity. Qed.
 
 Theorem velems_union_is_variation_preserving : forall A  A' c (HA: NoDupElem A)
 (HA': NoDupElem A'), 
-    X[[ velems_union A A']]c =x= elems_union (X[[ A]] c) (X[[ A']] c).
+    X[[ velems_union A A']]c =set= elems_union (X[[ A]] c) (X[[ A']] c).
 Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
 - (* case A' = [] *)
   (*
      -----------------------------------------------
-     X[[ velems_union A []]] c =x= elems_union (X[[ A]] c) []
+     X[[ velems_union A []]] c =set= elems_union (X[[ A]] c) []
   *)
   destruct A as [| a A]; intros. 
   + (* case A = []       *) simpl. reflexivity.
   + (* case A = (a :: A) *) simpl (X[[ _]] _) at 3.
-    (* forall X, velems_union X [] =vx= [] /\ forall x, elems_union x [] =x= [] *)
+    (* forall X, velems_union X [] =vset= [] /\ forall x, elems_union x [] =set= [] *)
     rewrite velems_union_nil_r, elems_union_nil_r. 
     reflexivity. assumption.
     
 - (* case A' = (a :: A') *)
   intros A c Ha Ha'. destruct a' as (a', e').
-  (* IHA' : X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ A']] c)
+  (* IHA' : X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ A']] c)
      Ha'  : NoDupElem (ae a' e' :: A')
      .........
      -----------------------------------------------
-     X[[ velems_union A (ae a' e' :: A')]] c =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+     X[[ velems_union A (ae a' e' :: A')]] c =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
   *)
   
   (* inversion NoDupElem (ae a' e' :: A') -> ~ InElem a' A' *)
@@ -409,37 +409,37 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
   pose (NoDupElem_NoDup Ha') as Hndp.
   inversion Hndp as [|a'' e'' HnInA' HNDpA']; subst. clear Hndp.
   
-  (* IHA' : X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ A']] c)
+  (* IHA' : X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ A']] c)
      HnInA' : ~ In (ae a' e') A'
      HnInElemA' : ~ InElem a' A'
      .......
      -----------------------------------------------
-     X[[ velems_union A (ae a' e' :: A')]] c =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+     X[[ velems_union A (ae a' e' :: A')]] c =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
   *)
   (** Prove by cases of In (ae a' e') A  *)
   destruct (in_dec velem_eq_dec (ae a' e') A) as [HInA | HnInA].
   + (* case In (ae a' e') A *)
     
-    (* IHA' : X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ A']] c)
+    (* IHA' : X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ A']] c)
        HnInA' : ~ In (ae a' e') A'
        HnInElemA' : ~ InElem a' A'
        HInA : In (ae a' e') A  (* case analysis *)
        ........
        -----------------------------------------------
-       X[[ velems_union A (ae a' e' :: A')]] c =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+       X[[ velems_union A (ae a' e' :: A')]] c =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
     *)
     
-    (* HInA : In (ae a' e') A -> velems_union A (ae a' e' :: A') =vx= velems_union A A' *)
+    (* HInA : In (ae a' e') A -> velems_union A (ae a' e' :: A') =vset= velems_union A A' *)
     apply velems_union_InA with (B:=A') in HInA as Hequiv. 
-    unfold "=vx=" in Hequiv. rewrite Hequiv.
+    unfold "=vset=" in Hequiv. rewrite Hequiv.
     (* .......
        -----------------------------------------------
-       X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+       X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
     *)
     simpl. 
     (* .......
        -----------------------------------------------
-       X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) 
+       X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) 
                                   (if E[[ e']] c then a' :: X[[ A']] c else X[[ A']] c)
     *)
     destruct (E[[ e']] c) eqn:He'.
@@ -447,14 +447,14 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
        (* HInA : In (ae a' e') A
           .......
           -----------------------------------------------
-          X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (a' :: X[[ A']] c)
+          X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (a' :: X[[ A']] c)
        *)
        simpl elems_union. unfold elems_union.
        unfold elems_union in IHA'.
        (* HInA : In (ae a' e') A
           .......
           -----------------------------------------------
-          X[[ velems_union A A']] c =x= set_add string_eq_dec a' (elems_union (X[[ A]] c) (X[[ A']] c))
+          X[[ velems_union A A']] c =set= set_add string_eq_dec a' (elems_union (X[[ A]] c) (X[[ A']] c))
        *)
        (* HInA  : In (ae a' e') A -> HInA_c: In a' (X[[A]]c) *)
        pose (In_config_true a' e' A c HInA He') as HInA_c.
@@ -464,10 +464,10 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
                                               elems_union (X[[ A]] c) (X[[ A']] c)  *)
        apply (In_set_add string_eq_dec) in HInA_c. rewrite HInA_c. clear HInA_c.
        
-       (* IHA' : X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ A']] c)
+       (* IHA' : X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ A']] c)
           .......
           -----------------------------------------------
-          X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ A']] c)
+          X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ A']] c)
        *)
        apply IHA'; eauto.
         
@@ -476,12 +476,12 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
        
   + (* case ~ In (ae a' e') A *)
   
-     (* IHA' : X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ A']] c)
+     (* IHA' : X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ A']] c)
         HnInA' : ~ In (ae a' e') A'
         HnInElemA' : ~ InElem a' A'
         .......
         -----------------------------------------------
-        X[[ velems_union A (ae a' e' :: A')]] c =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+        X[[ velems_union A (ae a' e' :: A')]] c =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
      *)
      (** Proof by cases of existsbElem a' A *)
      destruct (existsbElem a' A) eqn:HexstElemA.
@@ -491,26 +491,26 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
             HInElemA : InElem a' A
             ........
             -----------------------------------------------
-            X[[ velems_union A (ae a' e' :: A')]] c =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+            X[[ velems_union A (ae a' e' :: A')]] c =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
          *)
          (* From velems_union Defn, HnInA /\ HInElemA -> 
-             velems_union A (ae a' e' :: A') =vx= ae a' (e' \/(F) get_annot a' (velems_union A A')) 
+             velems_union A (ae a' e' :: A') =vset= ae a' (e' \/(F) get_annot a' (velems_union A A')) 
                                                    :: velems_union (removeElem a' A) A' *)
          apply (velems_union_nInA_InElemA) with (A:=A) in Ha' as Hequiv;
          try( split; assumption); try assumption.
-         unfold "=vx=" in Hequiv. rewrite Hequiv.
+         unfold "=vset=" in Hequiv. rewrite Hequiv.
          (* ........
             -----------------------------------------------
             X[[ ae a' (e' \/(F) get_annot a' (set_union velem_eq_dec A A')) 
                                    :: velems_union (removeElem a' A) A']] c 
-            =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+            =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
          *)
          simpl. 
          (* ........
             -----------------------------------------------
            (if (E[[ e']] c) || (E[[ get_annot a' (set_union velem_eq_dec A A')]] c)
              then a' :: X[[ velems_union (removeElem a' A) A']] c
-              else X[[ velems_union (removeElem a' A) A']] c) =x= elems_union 
+              else X[[ velems_union (removeElem a' A) A']] c) =set= elems_union 
                  (X[[ A]] c)
                     (if E[[ e']] c then a' :: X[[ A']] c else X[[ A']] c)
          *)
@@ -523,18 +523,18 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
                 .........
                 -----------------------------------------------
                 a' :: X[[ velems_union (removeElem a' A) A']] c 
-                       =x= elems_union (X[[ A]] c) (a' :: X[[ A']] c)
+                       =set= elems_union (X[[ A]] c) (a' :: X[[ A']] c)
              *)
              (* HnInElemA' : ~ InElem a' A' -> elems_union (X[[ A]] c) (a' :: X[[ A']] c)
-                    =x= a' :: elems_union (X[[ removeElem a' A]] c) (X[[ A']] c) *)
+                    =set= a' :: elems_union (X[[ removeElem a' A]] c) (X[[ A']] c) *)
              rewrite (notInElemA'_set_union_cons_removeElem _ c Ha HNdpElemA' HnInElemA').
              apply cons_equiv_elems. 
              
-             (* IHA': X[[ velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ A']] c)
+             (* IHA': X[[ velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ A']] c)
                 ..........
                 -----------------------------------------------
                 a' :: X[[ velems_union (removeElem a' A) A']] c 
-                       =x= a' :: elems_union (X[[ removeElem a' A]] c) (X[[ A']] c)
+                       =set= a' :: elems_union (X[[ removeElem a' A]] c) (X[[ A']] c)
              *)
              apply IHA'; eauto.
          
@@ -546,7 +546,7 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
                 -----------------------------------------------
                 (if E[[ get_annot a' (set_union velem_eq_dec A A')]] c
                   then a' :: X[[ velems_union (removeElem a' A) A']] c
-                   else X[[ velems_union (removeElem a' A) A']] c) =x= elems_union (X[[ A]] c) (X[[ A']] c)
+                   else X[[ velems_union (removeElem a' A) A']] c) =set= elems_union (X[[ A]] c) (X[[ A']] c)
              *) 
              
              (* ~ InElem a' A'-> E[[ get_annot a' (set_union velem_eq_dec A A')]]c = 
@@ -559,7 +559,7 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
                 -----------------------------------------------
                 (if E[[ get_annot a' A]] c
                   then a' :: X[[ velems_union (removeElem a' A) A']] c
-                   else X[[ velems_union (removeElem a' A) A']] c) =x= elems_union (X[[ A]] c) (X[[ A']] c)
+                   else X[[ velems_union (removeElem a' A) A']] c) =set= elems_union (X[[ A]] c) (X[[ A']] c)
              *) 
              
              (** Prove by cases (E[[ get_annot a' A]] c) *)
@@ -574,7 +574,7 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
                   (* E[[e]]c = true /\ In (ae a e) A -> In a X[[A]]c *)
                    apply In_config_true with (c:=c) in HInA; try assumption.
               
-                  (* In a X[[A]]c -> elems_union (X[[ A]] c) (X[[ A']] c) =x= 
+                  (* In a X[[A]]c -> elems_union (X[[ A]] c) (X[[ A']] c) =set= 
                                     (a' :: elems_union (X[[ removeElem a' A]] c) (X[[ A']] c)) *)
                    rewrite (In_set_union_removeElem _ c Ha HNdpElemA' HInA HnInElemA').
                    apply cons_equiv_elems. 
@@ -590,7 +590,7 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
                   (*  E[[e]]c = false /\ In (ae a e) A -> ~ In a X[[[A]]c *)
                   apply In_config_false with (c:=c) in HInA; try assumption.
                   
-                  (* ~ In a X[[A]]c -> elems_union (X[[ A]] c) (X[[ A']] c) =x= 
+                  (* ~ In a X[[A]]c -> elems_union (X[[ A]] c) (X[[ A']] c) =set= 
                                        elems_union (X[[ removeElem a' A]] c) (X[[ A']] c) *)
                   rewrite (notInElem_set_union_removeElem _ c Ha HNdpElemA' HInA HnInElemA').
               
@@ -604,18 +604,18 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
             HnInElemA : ~ InElem a' A
             ........
             -----------------------------------------------
-            X[[ velems_union A (ae a' e' :: A')]] c =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+            X[[ velems_union A (ae a' e' :: A')]] c =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
         *)
         (* HnInA /\ HnInElemA ->
-              velems_union A (ae a' e' :: A') =vx= ae a' e' :: velems_union A A' *)
+              velems_union A (ae a' e' :: A') =vset= ae a' e' :: velems_union A A' *)
         apply (velems_union_nInA_nInElemA) with (A:=A) in Ha' as Hequiv;
         try(split; assumption).
-        unfold "=vx=" in Hequiv. rewrite Hequiv.
+        unfold "=vset=" in Hequiv. rewrite Hequiv.
         (*  HnInElemA' : ~ InElem a' A'
             HnInElemA  : ~ InElem a' A
             ..............
             -----------------------------------------------
-            X[[ ae a' e' :: velems_union A A']] c =x= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
+            X[[ ae a' e' :: velems_union A A']] c =set= elems_union (X[[ A]] c) (X[[ ae a' e' :: A']] c)
         *)
         (* Goal -> HnInElemA' /\ HnInElemA /\ IHA'  *)
         apply velems_union_nInElemA_nInElemB; eauto.
@@ -623,19 +623,19 @@ Proof. intros A A'. generalize dependent A. induction A' as [|a' A' IHA'].
 Qed.
 
 Lemma configVElemSet_dist_velems_union : forall A  A' c (HA: NoDupElem A)
-(HA': NoDupElem A'), configVElemSet (velems_union A A') c =x=
+(HA': NoDupElem A'), configVElemSet (velems_union A A') c =set=
       elems_union (configVElemSet A c) (configVElemSet A' c) .
 Proof. apply velems_union_is_variation_preserving. Qed.
 
 
 Theorem avelems_union_vq_is_variation_preserving : forall Q Q' c (HA: NoDupElem (fst Q))(HA': NoDupElem (fst Q')), 
-AX[[(vqtype_union_vq Q Q')]]c =x= elems_union (AX[[ Q]]c) (AX[[ Q']]c).
+AX[[(vqtype_union_vq Q Q')]]c =set= elems_union (AX[[ Q]]c) (AX[[ Q']]c).
 Proof. 
 intros Q Q' c HQ HQ'. destruct Q as (A, e). destruct Q' as (A', e').
 unfold vqtype_union_vq, configaVelems. 
 simpl fst. simpl snd. simpl. 
 destruct (E[[ e]] c) eqn: He; simpl; [|
-destruct (E[[ e']] c) eqn: He'; simpl; [ | (* [] =x= [] *)simpl; reflexivity] ]; 
+destruct (E[[ e']] c) eqn: He'; simpl; [ | (* [] =set= [] *)simpl; reflexivity] ]; 
 rewrite configVElemSet_dist_velems_union; 
 try (apply NoDupElem_push_annot; auto); simpl;
 repeat(rewrite configVElemSet_push_annot); simpl;
@@ -644,12 +644,12 @@ Qed.
 
 Lemma configVQType_dist_vqtype_union_vq : forall Q Q' c (HA: NoDupElem (fst Q))
 (HA': NoDupElem (fst Q')), configVQtype (vqtype_union_vq Q Q') c
-=x= elems_union (configVQtype Q c) (configVQtype Q' c).
+=set= elems_union (configVQtype Q c) (configVQtype Q' c).
 Proof. apply avelems_union_vq_is_variation_preserving. Qed.
 
 (*Lemma configVQType_dist_velems_union : forall A A' e c (HA: NoDupElem A)
 (HA': NoDupElem A'), configVQtype (velems_union A A', e) c
-=x= elems_union (configVQtype (A, e) c) (configVQtype (A', e) c).
+=set= elems_union (configVQtype (A, e) c) (configVQtype (A', e) c).
 Proof. 
 intros A A' e c. unfold configVQtype, configaVelems.
 destruct (E[[ e]] c) eqn: He.
@@ -745,9 +745,9 @@ try(eauto).
 Qed. 
 
 Lemma velems_inter_equiv A A' B B' (HA: NoDupElem A) (HA': NoDupElem A')
-(HB: NoDupElem B) (HB': NoDupElem B'): A =vx= A' ->
-B =vx= B' ->
-velems_inter A B =vx= velems_inter A' B'. 
+(HB: NoDupElem B) (HB': NoDupElem B'): A =vset= A' ->
+B =vset= B' ->
+velems_inter A B =vset= velems_inter A' B'. 
 Proof. intros H1 H2.
 unfold equiv_velems in H1.
 unfold equiv_velems in H2.
@@ -760,13 +760,13 @@ apply H1. apply H2. Qed.
 
 Lemma vqtype_inter_vq_equiv A A' B B' (HA: NoDupElem (fst A)) 
 (HA': NoDupElem (fst A'))
-(HB: NoDupElem (fst B)) (HB': NoDupElem (fst B')): A =T= A' ->
-B =T= B' ->
-vqtype_inter_vq A B =T= vqtype_inter_vq A' B'. 
+(HB: NoDupElem (fst B)) (HB': NoDupElem (fst B')): A =vqtype= A' ->
+B =vqtype= B' ->
+vqtype_inter_vq A B =vqtype= vqtype_inter_vq A' B'. 
 Proof. intros HAt HBt.  
-unfold equiv_vqtype, "=avx=" in HAt. 
-unfold equiv_vqtype, "=avx=" in HBt. 
-unfold equiv_vqtype, "=avx=". intro c. specialize HAt with c.
+unfold equiv_vqtype, "=avset=" in HAt. 
+unfold equiv_vqtype, "=avset=" in HBt. 
+unfold equiv_vqtype, "=avset=". intro c. specialize HAt with c.
 specialize HBt with c. destruct A as (A, ea).
 destruct B as (B, eb). destruct A' as (A', ea').
 destruct B' as (B', eb'). unfold vqtype_inter_vq.
@@ -797,8 +797,8 @@ unfold equiv_vqtype.
 simpl. split. apply velems_inter_equiv. all :(try assumption).
 unfold equivE. intro. simpl. rewrite H0, H2. reflexivity.*) Qed.
 
-Lemma configVElemSet_velems_inter_nil_l A B c (HA: NoDupElem A) (HB: NoDupElem B): (X[[ A]] c) =x= [] ->
-(X[[velems_inter A B]] c) =x= []. 
+Lemma configVElemSet_velems_inter_nil_l A B c (HA: NoDupElem A) (HB: NoDupElem B): (X[[ A]] c) =set= [] ->
+(X[[velems_inter A B]] c) =set= []. 
 Proof. intro H. 
 rewrite configVElemSet_dist_velems_inter.
 apply elems_inter_nil_l_equiv.
@@ -806,8 +806,8 @@ apply elems_inter_nil_l_equiv.
 all: eauto.
 Qed.
 
-Lemma configVElemSet_velems_inter_nil_r A B c (HA: NoDupElem A) (HB: NoDupElem B): (X[[ B]] c) =x= [] ->
-(X[[velems_inter A B]] c) =x= []. 
+Lemma configVElemSet_velems_inter_nil_r A B c (HA: NoDupElem A) (HB: NoDupElem B): (X[[ B]] c) =set= [] ->
+(X[[velems_inter A B]] c) =set= []. 
 Proof. intro H. 
 rewrite configVElemSet_dist_velems_inter.
 apply elems_inter_nil_r_equiv.
@@ -817,9 +817,9 @@ Qed.
 
 
 Lemma velems_union_equiv A A' B B' (HA: NoDupElem A) (HA': NoDupElem A')
-(HB: NoDupElem B) (HB': NoDupElem B'): A =vx= A' ->
-B =vx= B' ->
-velems_union A B =vx= velems_union A' B'. 
+(HB: NoDupElem B) (HB': NoDupElem B'): A =vset= A' ->
+B =vset= B' ->
+velems_union A B =vset= velems_union A' B'. 
 Proof. intros H1 H2.
 unfold equiv_velems in H1.
 unfold equiv_velems in H2.
@@ -831,13 +831,13 @@ apply H1. apply H2. Qed.
 
 Lemma vqtype_union_vq_equiv A A' B B' (HA: NoDupElem (fst A)) 
 (HA': NoDupElem (fst A'))
-(HB: NoDupElem (fst B)) (HB': NoDupElem (fst B')): A =T= A' ->
-B =T= B' ->
-vqtype_union_vq A B =T= vqtype_union_vq A' B'. 
+(HB: NoDupElem (fst B)) (HB': NoDupElem (fst B')): A =vqtype= A' ->
+B =vqtype= B' ->
+vqtype_union_vq A B =vqtype= vqtype_union_vq A' B'. 
 Proof. intros HAt HBt. 
-unfold "=T=", "=avx=" in HAt. 
-unfold "=T=", "=avx=" in HBt. 
-unfold "=T=", "=avx=". intro c. specialize HAt with c.
+unfold "=vqtype=", "=avset=" in HAt. 
+unfold "=vqtype=", "=avset=" in HBt. 
+unfold "=vqtype=", "=avset=". intro c. specialize HAt with c.
 specialize HBt with c. destruct A as (A, ea).
 destruct B as (B, eb). destruct A' as (A', ea').
 destruct B' as (B', eb'). simpl in *.
@@ -890,10 +890,10 @@ Proof. split;
     1, 2: inversion HndpElemA; subst; simpl; right; eauto.
 Qed.    
 
-Lemma removeElem_push_annot a2 A1 e: removeElem a2 (A1 < e) =vx= ((removeElem a2 A1) < e).
+Lemma removeElem_push_annot a2 A1 e: removeElem a2 (A1 < e) =vset= ((removeElem a2 A1) < e).
 Proof. induction A1. simpl. reflexivity.
 destruct a as (a,f). simpl. destruct (string_beq a2 a) eqn:Ha2a.
-apply IHA1; auto. unfold "=vx=". intro c. simpl. 
+apply IHA1; auto. unfold "=vset=". intro c. simpl. 
 destruct ((E[[ f]] c) && (E[[ e]] c)); [apply cons_equiv_elems|];
 apply IHA1. Qed.
 
@@ -909,11 +909,11 @@ Qed.
 Hint Constructors NoDupElem:core.
 
 Lemma velems_union_push_annot A1 A2 e {HndpElemA1:NoDupElem A1} {HndpElemA2:NoDupElem A2}: 
-velems_union  (A1 < e) (A2 < e) =vx= ((velems_union A1 A2) < e).
+velems_union  (A1 < e) (A2 < e) =vset= ((velems_union A1 A2) < e).
 Proof. generalize dependent A1.
 
 induction A2 as [| (a2, e2) A2 IHA2]; intros. simpl. 
-unfold "=vx=". intro c. simpl. repeat(rewrite velems_union_nil_r;
+unfold "=vset=". intro c. simpl. repeat(rewrite velems_union_nil_r;
 try assumption; try eauto). 
 reflexivity.
 
@@ -932,7 +932,7 @@ destruct (in_dec velem_eq_dec (ae a2 (e2 /\(F) e)) (A1 < e)) as [HInA1 | HnInA1]
   + (* ~ In (ae a2 e2) A1 *)
      destruct (existsbElem a2 (A1 < e)) eqn:HexstElemA1;
      remember (velems_union A1 (ae a2 e2 :: A2)) as velemsunion;
-         assert (Hrewrite: velemsunion =vx= (velems_union A1 (ae a2 e2 :: A2))) by 
+         assert (Hrewrite: velemsunion =vset= (velems_union A1 (ae a2 e2 :: A2))) by 
           (rewrite Heqvelemsunion; reflexivity).
      ++ (* InElem a2 A1 *) 
          existsbElem_InElem in HexstElemA1. rename HexstElemA1 into HInElemA1.
@@ -951,7 +951,7 @@ destruct (in_dec velem_eq_dec (ae a2 (e2 /\(F) e)) (A1 < e)) as [HInA1 | HnInA1]
          apply push_annot_equiv with (e:=e) in Hrewrite. rewrite Hrewrite. clear Hrewrite.
          
          apply notInElem_push_annot with (e:=e) in HnInElemA2 as HnInElemA2_psh.
-         unfold "=vx=". intro c. simpl. repeat (rewrite notInElemA'_get_annot_set_union; try auto).
+         unfold "=vset=". intro c. simpl. repeat (rewrite notInElemA'_get_annot_set_union; try auto).
          
          rewrite get_annot_e_push_annot. simpl.
          rewrite andb_orb_distrib_l. reflexivity.
@@ -971,7 +971,7 @@ destruct (in_dec velem_eq_dec (ae a2 (e2 /\(F) e)) (A1 < e)) as [HInA1 | HnInA1]
         apply push_annot_equiv with (e:=e) in Hrewrite. rewrite Hrewrite. clear Hrewrite.
         
         rewrite (cons_equiv_velems) with (l2:= (velems_union A1 A2 < e)); try (apply IHA2; eauto).
-        unfold "=vx=". intro c. simpl. reflexivity.
+        unfold "=vset=". intro c. simpl. reflexivity.
 
         split. rewrite <- In_push_annot_In; try auto. apply HnInA1. Search push_annot.
         rewrite notInElem_push_annot. apply HnInElemA1.
@@ -982,8 +982,8 @@ destruct (in_dec velem_eq_dec (ae a2 (e2 /\(F) e)) (A1 < e)) as [HInA1 | HnInA1]
 Qed.
 
 
-Lemma push_annot_andf_equiv A e e': (A < (e /\(F) e')) =vx= ((A < e) < e').
-Proof. unfold "=vx=". intro c. Search push_annot.
+Lemma push_annot_andf_equiv A e e': (A < (e /\(F) e')) =vset= ((A < e) < e').
+Proof. unfold "=vset=". intro c. Search push_annot.
 repeat (rewrite configVElemSet_push_annot).
 simpl.  rewrite configVElemSet_push_annot. simpl.
 destruct (E[[ e]] c); destruct (E[[ e']] c);

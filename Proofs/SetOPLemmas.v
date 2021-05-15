@@ -47,7 +47,7 @@ Qed.
 
 (* -- In config set_add -- *)
 Lemma config_set_add_equiv_elems_true a f c A: ~ In (ae a f) A -> (E[[ f]]c) = true ->
-configVElemSet (set_add velem_eq_dec (ae a f) A) c =x=  (a :: (configVElemSet A c)).
+configVElemSet (set_add velem_eq_dec (ae a f) A) c =set=  (a :: (configVElemSet A c)).
 Proof. induction A.
 - intros. simpl. rewrite H0. reflexivity.
 - intros. simpl in H. apply Classical_Prop.not_or_and in H.
@@ -64,7 +64,7 @@ Qed.
 
 
 Lemma config_set_add_equiv_elems_false a f c A: ~ In (ae a f) A -> (E[[ f]]c) = false ->
-configVElemSet (set_add velem_eq_dec (ae a f) A) c =x=  (configVElemSet A c).
+configVElemSet (set_add velem_eq_dec (ae a f) A) c =set=  (configVElemSet A c).
 Proof. induction A.
 - intros. simpl. rewrite H0. reflexivity.
 - intros. simpl in H. apply Classical_Prop.not_or_and in H.
@@ -270,7 +270,7 @@ reflexivity. rewrite IHA. reflexivity.
 assumption. Qed.
 
 Lemma notIn_set_add_equiv_elems a A:
-         ~ In a A -> (set_add string_eq_dec a A) =x= (a::A) .
+         ~ In a A -> (set_add string_eq_dec a A) =set= (a::A) .
 Proof. unfold equiv_elems. intros Ha a0. split.
        - split.
          + intro H. simpl. rewrite set_add_iff in H. 
@@ -285,7 +285,7 @@ Qed.
 
 
 Lemma notIn_set_add_equiv_velems a A: ~ In a A -> 
-      (set_add velem_eq_dec a A) =vx= (a::A) .
+      (set_add velem_eq_dec a A) =vset= (a::A) .
 Proof. unfold equiv_velems. destruct a as (a, e).
 intros H c. simpl configVElemSet. destruct (E[[ e]]c) eqn: He.
 + apply (config_set_add_equiv_elems_true _ _ _ _ H He). 
@@ -295,7 +295,7 @@ Qed.
 (* -- In set_add remove  -- *)
 Lemma In_set_add_remove: forall a A (HA: NoDup A), 
        In a A ->  
-       set_add string_eq_dec a (set_remove string_eq_dec a A) =x= A.
+       set_add string_eq_dec a (set_remove string_eq_dec a A) =set= A.
 Proof. intros. unfold equiv_elems. intro.
 destruct (string_beq a0 a) eqn:Haa0.
 + rewrite stringDecF.eqb_eq in Haa0.
@@ -322,7 +322,7 @@ Qed.
 
 (* -- set_add set_remove -- *)
 Lemma set_add_remove: forall a A (HA: NoDup A),
-       set_add string_eq_dec a A =x= 
+       set_add string_eq_dec a A =set= 
        set_add string_eq_dec a (set_remove string_eq_dec a A).
 Proof. intros. destruct (in_dec string_eq_dec a A) eqn:HInA.
 rewrite In_set_add. symmetry.
@@ -491,7 +491,7 @@ eapply In_velems_inter. eauto.
 Qed.
 
 Lemma set_add_equiv: forall a A A',
-A=x=A' -> set_add string_eq_dec a A =x= set_add string_eq_dec a A'.
+A=set=A' -> set_add string_eq_dec a A =set= set_add string_eq_dec a A'.
 Proof. intros a A A'.
 intro H. unfold equiv_elems in H.
 unfold equiv_elems. intro a0.
@@ -510,7 +510,7 @@ rewrite <- H. reflexivity.
 Qed.
 
 Lemma set_remove_equiv: forall a A A' (HA: NoDup A) (HA': NoDup A'),
-A=x=A' -> set_remove string_eq_dec a A =x= set_remove string_eq_dec a A'.
+A=set=A' -> set_remove string_eq_dec a A =set= set_remove string_eq_dec a A'.
 Proof. intros a A A' HA HA'.
 intro H. unfold equiv_elems in H.
 unfold equiv_elems. intro a0.
@@ -534,7 +534,7 @@ Qed.
 
 Lemma set_union_equiv A A' B B' (HA: NoDup A) (HA': NoDup A')
 (HB: NoDup B) (HB': NoDup B'):
-A=x=B -> A'=x=B' -> set_union string_eq_dec A A' =x= set_union string_eq_dec B B'.
+A=set=B -> A'=set=B' -> set_union string_eq_dec A A' =set= set_union string_eq_dec B B'.
 Proof.
 intros H1 H2. unfold equiv_elems in H1, H2.
 unfold equiv_elems. intro a0.
@@ -556,7 +556,7 @@ Qed.
 
 Lemma set_inter_equiv A A' B B' (HA: NoDup A) (HA': NoDup A')
 (HB: NoDup B) (HB': NoDup B'):
-A=x=B -> A'=x=B' -> set_inter string_eq_dec A A' =x= set_inter string_eq_dec B B'.
+A=set=B -> A'=set=B' -> set_inter string_eq_dec A A' =set= set_inter string_eq_dec B B'.
 Proof.
 intros H1 H2. unfold equiv_elems in H1, H2.
 unfold equiv_elems. intro a0.
@@ -578,7 +578,7 @@ Qed.
 
 Lemma is_disjoint_bool_equiv A A' B B' (HA: NoDup A) (HA': NoDup A')
 (HB: NoDup B) (HB': NoDup B'):
-A=x=B -> A'=x=B' -> is_disjoint_bool A A' = is_disjoint_bool B B'.
+A=set=B -> A'=set=B' -> is_disjoint_bool A A' = is_disjoint_bool B B'.
 Proof. intros. unfold is_disjoint_bool.
 pose (set_inter_equiv HA HA' HB HB' H H0) as Hinter.
 destruct (elems_inter A A') eqn: HAA'; unfold elems_inter;
@@ -611,8 +611,8 @@ apply IHl. assumption.
 Qed. 
 
 Lemma equiv_qtype_set_remove_cons A a A':
-     In a A'-> A =t= set_remove string_eq_dec a A' <->
-               (a :: A) =t= A'.
+     In a A'-> A =qtype= set_remove string_eq_dec a A' <->
+               (a :: A) =qtype= A'.
 Proof. intros H1. split; intro H;
 unfold equiv_qtype; unfold equiv_qtype in H;
 unfold equiv_elems;  unfold equiv_elems in H;
@@ -666,7 +666,7 @@ Qed.
 
 
 Lemma set_union_velems_nil_l: forall A (H: NoDup A), 
-          set_union velem_eq_dec [] A =vx= A.
+          set_union velem_eq_dec [] A =vset= A.
 Proof. induction A. simpl. 
 reflexivity. simpl.  
 intro H.
@@ -730,7 +730,7 @@ Proof. (*intros a A A'. generalize dependent a.*)
            (* ~ In a A /\ ~ In a A' -> ~ In a (A U A') *)
            pose (conj HnInAe' HnInA'e') as HnInAUA'.
            rewrite (notIn_set_union velem_eq_dec) in HnInAUA'.
-           (* ~ In a A -> set_add a A =vx= (a::A) *)
+           (* ~ In a A -> set_add a A =vset= (a::A) *)
            apply (notIn_set_add_equiv_velems) in HnInAUA' as Hsetadd.
            apply get_annot_equiv with (a:=a) in Hsetadd. rewrite Hsetadd.
            
@@ -762,7 +762,7 @@ Proof. (*intros a A A'. generalize dependent a.*)
        (* ~ In a A /\ ~ In a A' -> ~ In a (A U A') *)
        pose (conj HnInAe' HnInA'e') as HnInAUA'.
        rewrite (notIn_set_union velem_eq_dec) in HnInAUA'.
-       (* ~ In a A -> set_add a A =vx= (a::A) *)
+       (* ~ In a A -> set_add a A =vset= (a::A) *)
        apply (notIn_set_add_equiv_velems) in HnInAUA' as Hsetadd.
        apply get_annot_equiv with (a:=a) in Hsetadd. rewrite Hsetadd.
        
@@ -788,11 +788,11 @@ Qed.
 (* nil lemmas should hold for equality,
    but proving equiv is easier and should be enough for us. *)
 
-Lemma elems_union_nil_r: forall A, elems_union A [] =x= A.
+Lemma elems_union_nil_r: forall A, elems_union A [] =set= A.
 Proof. intros. simpl. reflexivity. Qed.
 
 (* elems_union use set_add; thus bag(Dup) A will become set A on LHS*)
-Lemma elems_union_nil_l: forall A (H: NoDup A), elems_union [] A =x= A.
+Lemma elems_union_nil_l: forall A (H: NoDup A), elems_union [] A =set= A.
 Proof. intros. unfold elems_union. unfold equiv_elems.
  intro a. split. split.
  - rewrite set_union_iff. simpl. intro.
@@ -828,7 +828,7 @@ apply nodupelem_fixed_point. auto.
 Qed.
 
 
-Lemma velems_union_nil_l : forall A (H: NoDupElem A), velems_union [] A =vx= A.
+Lemma velems_union_nil_l : forall A (H: NoDupElem A), velems_union [] A =vset= A.
 Proof. 
 induction A. simpl. 
 reflexivity. simpl.  
@@ -864,15 +864,15 @@ Proof. intro A. induction A as [|(a, e)]. reflexivity.
 Lemma velems_inter_nil_l : forall A, velems_inter [] A = [].
 Proof. intros. rewrite velems_inter_equation. simpl. reflexivity. Qed.
 
-Lemma elems_inter_nil_l_equiv A B (HA: NoDup A) (HB: NoDup B): A =x= [] ->
-elems_inter A B =x= []. 
+Lemma elems_inter_nil_l_equiv A B (HA: NoDup A) (HB: NoDup B): A =set= [] ->
+elems_inter A B =set= []. 
 Proof. intro H. rewrite set_inter_equiv with (B:=[]) (B':=B).
 rewrite elems_inter_nil_l. try reflexivity.
 all: try (assumption); try (apply (NoDup_nil)). reflexivity.
 Qed.
 
-Lemma elems_inter_nil_r_equiv A B (HA: NoDup A) (HB: NoDup B): B =x= [] ->
-elems_inter A B =x= []. 
+Lemma elems_inter_nil_r_equiv A B (HA: NoDup A) (HB: NoDup B): B =set= [] ->
+elems_inter A B =set= []. 
 Proof. intro H. rewrite set_inter_equiv with (B:=A) (B':=[]).
 rewrite elems_inter_nil_r. try reflexivity.
 all: try (assumption); try (apply (NoDup_nil)). reflexivity.
@@ -895,7 +895,7 @@ rewrite IHA. Search get_annot.
 rewrite simpl_get_annot_neq. reflexivity.
 all: (try eauto). Qed. 
 
-Lemma velems_inter_pres : forall A (H: NoDupElem A), velems_inter A A =vx= A.
+Lemma velems_inter_pres : forall A (H: NoDupElem A), velems_inter A A =vset= A.
 Proof. intro A. induction A as [|(a, e)]. reflexivity.
 intro H.
 inversion H; subst. 
@@ -1025,7 +1025,7 @@ apply IHA ; eauto.
 Qed.
 
 Lemma velems_inter_simpl A B:
-velems_inter (velems_inter A B) B =vx= velems_inter A B. 
+velems_inter (velems_inter A B) B =vset= velems_inter A B. 
 Proof. induction A.
 - repeat (rewrite velems_inter_nil_l).
 reflexivity.
@@ -1055,7 +1055,7 @@ rewrite Hsimp. apply IHA.
 Qed.
 
 Lemma elems_inter_simpl A B:
-elems_inter (elems_inter A B) B =x= elems_inter A B. 
+elems_inter (elems_inter A B) B =set= elems_inter A B. 
 Proof. induction A.
 - repeat (rewrite elems_inter_nil_l). reflexivity.
 - simpl. destruct (set_mem string_eq_dec a B) eqn:H. 

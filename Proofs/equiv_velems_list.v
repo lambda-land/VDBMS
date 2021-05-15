@@ -5,32 +5,32 @@ Require Export Logic.
 Load ElemOPVelem.
 
 (* list-equivalence *)
-Definition equiv_eleml : relation (list elem) := 
+Definition equiv_elems_list : relation (list elem) := 
 fun A A' => forall a, (In a A <-> In a A').
 
-Infix "=l=" := equiv_eleml (at level 70) : type_scope.
+Infix "=list=" := equiv_elems_list (at level 70) : type_scope.
 
 (* V-set equivalence-list *)
 Definition equiv_velems_list : relation velems := 
-fun A A' => forall c, (X[[A]]c) =l= (X[[A']]c).
+fun A A' => forall c, (X[[A]]c) =list= (X[[A']]c).
 
-Infix "=vl=" := equiv_velems_list (at level 70) : type_scope.
+Infix "=vlist=" := equiv_velems_list (at level 70) : type_scope.
 
 
 (* equiv_qtype is Equivalence relation *)
-Remark equiv_eleml_refl: Reflexive equiv_eleml.
+Remark equiv_elems_list_refl: Reflexive equiv_elems_list.
 Proof.
   intros A a. reflexivity.
 Qed.
 
-Remark equiv_eleml_sym : Symmetric equiv_eleml.
+Remark equiv_elems_list_sym : Symmetric equiv_elems_list.
 Proof.
   intros A A' H a.
   symmetry;
   apply H.
 Qed.
 
-Remark equiv_eleml_trans : Transitive equiv_eleml.
+Remark equiv_elems_list_trans : Transitive equiv_elems_list.
 Proof.
   intros A A'' A' H1 H2 a.
   try (transitivity (In a A'')); 
@@ -39,10 +39,10 @@ Proof.
    try (apply H2). 
 Qed.
 
-Instance eleml_Equivalence : Equivalence equiv_eleml := {
-    Equivalence_Reflexive := equiv_eleml_refl;
-    Equivalence_Symmetric := equiv_eleml_sym;
-    Equivalence_Transitive := equiv_eleml_trans }.
+Instance eleml_Equivalence : Equivalence equiv_elems_list := {
+    Equivalence_Reflexive := equiv_elems_list_refl;
+    Equivalence_Symmetric := equiv_elems_list_sym;
+    Equivalence_Transitive := equiv_elems_list_trans }.
     
     (* equiv_velems is Equivalence relation *)
 
@@ -74,18 +74,18 @@ Instance velems_list_Equivalence : Equivalence equiv_velems_list := {
 
 (* equiv_vqtype is Equivalence relation *)
 
-Lemma equiv_list_intro: forall a l, In a l -> (a::l) =l= l.
+Lemma equiv_list_intro: forall a l, In a l -> (a::l) =list= l.
 Proof. intros. 
-unfold "=l=". 
+unfold "=list=". 
 intros. split.
 simpl. intro. 
 destruct H0. rewrite <- H0. auto.
 auto. intro. simpl. eauto.
 Qed.
 
-Lemma equiv_list_order: forall a a' l, (a::a'::l) =l= (a'::a::l).
+Lemma equiv_list_order: forall a a' l, (a::a'::l) =list= (a'::a::l).
 Proof. intros. 
-unfold "=l=". 
+unfold "=list=". 
 intros. split;
 simpl; intro; 
 destruct H; eauto;
@@ -93,12 +93,12 @@ destruct H; eauto;
 eauto.
 Qed.
 
-Lemma cons_equiv_list: forall a l1 l2, l1 =l= l2 -> (a::l1) =l= (a::l2).
+Lemma cons_equiv_list: forall a l1 l2, l1 =list= l2 -> (a::l1) =list= (a::l2).
 Proof. 
 intros. 
-unfold "=l=" in H.
+unfold "=list=" in H.
 
-unfold "=l=". 
+unfold "=list=". 
 intros. split;
 specialize H with (a:=a0);
 destruct H.
@@ -132,7 +132,7 @@ assumption.
 Qed.
 
 Lemma removeElem_notIn a vs c:  
-~ In a (X[[ vs]] c) -> X[[ vs]] c =l= X[[ removeElem a vs]] c.
+~ In a (X[[ vs]] c) -> X[[ vs]] c =list= X[[ removeElem a vs]] c.
 Proof. intro HnIn.
 functional induction (removeElem a vs) using removeElem_ind.
 simpl. reflexivity.
@@ -148,7 +148,7 @@ apply cons_equiv_list. eauto.
 eauto. Qed.
 
 Lemma removeElem_In a vs c:  
-In a (X[[ vs]] c) -> X[[ vs]] c =l= a :: X[[ removeElem a vs]] c.
+In a (X[[ vs]] c) -> X[[ vs]] c =list= a :: X[[ removeElem a vs]] c.
 Proof. intro HIn.
 functional induction (removeElem a vs) using removeElem_ind.
 + simpl in HIn. inversion HIn.
@@ -178,10 +178,10 @@ apply cons_equiv_list. eauto.
 eauto.
 Qed.
 
-Lemma nodupelem_gen_equiv_velems_list: forall v, v =vl= (nodupelem v).
+Lemma nodupelem_gen_equiv_velems_list: forall v, v =vlist= (nodupelem v).
 Proof. intro v.
 functional induction (nodupelem v) using nodupelem_ind;
-unfold "=vl="; unfold "=vl=" in *; intro c; simpl.
+unfold "=vlist="; unfold "=vlist=" in *; intro c; simpl.
 + reflexivity.
 + destruct (E[[ e]] c) eqn:He;
   [apply cons_equiv_list | ]; auto.
@@ -191,7 +191,7 @@ unfold "=vl="; unfold "=vl=" in *; intro c; simpl.
   specialize IHv0 with c. 
   apply cons_equiv_list with (a:=a) in IHv0.
   rewrite <- IHv0. rewrite existsbElem_InElem in e1. 
-  unfold "=l=".
+  unfold "=list=".
   (* Goal: In a0 (a :: X[[ vs]] c) <-> In a0 (a :: X[[ removeElem a vs]] c) *)
   intro a0. split; intro.
   +++ (* -> *) simpl in H. destruct H. rewrite H. simpl. eauto.

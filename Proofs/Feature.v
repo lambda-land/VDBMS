@@ -10,7 +10,7 @@ Require Import Logic.Classical_Pred_Type.
 
 Module Feature.
 
-(** Feature Exression Generic Object *)
+(** Feature Name *)
 
 Definition fname := string.
 
@@ -41,6 +41,7 @@ Fixpoint semE (e : fexp) (c : config) : bool :=
   end.
 
 Notation "E[[ e ]] c" := (semE e c) (at level 50, left associativity).
+
 
 (** Feature Expression Equality - see above *)
 (*Fixpoint eqb (e1 e2: fexp) : bool :=
