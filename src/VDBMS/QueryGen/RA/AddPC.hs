@@ -2,7 +2,7 @@
 --   and renames subqueries/relations without an alias.
 module VDBMS.QueryGen.RA.AddPC (
 
-         addPC
+         -- addPC
 
 ) where 
 

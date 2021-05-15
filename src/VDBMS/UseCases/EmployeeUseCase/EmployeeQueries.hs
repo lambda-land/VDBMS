@@ -100,7 +100,7 @@ v45 = F.Or empv4 empv5
 -- after pushing schema: #unique_variants = 6
 -- 
 -- π (salary^{v_3}) 
---   ((σ (empno=10004) empacct) ⋈_{empacct.title=job.title} job)
+--   (σ (empno=10004) (empacct ⋈_{empacct.title=job.title} job))
 -- 
 -- emptest :: Algebra
 -- emptest = project (pure $ trueAttr salary_) (tRef job)
@@ -110,13 +110,13 @@ v45 = F.Or empv4 empv5
 
 -- tbltest = (vtest,fromList [(Attribute {attributeName = "salary"},(F.Lit True,TInt32)),(Attribute {attributeName = "title"},(F.Lit True,TString))])
 empVQ1, empVQ1_alt, empVQ1_old, empVQ1_alt0, empVQ1_alt1, empVQ1_alt2 :: Algebra
-empVQ1 = 
+empVQ1' = 
   project (pure $ att2optatt salary_ empv3)
           (join (select empSqlCond $ tRef empacct)
                 (tRef job)
                 (joinEqCond (att2attrQualRel title_ empacct)
                             (att2attrQualRel title_ job)))
-empVQ1' = 
+empVQ1 = 
   project (pure $ att2optattQualRel salary_ job empv3)
           (select empSqlCond (join (tRef empacct)
                 (tRef job)
@@ -248,22 +248,35 @@ empVQ1_alt_typeErr =
 -- after pushing schema: #variants = 
 -- after pushing schema: #unique_variants = 
 -- 
--- (v_3 ∨ v_4 ∨ v_5) ⟨π (salary) ((v_3 ∨ v_4)⟨(σ (empno=10004) empacct) 
---                                             ⋈_{empacct.title=job.title} job 
+-- (v_3 ∨ v_4 ∨ v_5) ⟨π (salary) ((v_3 ∨ v_4)⟨σ (empno=10004) (empacct
+--                                             ⋈_{empacct.title=job.title} job)
 --                                ,σ (empno=10004) empacct⟩), ε⟩
 -- 
 empVQ2, empVQ2_alt, empVQ2_old, empVQ2_alt_thought_wrong_but_correct, empVQ2_alt2, empVQ2_alt3_thought_wrong_but_correct :: Algebra
-empVQ2 = 
+empVQ2' = 
   choice v345
          (project (pure $ trueAttr salary_)
                   (choice v34
-                          (join (select empSqlCond $ tRef empacct)
-                                (tRef job)
-                                (joinEqCond (att2attrQualRel title_ empacct)
-                                            (att2attrQualRel title_ job)))
+                          (select empSqlCond 
+                                  (join (tRef empacct)
+                                        (tRef job)
+                                        (joinEqCond (att2attrQualRel title_ empacct)
+                                                    (att2attrQualRel title_ job))))
                           (select empSqlCond $ tRef empacct)))
          Empty
 
+empVQ2 = 
+  choice v345
+                  (choice v34
+                          (project (pure $ att2optattQualRel salary_ job (F.Lit True))
+                            (select empSqlCond 
+                                  (join (tRef empacct)
+                                        (tRef job)
+                                        (joinEqCond (att2attrQualRel title_ empacct)
+                                                    (att2attrQualRel title_ job)))))
+                          (project (pure $ trueAttr salary_)
+                            (select empSqlCond $ tRef empacct)))
+         Empty
 -- empvq2lchc =
 --   (project (pure $ trueAttr salary_)
 --                   (choice v34
@@ -408,8 +421,8 @@ empVQ2_alt3_thought_wrong_but_correct =
 -- #variants = 1
 -- #unique_variants = 1
 -- 
--- π (name^v_3) ((σ (deptno="d001") empacct)
---               ⋈_{empacct.empno=dept.managerno} dept)
+-- π (name^v_3) (σ (deptno="d001") (empacct
+--               ⋈_{empacct.empno=dept.managerno} dept))
 -- 
 -- after pushing schema: #variants = 
 -- after pushing schema: #unique_variants = 
@@ -417,11 +430,12 @@ empVQ2_alt3_thought_wrong_but_correct =
 empVQ3, empVQ3_alt, empVQ3_old :: Algebra
 empVQ3 = 
   project (pure $ att2optatt name_ empv3)
-          (join (select (eqAttValSqlCond deptno_ departno_value)
-                        (tRef empacct))
-                (tRef dept)
-                (joinEqCond (att2attrQualRel empno_ empacct)
-                            (att2attrQualRel managerno_ dept)))
+          (select (eqAttrValSqlCond (att2attrQualRel deptno_ empacct) 
+                                    departno_value)
+                  (join (tRef empacct)
+                         (tRef dept)
+                         (joinEqCond (att2attrQualRel empno_ empacct)
+                                     (att2attrQualRel managerno_ dept))))
 
 empvq3tst = (select (eqAttValSqlCond deptno_ departno_value)
                         (tRef empacct))
@@ -470,17 +484,19 @@ empVQ3_old =
 -- after pushing schema: #variants = 
 -- after pushing schema: #unique_variants = 
 -- 
--- v_3 ∨ v_4 ∨ v_5 ⟨π (name, firstname, lastname)
---                    (v_3 ⟨empacct, empbio⟩ ⋈_{empno=managerno} (σ (deptno="d001") dept)), ε⟩
+-- v_3 ∨ v_4 ∨ v_5 ⟨π (name, firstname, lastname) (σ (deptno="d001")
+--                    (v_3 ⟨empacct, empbio⟩ ⋈_{empno=managerno}  dept), ε⟩
 -- 
 empVQ4, empVQ4_alt, empVQ4_old, empVQ4_alt1 :: Algebra
 empVQ4 = 
   choice v345
          (project (fmap trueAttr [name_, firstname_, lastname_])
-                  (join (choice empv3 (tRef empacct) (tRef empbio))
-                        (select (eqAttValSqlCond deptno_ departno_value) (tRef dept))
-                        (joinEqCond (att2attr empno_)
-                                    (att2attr managerno_))))
+                  (select (eqAttrValSqlCond (att2attrQualRel deptno_ dept) 
+                                    departno_value)
+                          (join (choice empv3 (tRef empacct) (tRef empbio))
+                                (tRef dept)
+                                (joinEqCond (att2attr empno_)
+                                            (att2attr managerno_)))))
          Empty
 
 -- v_3 ∨ v_4 ∨ v_5 ⟨π (deptno, name, firstname, lastname)
@@ -558,16 +574,17 @@ empVQ4_alt1 =
 -- after pushing schema: #variants = 
 -- after pushing schema: #unique_variants = 
 -- 
--- π (managerno^v_3) ((σ (deptno="d001") empacct) ⋈_{empacct.empno=dept.managerno} dept)
+-- π (managerno^v_3) (σ (deptno="d001") (empacct ⋈_{empacct.empno=dept.managerno} dept)
 -- 
 empVQ5, empVQ5_alt, empVQ5_old :: Algebra
 empVQ5 = 
   project (pure $ att2optatt name_ empv3)
-          (join (select (eqAttValSqlCond deptno_ departno_value)
-                        (tRef empacct))
-                (tRef dept)
-                (joinEqCond (att2attrQualRel empno_ empacct)
-                            (att2attrQualRel managerno_ dept)))
+          (select (eqAttrValSqlCond (att2attrQualRel deptno_ dept) 
+                                    departno_value)
+                  (join (tRef empacct)
+                        (tRef dept)
+                        (joinEqCond (att2attrQualRel empno_ empacct)
+                                    (att2attrQualRel managerno_ dept))))
 
 -- π (deptno^v_3, managerno^v_3) (empacct ⋈_{empacct.empno=dept.managerno} dept)
 -- 
@@ -610,16 +627,17 @@ empVQ5_old =
 -- after pushing schema: #variants = 
 -- after pushing schema: #unique_variants = 
 -- 
--- π (managerno^{v_3 ∨ v_4 ∨ v_5}) ((σ (empno=10004) empacct) 
---                                  ⋈_{empacct.deptno=dept.deptno} dept)
+-- π (managerno^{v_3 ∨ v_4 ∨ v_5}) (σ (empno=10004) (empacct
+--                                  ⋈_{empacct.deptno=dept.deptno} dept))
 -- 
 empVQ6, empVQ6_alt, empVQ6_old :: Algebra
 empVQ6 = 
   project (pure $ att2optatt managerno_ v345)
-          (join (select empSqlCond (tRef empacct))
-                (tRef dept)
-                (joinEqCond (att2attrQualRel deptno_ empacct)
-                            (att2attrQualRel deptno_ dept)))
+          (select empSqlCond 
+                  (join (tRef empacct)
+                        (tRef dept)
+                        (joinEqCond (att2attrQualRel deptno_ empacct)
+                                    (att2attrQualRel deptno_ dept))))
 
 -- π (empno^{v_3 ∨ v_4 ∨ v_5}, managerno^{v_3 ∨ v_4 ∨ v_5}) 
 --   (empacct ⋈_{empacct.deptno=dept.deptno} dept)
@@ -667,6 +685,16 @@ empVQ6_old =
 -- 
 empVQ7, empVQ7_alt, empVQ7_old :: Algebra
 empVQ7 = 
+  project ([att2optattQualRel managerno_ dept empv3, att2optattQualRel salary_ job empv3])
+          (join (tRef dept)
+                (join (tRef empacct)
+                      (tRef job)
+                      (joinEqCond (att2attrQualRel title_ empacct)
+                                  (att2attrQualRel title_ job)))
+                (joinEqCond (att2attr managerno_)
+                            (att2attr empno_)))
+-- att2optattQualRel salary_ job (F.Lit True))
+empVQ7' = 
   project (fmap (flip att2optatt empv3) [managerno_, salary_])
           (join (tRef dept)
                 (join (tRef empacct)
@@ -817,7 +845,7 @@ empVQ8_thought_wrong_but_correct =
 -- 
 -- tempQ = ρ (temp) 
 --           (π (managerno, deptno)
---              (σ (empno=10004) empacct) ⋈_{empacct.deptno=dept.deptno} dept))
+--              (σ (empno=10004) (empacct ⋈_{empacct.deptno=dept.deptno} dept))
 -- π (managerno^{v_3}, deptno^{v_3})
 --   (tempQ ⋈_{temp.managerno=dept.mangerno} dept)
 -- 
@@ -834,10 +862,11 @@ empVQ11 =
         renameQ temp 
                 (project ([trueAttr managerno_
                          , trueAttrQualRel deptno_ dept])
-                        (join (select empSqlCond (tRef empacct))
-                              (tRef dept)
-                              (joinEqCond (att2attrQualRel deptno_ empacct) 
-                                          (att2attrQualRel deptno_ dept))))
+                        (select empSqlCond 
+                                (join (tRef empacct)
+                                      (tRef dept)
+                                      (joinEqCond (att2attrQualRel deptno_ empacct) 
+                                                  (att2attrQualRel deptno_ dept)))))
 
 -- 
 -- #variants = 1
@@ -888,7 +917,7 @@ empVQ11_old =
 -- 
 -- tempQ = ρ (temp) 
 --           (π (managerno, deptno)
---              (σ (empno=10004) empacct) ⋈_{empacct.deptno=dept.deptno} dept))
+--              (σ (empno=10004) (empacct ⋈_{empacct.deptno=dept.deptno} dept))
 -- π (managerno^{v_3 ∨ v_4 ∨ v_5}, deptno^{v_3 ∨ v_4 ∨ v_5})
 --   (tempQ ⋈_{temp.managerno=dept.mangerno} dept)
 -- 
@@ -905,10 +934,11 @@ empVQ12 =
         renameQ temp 
                 (project ([trueAttr managerno_
                          , trueAttrQualRel deptno_ dept])
-                        (join (select empSqlCond (tRef empacct))
-                              (tRef dept)
-                              (joinEqCond (att2attrQualRel deptno_ empacct) 
-                                          (att2attrQualRel deptno_ dept))))
+                        (select empSqlCond 
+                                (join (tRef empacct)
+                                      (tRef dept)
+                                      (joinEqCond (att2attrQualRel deptno_ empacct) 
+                                                  (att2attrQualRel deptno_ dept)))))
 
 -- 
 -- 
@@ -951,13 +981,13 @@ empVQ12_old =
 
 -- 13.intent: For all managers, find all managers in the department that he/she worked in, 
 --            for VDB variant \vThree. 
---
+
 -- #variants = 1
 -- #unique_variants = 1
--- 
+
 -- after pushing schema: #variants = 
 -- after pushing schema: #unique_variants = 
--- 
+
 -- π (temp.managerno^{v_3}, deptname^{v_3}, dept.managerno^{v_3})
 --   ((ρ (temp) (π (managerno, deptno) dept)) ⋈_{temp.deptno=dept.deptno} dept)
 -- 

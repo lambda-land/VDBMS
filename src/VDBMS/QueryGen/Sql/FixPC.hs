@@ -25,44 +25,90 @@ import Data.Maybe (isNothing, fromJust)
 
 import Debug.Trace
 
--- |
+-- | fixPC for one big query approach.
+fixPC' :: PCatt -> Sql -> Sql
+fixPC' pc q = fixDoublePC pc (fixPC pc q)
+
+-- | 
+fixDoublePC :: PCatt -> Sql -> Sql
+fixDoublePC pc q@(Sql (SelectFromWhere as ts cs)) 
+  = Sql (SelectFromWhere (removeDoublePC pc as) (ts) cs)
+fixDoublePC pc (SqlBin o l r) 
+  = SqlBin o (fixDoublePC pc l) (fixDoublePC pc r)
+fixDoublePC _ q = q
+
+removeDoublePC :: PCatt -> [SqlAttrExpr] -> [SqlAttrExpr]
+removeDoublePC pc as = updated:rest 
+  where
+    rest = filter (\a -> (not (isFexp a))) (filter (\a -> (not (isPCs a))) as)
+    fexp = getF (head (filter isFexp as))
+    pcAtts = getAs (head (filter isPCs as))
+    updated = SqlAndPCsFexp pcAtts fexp pc
+    isPCs :: SqlAttrExpr -> Bool
+    isPCs (SqlAndPCs _ _) = True
+    isPCs _ = False
+    isFexp :: SqlAttrExpr -> Bool
+    isFexp (SqlAndPCFexp _ _ _) = True
+    isFexp _ = False
+    -- getF :: SqlAttrExpr -> FeatureExpr
+    getF (SqlAndPCFexp _ f _) = f
+    getAs :: SqlAttrExpr -> [Attr]
+    getAs (SqlAndPCs as _) = as
+
+-- | drops the pc attribute and instead conjuncts the 
+--   pc of all attributes and renames it as pc.
 fixPC :: PCatt -> Sql -> Sql 
-fixPC pc (Sql sfw)      = Sql $ fixPCsfw pc sfw
+fixPC pc q@(Sql sfw)      = 
+  -- trace ("query is :" ++ show q) $
+  Sql $ fixPCsfw pc sfw
 fixPC pc (SqlBin o l r) = SqlBin o (fixPC pc l) (fixPC pc r)
 fixPC _   sql           = sql  
 
 
--- |
+-- | drops the pc attribute and instead conjuncts the 
+--   pc of all attributes and renames it as pc.
 fixPCsfw :: PCatt -> SelectFromWhere -> SelectFromWhere
-fixPCsfw pc (SelectFromWhere as ts cs) = SelectFromWhere as' ts' cs
-  where
-    as' = deletePC as pc ++ [SqlAndPCs pcs pc]
-    pcs = map (\q -> Attr pc (Just (SubqueryQualifier q))) 
-              (concatMap getQual ts)
-    getQual :: Rename SqlRelation -> [Name]
-    getQual (Rename (Just alias) (SqlSubQuery _)) 
-      = [alias]
-    getQual (Rename Nothing (SqlSubQuery sql)) 
-      -- = trace (show sql) $
-      =  []
-      -- = error "FixPC. fixPCsfw. shouldnt be in this case!!!"
-    getQual (Rename Nothing (SqlInnerJoin lsr rsr _)) 
-      = case (isNothing nlsr, isNothing nrsr) of
-        (True,  True)  -> getQual lsr ++ getQual rsr
-        (True,  False) -> getQual lsr ++ [fromJust nrsr]
-        (False, True)  -> [fromJust nlsr] ++ getQual rsr
-        (False, False) -> [fromJust nlsr, fromJust nrsr]
-        where
-          nlsr = name lsr
-          nrsr = name rsr
-    getQual (Rename _ (SqlInnerJoin _ _ _)) 
-      = error "FixPC. fixPCsfw. shouldnt be in this case"
-      -- | isNothing (name lsr) && isNothing (name rsr) 
-      --   = getQual lsr ++ getQual rsr
-      -- | isNothing (name lsr) && isNothing (name rsr) 
-    ts' = map (fixPCrenameSqlRelation pc) ts
+fixPCsfw pc (SelectFromWhere as ts cs) 
+  = SelectFromWhere (dropEmptyConcat as') ts' cs
+    where
+      as' = deletePC as pc ++ [SqlAndPCs pcs pc]
+      pcs = map (\q -> Attr pc (Just (SubqueryQualifier q))) 
+                (concatMap getQual ts)
+      getQual :: Rename SqlRelation -> [Name]
+      getQual (Rename (Just alias) (SqlSubQuery _)) 
+        = [alias]
+      getQual (Rename Nothing (SqlSubQuery sql)) 
+        -- = trace (show sql) $
+        =  []
+        -- = error "FixPC. fixPCsfw. shouldnt be in this case!!!"
+      getQual (Rename Nothing (SqlInnerJoin lsr rsr _)) 
+        = case (isNothing nlsr, isNothing nrsr) of
+          (True,  True)  -> getQual lsr ++ getQual rsr
+          (True,  False) -> getQual lsr ++ [fromJust nrsr]
+          (False, True)  -> [fromJust nlsr] ++ getQual rsr
+          (False, False) -> [fromJust nlsr, fromJust nrsr]
+          where
+            nlsr = name lsr
+            nrsr = name rsr
+      getQual (Rename _ (SqlInnerJoin _ _ _)) 
+        = error "FixPC. fixPCsfw. shouldnt be in this case"
+        -- | isNothing (name lsr) && isNothing (name rsr) 
+        --   = getQual lsr ++ getQual rsr
+        -- | isNothing (name lsr) && isNothing (name rsr) 
+      ts' = map (fixPCrenameSqlRelation pc) ts
+      -- drops the empty concat of pc and replaces it with pc
+      dropEmptyConcat :: [SqlAttrExpr] -> [SqlAttrExpr]
+      dropEmptyConcat = map dropIt
+        where 
+          dropIt :: SqlAttrExpr -> SqlAttrExpr
+          dropIt (SqlAndPCs [] pc) 
+            = SqlAttr (Rename Nothing (Attr pc Nothing))
+          dropIt a = a
 
--- |
+
+
+-- | drops the pc attribute and instead conjuncts the 
+--   pc of all attributes and renames it as pc.
 fixPCrenameSqlRelation :: PCatt -> Rename SqlRelation -> Rename SqlRelation
 fixPCrenameSqlRelation pc (Rename a (SqlSubQuery sql)) 
   = Rename a (SqlSubQuery $ fixPC pc sql)
@@ -73,4 +119,36 @@ fixPCrenameSqlRelation pc (Rename a (SqlInnerJoin l r c))
   = Rename a (SqlInnerJoin (fixPCrenameSqlRelation pc l)
                            (fixPCrenameSqlRelation pc r)
                            c)
+
+-- | fixes the misplaced pc conjunct attribute: removes the conjunction
+--   that has an empty list of attributes. it also moves the 
+--   attribute expression one level up if the conjunction pc is 
+--   the only attribute.
+-- fixMisplacedPC :: PCatt -> SelectFromWhere -> SelectFromWhere
+-- fixMisplacedPC pc sfw@(SelectFromWhere as ts cs) 
+--   = SelectFromWhere as''' ts' cs
+--     where
+--       as' = dropEmptyPC as
+--       (ts', as'') = fixMisplacedPCsubs ts 
+--       as''' = addAttPCs2attExp pc as' as''
+
+-- -- |
+-- fixMisplacedPCsubs :: [Rename SqlRelation]
+--                    -> ([Rename SqlRelation], [SqlAttrExpr])
+-- fixMisplacedPCsubs rrs = undefined
+
+-- -- | drops the sql att that has an empty list of pc.
+-- dropEmptyPC :: [SqlAttrExpr] -> [SqlAttrExpr]
+-- dropEmptyPC as = filter (not . isAndPCsEmpty) as  
+
+-- -- | checks if and of pcs is the only sql att exp.
+-- isPCOnlyAtt :: [SqlAttrExpr] -> Bool
+-- isPCOnlyAtt as 
+--   | length as == 1 = case (isAndPCs (head as)) of 
+--     True  -> True
+--     False -> False
+--   | otherwise = False
+
+
+
 

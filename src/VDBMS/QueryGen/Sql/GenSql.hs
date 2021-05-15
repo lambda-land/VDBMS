@@ -64,8 +64,8 @@ genSql = evalQState . nameSubSql
 -- TODO: attributes qualifiers must also be updated.
 -- | names subqueries within a sql query.
 nameSubSql :: Sql -> QState Sql
-nameSubSql (Sql (SelectFromWhere as ts cs))
-  -- = trace "checking111111111111" $ 
+nameSubSql q@(Sql (SelectFromWhere as ts cs)) 
+  -- = trace ("query is:" ++ ppSqlString q) $
   = do ts' <- mapM nameRel ts
        renv <- gets env
        let as' = updateAttsQual as ts' renv 
@@ -100,7 +100,9 @@ nameRel rq@(Rename a q@(SqlSubQuery subq))
          then return $ Rename Nothing (SqlSubQuery subq')
          else do modify incCounter
                  return rq'
-  | otherwise = return rq
+  | otherwise 
+    = do q' <- nameSubSql subq
+         return (Rename a (SqlSubQuery q'))
 -- TODO: we may need to updates condition for attributes qualifiers.
 nameRel rq@(Rename a (SqlInnerJoin l r c)) 
   | isNothing a 
@@ -122,7 +124,9 @@ nameRel rq@(Rename a (SqlInnerJoin l r c))
 -- |
 updateAttsQual :: [SqlAttrExpr] -> [Rename SqlRelation] -> RenameEnv 
                -> [SqlAttrExpr]
-updateAttsQual as rs e = map (flip (flip updateAttQual rs) e) as 
+updateAttsQual as rs e = 
+  -- trace (show as ++ "env is " ++ show e) $
+  map (flip (flip updateAttQual rs) e) as 
 
 -- -- |
 updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv 
@@ -130,11 +134,15 @@ updateAttQual :: SqlAttrExpr -> [Rename SqlRelation] -> RenameEnv
 updateAttQual ae@(SqlAttr (Rename Nothing at@(Attr _ q))) _ e 
   | isNothing q = ae
   | isQualRel aq 
+    -- = trace ("problem is here!!!!" ++ show aq ++ show e) $ 
     = SqlAttr (Rename Nothing (updateAttrQual at (SubqueryQualifier aq')))
-      where 
+  | not (isQualRel aq) = ae
+          where 
         aq = fromJust q
         aq' = fromJust (SM.lookup (relQualifier aq) e)
-updateAttQual _ _ _ = error "updateAttQual. GenSql. shoulnt have got such SqlAttrExpr"
+updateAttQual ae@(SqlAndPCFexp _ _ _) _ _ = ae
+updateAttQual ae@(SqlNullAttr _) _ _ = ae
+updateAttQual ae _ _ = trace ("att expr is:" ++ show ae) $ error "updateAttQual. GenSql. shoulnt have got such SqlAttrExpr"
 
 -- |
 updateJCondQual :: RCondition 
@@ -172,6 +180,7 @@ updateAtomQual :: Atom -> [Rename SqlRelation] -> RenameEnv -> Atom
 updateAtomQual at@(Att a) _ e
   | isNothing aq = at 
   | isQualRel (fromJust aq) = Att $
+    -- trace ("here000000000" ++ show (relQualifier (fromJust aq)) ++ "show e: " ++ show e) $ Att $
     updateAttrQual 
       a 
       (SubqueryQualifier 
