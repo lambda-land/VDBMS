@@ -9,7 +9,7 @@ module VDBMS.Approaches.Linearize.RunOneBigQuery where
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra, optAlgebra)
 import VDBMS.Variational.Variational 
-import VDBMS.VDB.Table.Table (Table, mkVTable)
+import VDBMS.VDB.Table.Table (Table, mkVTable, getSqlTable)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
 -- import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable)
 import VDBMS.TypeSystem.Variational.TypeSystem 
@@ -59,22 +59,12 @@ runQ3_ conn vq =
          pc = presCond db
      vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
      start_constQ <- getTime Monotonic
-     let 
-         -- type_pc = typePC vq_type
-         type_sch = typeEnv2tableSch vq_type
+     let type_sch = typeEnv2tableSch vq_type
          type_as = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
-         -- vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch pc
-         -- try removing opt
-         -- ra_qs = optAlgebra vsch vq_constrained_opt --revised for the final version
          ra_qs = optAlgebra vsch vq_constrained_opt
-         -- ra_qs_subqNamed = map (second nameSubqRAlgebra) ra_qs
-         -- the following line are for optimizing the generated RA queries
-         -- ras_opt = map (second opts_) ra_qs --revised for the final version
-         -- ras_opt = map (second ((addPC pc) . opts_)) ra_qs_subqNamed --dropped addpc below
          ras_opt = map (second opts_) ra_qs
-         -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
          sql = ppSqlString $ fixPC' pc (genSql (optRAQs2Sql type_as pc ras_opt))
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
@@ -89,6 +79,8 @@ runQ3_ conn vq =
      putStrLn "gathering results: "
      strt_res <- getTime Monotonic
      let res = mkVTable type_sch sqlTab
+         lres = length (getSqlTable res)
+     putStrLn (show lres)
      end_res <- getTime Monotonic
      fprint (timeSpecs % "\n") strt_res end_res
      -- timeItName "make vtable" Monotonic $ return 
@@ -106,22 +98,12 @@ runQ3 conn vq =
          pc = presCond db
      vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
      start_constQ <- getTime Monotonic
-     let 
-         -- type_pc = typePC vq_type
-         type_sch = typeEnv2tableSch vq_type
+     let type_sch = typeEnv2tableSch vq_type
          type_as = typeAtts vq_type
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
-         -- vq_constrained_opt_qual = injectQualifier vq_constrained_opt vsch pc
-         -- try removing opt
-         -- ra_qs = optAlgebra vsch vq_constrained_opt --revised for the final version
          ra_qs = optAlgebra vsch vq_constrained_opt
-         -- ra_qs_subqNamed = map (second nameSubqRAlgebra) ra_qs
-         -- the following line are for optimizing the generated RA queries
-         -- ras_opt = map (second opts_) ra_qs --revised for the final version
-         -- ras_opt = map (second ((addPC pc) . opts_)) ra_qs_subqNamed --dropped addpc below
          ras_opt = map (second opts_) ra_qs
-         -- sql = ppSqlString $ optRAQs2Sql type_as pc ra_qs
          sql = show $ genSql (optRAQs2Sql type_as pc ras_opt)
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
@@ -135,6 +117,8 @@ runQ3 conn vq =
      putStrLn "gathering results: "
      strt_res <- getTime Monotonic
      let res = mkVTable type_sch sqlTab
+         lres = length (getSqlTable res)
+     putStrLn (show lres)
      end_res <- getTime Monotonic
      fprint (timeSpecs % "\n") strt_res end_res
      -- timeItName "make vtable" Monotonic $ return 
@@ -156,3 +140,4 @@ run3en = runQ3_ enronVDB
 
 run3en' :: Algebra -> IO Table
 run3en' = runQ3 enronVDB
+

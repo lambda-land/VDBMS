@@ -51,7 +51,7 @@ data Sql = Sql SelectFromWhere
   | SqlBin SqlBinOp Sql Sql
   | SqlTRef Relation
   | SqlEmpty
-    deriving Show
+    -- deriving Show
 
 -- -- | Sql select statements.
 -- data SqlSelect =  
@@ -74,12 +74,12 @@ data SelectFromWhere =
     , tables :: [Rename SqlRelation]
     , conditions :: [SqlCond Sql] -- TODO: debateable
   }
-    deriving Show
+    -- deriving Show
 
 -- | Sql null attribute.
 data SqlNullAtt = SqlNullAtt
-  -- deriving (Eq)
-  deriving (Eq, Show)
+  deriving (Eq)
+  -- deriving (Eq, Show)
 
 -- | Sql attribute projection expressions.
 data SqlAttrExpr = 
@@ -90,8 +90,8 @@ data SqlAttrExpr =
   | SqlAndPCFexp Attr FeatureExpr PCatt
   | SqlAndPCsFexp [Attr] FeatureExpr PCatt
   -- | SqlConcatAtt (Rename Attr) [String] -- ^ concat (A, "blah", "blah"), concat ... as A
-  -- deriving (Eq)
-  deriving (Eq, Show)
+  deriving (Eq)
+  -- deriving (Eq, Show)
 
 -- | appends the two lists of attributes for a sqlandpc.
 andSqlAtts :: SqlAttrExpr -> SqlAttrExpr -> SqlAttrExpr
@@ -160,7 +160,7 @@ data SqlRelation =
     SqlSubQuery Sql
   | SqlInnerJoin (Rename SqlRelation) (Rename SqlRelation) RCondition
   -- | SqlMoreInnerJoin     SqlRelation       (Rename Relation) RCondition
-  deriving Show
+  -- deriving Show
 
 -- | returns a relation if sqlrel is just a rel.
 relFromSqlRel :: SqlRelation -> Maybe Relation
@@ -210,7 +210,7 @@ isSqlEmpty _        = False
 
 -- | Sql set operations.
 data SqlBinOp = SqlUnion | SqlUnionAll | SqlDiff
-  deriving Show
+  -- deriving Show
 
 -- | Sql temparory storing intermediate results.
 --   Note: you can only use WITH statements in a single sql query.
@@ -485,7 +485,10 @@ vandfexp f = hcat . punctuate (comma <+> quotes (text " AND ") <> comma)
 -- instance Show OutSql where
 --   show = ppOutSqlString
 
--- instance Show Sql where 
---   show = ppSqlString
+instance Show SqlAttrExpr where
+  show = render . ppAtts
+
+instance Show Sql where 
+  show = ppSqlString
 
 
