@@ -27,7 +27,7 @@ import VDBMS.Features.FeatureExpr.FeatureExpr
 import VDBMS.Features.SAT 
 import VDBMS.DBMS.Table.Table
 
-type SqlVtable = Opt SqlTable -- this is not correct!
+type SqlVtable = Opt SqlTable 
 -- type SqlVtable = Opt VTuples
 
 -- | pretty prints a sql vtable

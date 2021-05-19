@@ -56,7 +56,8 @@ runQ1_ conn vq =
          features = dbFeatures db
          configs = getAllConfig db
          pc = presCond db
-     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     -- vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     vq_type <- typeOfQuery vq vsch_pc vsch
      -- putStrLn (show vq_type)
      start_constQ <- getTime Monotonic
      let type_sch = typeEnv2tableSch vq_type
@@ -70,16 +71,17 @@ runQ1_ conn vq =
      -- putStrLn ("vq_constrained " ++ show vq_constrained)
      -- putStrLn ("vq_constrained_opt " ++ show vq_constrained_opt)
      -- putStrLn (show )
-     end_constQ <- getTime Monotonic
+     -- end_constQ <- getTime Monotonic
      -- putStrLn ("explicitly anntoted query: " ++ show vq_constrained_opt) 
-     putStrLn "constructing queries:"
-     fprint (timeSpecs % "\n") start_constQ end_constQ
+     -- putStrLn "constructing queries:"
+     -- fprint (timeSpecs % "\n") start_constQ end_constQ
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
-     putStrLn (show $ fmap snd sql_qs)
+     -- putStrLn (show $ fmap snd sql_qs)
      let runq :: (Config Bool, String) -> IO SqlVariantTable
          runq = bitraverse (return . id) (fetchQRows db) 
-     sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
+     -- sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
+     sqlTables <- mapM runq sql_qs
      -- putStrLn (show (length sqlTables))
      -- tabtest <- fetchQRows conn ((map fst sql_qs) !! 1)
      -- tabtest <- fetchQRows conn "select * from r1;"
@@ -87,12 +89,14 @@ runQ1_ conn vq =
      -- putStrLn (prettySqlTable [aone_, atwo_, pc] tabtest)
      -- putStrLn (prettySqlVarTab features (atts ++ [pc]) (sqlTables !! 2))
      -- putStrLn (show (map (ppSqlVarTab features atts) sqlTables))
-     putStrLn "gathering results: "
-     strt_res <- getTime Monotonic
+     -- putStrLn "gathering results: "
+     -- strt_res <- getTime Monotonic
      let res = variantSqlTables2Table features pc type_sch sqlTables
          lres = length (getSqlTable res)
+     putStrLn (show lres)
      end_res <- getTime Monotonic
-     fprint (timeSpecs % "\n") strt_res end_res
+     fprint (timeSpecs % "\n") start_constQ end_res
+     -- fprint (timeSpecs % "\n") strt_res end_res
      -- timeItName "gathering results" Monotonic $ return 
      --   $ variantSqlTables2Table features pc type_sch sqlTables
      return ()

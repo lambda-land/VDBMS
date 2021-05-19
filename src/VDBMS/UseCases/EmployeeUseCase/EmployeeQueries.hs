@@ -69,6 +69,16 @@ v34 = F.Or empv3 empv4
 v45 :: F.FeatureExpr
 v45 = F.Or empv4 empv5
 
+
+-- | query for thesis example.
+thesisex :: Algebra 
+thesisex = project [att2optatt empno_ v45
+                   , trueAttr name_
+                   , trueAttr firstname_
+                   , trueAttr lastname_]
+                   (tRef empbio)
+
+
 -- empQppr = project 
 --   [att2optatt empno_ v45, trueAttr name_, trueAttr firstname_, trueAttr lastname_]
 --   (tRef empbio)

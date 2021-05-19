@@ -6,6 +6,7 @@ module VDBMS.VDB.Table.GenTable (
         -- adjustVTable2TableSch
         variantSqlTables2Table
         , sqlVtables2VTable
+        , varSqlTab2Tab
 
 ) where 
 
@@ -18,7 +19,7 @@ import VDBMS.VDB.Schema.Variational.Schema (
   , tschRowType
   , tableSchAtts
   )
-import VDBMS.Features.Variant (Variant)
+import VDBMS.Features.Variant (Variant, getVariant)
 import VDBMS.DBMS.Table.SqlVtable (SqlVtable, applyFexpToSqlVtable,
   updateTuplesPCInSqlVtable)
 import VDBMS.DBMS.Table.SqlVariantTable (
@@ -48,10 +49,22 @@ variantSqlTables2Table fs pc t_sch ts
     where 
       t_pc = tschFexp t_sch
       rowtype = tschRowType t_sch
-      ts_valid = applyConfVariantTables pc t_pc ts
+      -- ts_valid = applyConfVariantTables pc t_pc ts
       ts_sameSch_updatedPC = map 
         ((flip conformSqlTableToSchema rowtype) . (updateTuplesPC fs pc)) 
-        ts_valid
+        ts
+        -- ts_valid
+
+-- |
+varSqlTab2Tab :: PCatt -> TableSchema -> [SqlVariantTable] -> Table
+varSqlTab2Tab pc t_sch ts = mkVTable t_sch (combineSqlTables pc finalTab)
+  where
+    rowtype = tschRowType t_sch
+    t_pc = tschFexp t_sch
+    ts_valid = applyConfVariantTables pc t_pc ts
+    finalTab = map ((flip conformSqlTableToSchema rowtype) . getVariant)
+                   ts_valid
+                   -- ts
 
 -- | takes everything neede to combine a list of opt sqltable
 --   to a table.
@@ -61,11 +74,12 @@ sqlVtables2VTable pc t_sch ts
     where
       t_pc = tschFexp t_sch
       rowtype = tschRowType t_sch
-      ts_valid = map (applyFexpToSqlVtable t_pc pc) ts 
+      -- ts_valid = map (applyFexpToSqlVtable t_pc pc) ts 
       ts_sameSch_updatedPC 
         = map ((flip conformSqlTableToSchema rowtype) 
                . (updateTuplesPCInSqlVtable pc)) 
-              ts_valid
+              ts
+              -- ts_valid
 
 {--
 ------------------- construct vtable for approach1 -------------------
