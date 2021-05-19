@@ -6,10 +6,13 @@ module VDBMS.Approaches.Linearize.RunOneQueryAtATimeinjected where
 
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra, optAlgebra)
+-- import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra)
 import VDBMS.Variational.Variational 
 import VDBMS.VDB.Table.Table (Table, mkVTable, getSqlTable)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
-import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, prettySqlVarTab)
+-- import VDBMS.DBMS.Table.SqlVariantTable (SqlVariantTable, prettySqlVarTab)
+import VDBMS.DBMS.Table.SqlVtable (SqlVtable, prettySqlVTable)
+import VDBMS.Variational.Opt (Opt)
 import VDBMS.TypeSystem.Variational.TypeSystem 
   (typeOfQuery, typeEnv2tableSch, typeAtts)
 import VDBMS.VDB.Schema.Variational.Types (featureModel)
@@ -19,7 +22,7 @@ import VDBMS.QueryTrans.AlgebraToSql (transAlgebra2Sql)
 -- import VDBMS.QueryGen.MySql.PrintSql (ppSqlString)
 import VDBMS.QueryLang.SQL.Pure.Sql (ppSqlString)
 import VDBMS.QueryGen.Sql.GenSql (genSql)
-import VDBMS.VDB.Table.GenTable (variantSqlTables2Table)
+import VDBMS.VDB.Table.GenTable (sqlVtabs2VTab)
 -- import VDBMS.VDB.Schema.Variational.Schema (tschFexp, tschRowType)
 import VDBMS.Features.Config (Config)
 import VDBMS.Approaches.Timing (timeItName)
@@ -65,10 +68,12 @@ runQ7_ conn vq =
          vq_constrained = pushSchToQ vsch vq
          vq_constrained_opt = chcSimpleReduceRec vq_constrained
          ra_qs = optAlgebra vsch vq_constrained_opt
+         -- ras_opt :: [Opt RAlgebra]
          ras_opt = map (second opts_) ra_qs
          sql_qs1 = fmap (bimapDefault id (genSql . transAlgebra2Sql)) ras_opt 
-         sql_qs2 = fmap (addFexp2PC pc) sql_qs1
-         sql_qs = fmap (ppSqlString . (fixPC' pc)) sql_qs2
+         sql_qs2 = fmap 
+           (\(fex, query) -> (fex, addFexp2PC pc (fex, query))) sql_qs1
+         sql_qs = fmap (bimapDefault id (ppSqlString . (fixPC' pc))) sql_qs2
      -- putStrLn (show type_sch)
      -- putStrLn ("vq_constrained " ++ show vq_constrained)
      -- putStrLn ("vq_constrained_opt " ++ show vq_constrained_opt)
@@ -80,10 +85,10 @@ runQ7_ conn vq =
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
      -- putStrLn (show sql_qs)
-     -- let runq :: (Config Bool, String) -> IO SqlVariantTable
-     --     runq = bitraverse (return . id) (fetchQRows db) 
+     let runq :: Opt String -> IO SqlVtable
+         runq = bitraverse (return . id) (fetchQRows db) 
      -- sqlTables <- timeItName "running queries" Monotonic $ mapM runq sql_qs
-     sqlTables <- mapM (fetchQRows db) sql_qs
+     sqlTables <- mapM runq sql_qs
      -- putStrLn (show (length sqlTables))
      -- tabtest <- fetchQRows conn ((map fst sql_qs) !! 1)
      -- tabtest <- fetchQRows conn "select * from r1;"
@@ -93,7 +98,7 @@ runQ7_ conn vq =
      -- putStrLn (show (map (ppSqlVarTab features atts) sqlTables))
      -- putStrLn "gathering results: "
      -- strt_res <- getTime Monotonic
-     let res = mkVTable type_sch (concat sqlTables)
+     let res = sqlVtabs2VTab pc type_sch sqlTables
          lres = length (getSqlTable res)
      putStrLn (show lres)
      end_res <- getTime Monotonic
