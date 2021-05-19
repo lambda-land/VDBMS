@@ -1,3 +1,2 @@
-- encode explicitly-annotated VRA in Coq
-- define variation-preserving property in Coq
-- prove variation-preserving property in Coq
+
+
