@@ -79,8 +79,8 @@ sqlVtables2VTable pc t_sch ts
       ts_sameSch_updatedPC 
         = map ((flip conformSqlTableToSchema rowtype) 
                . (updateTuplesPCInSqlVtable pc)) 
-              -- ts
-              ts_valid
+              ts
+              -- ts_valid
 
 sqlVtabs2VTab :: PCatt -> TableSchema -> [SqlVtable] -> Table
 sqlVtabs2VTab pc t_sch ts 
@@ -92,8 +92,8 @@ sqlVtabs2VTab pc t_sch ts
       ts_sameSch_updatedPC 
         = map ((flip conformSqlTableToSchema rowtype) 
                . getObj) 
-              -- ts
-              ts_valid
+              ts
+              -- ts_valid
 
 {--
 ------------------- construct vtable for approach1 -------------------
