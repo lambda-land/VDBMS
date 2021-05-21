@@ -7,6 +7,7 @@ module VDBMS.Approaches.Linearize.RunOneQueryAtATime where
 
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra, optAlgebra)
+-- import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra(..))
 import VDBMS.Variational.Variational (Variational(..))
 import VDBMS.Variational.Opt (Opt)
 import VDBMS.VDB.Table.Table (Table, getSqlTable)
@@ -70,6 +71,7 @@ runQ2_ conn vq =
      -- fprint (timeSpecs % "\n") start_constQ end_constQ
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
+     -- putStrLn (show $ numVar ra_qs)
      -- putStrLn (show $ fmap snd sql_qs)
      let runq :: Opt String -> IO SqlVtable
          runq = bitraverse (return . id) (fetchQRows db) 
@@ -80,8 +82,8 @@ runQ2_ conn vq =
      -- putStrLn "gathering results: "
      -- strt_res <- getTime Monotonic
      let res = sqlVtables2VTable pc type_sch sqlTables
-         lres = length (getSqlTable res)
-     putStrLn (show lres)
+         -- lres = length (getSqlTable res)
+     -- putStrLn (show lres)
      end_res <- getTime Monotonic
      -- fprint (timeSpecs % "\n") strt_res end_res
      fprint (timeSpecs % "\n") start_constQ end_res
@@ -89,6 +91,9 @@ runQ2_ conn vq =
      --   $ sqlVtables2VTable pc type_sch sqlTables
      -- putStrLn (show res)
      return ()
+
+-- numVar :: [(a, RAlgebra)] -> Int 
+-- numVar ras = length $ filter (/=REmpty) (map snd ras)
 
 -- |
 runQ2 :: Database conn => IO conn -> Algebra -> IO Table

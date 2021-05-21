@@ -7,6 +7,7 @@ module VDBMS.Approaches.ConfigQ.RunVariantQueryOnVDB where
 
 import VDBMS.VDB.Database.Database (Database(..))
 import VDBMS.QueryLang.RelAlg.Variational.Algebra (Algebra)
+-- import VDBMS.QueryLang.RelAlg.Relational.Algebra (RAlgebra(..))
 import VDBMS.Variational.Variational 
 import VDBMS.VDB.Table.Table (Table, getSqlTable)
 -- import VDBMS.DBMS.Table.Table (SqlTable)
@@ -77,6 +78,7 @@ runQ1_ conn vq =
      -- fprint (timeSpecs % "\n") start_constQ end_constQ
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
+     -- putStrLn (show $ numVar ra_qs)
      -- putStrLn (show $ fmap snd sql_qs)
      let runq :: (Config Bool, String) -> IO SqlVariantTable
          runq = bitraverse (return . id) (fetchQRows db) 
@@ -100,6 +102,9 @@ runQ1_ conn vq =
      -- timeItName "gathering results" Monotonic $ return 
      --   $ variantSqlTables2Table features pc type_sch sqlTables
      return ()
+
+-- numVar :: [(a, RAlgebra)] -> Int 
+-- numVar ras = length $ filter (/=REmpty) (map snd ras)
 
 -- |
 runQ1 :: Database conn => IO conn -> Algebra -> IO Table
