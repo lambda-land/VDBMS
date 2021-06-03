@@ -2,7 +2,7 @@
 Set Warnings "-notation-overridden,-parsing".
 Require Export Logic.
 
-Load ElemOPVelem.
+Load Elem_Op_Velem.
 
 (* list-equivalence *)
 Definition equiv_elems_list : relation (list elem) := 

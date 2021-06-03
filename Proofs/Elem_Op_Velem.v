@@ -2,7 +2,7 @@
 Set Warnings "-notation-overridden,-parsing".
 
 
-Load get_annot_lemmas.
+Load Get_Annot_Lemmas.
 
 
 (* configVElemSet InElem *)

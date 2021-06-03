@@ -2,7 +2,7 @@
 Set Warnings "-notation-overridden,-parsing".
 
 
-Load equiv_lemms.
+Load Equiv_Lemmas.
 
 
 Lemma simpl_get_annot_eq a e A: get_annot a ((ae a e)::A) = (e \/(F) (get_annot a A)).

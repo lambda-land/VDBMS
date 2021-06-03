@@ -1,7 +1,7 @@
 (** Variational relational algebra lemmas *)
 Set Warnings "-notation-overridden,-parsing".
 
-Load SetOPLemmas.
+Load Set_Op_Lemmas.
 
 
 Ltac intro_nodupelemconfig_rewrite H:= 

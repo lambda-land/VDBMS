@@ -5,10 +5,10 @@ Require Export List.
 Require Export Logic.
 Import Coq.Lists.List.ListNotations.
 
-Load VRA_varPrsrvtn_thm.
+Load VRA_VarPrsrvtn_Thm.
 
 
-Module subset_subsump_lemmas. 
+Module Subset_Subsump_Lemmas. 
 
 Lemma count_occ_NoDup_0_or_1 {A:Type} eq_dec (l:list A):
   NoDup l <-> forall x, count_occ eq_dec l x = 0 \/ count_occ eq_dec l x = 1.
@@ -563,7 +563,7 @@ simpl.
 Admitted.*)
 
  
-End subset_subsump_lemmas.  
+End Subset_Subsump_Lemmas.  
 (*================================================*)
    
 (*

@@ -3,10 +3,10 @@ Set Warnings "-notation-overridden,-parsing".
 
 (*Load configdistUnionInter. *)
 
-Load subset_subsump_lemmas.
-Import subset_subsump_lemmas.
+Load Subset_Subsump_Lemmas.
+Import Subset_Subsump_Lemmas.
 
-Module VRA_ImptoExp.
+Module VRA_Imp_To_Exp.
 (* Few points to remember:
    1. when destructing (vTypeImp S q = (A, _) ),
       get (NoDupElem A) by applying NoDupElem_vtypeImpNOTC'. 
@@ -1693,7 +1693,7 @@ destruct HExpQImpT as [A' HExpQExpT].
 exists A'; assumption. assumption.
 Qed.
 
-End VRA_ImptoExp.
+End VRA_Imp_To_Exp.
 
 (*Lemma ExpQ_ImpType_Equiv_ExpQ_ExpType' e1 e2 S q A A': 
   { e1 , S |- [q]S | A }  -> 

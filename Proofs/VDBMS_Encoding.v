@@ -17,7 +17,7 @@ Import Coq.Lists.List.ListNotations.
 
 (* Local libs and moduels *)
 Load CpdtTactics.
-Require Import Coq_extended_logic.
+Require Import Coq_Extended_Logic.
 
 
 (*Require Import Coq.MSets.MSetInterface.
@@ -41,7 +41,7 @@ Import StringWL.Raw.*)
 Load Feature.
 Import Feature.
 
-Module VRA_RA_encoding.
+Module VDBMS_Encoding.
 
 (** -------------------------------------------------------------
   Elemribute: Type and Comparison Function, Lemmas
@@ -1750,7 +1750,7 @@ Notation "s ||= q " := (type_ q s) (at level 49).
 
 
 
-End VRA_RA_encoding.
+End VDBMS_Encoding.
 
 (*
 --------------------------------------------------------------

@@ -1,10 +1,10 @@
 (** Variational relational algebra lemmas *)
 Set Warnings "-notation-overridden,-parsing".
  
-Load VRA_ImptoExp.
-Import VRA_ImptoExp.
+Load VRA_Imp_To_Exp.
+Import VRA_Imp_To_Exp.
 
-Import VRA_varPrsrvtn_thm.
+Import VRA_VarPrsrvtn_Thm.
 
 Theorem variation_preservation_Imp e S q A (HndpQ: NoDupElemvQ q): 
        { e , S |- q | A } ->

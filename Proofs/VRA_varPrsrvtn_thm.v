@@ -6,9 +6,9 @@ Require Export List.
 Require Export Logic.
 Import Coq.Lists.List.ListNotations.
 
-Load configdistUnionInter.
+Load Config_Dist_Over_Union_Inter.
 
-Module VRA_varPrsrvtn_thm.
+Module VRA_VarPrsrvtn_Thm.
 
 (** ------------------------------------------------------------
   equiv_qtype_bool correct quiv
@@ -589,7 +589,7 @@ Proof.
 Qed.
 
 
-End VRA_varPrsrvtn_thm.
+End VRA_VarPrsrvtn_Thm.
 
 
 (** vcond supposed to be*)

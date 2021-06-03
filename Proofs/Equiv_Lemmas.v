@@ -1,8 +1,8 @@
 (** Equivalence lemmas *)
 Set Warnings "-notation-overridden,-parsing".
 
-Load VRA_RA_encoding.
-Import VRA_RA_encoding.
+Load VDBMS_Encoding.
+Import VDBMS_Encoding.
 
 
 
