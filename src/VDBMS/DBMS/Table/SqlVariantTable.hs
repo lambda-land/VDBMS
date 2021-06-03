@@ -38,6 +38,11 @@ import Text.PrettyPrint
 
 type SqlVariantTable = Variant SqlTable Bool
 
+-- | appends sqlvarianttables assuming that the presence 
+--   conditions have already been applied in tuples.
+-- appSqlVarTabs :: [SqlVariantTable] -> SqlTable
+-- appSqlVarTabs ts = concat $ map getVariant ts 
+
 -- | pretty prints a sql variant table.
 prettySqlVarTab :: [Feature] -> [Attribute] -> SqlVariantTable -> String
 prettySqlVarTab fs as = render . ppSqlVarTab fs as

@@ -57,7 +57,8 @@ runQ3_ conn vq =
          features = dbFeatures db
          configs = getAllConfig db
          pc = presCond db
-     vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     -- vq_type <- timeItNamed "type system: " $ typeOfQuery vq vsch_pc vsch
+     vq_type <- typeOfQuery vq vsch_pc vsch
      start_constQ <- getTime Monotonic
      let type_sch = typeEnv2tableSch vq_type
          type_as = typeAtts vq_type
@@ -69,20 +70,22 @@ runQ3_ conn vq =
      -- putStrLn (show $ fmap snd ra_qs)
      -- putStrLn (show $ fmap snd ras_opt)
      -- putStrLn sql
-     end_constQ <- getTime Monotonic
-     putStrLn sql
-     putStrLn "constructing queries:"
-     fprint (timeSpecs % "\n") start_constQ end_constQ
-     sqlTab <- timeItName "running query" Monotonic $ fetchQRows db sql
+     -- end_constQ <- getTime Monotonic
+     -- putStrLn sql
+     -- putStrLn "constructing queries:"
+     -- fprint (timeSpecs % "\n") start_constQ end_constQ
+     -- sqlTab <- timeItName "running query" Monotonic $ fetchQRows db sql
+     sqlTab <- fetchQRows db sql
      -- putStrLn (prettySqlTable (type_as ++ pure pc) sqlTab)
      -- putStrLn (show sqlTab)
-     putStrLn "gathering results: "
-     strt_res <- getTime Monotonic
+     -- putStrLn "gathering results: "
+     -- strt_res <- getTime Monotonic
      let res = mkVTable type_sch sqlTab
          lres = length (getSqlTable res)
      putStrLn (show lres)
      end_res <- getTime Monotonic
-     fprint (timeSpecs % "\n") strt_res end_res
+     -- fprint (timeSpecs % "\n") strt_res end_res
+     fprint (timeSpecs % "\n") start_constQ end_res
      -- timeItName "make vtable" Monotonic $ return 
      --   $ mkVTable type_sch sqlTab
      -- putStrLn (show res)
